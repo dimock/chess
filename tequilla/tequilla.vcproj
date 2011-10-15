@@ -92,7 +92,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy /Y /R $(TargetPath) D:\arena_3.0\Engines\tequilla\*"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -176,7 +176,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy /Y /R $(TargetPath) D:\arena_3.0\Engines\tequilla\*&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="xcopy /Y /R $(TargetPath) $(ARENA_PATH)\Engines\tequilla\*&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
