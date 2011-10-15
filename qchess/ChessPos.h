@@ -17,6 +17,7 @@ public:
 
 	ChessPosition();
 
+  void setMaxDepth(int d);
   bool initialize(bool enableBook, int depthMax);
   void setUpLeft(const QPoint & upleft) const { upleft_ = upleft; }
 	void draw(QWidget * view, const QPoint & cursorPt) const;

@@ -52,6 +52,7 @@ private slots:
   void onStepDone();
   void onTimeoutStop();
   void onTurnBoard(bool t);
+  void onSettings();
 
 private:
 
@@ -90,6 +91,7 @@ private:
   QAction * onPrevAction_;
   QAction * onGoAction_;
   QAction * onTurnBoardAction_;
+  QAction * onSettingsAction_;
 
   ChessAlgThread thread_;
 };

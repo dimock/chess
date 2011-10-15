@@ -8,10 +8,12 @@
 #include <QStatusBar>
 #include <QTimer>
 #include <QMessageBox>
+#include <QSettings>
+#include "setparamsdlg.h"
 
 
 ChessAlgThread::ChessAlgThread(ChessWidget * widget) :
-widget_(widget)
+  widget_(widget)
 {
 }
 
@@ -30,6 +32,11 @@ ChessWidget::ChessWidget(QWidget * parent) :
   thread_(this), stepsCount_(false), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), computerAnswers_(true), timelimit_(1000),
   forcesCount_(0), additionalCount_(0), nullMovesCount_(0), depthMax_(2), enableBook_(true)
 {
+  QSettings settings(tr("Dimock"), tr("qchess"));
+  timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
+  depthMax_ = settings.value(tr("max_depth"), 16).toInt();
+
+  setFixedSize(450, 500);
   pv_str_[0] = 0;
   setAttribute(Qt::WA_DeleteOnClose);
   cpos_.setUpLeft(upleft_);
@@ -71,7 +78,9 @@ void ChessWidget::createMenu()
   onTurnBoardAction_->setStatusTip(tr("Turn board to play another color"));
   onTurnBoardAction_->setCheckable(true);
   onTurnBoardAction_->setChecked(false);
-  connect(onTurnBoardAction_, SIGNAL(toggled(bool)), this, SLOT(onTurnBoard(bool)));
+
+  onSettingsAction_ = new QAction(tr("Settin&gs"), this);
+  onSettingsAction_->setStatusTip(tr("Change game settings"));
 
   gameMenu->addAction(onNewAction_);
   gameMenu->addAction(onLoadAction_);
@@ -80,6 +89,8 @@ void ChessWidget::createMenu()
   gameMenu->addAction(onNextAction_);
   gameMenu->addAction(onGoAction_);
   gameMenu->addAction(onTurnBoardAction_);
+  gameMenu->addSeparator();
+  gameMenu->addAction(onSettingsAction_);
 
   connect(onNewAction_, SIGNAL(triggered()), this, SLOT(onNew()));
   connect(onLoadAction_, SIGNAL(triggered()), this, SLOT(onLoad()));
@@ -87,6 +98,8 @@ void ChessWidget::createMenu()
   connect(onPrevAction_, SIGNAL(triggered()), this, SLOT(onPrev()));
   connect(onNextAction_, SIGNAL(triggered()), this, SLOT(onNext()));
   connect(onGoAction_, SIGNAL(triggered()), this, SLOT(onGo()));
+  connect(onTurnBoardAction_, SIGNAL(toggled(bool)), this, SLOT(onTurnBoard(bool)));
+  connect(onSettingsAction_, SIGNAL(triggered()), this, SLOT(onSettings()));
 }
 
 void ChessWidget::enableActions(bool on)
@@ -98,6 +111,22 @@ void ChessWidget::enableActions(bool on)
   onNextAction_->setEnabled(on);
   onGoAction_->setEnabled(on);
   onTurnBoardAction_->setEnabled(on);
+}
+
+void ChessWidget::onSettings()
+{
+  SetParamsDlg dlg(this);
+  if ( !dlg.exec() )
+    return;
+
+  QSettings settings(tr("Dimock"), tr("qchess"));
+  settings.setValue(tr("step_time"), dlg.getStepTime());
+  settings.setValue(tr("max_depth"), dlg.getMaxDepth());
+
+  depthMax_ = dlg.getMaxDepth();
+  timelimit_ = dlg.getStepTime()*1000;
+
+  cpos_.setMaxDepth(depthMax_);
 }
 
 void ChessWidget::onNew()
@@ -273,7 +302,7 @@ void ChessWidget::drawState()
     return;
 
   QPainter painter(this);
-  QFont font(QObject::tr("Time New Roman"), 14, QFont::Bold);
+  QFont font(QObject::tr("Time New Roman"), 12, QFont::Bold);
   QPen pen(Qt::red);
   painter.setPen(pen);
   painter.setFont(font);
@@ -303,13 +332,14 @@ void ChessWidget::drawInfo()
     step_dt = (((double)full_t_)/(1000.0*bs_count_));
   }
 
-  double base_real = depth_ > 0 ? exp(log((double)(movesCurr_-forcesCount_-additionalCount_))/depth_) : 0;
-  infoText.sprintf("Moves base (avg) = %5.2f Step time = %5.2f (s) Steps = %d\n%5.2f kNodes/s Depth = %d Depth (avg) = %4.1f Eval = %4.2f\nCurrent step %5.2f kNodes/s  Moves base (current) = %5.2f\ntotal = %d moves = %d forced = %d additional = %d base = %5.2f\nnull moves = %d\n%s",
-    mavg, dt_/1000.0, stepsCount_, nps, depth_, davg, w_/100.0f,
-    nps_curr, moves_base_,
-    totalCurr_, movesCurr_, forcesCount_, additionalCount_, base_real, nullMovesCount_, pv_str_);
+  //double base_real = depth_ > 0 ? exp(log((double)(movesCurr_-forcesCount_-additionalCount_))/depth_) : 0;
+  //infoText.sprintf("Moves base (avg) = %5.2f Step time = %5.2f (s) Steps = %d\n%5.2f kNodes/s Depth = %d Depth (avg) = %4.1f Eval = %4.2f\nCurrent step %5.2f kNodes/s  Moves base (current) = %5.2f\ntotal = %d moves = %d forced = %d additional = %d base = %5.2f\nnull moves = %d\n%s",
+  //  mavg, dt_/1000.0, stepsCount_, nps, depth_, davg, w_/100.0f,
+  //  nps_curr, moves_base_,
+  //  totalCurr_, movesCurr_, forcesCount_, additionalCount_, base_real, nullMovesCount_, pv_str_);
 
-  painter.drawText(QRect(0, 370, 550, 250), Qt::AlignCenter, infoText);
+  infoText.sprintf("%d: [%d] %s (%0.2f)", stepsCount_, depth_, pv_str_, w_/100.0);
+  painter.drawText(QRect(00, 450, 450, 50), Qt::AlignCenter, infoText);
 }
 
 void ChessWidget::mouseDoubleClickEvent(QMouseEvent * e)
@@ -345,10 +375,10 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
       onGo();
     }
   }
-  else if ( e->button() == Qt::RightButton )
-  {
-    onGo();
-  }
+  //else if ( e->button() == Qt::RightButton )
+  //{
+  //  onGo();
+  //}
 
   update();
 }

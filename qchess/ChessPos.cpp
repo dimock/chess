@@ -22,6 +22,10 @@ ChessPosition::ChessPosition() : board_(Figure::ColorWhite), working_(false), tu
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
 }
 
+void ChessPosition::setMaxDepth(int d)
+{
+  alg_.setDepth(d);
+}
 
 bool ChessPosition::initialize(bool enableBook, int depthMax)
 {

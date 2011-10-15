@@ -52,6 +52,7 @@
 				RuntimeLibrary="3"
 				BufferSecurityCheck="false"
 				TreatWChar_tAsBuiltInType="false"
+				ForceConformanceInForLoopScope="true"
 				RuntimeTypeInfo="true"
 				AssemblerListingLocation="$(ConfigurationName)"
 				ObjectFile="$(IntDir)\"
@@ -220,11 +221,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\moc_setparamsdlg.cpp"
+				>
+			</File>
+			<File
 				RelativePath="qchess_main.cpp"
 				>
 			</File>
 			<File
 				RelativePath="selfiguredlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\setparamsdlg.cpp"
 				>
 			</File>
 		</Filter>
@@ -289,24 +298,16 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\setparamsdlg.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Generated Files"
 			Filter="cpp;c;cxx;moc;h;def;odl;idl;res;"
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}"
 			>
-			<File
-				RelativePath="Release-Qt\moc_ChessWidget.cpp"
-				>
-				<FileConfiguration
-					Name="Debug-Qt|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
 			<File
 				RelativePath="Debug-Qt\moc_ChessWidget.cpp"
 				>
@@ -320,7 +321,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Release-Qt\moc_selfiguredlg.cpp"
+				RelativePath="Release-Qt\moc_ChessWidget.cpp"
 				>
 				<FileConfiguration
 					Name="Debug-Qt|Win32"
@@ -344,7 +345,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Release-Qt\qrc_qchess.cpp"
+				RelativePath="Release-Qt\moc_selfiguredlg.cpp"
 				>
 				<FileConfiguration
 					Name="Debug-Qt|Win32"
@@ -360,6 +361,18 @@
 				>
 				<FileConfiguration
 					Name="Release-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="Release-Qt\qrc_qchess.cpp"
+				>
+				<FileConfiguration
+					Name="Debug-Qt|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
