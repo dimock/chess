@@ -1,0 +1,16 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+	<file>images/pawn_b.png</file>
+	<file>images/pawn_w.png</file>
+	<file>images/bishop_b.png</file>
+	<file>images/bishop_w.png</file>
+	<file>images/knight_w.png</file>
+	<file>images/knight_b.png</file>
+	<file>images/rook_w.png</file>
+	<file>images/rook_b.png</file>
+	<file>images/queen_w.png</file>
+	<file>images/queen_b.png</file>
+	<file>images/king_w.png</file>
+	<file>images/king_b.png</file>
+</qresource>
+</RCC>

@@ -1,0 +1,327 @@
+***Atomic opening book for White***
+
+
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 f3d5
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 h3g5 c8g4 f2f3 f6g5 h2h3 g8f6 f1d3 f6e4
+g1h3 f7f6 b1c3 c7c6 e2e3 g7g6 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 f3d5
+g1f3 f7f6 f3d4 g8h6 h2h3 c7c6 b1c3 b7b5 e2e4e7e5
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 d2d4 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 e7e6 e2e4 g7h6 c3b5 c6b5 f1b5 b8c6 c2c3 g7g6
+g1f3 f7f6 b1c3 c7c6 e2e4 h7h5 
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 f3d5
+g1h3 f7f6 b1c3 c7c6 e2e3 g7g6 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 f3d5
+g1f3 f7f6 e2e3 d7d5 b1c3 b7b5 f1d3 g7g6 f3d4
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 d2d4 c8g4 e4d5 e7e5
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 f3g5 f6g5 d2d4 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 d4b5 c6b5 b1c3 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 d4f5 e7e6 f5g7 h7h5 b1c3 g8f6 e2e4 e7e6 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 d2d4 c7c6 b1c3 d7d5 e2e4 b7b5 h2h3 h7h5 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 d7d5 e2e4 b7b5 h2h3 h7h5 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 d2d4 e7e6 b1c3 f8b4 e2e4 h7h5 f2f4 d7d5 
+g1f3 f7f6 e2e4 d7d5 d2d4 c8g4 e4d5 e7e6  
+g1f3 f7f6 e2e4 d7d5 b1c3 c7c6 c3b5 c6b5 f1b5 b8c6 d2d4 
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 f3d5
+e2e4 e7e5 d1h5 g7g6 h5h3
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 c3d5 c6d5 e2e4 d7d6 f1b5 b8c6 
+d2d4 h7h5 
+g1f3 f7f6 e2e4 d7d5 b1c3 c7c6 c3b5 c6b5 f1b5 b8c6 d2d4 d5e4 d1h5 g7g6 
+h5d5 d8a5 c2c3
+g1f3 f7f6 f3d4 g8h6 h2h3 b8c6 d4b5 c6d4 b5d4
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 e7e6 e2e4 h7h5 f2f4 f8b4 
+f4f5 d7d5 h2h4 g7g5
+g1h3 f7f6 e2e4 d7d5 b1a3 c7c6 a3b5 c6b5 f1b5 b8c6 d2d4 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g7g6
+g1f3 f7f6 f3d4 g8h6 e2e3 c7c6 b1c3 d7d6 c3b5 c6b5 f1b5 b8c6 d1h5 g7g6 
+h5d5 e7e6 d5d6
+e2e3 e7e6 g1f3 f7f6 f3d4 c7c6 b1c3 b7b5 d4f5 e6f5 c3d5
+b1c3 g8f6 e2e4 e7e6 c3b5 f6g4 f2f4 d8f6
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g7g6 c1h6 c8g4 f2f3 g4h3 c2c3 g7g6 
+h2h4 e7e6 
+g1f3 e7e5 f3g5 f7e5 h2h4 g1h3 e7e5 h3g5 f7f5 h2h4 
+g1f3 f7f6 b1c3 g8h6 f3e5 f6e5 h2h3 c7c6 d2d4 
+g1h3 f7f6 b1c3 c7c6 
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 f3d4 g8h6 
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 f3d4 g7g6 c3b5
+g1f3 f7f6 b1c3 c7c6 e2e4 g7g6 f3d4
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 
+g1f3 f7f6 b1c3 c7c6 e2e3 d7d6 f3g5 f6g5 c3d6 c6d5 d1h5 g7g6 h5b5 b8c6 
+b5b6
+g1h3 f7f6 b1c3 c7c6 e2e4
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 g7g6
+g1f3 f7f6 b1c3 c7c6 e2e4 d7d5 c3b5 c6b5 f1b5 b8c6 d2d4 
+g1f3 f7f6 e2e3 e7e6 f3d4
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 
+f3d5
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4
+g1h3 f7f6 b1c3 c7c6 e2e4
+g1h3 f7f6 b1c3 c7c6 e2e3 g7g6 c3d5 c6d5 f1b5 b8c6 h3f4
+g1h3 f7f6 e2e4 e7e6 b1a3
+g1f3 e7e5 f3g5 f7f5 h2h4 
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 
+f3d5 
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 f3d4 g8h6 
+g1f3 f7f6 f3d4 b8c6 d4f5 e7e6 e2e4
+g1h3 f7f6 b1c3 c7c6 e2e4
+g1f3 f7f6 b1c3 c7c6 e2e4 d7d6 f3g5 f6g5c3d5 c6d5 d1h5 g7g6 h5b5 b8c6 
+b5b6 a7b5 f1b5 e8f7 b5e8 f7e6
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 c3b5 c6b5f1b5 b8c6 h3g5 f6g5 d1h5 g7g6 
+h5e5 c8e6 e5d6
+g1h3 f7f6 b1c3 g8h6 c3d5 e7e6 c2c3
+g1f3 f7f6 f3d4 b8c6 d4f5 e7e6 e2e4 c6d4 d1h5 g7g6 f5g7
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 d2d4 g8h6 c1h6 c8g4 e4e5 e7e6 
+g1h3 f7f6 b1c3 c7c6 e2e4
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 
+f3d5
+g1h3 f7f6 b1c3 c7c6 e2e3 g7g6 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 
+f3d5
+g1h3 f7f6 b1c3 c7c6 e2e3 e7e6 h3f4
+g1f3 f7f6 e2e4 d7d5 d2d4 g8h6 c1h6
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 c2c3
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 e4d5
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 b7b5 
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 
+f3d5
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 b1c3 e7e5
+g1f3 f7f6 f3d4 g8h6 h2h3 c7c6 d4f5 h6f5 e2e4 g7g6
+g1f3 f7f6 f3d4 g8h6 h2h3 b8c6 d4b5 c6d4 b5d4
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 e7e5 c3b5 c6b5 
+f1b5 b8c6 c2c3
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5 f1b5 b8c6 
+d2d4 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 h3f4 e7e5
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5 f1b5 b8c6 h3f4 e7e5
+g1f3 f7f6 d2d4 d7d5 f3e5 c8g4 f2f3 f6e5 f3g4
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5 d1f3 g8f6 
+f3d5
+g1f3 f7f6 d2d4 d7d5 g2g3 c8g4 f1h3 g8h6 e1g1
+g1f3 f7f6 e2e4 d7d5 d2d4 c8g4
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 c8g4 d2d4 c8g4
+e2e3 e7e6 g1f3 f7f6 f3d4 c7c6 b1c3 
+e2e3 e7e6 g1f3 d8f6 g2g4
+e2e3 e7e6 g1f3 d8f6 c2c3
+g1f3 f7f6 f3d4 g8h6 g2g4 c7c6 e2e4 e7e5
+g1f3 f7f6 e2e4 d7d5 b1c3 c7c6 c3b5 c6b5 f1b5 b8c6 d2d4 d5e4 d1h5 g7g6 
+h5d5
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 e7e6 c3b5 c6b5 d1h5 g7g6 
+h5b5 b8c6 b5b6
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 d7d6 c3d5 c6d5 d1h5 g7g6 
+h5b5 b8c6 b5b6 a7b6 f1b5 e8f7 b5e8 f7e6 e4e5
+g1f3 e7e5 f3g5 f7f5 e2e4 h7h5 d2d4
+g1f3 f7f6 e2e4 e7e5 f3g5 
+g1h3 f7f6 b1c3 c7c6 e2e3 h7h5 c3b5 c6b5 f1b5 b8c6 h3g5 f6g5d1f3g8f6f3d5
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3c2c3
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3e4d5
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 b7b5 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 b1c3 e7e5
+g1f3 f7f6 f3d4 g8h6 h2h3 c7c6 d4f5 h6f5 e2e4 g7g6
+g1f3 f7f6 f3d4 g8h6 h2h3 b8c6 d4b5 c6d4 b5d4
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 e7e5c3b5c6b5f1b5 
+b8c6c2c3
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5f1b5 
+b8c6d2d4 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 h3f4 e7e5
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5 f1b5 b8c6 h3f4 e7e5
+g1f3 f7f6 d2d4 d7d5 f3e5 c8g4 f2f3 f6e5 f3g4
+g1f3 f7f6 d2d4 d7d5 g2g3 c8g4 f1h3 g8h6 e1g1
+g1f3 f7f6 e2e4 d7d5 d2d4 c8g4
+e2e3 e7e6 g1f3 f7f6 f3d4 c7c6 b1c3 
+e2e3 e7e6 g1f3 d8f6 g2g4
+e2e3 e7e6 g1f3 d8f6 c2c3
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 g7g6 c2c3 f8h6 h3g5 h6g5 
+h2h4 h7h5 g2g4 c7c5 f2f4 c5c4 e4d5 e7e5
+g1f3 f7f6 f3d4 g8h6 g2g4 c7c6 e2e4 e7e5
+g1f3 f7f6 e2e4 d7d5 b1c3 c7c6 c3b5 c6b5 f1b5 b8c6 d2d4 d5e4 d1h5 g7g6 
+h5d5
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 e7e6 c3b5 c6b5 d1h5 g7g6 
+h5b5 b8c6 b5b6
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 d7d6 c3d5 c6d5 d1h5 g7g6 
+h5b5 b8c6 b5b6 a7b6 f1b5 e8f7 b5e8 f7e6 e4e5
+g1f3 e7e5 f3g5 f7f5 e2e4 h7h5 d2d4 
+g1f3 f7f6 e2e4 e7e5 f3g5 
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 h3g5
+g1h3 f7f6 e2e3 b8c6 d1h5 g7g6 h5d5 d7d6 d5f7 e8d7 f7e7
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6
+g1h3 c7c6 h3g5 f7f6 g5h7 d8a5 c2c3 a5f5 f2f3 f5c2 d1c2 d7d5 h2h4 
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 h3g5 c8g4 f2f3 f6g5 h2h3 g8f6 f1d3 f6e4
+g1h3 f7f6 e2e4 d7d5 d2d4
+
+
+***Atomic opening book for Black***
+
+
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8h3 f2f4 c7c5 e4e5 h7h5 
+h2h4 e7e6 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 e7e6 
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 h3g5 c8g4 f2f3 f6g5 h2h3 g8f6 f1d3 f6e4
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 b7b5 
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 h3g5 c8g4 f2f3 f6g5 h2h3 g8f6 f1d3 f6e4
+e2e3 e7e6 g1f3 d8f6 f1d3 f8b4 c2c3 b4c3 b1c3 g8h6 g2g4 h6g4 d1f3
+e2e3 e7e6 g1f3 d8f6 b1c3 g8h6 g2g4 h6g4 d1f3
+e2e3 e7e6 g1f3 f7f5 f3h5 g7g6 h5g5 d8g5
+e2e4 e7e6 d1f3 f7f5 e4f5 f8b4 b1c3 g8f6 
+g1f3 f7f6 f3d4 g8h6 f2f3 c7c6 e2e4 b1c3 
+g1f3 f7f6 f3d4 g8h6 h2h3 c7c6 b1c3 b7b5 e2e4 e7e5
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 d2d4 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 e7e6 e2e4 g7g6 c3b5 c6b5 
+f1b5 b8c6 c2c3 g7g6
+e2e3 e7e6 d1f3 f7f5 f3b7 d8h4 g2g3 h4b4 c2c3 b4b2
+g1f3 f7f6 e2e3 d7d5 b1c3 b7b5 f3g5 f6g5 d1h5 g7g6 h5e5 e7e6 e5c7 g8f6 
+f2f3 f8h6
+g1f3 f7f6 e2e3 d7d5 b1c3 b7b5 f1d3 g7g6 f3d4 
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 f3g5 f6g5 d2d4 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 d4b5 c6b5 b1c3 d7d5 c3b5 d8a5 
+b2b4 a5b4 f1b5 b8c6
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 d4f5 e7e6 f5g7 h7h5
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 f3d4 a7a6 d4f5 g7g6
+b1c3 g8f6 e2e4 c7c6 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 g7g6 e2e4 b7b5 h2h3 h7h5
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 d2d4 e7e6 b1c3 f8b4 e2e4 h7h5 f2f4 d7d5 
+g1h3 f7f6 h3f4 d7d5 f4e6 c8e6 b1c3 b7b5 e2e4 e7e5
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 c2c3 e7e6 
+e4d5 g7g6 d4d5 f8h6 d5d6
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 c2c3 h7h5 
+e4d5 e7e6 d4d5 f8d6 f1d3 g7g6 f3f4
+g1h3 f7f6 e2e4 d7d5 b1c3 b7b5 d2d4 c8g4 f2f3 g4h3 e4d5 e7e6 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 c8g4 f2f3 g4h3 e4d5 e7e6 d4d5 f8d6 
+f1d3 g7g6 f3f4 h7h5 h2h4 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 e4d5 e7e6 
+d4d5 f8d6 f3f4 h7h5 g2g3
+g1f3 f7f6 e2e4 d7d5 d2d4 c8g4 e4d5 e7e6 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 c3d5 c6d5 e2e4 d7d6 f1b5 b8c6 
+d2d4 h7h5
+g1f3 f7f6 f3d4 g8h6 h2h3 b8c6 d4b5 c6d4 b5d4
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 e7e6 e2e4 h7h5 f2f4 f8b4 
+f4f5 d7d5 h2h4 g7g5
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 e7e6 c2c3 
+c7c5 e4e5 g7g6 h2h4 h7h5 f3f4 c5c4
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 c8h3 f2f4 c7c5
+g1f3 f7f6 b1c3 c7c6 e2e4 e7e6 
+b1c3 g8f6 e2e4 e7e6 c3b5 f6g4 f2f4 d8f6
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8h3 f2f4 c7c5 e4e5 h7h5 
+h2h4 e7e6 
+e2e3 e7e6 g1f3 d8f6 f1d3 f8b4 c2c3 b4c3 b1c3 g8h6 g2g4 h6g4 d1f3
+e2e3 e7e6 g1f3 d8f6 b1c3 g8h6 g2g4 h6g4 d1f3
+e2e4 e7e6 d1f3 f7f5 e4f5 f8b4 b1c3 g8f6 
+g1h3 f7f6 e2e3 d7d5 h3g5 f6g5 d1h5 g7g6 h5e5 c8e6 e5c7 b7b5 
+g1f3 f7f6 e2e4 d7d5 b1c6 b7b5 d2d4 g8h6 c1h6 c8g4 e4d5 g7g6
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 e7e6 
+g1f3 f7f6 b1c3 c7c6 e2e4 g7g6 f3d4 
+b1c3 g8f6 e2e4 c7c6 
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 
+b1c3 g8f6 e2e4 c7c6 h2h3 b7b5 d2d4 e7e5
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6d2d4 f8h6c1g5b8a6
+e2e3 e7e6 g1f3 f7f6 
+e2e3 e7e6 g1f3 f7f6 f3d4 g8h6 
+b1c3 g8f6 e2e4 c7c6 
+g1f3 f7f6 b1a3 b7b5 e2e3 e7e6 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6g7g6
+g1f3 f7f6 b1c3 c7c6 f3e5 f6e5 e2e4 e7e6 
+g1h3 f7f6 b1c3 c7c6 
+g1h3 f7f6 b1c3 c7c6 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 b7b5 d4f5 e7e5 f5g7 h7h5
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 d4b5 d8a5 c2c3 g4f2 d1h5 g7g6 
+b5c7e8d8
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 d2d4 g8h6 c1h6 c8g4
+g1f3 f7f6 e2e3 d7d5 f3d4 b7b5 
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 f3d4 g8h6 
+f7f6 e2e3 d7d5 f3e5 f6e5 d1h5 g7g6 h5e5 c8e6 e5c7
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 f8h6
+g1f3 f7f6 f3d4 g8h6 g2g4 b7b5 
+g1h3 c7c6 b1c3 h7h6 e2e3 e7e6 c3b5 c6b5 f1b5 b8c6 h3f4 a7a6 f4d5 d8h4 
+g2g3 h4g4 d1g4 g8f6 d5c7 e8d8 c7e6 d7d6
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8h3 f2f4 c7c5 e4e5 h7h5 
+h2h4 f8h6
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8h3 f2f4 c7c5 e4e5 h7h5 
+h2h4 d7d6
+e2e3 d7d6 d1f3 f7f5 
+e2e3 e7e6 g1f3 f7f6 f3d4 g8h6 
+g1f3 f7f6 e2e4 d7d5 d2d4 g8h6 c1g5 c8g4 e4d5 g7g6
+g1f3 f7f6 e2e3 d7d5 b1c3 b7b5 f1d3 g7g6 f3d4 e7e5
+e2e3 d7d6 g1f3 c8g4
+b1c3 g8f6 e2e4 c7c6 
+g1f3 f7f6 d2d4 d7d5 e2e4 g8h6 c1h6c8g4e4d5g7g6
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 c3b5 d8a5 c2c3 g4f2 d1h5 g7g6 
+b5c7 e8d8
+g1f3 f7f6 b1c3 c7c6 e2e3 e7e6 
+b1c3 g8f6 e2e4 c7c6 g1h3 f6g4 f2f4 f7f6 
+b1c3 g8f6 e2e4 c7c6 g1h3 f6g4 f2f4 d7d5 
+g1h3 f7f6 e2e4 d7d5 d2d4 b8a6
+e2e3 e7e6 g1f3 f7f6 f3d4 g8h6 
+e2e3 d7d6 d1f3 f7f5 
+e2e4 d7d5 
+d2d4 d7d5 
+b1a3 g8f6 e2e4 b7b5 
+g1f3 f7f6 b1c3 c7c6 e2e4 g7g6f3d4 g8h6 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6
+g1h3 f7f6 b1c3 c7c6 e2e3 e7e6 
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 d2d4 g8h6 c1h6 c8g4 e4e5 e7e6 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 b7b5 b1c3 d7d5 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 b7b5 d1f5 e7e5 f5g7 h7h5
+g1f3 f7f6 e2e4 d7d5 d2d4 g8h6 c1h6
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 e7e6 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 c2c3
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 e4d5
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 b7b5 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 b1c3 e7e5
+g1f3 f7f6 f3d4 g8h6 h2h3 c7c6 d4f5 h6f5 e2e4 g7g6
+g1f3 f7f6 f3d4 g8h6 h2h3 b8c6 d4b5 c6d4 b5d4
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 g7g6
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 b7b5 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5 f1b5 b8c6 d2d4 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 h3f4 e7e5
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5 f1b5 b8c6 h3f4 e7e5
+g1f3 f7f6 d2d4 d7d5 f3e5 c8g4 f2f3 f6e5 f3g4
+g1f3 f7f6 d2d4 d7d5 g2g3 c8g4 f1h3 g8h6 e1g1
+g1f3 f7f6 e2e4 d7d5 d2d4 c8g4
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 c8g4 d2d4 c8g4
+e2e3 e7e6 g1f3 f7f6 f3d4 c7c6 b1c3 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 g7g6 c2c3 f8h6 h3g5 h6g5 
+h2h4 h7h5 g2g4 c7c5 f2f4 c5c4 e4d5 e7e5
+g1f3 f7f6 f3d4 g8h6 g2g4 c7c6 e2e4 e7e5
+b1a3 b7b5 
+b1c3 e7e5
+g1f3 f7f6 e2e3 d7d5 f3d4 b7b5 
+e2e3 e7e6 d1f3 f7f5 f3b7 d8h4 g2g3 h4b4 c2c3 b4b2
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 d2d4 g8h6 c1h6 c8g4
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 b7b5 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 f8h6
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 c2c3 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 c8g4 f2f3 g4h3 e4d5
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 b7b5 
+g1f3 f7f6 f3d4 g8h6 e2e3 h6g4 f2f4 c7c6 b1c3 e7e5
+g1f3 f7f6 f3d4 g8h6 h2h3 c7c6 d4f5 h6f5 e2e4 g7g6
+g1f3 f7f6 f3d4 g8h6 h2h3 b8c6 d4b5 c6d4 b5d4
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 d2d4 g7g6
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 d2d4 b7b5 
+g1f3 f7f6 f3d4 g8h6 d4f5 h6f5 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5 f1b5 b8c6 d2d4 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 h3f4 e7e5
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 c3d5 c6d5 f1b5 b8c6 h3f4 e7e5
+g1f3 f7f6 d2d4 d7d5 f3e5 c8g4 f2f3 f6e5 f3g4
+g1f3 f7f6 d2d4 d7d5 g2g3 c8g4 f1h3 g8h6 e1g1
+g1f3 f7f6 e2e4 d7d5 d2d4 c8g4
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 c8g4 d2d4 
+e2e3 e7e6 g1f3 f7f6 f3d4 c7c6 b1c3 
+g1h3 f7f6 e2e4 d7d5 b1a3 b7b5 d2d4 g8h6 c1h6 g7g6 c2c3 f8h6 h3g5 h6g5 
+h2h4 h7h5 g2g4 c7c5 f2f4 c5c4 e4d5 e7e5
+g1f3 f7f6 f3d4 g8h6 g2g4 c7c6 e2e4 e7e5
+b1a3 b7b5 
+b1c3 e7e5
+g1f3 f7f6 e2e3 d7d5 f3d4 b7b5 
+e2e3 e7e6 d1f3 f7f5 f3b7 d8h4 g2g3 h4b4 c2c3 b4b2
+g1f3 f7f6 e2e4 d7d5 b1c3 b7b5 d2d4 g8h6 c1h6
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 b7b5 
+g1g3 f7f6 f3d4 f8h6 d4f5 h6f5 b1c3 c7c6 e2e3 g7g
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 h3g5
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 e7e6 
+g1h3 f7f6 b1c3 c7c6 e2e3 d7d5 h3g5 c8g4 f2f3 f6g5 h2h3 g8f6 f1d3 f6e4
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 e7e6 
+g1h3 f7f6 b1c3 c7c6 e2e4 g7g6 d2d4 b7b5
+
