@@ -291,7 +291,7 @@ void MovesTable::calcPawnEat(int pos_index)
     if ( !p || 0 == p.y() || 7 == p.y() )
       continue;
 
-    mask(pos_index, color, Figure::TypePawn) |= 1i64 << p.index();
+    mask(pos_index, color, Figure::TypePawn) |= 1ULL << p.index();
   }
 }
 
@@ -302,7 +302,7 @@ void MovesTable::calcBishopEat(int pos_index)
   {
     const int * pidx = inds(pos_index, color, Figure::TypeBishop, dir);
     for ( ; *pidx >= 0; ++pidx)
-      mask(pos_index, color, Figure::TypeBishop) |= 1i64 << *pidx;
+      mask(pos_index, color, Figure::TypeBishop) |= 1ULL << *pidx;
   }
 }
 
@@ -313,7 +313,7 @@ void MovesTable::calcKnightEat(int pos_index)
   {
     const int * pidx = inds(pos_index, color, Figure::TypeKnight, dir);
     for ( ; *pidx >= 0; ++pidx)
-      mask(pos_index, color, Figure::TypeKnight) |= 1i64 << *pidx;
+      mask(pos_index, color, Figure::TypeKnight) |= 1ULL << *pidx;
   }
 }
 
@@ -324,7 +324,7 @@ void MovesTable::calcRookEat(int pos_index)
   {
     const int * pidx = inds(pos_index, color, Figure::TypeRook, dir);
     for ( ; *pidx >= 0; ++pidx)
-      mask(pos_index, color, Figure::TypeRook) |= 1i64 << *pidx;
+      mask(pos_index, color, Figure::TypeRook) |= 1ULL << *pidx;
   }
 }
 
@@ -335,7 +335,7 @@ void MovesTable::calcQueenEat(int pos_index)
   {
     const int * pidx = inds(pos_index, color, Figure::TypeQueen, dir);
     for ( ; *pidx >= 0; ++pidx)
-      mask(pos_index, color, Figure::TypeQueen) |= 1i64 << *pidx;
+      mask(pos_index, color, Figure::TypeQueen) |= 1ULL << *pidx;
   }
 }
 
@@ -346,6 +346,6 @@ void MovesTable::calcKingEat(int pos_index)
   {
     const int * pidx = inds(pos_index, color, Figure::TypeKing, dir);
     for ( ; *pidx >= 0; ++pidx)
-      mask(pos_index, color, Figure::TypeKing) |= 1i64 << *pidx;
+      mask(pos_index, color, Figure::TypeKing) |= 1ULL << *pidx;
   }
 }

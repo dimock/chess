@@ -6,6 +6,8 @@
 #include <ostream>
 #include <istream>
 #include <limits>
+#include <stdio.h>
+#include <string.h>
 
 #undef DONT_USE_EXTS_
 #undef USE_EXTRA_QUIS_
