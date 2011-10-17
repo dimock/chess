@@ -303,7 +303,7 @@ WeightType Board::evaluateWinnerLoser() const
   const Figure & king_l = getFigure(lose_color, KingIndex);
 
   WeightType kingEval = 0;
-  if ( fmgr_.pawns(win_color) > 0 )
+  if ( fmgr_.pawns(win_color) > 0 && fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeRook] )
   {
     int yw = king_w.where() >> 3;
     int yl = king_l.where() >> 3;
