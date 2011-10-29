@@ -16,8 +16,8 @@ public:
 
   bool readTable(const char * fname);
 
-  StepId findStep(const std::vector<StepId> & steps, Board * board);
-  StepId findStep2(const std::vector<StepId> & steps, Board * board);
+  //StepId findStep(const std::vector<StepId> & steps, Board * board);
+  //StepId findStep2(const std::vector<StepId> & steps, Board * board);
 
 private:
 
@@ -78,6 +78,23 @@ private:
   static uint64 pmask_isolated_[8];
 };
 
+class FieldColors
+{
+public:
+
+  FieldColors();
+
+  static bool isWhite(int8 i)
+  {
+    THROW_IF( (uint8)i > 63, "invalid position for field color detection" );
+    return colors_[i];
+  }
+
+private:
+
+  static bool colors_[64];
+};
+
 class BitsCounter
 {
   int8 array_[256];
@@ -107,48 +124,48 @@ public:
   }
 };
 
-class DeltaPosCounter
-{
-  FPos array_[4096];
-
-  FPos deltaP(FPos dp) const
-  {
-    int x = dp.x();
-    int y = dp.y();
-
-    if ( x < 0 )
-      x = -x;
-    if ( y < 0 )
-      y = -y;
-
-    if ( x != 0 && y != 0 && x != y )
-      return FPos(0, 0);
-
-    int xx = dp.x(), yy = dp.y();
-    if ( xx != 0 )
-      xx /= x;
-    if ( yy != 0 )
-      yy /= y;
-
-    return FPos(xx, yy);
-  }
-
-public:
-
-  DeltaPosCounter()
-  {
-    for (int i = 0; i < 4096; ++i)
-    {
-      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
-      array_[i] = deltaP(dp);
-    }
-  }
-
-  inline const FPos & operator [] (int i) const
-  {
-    return array_[i];
-  }
-};
+//class DeltaPosCounter
+//{
+//  FPos array_[4096];
+//
+//  FPos deltaP(FPos dp) const
+//  {
+//    int x = dp.x();
+//    int y = dp.y();
+//
+//    if ( x < 0 )
+//      x = -x;
+//    if ( y < 0 )
+//      y = -y;
+//
+//    if ( x != 0 && y != 0 && x != y )
+//      return FPos(0, 0);
+//
+//    int xx = dp.x(), yy = dp.y();
+//    if ( xx != 0 )
+//      xx /= x;
+//    if ( yy != 0 )
+//      yy /= y;
+//
+//    return FPos(xx, yy);
+//  }
+//
+//public:
+//
+//  DeltaPosCounter()
+//  {
+//    for (int i = 0; i < 4096; ++i)
+//    {
+//      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
+//      array_[i] = deltaP(dp);
+//    }
+//  }
+//
+//  inline const FPos & operator [] (int i) const
+//  {
+//    return array_[i];
+//  }
+//};
 
 //class LengthCounter
 //{
@@ -194,72 +211,72 @@ public:
 //  }
 //};
 
-class DistanceCounter
-{
-  int array_[4096];
-
-  int dist_dP(FPos dp) const
-  {
-    int x = dp.x();
-    int y = dp.y();
-    if ( x < 0 )
-      x = -x;
-    if ( dp.y() < 0 )
-      y = -y;
-    return std::max(x, y);
-  }
-
-public:
-
-  DistanceCounter()
-  {
-    for (int i = 0; i < 4096; ++i)
-    {
-      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
-      array_[i] = dist_dP(dp);
-    }
-  }
-
-  int operator [] (int i) const
-  {
-    return array_[i];
-  }
-};
-
-
-class BorderDistanceCounter
-{
-  int array_[64];
-
-  int dist_dP(FPos p) const
-  {
-    if ( !p )
-      return 0;
-    int dist = p.x();
-    if ( 7-p.x() < dist )
-      dist = 7-p.x();
-    if ( p.y() < dist )
-      dist = p.y();
-    if ( 7-p.y() < dist )
-      dist = 7-p.y();
-    return dist;
-  }
-
-public:
-
-  BorderDistanceCounter()
-  {
-    for (int i = 0; i < 64; ++i)
-    {
-      array_[i] = dist_dP(FPosIndexer::get(i));
-    }
-  }
-
-  int operator [] (int i) const
-  {
-    return array_[i];
-  }
-};
+//class DistanceCounter
+//{
+//  int array_[4096];
+//
+//  int dist_dP(FPos dp) const
+//  {
+//    int x = dp.x();
+//    int y = dp.y();
+//    if ( x < 0 )
+//      x = -x;
+//    if ( dp.y() < 0 )
+//      y = -y;
+//    return std::max(x, y);
+//  }
+//
+//public:
+//
+//  DistanceCounter()
+//  {
+//    for (int i = 0; i < 4096; ++i)
+//    {
+//      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
+//      array_[i] = dist_dP(dp);
+//    }
+//  }
+//
+//  int operator [] (int i) const
+//  {
+//    return array_[i];
+//  }
+//};
+//
+//
+//class BorderDistanceCounter
+//{
+//  int array_[64];
+//
+//  int dist_dP(FPos p) const
+//  {
+//    if ( !p )
+//      return 0;
+//    int dist = p.x();
+//    if ( 7-p.x() < dist )
+//      dist = 7-p.x();
+//    if ( p.y() < dist )
+//      dist = p.y();
+//    if ( 7-p.y() < dist )
+//      dist = 7-p.y();
+//    return dist;
+//  }
+//
+//public:
+//
+//  BorderDistanceCounter()
+//  {
+//    for (int i = 0; i < 64; ++i)
+//    {
+//      array_[i] = dist_dP(FPosIndexer::get(i));
+//    }
+//  }
+//
+//  int operator [] (int i) const
+//  {
+//    return array_[i];
+//  }
+//};
 //////////////////////////////////////////////////////////////////////////
 
 inline int numBitsInByte(uint8 byte)
@@ -274,12 +291,12 @@ inline int numBitsInWord(uint16 word)
 }
 
 // returns {0,0}  if (to - from) isn't horizontal, vertical or diagonal
-inline const FPos & getDeltaPos(int to, int from)
-{
-  static DeltaPosCounter dp_counter;
-  THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
-  return dp_counter[(to<<6) | from];
-}
+//inline const FPos & getDeltaPos(int to, int from)
+//{
+//  static DeltaPosCounter dp_counter;
+//  THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
+//  return dp_counter[(to<<6) | from];
+//}
 
 //// returns '-1' if dp isn't horizontal, vertical or diagonal
 //inline int getLength8(FPos dp)
@@ -289,22 +306,22 @@ inline const FPos & getDeltaPos(int to, int from)
 //}
 
 // returns distance between 2 points - 'a' & 'b'
-inline int getDistance(int a, int b)
-{
-  static DistanceCounter distance_counter;
-  THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
-  return distance_counter[(a<<6) | b];
-}
+//inline int getDistance(int a, int b)
+//{
+//  static DistanceCounter distance_counter;
+//  THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
+//  return distance_counter[(a<<6) | b];
+//}
 
 // returns distance from point to the nearest border
-inline int distToBorder(int p)
-{
-  static BorderDistanceCounter distance_counter;
-  return distance_counter[p];
-}
+//inline int distToBorder(int p)
+//{
+//  static BorderDistanceCounter distance_counter;
+//  return distance_counter[p];
+//}
 
 
-bool moveToStrShort(const StepId & sid, char * str);
-bool moveToStr(const StepId & sid, char * str);
-bool strToMove(char * str, Board * board, StepId & sid);
-bool formatMove(StepId & sid, char * str);
+//bool moveToStrShort(const StepId & sid, char * str);
+//bool moveToStr(const StepId & sid, char * str);
+//bool strToMove(char * str, Board * board, StepId & sid);
+//bool formatMove(StepId & sid, char * str);

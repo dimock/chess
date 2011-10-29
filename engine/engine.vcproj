@@ -280,23 +280,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\BasicTypes.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ChessAlg.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ChessBoard.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ChessMove.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ChessVerify.cpp"
+				RelativePath=".\Board.cpp"
 				>
 			</File>
 			<File
@@ -312,15 +296,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\FigureDirs.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Helpers.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\MovesPrecounter.cpp"
 				>
 			</File>
 		</Filter>
@@ -334,15 +310,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ChessAlg.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ChessBoard.h"
-				>
-			</File>
-			<File
-				RelativePath=".\debut.h"
+				RelativePath=".\Board.h"
 				>
 			</File>
 			<File
@@ -366,7 +334,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MovesPrecounter.h"
+				RelativePath=".\Move.h"
 				>
 			</File>
 		</Filter>

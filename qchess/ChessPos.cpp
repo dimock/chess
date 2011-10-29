@@ -13,9 +13,9 @@ std::auto_ptr<QImage> ChessPosition::fimages_[12];
 
 using namespace std;
 
-ChessPosition::ChessPosition() : board_(Figure::ColorWhite), working_(false), turned_(false)
+ChessPosition::ChessPosition() : working_(false), turned_(false)
 {
-  lastStep_.clear();
+  //lastStep_.clear();
 
   squareSize_ = 44;
   borderWidth_ = 16;
@@ -24,7 +24,7 @@ ChessPosition::ChessPosition() : board_(Figure::ColorWhite), working_(false), tu
 
 void ChessPosition::setMaxDepth(int d)
 {
-  alg_.setDepth(d);
+  //alg_.setDepth(d);
 }
 
 bool ChessPosition::initialize(bool enableBook, int depthMax)
@@ -32,79 +32,17 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   if ( working_)
     return false;
 
-  alg_.init(Figure::ColorWhite);
-  alg_.enableBook(enableBook);
-  alg_.setDepth(depthMax);
+  //alg_.init(Figure::ColorWhite);
+  //alg_.enableBook(enableBook);
+  //alg_.setDepth(depthMax);
 
-  clearSteps();
+  //clearSteps();
 
-  Board & board = *alg_.getCurrent();
+  //Board & board = *alg_.getCurrent();
 
-  for (char i = 'a'; i <= 'h'; ++i)
-  {
-    Figure pawn(Figure::TypePawn, i, 7, Figure::ColorBlack, true);
-    board.addFigure(pawn);
-  }
 
-  for (char i = 'a'; i <= 'h'; ++i)
-  {
-    Figure pawn(Figure::TypePawn, i, 2, Figure::ColorWhite, true);
-    board.addFigure(pawn);
-  }
-
-  {
-    Figure knight1(Figure::TypeKnight, 'b', 8, Figure::ColorBlack, true);
-    Figure knight2(Figure::TypeKnight, 'g', 8, Figure::ColorBlack, true);
-
-    Figure bishop1(Figure::TypeBishop, 'c', 8, Figure::ColorBlack, true);
-    Figure bishop2(Figure::TypeBishop, 'f', 8, Figure::ColorBlack, true);
-
-    Figure rook1(Figure::TypeRook, 'a', 8, Figure::ColorBlack, true);
-    Figure rook2(Figure::TypeRook, 'h', 8, Figure::ColorBlack, true);
-
-    Figure queen(Figure::TypeQueen, 'd', 8, Figure::ColorBlack, true);
-    Figure king(Figure::TypeKing, 'e', 8, Figure::ColorBlack, true);
-
-    board.addFigure(knight1);
-    board.addFigure(knight2);
-
-    board.addFigure(bishop1);
-    board.addFigure(bishop2);
-
-    board.addFigure(rook1);
-    board.addFigure(rook2);
-
-    board.addFigure(queen);
-    board.addFigure(king);
-  }
-  {
-    Figure knight1(Figure::TypeKnight, 'b', 1, Figure::ColorWhite, true);
-    Figure knight2(Figure::TypeKnight, 'g', 1, Figure::ColorWhite, true);
-
-    Figure bishop1(Figure::TypeBishop, 'c', 1, Figure::ColorWhite, true);
-    Figure bishop2(Figure::TypeBishop, 'f', 1, Figure::ColorWhite, true);
-
-    Figure rook1(Figure::TypeRook, 'a', 1, Figure::ColorWhite, true);
-    Figure rook2(Figure::TypeRook, 'h', 1, Figure::ColorWhite, true);
-
-    Figure queen(Figure::TypeQueen, 'd', 1, Figure::ColorWhite, true);
-    Figure king(Figure::TypeKing, 'e', 1, Figure::ColorWhite, true);
-
-    board.addFigure(knight1);
-    board.addFigure(knight2);
-
-    board.addFigure(bishop1);
-    board.addFigure(bishop2);
-
-    board.addFigure(rook1);
-    board.addFigure(rook2);
-
-    board.addFigure(queen);
-    board.addFigure(king);
-  }
-
-  board_ = *alg_.getCurrent();
-  lastStep_.clear();
+  if ( !board_.initialize( "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2" ) )
+    return false;
 
   return true;
 }
@@ -122,7 +60,7 @@ void ChessPosition::draw(QWidget * view, const QPoint & cursorPt) const
 	drawBoard(&painter, sz);
 	drawFigures(&painter, sz);
   //drawFake(&painter, sz);
-  drawCurrentMoving(&painter, sz, cursorPt);
+  //drawCurrentMoving(&painter, sz, cursorPt);
 }
 
 void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
@@ -178,13 +116,13 @@ void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
     bool wht = (x+y) & 1;
 		QColor color = wht ? cwhite : cblack;
 
-    FPos fpos = turned_ ? FPos(7-x, 7-y) : FPos(x, y);
+    //FPos fpos = turned_ ? FPos(7-x, 7-y) : FPos(x, y);
 
-    if ( lastStep_ && fpos.index() == lastStep_.to_ )
-      color = wht ? lwhite : lblack;
+    //if ( lastStep_ && fpos.index() == lastStep_.to_ )
+    //  color = wht ? lwhite : lblack;
 
-    if ( selectedPositions_.find(fpos.index()) != selectedPositions_.end() )
-      color = wht ? swhite : sblack;
+    //if ( selectedPositions_.find(fpos.index()) != selectedPositions_.end() )
+    //  color = wht ? swhite : sblack;
 
 		QRect r(p.x()+squareSize_*x, p.y()-squareSize_*y, squareSize_, squareSize_);
 		painter->fillRect(r, color);
@@ -201,7 +139,7 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
     for (int index = 0; index < Board::NumOfFigures; ++index)
     {
       Figure fig = board_.getFigure((Figure::Color)color, index);
-      if ( !fig || fig == selectedFigure_ )
+      if ( !fig /*|| fig == selectedFigure_ */)
         continue;
 
   	  int inum = fig.getColor()*6+(fig.getType()-1);
@@ -218,8 +156,7 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
   	  if ( !fimages_[inum].get() )
   		  continue;
 
-      FPos fpos = FPosIndexer::get(fig.where());
-      QPoint p = coordByFPos(fpos);
+      QPoint p = coordByField(fig.where());
       QRect r(p.x(), p.y(), squareSize_, squareSize_);
 
       painter->drawImage(r, *fimages_[inum].get(), fimages_[inum]->rect());
@@ -227,35 +164,36 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
   }
 }
 
-void ChessPosition::drawCurrentMoving(QPainter * painter, QSize & , const QPoint & cursorPt) const
-{
-  if ( selectedFigure_.getType() == Figure::TypeNone || !FPosIndexer::get(selectedFigure_.where()) )
-    return;
+//void ChessPosition::drawCurrentMoving(QPainter * painter, QSize & , const QPoint & cursorPt) const
+//{
+//  if ( selectedFigure_.getType() == Figure::TypeNone || !FPosIndexer::get(selectedFigure_.where()) )
+//    return;
+//
+//  int inum = selectedFigure_.getColor()*6+(selectedFigure_.getType()-1);
+//  if ( inum < 0 || inum > 11 )
+//    return;
+//
+//  if ( !fimages_[inum].get() )
+//  {
+//    QString imgName;
+//    imgName.sprintf(":/images/%s_%c.png", selectedFigure_.name(), selectedFigure_.getColor() ? 'w' : 'b');
+//    fimages_[inum].reset( new QImage(imgName) );
+//  }
+//
+//  if ( !fimages_[inum].get() )
+//    return;
+//
+//  QRect r(cursorPt.x()-squareSize_/2, cursorPt.y()-squareSize_/2, squareSize_, squareSize_);
+//  painter->drawImage(r, *fimages_[inum].get(), fimages_[inum]->rect());
+//
+//}
 
-  int inum = selectedFigure_.getColor()*6+(selectedFigure_.getType()-1);
-  if ( inum < 0 || inum > 11 )
-    return;
-
-  if ( !fimages_[inum].get() )
-  {
-    QString imgName;
-    imgName.sprintf(":/images/%s_%c.png", selectedFigure_.name(), selectedFigure_.getColor() ? 'w' : 'b');
-    fimages_[inum].reset( new QImage(imgName) );
-  }
-
-  if ( !fimages_[inum].get() )
-    return;
-
-  QRect r(cursorPt.x()-squareSize_/2, cursorPt.y()-squareSize_/2, squareSize_, squareSize_);
-  painter->drawImage(r, *fimages_[inum].get(), fimages_[inum]->rect());
-
-}
-
-QPoint ChessPosition::coordByFPos(const FPos & fpos) const
+QPoint ChessPosition::coordByField(int f) const
 {
   QPoint orig(upleft_.x()+borderWidth_, upleft_.y()+boardSize_.height()-borderWidth_-squareSize_);
-  int x = fpos.x();
-  int y = fpos.y();
+  Index index(f);
+  int x = index.x();
+  int y = index.y();
   if ( turned_ )
   {
     x = 7-x;
@@ -271,16 +209,21 @@ int ChessPosition::getPositionOnPt(const QPoint & pt) const
   dp.ry() = squareSize_*8 - dp.y();
 
   if ( dp.x() < 0 || dp.x() >= squareSize_*8 || dp.y() < 0 || dp.y() >= squareSize_*8 )
-    return FPos(-1, -1);
+    return -1;
 
   int x = dp.x()/squareSize_;
   int y = dp.y()/squareSize_;
 
-  FPos fpos = turned_ ? FPos(7-x, 7-y) : FPos(x, y);
-  if ( !fpos )
+  if ( turned_ )
+  {
+    x = 7 - x;
+    y = 7 - y;
+  }
+
+  if ( (unsigned)x > 7 || (unsigned)y > 7 )
     return -1;
 
-  return fpos.index();
+  return Index(x, y);
 }
 
 bool ChessPosition::getFigureOnPt(const QPoint & pt, Figure & fig) const
@@ -297,128 +240,128 @@ bool ChessPosition::getFigureOnPt(const QPoint & pt, Figure & fig) const
   return true;
 }
 
-bool ChessPosition::selectFigure(const QPoint & pt)
-{
-  if ( working_ )
-    return false;
+//bool ChessPosition::selectFigure(const QPoint & pt)
+//{
+//  if ( working_ )
+//    return false;
+//
+//  selectedPositions_.clear();
+//  if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board_.getColor() )
+//  {
+//    selectedFigure_.setType(Figure::TypeNone);
+//    return false;
+//  }
+//
+//  if ( !calculateSteps(steps_) )
+//  {
+//    selectedFigure_.setType(Figure::TypeNone);
+//    return false;
+//  }
+//
+//  for (size_t i = 0; i < steps_.size(); ++i)
+//  {
+//    const Step & step = steps_[i];
+//    if ( step.index_ != selectedFigure_.getIndex() )
+//      continue;
+//
+//    selectedSteps_.push_back(step);
+//  }
+//
+//  if ( selectedSteps_.size() == 0 )
+//  {
+//    selectedFigure_.setType(Figure::TypeNone);
+//    return false;
+//  }
+//
+//  for (size_t i = 0; i < selectedSteps_.size(); ++i)
+//  {
+//    const Step & step = selectedSteps_[i];
+//    selectedPositions_.insert(step.to_);
+//  }
+//
+//  return true;
+//}
 
-  selectedPositions_.clear();
-  if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board_.getColor() )
-  {
-    selectedFigure_.setType(Figure::TypeNone);
-    return false;
-  }
+//bool ChessPosition::makeFigureStep(const QPoint & pt)
+//{
+//  if ( working_ )
+//    return false;
+//
+//  int pos = getPositionOnPt(pt);
+//  if ( pos < 0 )
+//  {
+//    clearSteps();
+//    return false;
+//  }
+//
+//  std::vector<Step> steps;
+//  for (size_t i = 0; i < selectedSteps_.size(); ++i)
+//  {
+//    const Step & step = selectedSteps_[i];
+//    if ( step.to_ == pos )
+//      steps.push_back(step);
+//  }
+//  clearSteps();
+//
+//  if ( steps.size() == 0 )
+//    return false;
+//
+//  int idx = -1;
+//  if ( steps.size() == 1 )
+//    idx = 0;
+//  else
+//  {
+//    SelectFigureDlg dlg;
+//    Figure::Type type = Figure::TypeNone;
+//    if ( dlg.exec() == QDialog::Accepted )
+//    {
+//      if ( dlg.rbBishop_->isChecked() )
+//        type = Figure::TypeBishop;
+//      else if ( dlg.rbKnight_->isChecked() )
+//        type = Figure::TypeKnight;
+//      else if ( dlg.rbRook_->isChecked() )
+//        type = Figure::TypeRook;
+//      else if ( dlg.rbQueen_->isChecked() )
+//        type = Figure::TypeQueen;
+//    }
+//    if ( Figure::TypeNone != type )
+//    {
+//      for (size_t i = 0; i < steps.size(); ++i)
+//      {
+//        Step & step = steps[i];
+//        if ( step.newType_ == type )
+//        {
+//          idx = i;
+//          break;
+//        }
+//      }
+//    }
+//  }
+//
+//  clearSteps();
+//
+//  if ( idx < 0 )
+//    return false;
+//
+//  applyStep(steps[idx]);
+//  return true;
+//}
 
-  if ( !calculateSteps(steps_) )
-  {
-    selectedFigure_.setType(Figure::TypeNone);
-    return false;
-  }
+//const Figure * ChessPosition::getSelection() const
+//{
+//  if ( selectedFigure_.getType() == Figure::TypeNone || !selectedFigure_ )
+//    return 0;
+//
+//  return &selectedFigure_;
+//}
 
-  for (size_t i = 0; i < steps_.size(); ++i)
-  {
-    const Step & step = steps_[i];
-    if ( step.index_ != selectedFigure_.getIndex() )
-      continue;
-
-    selectedSteps_.push_back(step);
-  }
-
-  if ( selectedSteps_.size() == 0 )
-  {
-    selectedFigure_.setType(Figure::TypeNone);
-    return false;
-  }
-
-  for (size_t i = 0; i < selectedSteps_.size(); ++i)
-  {
-    const Step & step = selectedSteps_[i];
-    selectedPositions_.insert(step.to_);
-  }
-
-  return true;
-}
-
-bool ChessPosition::makeFigureStep(const QPoint & pt)
-{
-  if ( working_ )
-    return false;
-
-  int pos = getPositionOnPt(pt);
-  if ( pos < 0 )
-  {
-    clearSteps();
-    return false;
-  }
-
-  std::vector<Step> steps;
-  for (size_t i = 0; i < selectedSteps_.size(); ++i)
-  {
-    const Step & step = selectedSteps_[i];
-    if ( step.to_ == pos )
-      steps.push_back(step);
-  }
-  clearSteps();
-
-  if ( steps.size() == 0 )
-    return false;
-
-  int idx = -1;
-  if ( steps.size() == 1 )
-    idx = 0;
-  else
-  {
-    SelectFigureDlg dlg;
-    Figure::Type type = Figure::TypeNone;
-    if ( dlg.exec() == QDialog::Accepted )
-    {
-      if ( dlg.rbBishop_->isChecked() )
-        type = Figure::TypeBishop;
-      else if ( dlg.rbKnight_->isChecked() )
-        type = Figure::TypeKnight;
-      else if ( dlg.rbRook_->isChecked() )
-        type = Figure::TypeRook;
-      else if ( dlg.rbQueen_->isChecked() )
-        type = Figure::TypeQueen;
-    }
-    if ( Figure::TypeNone != type )
-    {
-      for (size_t i = 0; i < steps.size(); ++i)
-      {
-        Step & step = steps[i];
-        if ( step.newType_ == type )
-        {
-          idx = i;
-          break;
-        }
-      }
-    }
-  }
-
-  clearSteps();
-
-  if ( idx < 0 )
-    return false;
-
-  applyStep(steps[idx]);
-  return true;
-}
-
-const Figure * ChessPosition::getSelection() const
-{
-  if ( selectedFigure_.getType() == Figure::TypeNone || !selectedFigure_ )
-    return 0;
-
-  return &selectedFigure_;
-}
-
-void ChessPosition::clearSteps()
-{
-  steps_.clear();
-  selectedSteps_.clear();
-  selectedFigure_.clear();
-  selectedPositions_.clear();
-}
+//void ChessPosition::clearSteps()
+//{
+//  steps_.clear();
+//  selectedSteps_.clear();
+//  selectedFigure_.clear();
+//  selectedPositions_.clear();
+//}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -427,93 +370,93 @@ Board ChessPosition::getBoard() const
   return board_;
 }
 
-int ChessPosition::doStep(CalcResult & cres)
-{
-  if ( working_ )
-    return 0;
-
-  working_ = true;
-
-  int depth = alg_.doBestStep(cres, cout);
-
-  if ( alg_.getCurrent() )
-    board_ = *alg_.getCurrent();
-
-  if ( alg_.lastStep() )
-    lastStep_ = *alg_.lastStep();
-  else
-    lastStep_.clear();
-
-  working_ = false;
-
-  return depth;
-}
-
-bool ChessPosition::applyStep(const Step & step)
-{
-  if ( working_ )
-    return false;
-
-  Step astep = step;
-  alg_.applyStep(astep);
-  if ( alg_.getCurrent() )
-    board_ = *alg_.getCurrent();
-
-  lastStep_.clear();
-  if ( alg_.lastStep() )
-    lastStep_ = *alg_.lastStep();
-
-  return true;
-}
-
-int ChessPosition::stepsCount() const
+//int ChessPosition::doStep(CalcResult & cres)
+//{
+//  if ( working_ )
+//    return 0;
+//
+//  working_ = true;
+//
+//  int depth = alg_.doBestStep(cres, cout);
+//
+//  if ( alg_.getCurrent() )
+//    board_ = *alg_.getCurrent();
+//
+//  if ( alg_.lastStep() )
+//    lastStep_ = *alg_.lastStep();
+//  else
+//    lastStep_.clear();
+//
+//  working_ = false;
+//
+//  return depth;
+//}
+//
+//bool ChessPosition::applyStep(const Step & step)
+//{
+//  if ( working_ )
+//    return false;
+//
+//  Step astep = step;
+//  alg_.applyStep(astep);
+//  if ( alg_.getCurrent() )
+//    board_ = *alg_.getCurrent();
+//
+//  lastStep_.clear();
+//  if ( alg_.lastStep() )
+//    lastStep_ = *alg_.lastStep();
+//
+//  return true;
+//}
+//
+int ChessPosition::movesCount() const
 {
   if ( working_ )
     return -1;
 
-  return alg_.stepsCount();
+  return board_.movesCount();
 }
-
-void ChessPosition::stop()
-{
-  alg_.stop();
-}
-
-bool ChessPosition::calculateSteps(std::vector<Step> & steps)
-{
-  if ( working_ )
-    return false;
-
-  return alg_.calculateSteps(steps);
-}
-
-void ChessPosition::prevPos()
-{
-  if ( working_ )
-    return;
-
-  alg_.prevPos();
-  if ( alg_.getCurrent() )
-    board_ = *alg_.getCurrent();
-
-  lastStep_.clear();
-  if ( alg_.lastStep() )
-    lastStep_ = *alg_.lastStep();
-}
-
-void ChessPosition::nextPos()
-{
-  if ( working_ )
-    return;
-
-  alg_.nextPos();
-  if ( alg_.getCurrent() )
-    board_ = *alg_.getCurrent();
-
-  lastStep_.clear();
-  if ( alg_.lastStep() )
-    lastStep_ = *alg_.lastStep();
-}
+//
+//void ChessPosition::stop()
+//{
+//  alg_.stop();
+//}
+//
+//bool ChessPosition::calculateSteps(std::vector<Step> & steps)
+//{
+//  if ( working_ )
+//    return false;
+//
+//  return alg_.calculateSteps(steps);
+//}
+//
+//void ChessPosition::prevPos()
+//{
+//  if ( working_ )
+//    return;
+//
+//  alg_.prevPos();
+//  if ( alg_.getCurrent() )
+//    board_ = *alg_.getCurrent();
+//
+//  lastStep_.clear();
+//  if ( alg_.lastStep() )
+//    lastStep_ = *alg_.lastStep();
+//}
+//
+//void ChessPosition::nextPos()
+//{
+//  if ( working_ )
+//    return;
+//
+//  alg_.nextPos();
+//  if ( alg_.getCurrent() )
+//    board_ = *alg_.getCurrent();
+//
+//  lastStep_.clear();
+//  if ( alg_.lastStep() )
+//    lastStep_ = *alg_.lastStep();
+//}
 
 bool ChessPosition::save() const
 {
@@ -531,12 +474,12 @@ bool ChessPosition::load()
   if ( !doLoad() )
     return false;
 
-  if ( alg_.getCurrent() )
-    board_ = *alg_.getCurrent();
+  //if ( alg_.getCurrent() )
+  //  board_ = *alg_.getCurrent();
 
-  lastStep_.clear();
-  if ( alg_.lastStep() )
-    lastStep_ = *alg_.lastStep();
+  //lastStep_.clear();
+  //if ( alg_.lastStep() )
+  //  lastStep_ = *alg_.lastStep();
 
   return true;
 }
@@ -581,7 +524,7 @@ bool ChessPosition::doSave() const
 
 	std::ofstream out(fname.toAscii());
 
-	alg_.save(out);
+	//alg_.save(out);
 	return true;
 }
 
@@ -596,7 +539,7 @@ bool ChessPosition::doLoad()
 	if ( !in )
 		return false;
 
-	alg_.load(in);
+	//alg_.load(in);
 
 	return true;
 }

@@ -20,7 +20,7 @@ public:
 
   inline void set(const Figure & fig)
   {
-    THROW_IF( *this, "try to put figure on the occupied field");
+    THROW_IF( *this, "try to put figure to occupied field");
 
     color_ = fig.getColor();
     type_  = fig.getType();
@@ -31,9 +31,9 @@ public:
 
 private:
 
-  uint8  color_ : 1,
-          type_  : 3,
-          index_ : 4;
+  uint8 color_ : 1,
+        type_  : 3,
+        index_ : 4;
 };
 
 #pragma pack (pop)

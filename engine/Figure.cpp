@@ -1,40 +1,22 @@
 #include "Figure.h"
-#include "ChessBoard.h"
-
-
-
-
 
 Figure::Figure() :
-  color_(ColorBlack), type_(TypeNone), firstStep_(false), index_(-1), pos_(-1, -1), reserved_(0)
+  color_(ColorBlack), type_(TypeNone), first_step_(0), index_(-1), pos_(-1)
 {
 }
 
-Figure::Figure(Type type, char x /* a - h */, int y /* 1 - 8 */, Color c, bool firstStep) :
-  color_(c), type_(type), firstStep_(firstStep), index_(-1), reserved_(0)
+Figure::Figure(Type type, Color color, int x, int y, bool firstStep) :
+  color_(color), type_(type), first_step_(firstStep), index_(-1)
 {
-  if ( x >= 'a' && x <= 'h' )
-    pos_.set_x(x - 'a');
-  else if ( x >= 'A' && x <= 'H' )
-    pos_.set_x(x - 'A');
+  pos_.set_x(x);
+  pos_.set_y(y);
   
-  pos_.set_y(y - 1);
-  
-  THROW_IF( pos_ < 0, "invalid figure position");
+  THROW_IF( pos_ < 0 || pos_ > 63, "invalid figure position");
 }
 
 bool Figure::operator == ( const Figure & other ) const
 {
   return color_ == other.color_ && type_ == other.type_ && index_ == other.index_ && pos_ == other.pos_;
-}
-
-void Figure::clear()
-{
-  color_ = ColorBlack;
-  type_ = TypeNone;
-  firstStep_ = false;
-  index_ = -1;
-  pos_ = -1;
 }
 
 const char * Figure::name() const

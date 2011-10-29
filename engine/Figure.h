@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BasicTypes.h"
+#include "Helpers.h"
 
 #pragma pack (push, 1)
 
@@ -26,9 +27,7 @@ public:
   static WeightType positionEvaluation(int stage, int color, int type, int pos);
 
   Figure();
-	Figure(Type type, char x /* a - h */, int y /* 1 - 8 */, Color c, bool firstStep = false);
-
-  void clear();
+	Figure(Type type, Color c, int x, int y, bool firstStep = false);
 
   bool operator == ( const Figure & other ) const;
   operator bool () const { return type_ != TypeNone; }
@@ -36,13 +35,14 @@ public:
   Color getColor() const { return (Figure::Color)color_; }
   void  setType(Figure::Type type) { type_ = (Figure::Type)type; }
   Type  getType() const{ return (Figure::Type)type_; }
-	void  setMoved() { firstStep_ = false; }
-  bool  isFirstStep() const { return firstStep_; }
-  void  setUnmoved() { firstStep_ = true; }
+	void  setMoved() { first_step_ = false; }
+  bool  isFirstStep() const { return first_step_; }
+  void  setUnmoved() { first_step_ = true; }
   int   getIndex() const { return index_; }
-  void  setIndex(int idx) { index_ = idx; }
-  int   where() const { return pos_; }
-  int   go(int i) { return pos_ = (int8)i; }
+  void  setIndex(int8 idx) { index_ = idx; }
+  int8  where() const { return pos_; }
+  int8  go(int8 i) { return pos_ = i; }
+  void  clear() { type_ = TypeNone; }
 
   const char * name() const;
 
@@ -53,15 +53,11 @@ public:
 
 protected:
 
-  bool isDirValid(uint8 dir) const;
-
-	Index   pos_;
-
-  uint16 color_ : 1,
-          type_ : 3,
-          firstStep_ : 1,
-          index_ : 4,
-          reserved_ : 7;
+	Index pos_;
+  int8  index_;
+  int8  type_;
+  uint8 color_ : 1,
+        first_step_ : 1;
 };
 
 __declspec (align(1)) class FiguresCounter
@@ -70,8 +66,22 @@ public:
 
   FiguresCounter() : pawns_(0), wbishops_(0), bbishops_(0), knights_(0), rooks_(0), queens_(0), count_(0), weight_(0)
   {
-    for (int i = 0; i < 2; ++i)
-      eval_[i] = 0;
+    eval_[0] = 0;
+    eval_[1] = 0;
+  }
+
+  void clear()
+  {
+    pawns_ = 0;
+    wbishops_ = 0;
+    bbishops_ = 0;
+    knights_ = 0;
+    rooks_ = 0;
+    queens_ = 0;
+    count_ = 0;
+    weight_ = 0;
+    eval_[0] = 0;
+    eval_[1] = 0;
   }
 
   void incr(const Figure & fig)
@@ -83,7 +93,7 @@ public:
       break;
 
     case Figure::TypeBishop:
-      if ( FPosIndexer::get(fig.where()).is_white() )
+      if ( FieldColors::isWhite(fig.where()) )
         wbishops_++;
       else
         bbishops_++;
@@ -131,7 +141,7 @@ public:
       break;
 
     case Figure::TypeBishop:
-      if ( FPosIndexer::get(fig.where()).is_white() )
+      if ( FieldColors::isWhite(fig.where()) )
       {
         wbishops_--;
         THROW_IF(wbishops_ > 9, "number of white-field bishops is invalid");
@@ -203,13 +213,13 @@ public:
 
 private:
 
-  uint32 pawns_ : 4,
-          wbishops_ : 4,
-          bbishops_ : 4,
-          knights_ : 4,
-          rooks_ : 4,
-          queens_ : 4,
-          count_ : 4;
+  uint8 pawns_;
+  uint8 wbishops_;
+  uint8 bbishops_;
+  uint8 knights_;
+  uint8 rooks_;
+  uint8 queens_;
+  uint8 count_;
 
   WeightType weight_, eval_[2];
 };
@@ -221,9 +231,20 @@ class FiguresManager
 
 public:
 
-  FiguresManager() : hashCode_(0)
+  FiguresManager() : hashCode_(0ULL)
   {
-    pawn_mask_[0] = pawn_mask_[1] = 0;
+    pawn_mask_[0] = pawn_mask_[1] = 0ULL;
+    mask_[0] = mask_[1] = 0ULL;
+  }
+
+  void clear()
+  {
+    hashCode_ = 0ULL;
+    pawn_mask_[0] = pawn_mask_[1] = 0ULL;
+    mask_[0] = mask_[1] = 0ULL;
+
+    fcounter_[0].clear();
+    fcounter_[1].clear();
   }
 
   void incr(const Figure & fig)
@@ -232,14 +253,16 @@ public:
     const uint64 & uc = code(fig, fig.where());
     hashCode_ ^= uc;
 
-    if ( fig.getType() != Figure::TypePawn )
-      return;
+    mask_[fig.getColor()] |= 1ULL << fig.where();
 
-    int x = fig.where() & 7;
-    int y = fig.where() >> 3;
-    int bit = y | (x << 3);
+    if ( fig.getType() == Figure::TypePawn )
+    {
+      int x = fig.where() & 7;
+      int y = fig.where() >> 3;
+      int bit = y | (x << 3);
 
-    pawn_mask_[fig.getColor()] |= 1ULL << bit;
+      pawn_mask_[fig.getColor()] |= 1ULL << bit;
+    }
   }
 
   void decr(const Figure & fig)
@@ -248,15 +271,17 @@ public:
     const uint64 & uc = code(fig, fig.where());
     hashCode_ ^= uc;
 
-    if ( fig.getType() != Figure::TypePawn )
-      return;
+    mask_[fig.getColor()] ^= 1ULL << fig.where();
 
-    int x = fig.where() & 7;
-    int y = fig.where() >> 3;
-    int bit = y | (x << 3);
+    if ( fig.getType() == Figure::TypePawn )
+    {
+      int x = fig.where() & 7;
+      int y = fig.where() >> 3;
+      int bit = y | (x << 3);
 
-    pawn_mask_[fig.getColor()] ^= 1ULL << bit;
-    THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit), "invalid pawn mask" );
+      pawn_mask_[fig.getColor()] ^= 1ULL << bit;
+      THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit), "invalid pawn mask" );
+    }
   }
 
   void move(Figure & fig, int to)
@@ -269,20 +294,23 @@ public:
     hashCode_ ^= uc1;
     fcounter_[fig.getColor()].move(fig, to);
 
+    mask_[fig.getColor()] ^= 1ULL << from;
+    mask_[fig.getColor()] |= 1ULL << to;
+
     if ( fig.getType() != Figure::TypePawn )
-      return;
+    {
+      int xfrom = from & 7;
+      int yfrom = from >> 3;
+      int xto = to & 7;
+      int yto = to >> 3;
 
-    int xfrom = from & 7;
-    int yfrom = from >> 3;
-    int xto = to & 7;
-    int yto = to >> 3;
+      int bit_from = yfrom | (xfrom << 3);
+      int bit_to = yto | (xto << 3);
 
-    int bit_from = yfrom | (xfrom << 3);
-    int bit_to = yto | (xto << 3);
-
-    pawn_mask_[fig.getColor()] ^= 1ULL << bit_from;
-    THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit_from), "invalid pawn mask" );
-    pawn_mask_[fig.getColor()] |= 1ULL << bit_to;
+      pawn_mask_[fig.getColor()] ^= 1ULL << bit_from;
+      THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit_from), "invalid pawn mask" );
+      pawn_mask_[fig.getColor()] |= 1ULL << bit_to;
+    }
   }
 
   void hashFake(int fakePos, int color)
@@ -291,11 +319,11 @@ public:
     hashCode_ ^= fakeCode;
   }
 
-  void hashCastling(int color)
-  {
-    const uint64 & castleCode = s_zobristCodes_[ (color<<3) | 7 ];
-    hashCode_ ^= castleCode;
-  }
+  //void hashCastling(int color)
+  //{
+  //  const uint64 & castleCode = s_zobristCodes_[ (color<<3) | 7 ];
+  //  hashCode_ ^= castleCode;
+  //}
 
   void hashColor()
   {
@@ -318,6 +346,7 @@ public:
   WeightType eval(int stage) const { return fcounter_[Figure::ColorWhite].eval(stage) - fcounter_[Figure::ColorBlack].eval(stage); }
   const uint64 & hashCode() const { return hashCode_; }
   const uint64 & pawn_mask(Figure::Color color) const { return pawn_mask_[color]; }
+  const uint64 & mask(Figure::Color color) const { return mask_[color]; }
 
 private:
 
@@ -326,7 +355,12 @@ private:
     return s_zobristCodes_[ (i<<4) | (fig.getColor()<<3) | fig.getType() ];
   }
 
+  /// all figures mask
+  uint64 mask_[2];
+
+  /// only pawns. transposed for optimization
   uint64 pawn_mask_[2];
+
   FiguresCounter fcounter_[2];
   uint64 hashCode_;
 };

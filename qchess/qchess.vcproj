@@ -309,18 +309,6 @@
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}"
 			>
 			<File
-				RelativePath="Debug-Qt\moc_ChessWidget.cpp"
-				>
-				<FileConfiguration
-					Name="Release-Qt|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="Release-Qt\moc_ChessWidget.cpp"
 				>
 				<FileConfiguration
@@ -333,7 +321,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Debug-Qt\moc_selfiguredlg.cpp"
+				RelativePath="Debug-Qt\moc_ChessWidget.cpp"
 				>
 				<FileConfiguration
 					Name="Release-Qt|Win32"
@@ -357,7 +345,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Debug-Qt\qrc_qchess.cpp"
+				RelativePath="Debug-Qt\moc_selfiguredlg.cpp"
 				>
 				<FileConfiguration
 					Name="Release-Qt|Win32"
@@ -373,6 +361,18 @@
 				>
 				<FileConfiguration
 					Name="Debug-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="Debug-Qt\qrc_qchess.cpp"
+				>
+				<FileConfiguration
+					Name="Release-Qt|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool

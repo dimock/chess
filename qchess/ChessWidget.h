@@ -59,7 +59,7 @@ private:
   void enableActions(bool on);
   void drawState();
   void drawInfo();
-  void doBestStep();
+  //void doBestStep();
 
   bool okToReset();
 
@@ -73,7 +73,6 @@ private:
   char pv_str_[256];
   double moves_avg_base_, depth_avg_, moves_base_;
   WeightType w_;
-  int stepsCount_;
   bool goingToClose_;
   bool changed_;
 
