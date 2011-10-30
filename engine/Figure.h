@@ -298,25 +298,25 @@ public:
     mask_[fig.getColor()] |= 1ULL << to;
 
     if ( fig.getType() != Figure::TypePawn )
-    {
-      int xfrom = from & 7;
-      int yfrom = from >> 3;
-      int xto = to & 7;
-      int yto = to >> 3;
+      return;
 
-      int bit_from = yfrom | (xfrom << 3);
-      int bit_to = yto | (xto << 3);
+    int xfrom = from & 7;
+    int yfrom = from >> 3;
+    int xto = to & 7;
+    int yto = to >> 3;
 
-      pawn_mask_[fig.getColor()] ^= 1ULL << bit_from;
-      THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit_from), "invalid pawn mask" );
-      pawn_mask_[fig.getColor()] |= 1ULL << bit_to;
-    }
+    int bit_from = yfrom | (xfrom << 3);
+    int bit_to = yto | (xto << 3);
+
+    pawn_mask_[fig.getColor()] ^= 1ULL << bit_from;
+    THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit_from), "invalid pawn mask" );
+    pawn_mask_[fig.getColor()] |= 1ULL << bit_to;
   }
 
-  void hashFake(int fakePos, int color)
+  void hashEnPassant(int pos, int color)
   {
-    const uint64 & fakeCode = s_zobristCodes_[ (fakePos<<4) | (color<<3)/* | fig.getType() - use 0 instead*/ ];
-    hashCode_ ^= fakeCode;
+    const uint64 & enpassantCode = s_zobristCodes_[ (pos<<4) | (color<<3)/* | fig.getType() - use 0 instead*/ ];
+    hashCode_ ^= enpassantCode;
   }
 
   //void hashCastling(int color)

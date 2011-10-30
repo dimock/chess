@@ -300,6 +300,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MoveMaker.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MovesGenerator.cpp"
 				>
 			</File>

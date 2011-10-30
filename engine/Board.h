@@ -20,14 +20,25 @@ public:
   /// initialize from FEN
   bool initialize(const char * fen);
 
-  /// make movement. fill undo info
+  /*! movements
+   */
+  /// do move. fill undo info,, don't validate
+  bool doMove(MoveCmd & );
+
+  /// really make move. perform validation
   bool makeMove(MoveCmd & );
 
-  /// undo move. restore old state
+  /// undo move. restore old state after doMove
+  void undoMove(MoveCmd & );
+
+  /// called after makeMove
   void unmakeMove(MoveCmd & );
 
   /// generate movements from this position. don't verify and sort them. only calculate sort weights. returns number of moves found
   int  generateMoves(Move (&)[MovesMax]);
+  /*! end of movements
+   */
+
 
   /// always use this method to get figure
   inline const Figure & getFigure(Figure::Color color, int index) const
@@ -50,7 +61,7 @@ public:
     return fields_[index];
   }
 
-  /// always use this method to get figure
+  /// always use this method to get field
   inline Field & getField(int index)
   {
     THROW_IF((unsigned)index > 63, "field index is invalid" );

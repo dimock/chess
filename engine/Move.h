@@ -28,6 +28,7 @@ struct Move
 __declspec (align(1))
 struct MoveCmd : public Move
 {
+  MoveCmd(const Move & move) : Move(move) {}
   /// index of moved figure
   int8 index_;
 
@@ -37,14 +38,20 @@ struct MoveCmd : public Move
   /// castle: 0 - no castle, 1 - short castle, 2 - long castle
   int8 castle_;
 
-  /// 1 - if figure haven't moved yet
-  int8 first_move_;
+  /// true - if figure haven't moved yet
+  bool first_move_;
 
   /// type of eaten figure to restore it while unmove
   int8 eaten_type_;
 
+  /// used to restore rook position after castle
+  int8 rook_index_;
+
   /// restore old board state while unmove
   int8 old_state_;
+
+  /// do we need Undo
+  bool need_undo_;
 
   /// number of checking figures
   uint8 checkingNum_;
@@ -68,8 +75,11 @@ struct MoveCmd : public Move
     en_passant_ = -1;
     castle_ = 0;
     eaten_type_ = 0;
+    rook_index_ = -1;
     old_state_ = 0;
+    first_move_ = false;
     checkingNum_ = 0;
+    need_undo_ = false;
   }
 };
 

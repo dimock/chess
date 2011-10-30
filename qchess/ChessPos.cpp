@@ -42,7 +42,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //Board & board = *alg_.getCurrent();
 
 
-  if ( !board_.initialize( "rnbk1Q1r/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR b KQ - 0 6" ) )
+  if ( !board_.initialize( "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7" ) )
     return false;
 
   return true;
@@ -280,16 +280,20 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
-  ticks_ /= num;
+  //ticks_ /= num;
 
   for (int i = 0; i < num; ++i)
   {
     const Move & move = moves[i];
-    int index = board_.getField(move.from_).index();
-    if ( index != selectedFigure_.getIndex() )
-      continue;
-
-    selectedPositions_.insert(move.to_);
+    MoveCmd moveCmd(move);
+    moveCmd.clearUndo();
+    if ( board_.doMove(moveCmd) )
+    {
+      int index = board_.getField(move.from_).index();
+      if ( index == selectedFigure_.getIndex() )
+        selectedPositions_.insert(move.to_);
+    }
+    board_.undoMove(moveCmd);
   }
 
   if ( selectedPositions_.size() == 0 )

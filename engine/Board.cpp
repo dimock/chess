@@ -351,12 +351,3 @@ bool Board::addFigure(const Figure & fig)
 
   return false;
 }
-
-bool Board::makeMove(MoveCmd & move)
-{
-  return false;
-}
-
-void Board::unmakeMove(MoveCmd & move)
-{
-}
