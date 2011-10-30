@@ -15,6 +15,12 @@ struct Move
 
   /// index of field go to
   int8 to_;
+
+  /// new type while pawn promotion
+  int8 new_type_;
+
+  /// index of eaten (removed) figure
+  int8 rindex_;
 };
 
 /*! complete move structure with all necessary unmove information
@@ -24,9 +30,6 @@ struct MoveCmd : public Move
 {
   /// index of moved figure
   int8 index_;
-
-  /// index of eaten (removed) figure
-  int8 rindex_;
 
   /// en-passant pawn index
   int8 en_passant_;

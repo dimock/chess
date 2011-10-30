@@ -26,52 +26,67 @@ public:
   /// undo move. restore old state
   void unmakeMove(MoveCmd & );
 
-  /// generate movements from this position. don't verify and sort them. only calculate sort weights. returns index of best move
+  /// generate movements from this position. don't verify and sort them. only calculate sort weights. returns number of moves found
   int  generateMoves(Move (&)[MovesMax]);
 
+  /// always use this method to get figure
   inline const Figure & getFigure(Figure::Color color, int index) const
   {
     THROW_IF( (size_t)index >= NumOfFigures, "\"Figure & getFigure(Figure::Color, int) const\" - try to get invalid figure");
     return figures_[color][index];
   }
 
+  /// always use this method to get figure
   inline Figure & getFigure(Figure::Color color, int index)
   {
     THROW_IF( (size_t)index >= NumOfFigures, "\"Figure & getFigure(Figure::Color, int) const\" - try to get invalid figure");
     return figures_[color][index];
   }
 
+  /// always use this method to get field
   inline const Field & getField(int index) const
   {
     THROW_IF((unsigned)index > 63, "field index is invalid" );
     return fields_[index];
   }
 
+  /// always use this method to get figure
   inline Field & getField(int index)
   {
     THROW_IF((unsigned)index > 63, "field index is invalid" );
     return fields_[index];
   }
 
+  /// returns number of moves. started from 1
   int movesCount() const { return movesCounter_; }
 
+  /// returns current move color
   Figure::Color getColor() const { return color_; }
 
+  /// returns current state, ie check, mat etc
   State getState() const { return state_; }
 
+  /// just a useful method to quickly check if there is a draw
   static bool isDraw(State state)
   {
     return Stalemat == state || DrawReps == state || DrawInsuf == state || Draw50Moves == state;
   }
 
-
+  /// methods
 private:
 
+  /// add new figure. firstly find empty slot (index). try to put pawn to slots 0-7, knight to slots 8-9 etc...
   bool addFigure(const Figure &);
+
+  /// set figure with given index to given position
   void setFigure(const Figure &);
 
 
+  /// clear board. remove all figures
   void clear();
+
+  /// data
+private:
 
   /// 0 - no castle, 1 - short, 2 - long
   uint8 castle_[2];

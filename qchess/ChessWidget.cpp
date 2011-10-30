@@ -357,7 +357,7 @@ void ChessWidget::mousePressEvent(QMouseEvent * e)
 
   curPt_ = e->pos();
 
-  //cpos_.selectFigure(curPt_);
+  cpos_.selectFigure(curPt_);
 
   update();
 }
@@ -368,6 +368,7 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
 
   if ( e->button() == Qt::LeftButton )
   {
+    cpos_.clearSelected();
     //if ( cpos_.makeFigureStep(curPt_) )
     //{
     //  changed_ = true;

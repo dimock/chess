@@ -299,6 +299,14 @@
 				RelativePath=".\Helpers.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\MovesGenerator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MovesTable.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -335,6 +343,10 @@
 			</File>
 			<File
 				RelativePath=".\Move.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MovesTable.h"
 				>
 			</File>
 		</Filter>

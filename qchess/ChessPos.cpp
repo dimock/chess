@@ -41,7 +41,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //Board & board = *alg_.getCurrent();
 
 
-  if ( !board_.initialize( "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2" ) )
+  if ( !board_.initialize( "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" ) )
     return false;
 
   return true;
@@ -60,7 +60,7 @@ void ChessPosition::draw(QWidget * view, const QPoint & cursorPt) const
 	drawBoard(&painter, sz);
 	drawFigures(&painter, sz);
   //drawFake(&painter, sz);
-  //drawCurrentMoving(&painter, sz, cursorPt);
+  drawCurrentMoving(&painter, sz, cursorPt);
 }
 
 void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
@@ -116,13 +116,13 @@ void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
     bool wht = (x+y) & 1;
 		QColor color = wht ? cwhite : cblack;
 
-    //FPos fpos = turned_ ? FPos(7-x, 7-y) : FPos(x, y);
+    Index fidx = turned_ ? Index(7-x, 7-y) : Index(x, y);
 
     //if ( lastStep_ && fpos.index() == lastStep_.to_ )
     //  color = wht ? lwhite : lblack;
 
-    //if ( selectedPositions_.find(fpos.index()) != selectedPositions_.end() )
-    //  color = wht ? swhite : sblack;
+    if ( selectedPositions_.find(fidx) != selectedPositions_.end() )
+      color = wht ? swhite : sblack;
 
 		QRect r(p.x()+squareSize_*x, p.y()-squareSize_*y, squareSize_, squareSize_);
 		painter->fillRect(r, color);
@@ -139,7 +139,7 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
     for (int index = 0; index < Board::NumOfFigures; ++index)
     {
       Figure fig = board_.getFigure((Figure::Color)color, index);
-      if ( !fig /*|| fig == selectedFigure_ */)
+      if ( !fig || fig == selectedFigure_ )
         continue;
 
   	  int inum = fig.getColor()*6+(fig.getType()-1);
@@ -164,29 +164,29 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
   }
 }
 
-//void ChessPosition::drawCurrentMoving(QPainter * painter, QSize & , const QPoint & cursorPt) const
-//{
-//  if ( selectedFigure_.getType() == Figure::TypeNone || !FPosIndexer::get(selectedFigure_.where()) )
-//    return;
-//
-//  int inum = selectedFigure_.getColor()*6+(selectedFigure_.getType()-1);
-//  if ( inum < 0 || inum > 11 )
-//    return;
-//
-//  if ( !fimages_[inum].get() )
-//  {
-//    QString imgName;
-//    imgName.sprintf(":/images/%s_%c.png", selectedFigure_.name(), selectedFigure_.getColor() ? 'w' : 'b');
-//    fimages_[inum].reset( new QImage(imgName) );
-//  }
-//
-//  if ( !fimages_[inum].get() )
-//    return;
-//
-//  QRect r(cursorPt.x()-squareSize_/2, cursorPt.y()-squareSize_/2, squareSize_, squareSize_);
-//  painter->drawImage(r, *fimages_[inum].get(), fimages_[inum]->rect());
-//
-//}
+void ChessPosition::drawCurrentMoving(QPainter * painter, QSize & , const QPoint & cursorPt) const
+{
+  if ( selectedFigure_.getType() == Figure::TypeNone )
+    return;
+
+  int inum = selectedFigure_.getColor()*6+(selectedFigure_.getType()-1);
+  if ( inum < 0 || inum > 11 )
+    return;
+
+  if ( !fimages_[inum].get() )
+  {
+    QString imgName;
+    imgName.sprintf(":/images/%s_%c.png", selectedFigure_.name(), selectedFigure_.getColor() ? 'w' : 'b');
+    fimages_[inum].reset( new QImage(imgName) );
+  }
+
+  if ( !fimages_[inum].get() )
+    return;
+
+  QRect r(cursorPt.x()-squareSize_/2, cursorPt.y()-squareSize_/2, squareSize_, squareSize_);
+  painter->drawImage(r, *fimages_[inum].get(), fimages_[inum]->rect());
+
+}
 
 QPoint ChessPosition::coordByField(int f) const
 {
@@ -240,47 +240,45 @@ bool ChessPosition::getFigureOnPt(const QPoint & pt, Figure & fig) const
   return true;
 }
 
-//bool ChessPosition::selectFigure(const QPoint & pt)
-//{
-//  if ( working_ )
-//    return false;
-//
-//  selectedPositions_.clear();
-//  if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board_.getColor() )
-//  {
-//    selectedFigure_.setType(Figure::TypeNone);
-//    return false;
-//  }
-//
-//  if ( !calculateSteps(steps_) )
-//  {
-//    selectedFigure_.setType(Figure::TypeNone);
-//    return false;
-//  }
-//
-//  for (size_t i = 0; i < steps_.size(); ++i)
-//  {
-//    const Step & step = steps_[i];
-//    if ( step.index_ != selectedFigure_.getIndex() )
-//      continue;
-//
-//    selectedSteps_.push_back(step);
-//  }
-//
-//  if ( selectedSteps_.size() == 0 )
-//  {
-//    selectedFigure_.setType(Figure::TypeNone);
-//    return false;
-//  }
-//
-//  for (size_t i = 0; i < selectedSteps_.size(); ++i)
-//  {
-//    const Step & step = selectedSteps_[i];
-//    selectedPositions_.insert(step.to_);
-//  }
-//
-//  return true;
-//}
+bool ChessPosition::selectFigure(const QPoint & pt)
+{
+  if ( working_ )
+    return false;
+
+  selectedPositions_.clear();
+  if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board_.getColor() )
+  {
+    selectedFigure_.setType(Figure::TypeNone);
+    return false;
+  }
+
+  Move moves[Board::MovesMax];
+
+  int num = board_.generateMoves(moves);
+
+  if ( !num )
+  {
+    selectedFigure_.setType(Figure::TypeNone);
+    return false;
+  }
+
+  for (int i = 0; i < num; ++i)
+  {
+    const Move & move = moves[i];
+    int index = board_.getField(move.from_).index();
+    if ( index != selectedFigure_.getIndex() )
+      continue;
+
+    selectedPositions_.insert(move.to_);
+  }
+
+  if ( selectedPositions_.size() == 0 )
+  {
+    selectedFigure_.setType(Figure::TypeNone);
+    return false;
+  }
+  return true;
+}
 
 //bool ChessPosition::makeFigureStep(const QPoint & pt)
 //{
@@ -355,13 +353,13 @@ bool ChessPosition::getFigureOnPt(const QPoint & pt, Figure & fig) const
 //  return &selectedFigure_;
 //}
 
-//void ChessPosition::clearSteps()
-//{
-//  steps_.clear();
-//  selectedSteps_.clear();
-//  selectedFigure_.clear();
-//  selectedPositions_.clear();
-//}
+void ChessPosition::clearSelected()
+{
+  //steps_.clear();
+  //selectedSteps_.clear();
+  selectedFigure_.clear();
+  selectedPositions_.clear();
+}
 
 
 //////////////////////////////////////////////////////////////////////////
