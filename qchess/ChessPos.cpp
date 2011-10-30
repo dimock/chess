@@ -255,6 +255,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
   Move moves[Board::MovesMax];
 
+  int num = 0;
   long long t0, t1;
   _asm
   {
@@ -263,7 +264,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     mov dword ptr [ecx], eax
     mov dword ptr [ecx+4], edx
   }
-  int num = board_.generateMoves(moves);
+  num = board_.generateMoves(moves);
   _asm
   {
     rdtsc
@@ -271,6 +272,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     mov dword ptr [ecx], eax
     mov dword ptr [ecx+4], edx
   }
+  ticks_ = (t1 - t0 - 105);
 
   if ( !num )
   {
@@ -278,8 +280,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
-  ticks_ = (t1 - t0)/num;
-
+  //ticks_ /= num;
 
   for (int i = 0; i < num; ++i)
   {

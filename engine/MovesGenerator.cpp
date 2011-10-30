@@ -59,7 +59,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
           }
         }
 
-        for (int i = 2; i < 4 && *table >= 0 && !getField(*table); ++i, ++table)
+        for (; *table >= 0 && !getField(*table); ++table)
         {
           Move & move = moves[m++];
           move.from_ = fig.where();
@@ -87,7 +87,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
       {
         int8 * table = MovesTable::knight(fig.where());
 
-        for (int i = 0; i < 8 && *table >= 0; ++i, ++table)
+        for (; *table >= 0; ++table)
         {
           const Field & field = getField(*table);
           int rindex = -1;
@@ -111,7 +111,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
       {
         int8 * table = MovesTable::king(fig.where());
 
-        for (int i = 0; i < 8 && *table >= 0; ++i, ++table)
+        for (; *table >= 0; ++table)
         {
           const Field & field = getField(*table);
           int rindex = -1;
@@ -169,8 +169,74 @@ int Board::generateMoves(Move (&moves)[MovesMax])
     case Figure::TypeQueen:
       {
         uint16 * table = MovesTable::move(fig.getType()-Figure::TypeBishop, fig.where());
+        uint8 * fields = reinterpret_cast<uint8*>(fields_);
+        uint8 * pmoves = reinterpret_cast<uint8*>(moves);
+        int8 p0 = fig.where();
+        _asm
+        {
+          mov esi, dword ptr [table]
 
-        for (int i = 0; i < 8 && *table; ++i, ++table)
+          xor eax, eax
+          xor ebx, ebx
+          xor ecx, ecx
+          xor edx, edx
+          mov dh, byte ptr [p0]
+
+Start:    mov cx, word ptr [esi]
+          test cx, cx
+          jz Stop
+
+          lea esi, [esi + 2]
+
+          mov dl, ch
+          xor ch, ch
+          mov bl, dh
+
+L1:       add bl, dl
+          mov edi, fields
+          xor bh, bh
+          add edi, ebx
+          mov bh, byte ptr [edi]
+
+          mov al, bh
+          and al, 14
+          neg al
+          cbw       ; ah == 255 if where is some figure in the field
+
+          mov al, bh
+          and al, 1
+          xor al, byte ptr [ocolor] ; 0 if figure.color == opponent's color
+          and al, ah
+          jnz Start ; non-zero if there is some figure of my color in the field
+
+          shr bh, 4
+          not ah ; now there is 255 if there is NO figure in the field
+          or  bh, ah ; set to -1 if no capture
+
+          mov eax, dword ptr [m]
+          mov edi, pmoves
+          lea edi, [edi + eax*4]
+
+          mov byte ptr [edi], dh ; from
+          mov byte ptr [edi+1], bl ; to
+          mov byte ptr [edi+2], bh ; rindex
+
+          inc eax
+          mov dword ptr [m], eax
+
+          not bh
+          test bh, bh
+          loopz L1
+
+          jmp Start
+
+Stop:     nop
+        }
+      }
+      /*{
+        uint16 * table = MovesTable::move(fig.getType()-Figure::TypeBishop, fig.where());
+
+        for (; *table; ++table)
         {
           int8 * packed = reinterpret_cast<int8*>(table);
           int8 count = packed[0];
@@ -198,7 +264,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
             move.rindex_ = rindex;
           }
         }
-      }
+      }*/
       break;
     }
   }

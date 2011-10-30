@@ -44,7 +44,7 @@ public:
   Index(int x, int y) { index_ = x | (y<<3); }
   Index(char x, char y) { index_ = (x-'a') | ((y-'1')<<3); }
 
-  operator int () const
+  operator int8 () const
   {
     return index_;
   }

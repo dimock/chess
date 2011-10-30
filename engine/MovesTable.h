@@ -4,10 +4,10 @@
 
 class MovesTable
 {
-  static int8   s_tablePawn_[2][64][4];
-  static int8   s_tableKnight_[64][8];
-  static int8   s_tableKing_[64][8];
-  static uint16 s_tableOther_[4][64][8];
+  static int8   s_tablePawn_[2][64][6];
+  static int8   s_tableKnight_[64][10];
+  static int8   s_tableKing_[64][10];
+  static uint16 s_tableOther_[4][64][10];
 
   void initPawns(int);
   void initKnights(int);

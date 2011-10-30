@@ -1,9 +1,9 @@
 #include "MovesTable.h"
 
-int8  MovesTable::s_tablePawn_[2][64][4];
-int8  MovesTable::s_tableKnight_[64][8];
-int8  MovesTable::s_tableKing_[64][8];
-uint16 MovesTable::s_tableOther_[4][64][8];
+int8  MovesTable::s_tablePawn_[2][64][6];
+int8  MovesTable::s_tableKnight_[64][10];
+int8  MovesTable::s_tableKing_[64][10];
+uint16 MovesTable::s_tableOther_[4][64][10];
 
 static MovesTable s_movesTable;
 
@@ -103,6 +103,8 @@ void MovesTable::initPawns(int pos)
       else
         s_tablePawn_[color][pos][i] = -1;
     }
+    for (int i = 4; i < 6; ++i)
+      s_tablePawn_[color][pos][i] = -1;
   }
 }
 
@@ -120,7 +122,7 @@ void MovesTable::initKnights(int pos)
       continue;
     s_tableKnight_[pos][j++] = q.index();
   }
-  for ( ; j < 8; ++j)
+  for ( ; j < 10; ++j)
     s_tableKnight_[pos][j] = -1;
 }
 
@@ -138,7 +140,7 @@ void MovesTable::initKings(int pos)
       continue;
     s_tableKing_[pos][j++] = q.index();
   }
-  for ( ; j < 8; ++j)
+  for ( ; j < 10; ++j)
     s_tableKing_[pos][j] = -1;
 }
 
