@@ -37,6 +37,8 @@ public:
   bool save() const;
   bool load();
 
+  long long getTicks() const { return ticks_; }
+
 
 private:
 
@@ -71,6 +73,8 @@ private:
   int borderWidth_;
   QSize boardSize_;
   bool turned_;
+
+  long long ticks_;
 
   volatile bool working_;
 };

@@ -20,6 +20,7 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
   squareSize_ = 44;
   borderWidth_ = 16;
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
+  ticks_ = 0;
 }
 
 void ChessPosition::setMaxDepth(int d)
@@ -41,7 +42,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //Board & board = *alg_.getCurrent();
 
 
-  if ( !board_.initialize( "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" ) )
+  if ( !board_.initialize( "rnbk1Q1r/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR b KQ - 0 6" ) )
     return false;
 
   return true;
@@ -254,13 +255,31 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
   Move moves[Board::MovesMax];
 
+  long long t0, t1;
+  _asm
+  {
+    rdtsc
+    lea ecx, [t0]
+    mov dword ptr [ecx], eax
+    mov dword ptr [ecx+4], edx
+  }
   int num = board_.generateMoves(moves);
+  _asm
+  {
+    rdtsc
+    lea ecx, [t1]
+    mov dword ptr [ecx], eax
+    mov dword ptr [ecx+4], edx
+  }
 
   if ( !num )
   {
     selectedFigure_.setType(Figure::TypeNone);
     return false;
   }
+
+  ticks_ = (t1 - t0)/num;
+
 
   for (int i = 0; i < num; ++i)
   {

@@ -118,7 +118,7 @@ void MovesTable::initKnights(int pos)
     FPos q = p + d;
     if ( !q )
       continue;
-    s_tableKnight_[pos][j] = q.index();
+    s_tableKnight_[pos][j++] = q.index();
   }
   for ( ; j < 8; ++j)
     s_tableKnight_[pos][j] = -1;
@@ -136,7 +136,7 @@ void MovesTable::initKings(int pos)
     FPos q = p + d;
     if ( !q )
       continue;
-    s_tableKing_[pos][j] = q.index();
+    s_tableKing_[pos][j++] = q.index();
   }
   for ( ; j < 8; ++j)
     s_tableKing_[pos][j] = -1;

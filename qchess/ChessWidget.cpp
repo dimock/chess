@@ -338,7 +338,7 @@ void ChessWidget::drawInfo()
   //  nps_curr, moves_base_,
   //  totalCurr_, movesCurr_, forcesCount_, additionalCount_, base_real, nullMovesCount_, pv_str_);
 
-  infoText.sprintf("%d: [%d] %s (%0.2f)", cpos_.movesCount(), depth_, pv_str_, w_/100.0);
+  infoText.sprintf("%d: [%d] %s (%0.2f) (%d)", cpos_.movesCount(), depth_, pv_str_, w_/100.0, (int)cpos_.getTicks());
   painter.drawText(QRect(00, 450, 450, 50), Qt::AlignCenter, infoText);
 }
 
