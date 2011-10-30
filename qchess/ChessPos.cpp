@@ -280,7 +280,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
-  //ticks_ /= num;
+  ticks_ /= num;
 
   for (int i = 0; i < num; ++i)
   {
