@@ -265,14 +265,6 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     mov dword ptr [ecx+4], edx
   }
   num = board_.generateMoves(moves);
-  _asm
-  {
-    rdtsc
-    lea ecx, [t1]
-    mov dword ptr [ecx], eax
-    mov dword ptr [ecx+4], edx
-  }
-  ticks_ = (t1 - t0 - 105);
 
   if ( !num )
   {
@@ -295,6 +287,14 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     }
     board_.undoMove(moveCmd);
   }
+  _asm
+  {
+    rdtsc
+      lea ecx, [t1]
+    mov dword ptr [ecx], eax
+      mov dword ptr [ecx+4], edx
+  }
+  ticks_ = (t1 - t0 - 105);
 
   if ( selectedPositions_.size() == 0 )
   {
