@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BasicTypes.h"
+#include "fpos.h"
 
 class Board;
 
@@ -124,48 +125,48 @@ public:
   }
 };
 
-//class DeltaPosCounter
-//{
-//  FPos array_[4096];
-//
-//  FPos deltaP(FPos dp) const
-//  {
-//    int x = dp.x();
-//    int y = dp.y();
-//
-//    if ( x < 0 )
-//      x = -x;
-//    if ( y < 0 )
-//      y = -y;
-//
-//    if ( x != 0 && y != 0 && x != y )
-//      return FPos(0, 0);
-//
-//    int xx = dp.x(), yy = dp.y();
-//    if ( xx != 0 )
-//      xx /= x;
-//    if ( yy != 0 )
-//      yy /= y;
-//
-//    return FPos(xx, yy);
-//  }
-//
-//public:
-//
-//  DeltaPosCounter()
-//  {
-//    for (int i = 0; i < 4096; ++i)
-//    {
-//      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
-//      array_[i] = deltaP(dp);
-//    }
-//  }
-//
-//  inline const FPos & operator [] (int i) const
-//  {
-//    return array_[i];
-//  }
-//};
+class DeltaPosCounter
+{
+  FPos array_[4096];
+
+  FPos deltaP(FPos dp) const
+  {
+    int x = dp.x();
+    int y = dp.y();
+
+    if ( x < 0 )
+      x = -x;
+    if ( y < 0 )
+      y = -y;
+
+    if ( x != 0 && y != 0 && x != y )
+      return FPos();
+
+    int xx = dp.x(), yy = dp.y();
+    if ( xx != 0 )
+      xx /= x;
+    if ( yy != 0 )
+      yy /= y;
+
+    return FPos(xx, yy);
+  }
+
+public:
+
+  DeltaPosCounter()
+  {
+    for (int i = 0; i < 4096; ++i)
+    {
+      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
+      array_[i] = deltaP(dp);
+    }
+  }
+
+  inline const FPos & operator [] (int i) const
+  {
+    return array_[i];
+  }
+};
 
 //class LengthCounter
 //{
@@ -290,13 +291,13 @@ inline int numBitsInWord(uint16 word)
   return numBitsInByte(word&0xff) + numBitsInByte(word>>8);
 }
 
-// returns {0,0}  if (to - from) isn't horizontal, vertical or diagonal
-//inline const FPos & getDeltaPos(int to, int from)
-//{
-//  static DeltaPosCounter dp_counter;
-//  THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
-//  return dp_counter[(to<<6) | from];
-//}
+/// returns { 0, 0 }  if (to - from) isn't horizontal, vertical or diagonal
+inline const FPos & getDeltaPos(int to, int from)
+{
+  static DeltaPosCounter dp_counter;
+  THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
+  return dp_counter[(to<<6) | from];
+}
 
 //// returns '-1' if dp isn't horizontal, vertical or diagonal
 //inline int getLength8(FPos dp)

@@ -7,6 +7,7 @@ bool Board::doMove(MoveCmd & move)
   Figure::Color ocolor = Figure::otherColor(color_);
   move.en_passant_ = en_passant_;
   move.old_state_ = state_;
+//  move.index_ = fig.getIndex();
   en_passant_ = -1;
 
   state_ = Ok;
@@ -28,7 +29,9 @@ bool Board::doMove(MoveCmd & move)
       getField(rook.where()).clear();
       fmgr_.move(rook, move.from_+d);
       rook.setMoved();
-      getField(rook.where()).set(rook);
+      Field & field_rook_to  = getField(rook.where());
+      move.field_rook_to_ = field_rook_to;
+      field_rook_to.set(rook);
 
       castle_[color_] = d > 0 ? 1 : 2;
       state_ = Castle;
@@ -69,7 +72,9 @@ bool Board::doMove(MoveCmd & move)
   else
     fmgr_.move(fig, move.to_);
 
-  getField(fig.where()).set(fig);
+  Field & field_to = getField(fig.where());
+  move.field_to_ = field_to;
+  field_to.set(fig);
   move.need_undo_ = true;
 
   return true;
@@ -101,7 +106,7 @@ void Board::undoMove(MoveCmd & move)
   }
 
   // restore position and field
-  getField(move.to_).clear();
+  getField(move.to_) = move.field_to_;
   if ( move.first_move_ )
     fig.setUnmoved();
   getField(fig.where()).set(fig);
@@ -130,8 +135,8 @@ void Board::undoMove(MoveCmd & move)
   {
     int d = (move.to_ - move.from_) >> 1;
 
-    // clear rook's field
-    getField(move.from_+d).clear();
+    // restore rook's field
+    getField(move.from_+d) = move.field_rook_to_;
 
     Figure & rook = getFigure(color_, move.rook_index_);
 

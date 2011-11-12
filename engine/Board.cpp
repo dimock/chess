@@ -1,4 +1,6 @@
 #include "Board.h"
+#include "fpos.h"
+#include "FigureDirs.h"
 
 Board::Board()
 {
@@ -262,8 +264,203 @@ bool Board::initialize(const char * fen)
     }
   }
 
+  if ( !invalidate() )
+    return false;
+
   return true;
 }
+
+//////////////////////////////////////////////////////////////////////////
+/// verification of move/unmove methods
+bool Board::operator != (const Board & other) const
+{
+  const char * buf0 = reinterpret_cast<const char*>(this);
+  const char * buf1 = reinterpret_cast<const char*>(&other);
+
+  for (int i = 0; i < sizeof(Board); ++i)
+  {
+    if ( buf0[i] != buf1[i] )
+      return true;
+  }
+
+  return false;
+}
+
+bool Board::invalidate()
+{
+  Figure::Color ocolor = Figure::otherColor(color_);
+
+  Figure & king1 = getFigure(color_, KingIndex);
+  Figure & king2 = getFigure(ocolor, KingIndex);
+
+  state_ = Ok;
+
+  if ( isAttacked(color_, king2.where()) )
+  {
+    state_ = Invalid;
+    return false;
+  }
+
+  if ( isAttacked(ocolor, king1.where()) )
+    state_ = UnderCheck;
+
+  int cnum = findCheckingFigures(ocolor, king1.where());
+  if ( cnum > 2 )
+  {
+    state_ = Invalid;
+    return false;
+  }
+  else if ( cnum > 0 )
+  {
+    state_ = UnderCheck;
+  }
+
+  MoveCmd moves[MovesMax];
+  int snum = generateMoves(moves);
+
+  bool found = false;
+  for (int i = 0; !found && i < snum; ++i)
+  {
+    MoveCmd & move = moves[i];
+    move.clearUndo();
+
+#ifndef NDEBUG
+    Board board0(*this);
+#endif
+
+    if ( doMove(move) )
+      found = true;
+
+    undoMove(move);
+
+    THROW_IF(board0 != *this, "board is not restored by undo move method");
+  }
+
+  if ( !found )
+    state_ = UnderCheck == state_ ? ChessMat : Stalemat;
+
+  return true;
+}
+
+int Board::findCheckingFigures(Figure::Color color, int pos)
+{
+  checkingNum_ = 0;
+  for (int i = 0; i < KingIndex; ++i)
+  {
+    const Figure & fig = getFigure(color, i);
+    if ( !fig )
+      continue;
+
+    int dir = FigureDir::dir(fig, pos);
+    if ( (dir < 0) || (Figure::TypePawn == fig.getType() && (2 == dir || 3 == dir)) || (Figure::TypeKing == fig.getType() && dir > 7) )
+      continue;
+
+    if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() )
+    {
+      if ( checkingNum_ > 1 )
+        return ++checkingNum_;
+
+      checking_[checkingNum_++] = i;
+    }
+
+    FPos dp = getDeltaPos(fig.where(), pos);
+
+    THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
+
+    FPos p = FPosIndexer::get(pos) + dp;
+    const FPos & figp = FPosIndexer::get(fig.where());
+    bool have_figure = false;
+    for ( ; p != figp; p += dp)
+    {
+      const Field & field = getField(p.index());
+      if ( field )
+      {
+        have_figure = true;
+        break;
+      }
+    }
+
+    if ( !have_figure )
+    {
+      checking_[checkingNum_++] = i;
+    }
+  }
+
+  return checkingNum_;
+}
+
+
+/// is field 'pos' attacked by given color?
+bool Board::isAttacked(const Figure::Color c, int pos) const
+{
+  for (int i = KingIndex; i >= 0; --i)
+  {
+    const Figure & fig = getFigure(c, i);
+    if ( !fig )
+      continue;
+
+    int dir = FigureDir::dir(fig, pos);
+    if ( (dir < 0) || (Figure::TypePawn == fig.getType() && (2 == dir || 3 == dir)) || (Figure::TypeKing == fig.getType() && dir > 7) )
+      continue;
+
+    if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() || Figure::TypeKing == fig.getType() )
+      return true;
+
+    FPos dp = getDeltaPos(fig.where(), pos);
+
+    THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
+
+    FPos p = FPosIndexer::get(pos) + dp;
+    const FPos & figp = FPosIndexer::get(fig.where());
+    bool have_fig = false;
+    for ( ; p != figp; p += dp)
+    {
+      const Field & field = getField(p.index());
+      if ( !field )
+        continue;
+
+      if ( field.color() == c && Figure::TypeQueen == field.type() )
+      {
+        return true;
+      }
+
+      if ( field.color() == c && (Figure::TypeBishop == field.type() || Figure::TypeRook == field.type()) )
+      {
+        const Figure & afig = getFigure(c, field.index());
+        int dir = FigureDir::dir(afig, pos);
+        if ( dir >= 0 )
+          return true;
+
+        have_fig = true;
+        break;
+      }
+
+      if ( (Figure::TypeKnight == field.type()) || (field.color() != c && Figure::TypeKing != field.type()) || (field.color() == c && Figure::TypeKing == field.type()) )
+      {
+        have_fig = true;
+        break;
+      }
+
+      if ( Figure::TypePawn == field.type() )
+      {
+        const Figure & pawn = getFigure(field.color(), field.index());
+        int d = FigureDir::dir(pawn, pos);
+        if ( 0 == d || 1 == d )
+          return true;
+
+        have_fig = true;
+        break;
+      }
+    }
+
+    if ( !have_fig )
+      return true;
+  }
+
+  return false;
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 void Board::setFigure(const Figure & fig)
 {

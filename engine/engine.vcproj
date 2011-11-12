@@ -296,6 +296,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FigureDirs.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\fpos.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Helpers.cpp"
 				>
 			</File>
@@ -335,6 +343,10 @@
 			</File>
 			<File
 				RelativePath=".\FigureDirs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\fpos.h"
 				>
 			</File>
 			<File

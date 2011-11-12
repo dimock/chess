@@ -42,7 +42,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //Board & board = *alg_.getCurrent();
 
 
-  if ( !board_.initialize( "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7" ) )
+  if ( !board_.initialize( "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10" ) )//"rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7" ) )
     return false;
 
   return true;
@@ -253,7 +253,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
-  Move moves[Board::MovesMax];
+  MoveCmd moves[Board::MovesMax];
 
   int num = 0;
   long long t0, t1;
@@ -276,23 +276,29 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
   for (int i = 0; i < num; ++i)
   {
-    const Move & move = moves[i];
-    MoveCmd moveCmd(move);
-    moveCmd.clearUndo();
-    if ( board_.doMove(moveCmd) )
+    MoveCmd & move = moves[i];
+    move.clearUndo();
+
+#ifndef NDEBUG
+    Board board0 = board_;
+#endif
+
+    int index = board_.getField(move.from_).index();
+    if ( board_.doMove(move) )
     {
-      int index = board_.getField(move.from_).index();
       if ( index == selectedFigure_.getIndex() )
         selectedPositions_.insert(move.to_);
     }
-    board_.undoMove(moveCmd);
+    board_.undoMove(move);
+
+    THROW_IF(board0 != board_, "board is not restored by undo move method");
   }
   _asm
   {
     rdtsc
-      lea ecx, [t1]
+    lea ecx, [t1]
     mov dword ptr [ecx], eax
-      mov dword ptr [ecx+4], edx
+    mov dword ptr [ecx+4], edx
   }
   ticks_ = (t1 - t0 - 105);
 

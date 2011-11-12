@@ -14,6 +14,8 @@ public:
   enum State { Invalid, Ok, Castle, UnderCheck, Stalemat, DrawReps, DrawInsuf, Draw50Moves, ChessMat };
   enum { PawnIndex, KnightIndex = 8, BishopIndex = 10, RookIndex = 12, QueenIndex = 14, KingIndex = 15, NumOfFigures = 16, NumOfFields = 64, MovesMax = 256 };
 
+  bool operator != (const Board & ) const;
+
   /// c-tor
   Board();
 
@@ -35,7 +37,7 @@ public:
   void unmakeMove(MoveCmd & );
 
   /// generate movements from this position. don't verify and sort them. only calculate sort weights. returns number of moves found
-  int  generateMoves(Move (&)[MovesMax]);
+  int  generateMoves(MoveCmd (&)[MovesMax]);
   /*! end of movements
    */
 
@@ -86,12 +88,20 @@ public:
   /// methods
 private:
 
+  /// is field 'pos' attacked by given color?
+  bool isAttacked(const Figure::Color c, int pos) const;
+
+  // returns number of checking figures
+  int findCheckingFigures(Figure::Color color, int pos);
+
+  /// verify position and calculate checking figures
+  bool invalidate();
+
   /// add new figure. firstly find empty slot (index). try to put pawn to slots 0-7, knight to slots 8-9 etc...
   bool addFigure(const Figure &);
 
   /// set figure with given index to given position
   void setFigure(const Figure &);
-
 
   /// clear board. remove all figures
   void clear();

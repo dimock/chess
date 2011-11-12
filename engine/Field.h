@@ -27,7 +27,10 @@ public:
     index_ = fig.getIndex();
   }
 
-  inline void clear() { type_ = 0; }
+  inline void clear()
+  {
+    *reinterpret_cast<uint8*>(this) = 0;
+  }
 
 private:
 

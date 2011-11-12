@@ -1,7 +1,7 @@
 #include "Board.h"
 #include "MovesTable.h"
 
-int Board::generateMoves(Move (&moves)[MovesMax])
+int Board::generateMoves(MoveCmd (&moves)[MovesMax])
 {
   int m = 0;
   Figure::Color ocolor = Figure::otherColor(color_);
@@ -39,10 +39,11 @@ int Board::generateMoves(Move (&moves)[MovesMax])
 
           const Figure & rfig = getFigure(ocolor, rindex);
 
-          Move & move = moves[m++];
+          MoveCmd & move = moves[m++];
           move.from_ = fig.where();
           move.to_ = *table;
           move.rindex_ = rfig.getIndex();
+          move.new_type_ = 0;
 
           if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
           {
@@ -61,10 +62,11 @@ int Board::generateMoves(Move (&moves)[MovesMax])
 
         for (; *table >= 0 && !getField(*table); ++table)
         {
-          Move & move = moves[m++];
+          MoveCmd & move = moves[m++];
           move.from_ = fig.where();
           move.to_ = *table;
           move.rindex_ = -1;
+          move.new_type_ = 0;
 
           if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
           {
@@ -98,11 +100,12 @@ int Board::generateMoves(Move (&moves)[MovesMax])
             rindex = field.index();
           }
 
-          Move & move = moves[m++];
+          MoveCmd & move = moves[m++];
           
           move.from_ = fig.where();
           move.to_ = *table;
           move.rindex_ = rindex;
+          move.new_type_ = 0;
         }
       }
       break;
@@ -122,11 +125,12 @@ int Board::generateMoves(Move (&moves)[MovesMax])
             rindex = field.index();
           }
 
-          Move & move = moves[m++];
+          MoveCmd & move = moves[m++];
 
           move.from_ = fig.where();
           move.to_ = *table;
           move.rindex_ = rindex;
+          move.new_type_ = 0;
         }
 
         if ( fig.isFirstStep() )
@@ -138,10 +142,12 @@ int Board::generateMoves(Move (&moves)[MovesMax])
               const Figure & krook = getFigure(color_, kfield.index());
               if ( krook.isFirstStep() )
               {
-                Move & move = moves[m++];
+                MoveCmd & move = moves[m++];
 
                 move.from_ = fig.where();
                 move.to_ = fig.where() + 2;
+                move.new_type_ = 0;
+                move.rindex_ = -1;
               }
             }
           }
@@ -153,10 +159,12 @@ int Board::generateMoves(Move (&moves)[MovesMax])
               const Figure & qrook = getFigure(color_, qfield.index());
               if ( qrook.isFirstStep() )
               {
-                Move & move = moves[m++];
+                MoveCmd & move = moves[m++];
 
                 move.from_ = fig.where();
                 move.to_ = fig.where() - 2;
+                move.new_type_ = 0;
+                move.rindex_ = -1;
               }
             }
           }
@@ -191,11 +199,12 @@ int Board::generateMoves(Move (&moves)[MovesMax])
               rindex = field.index();
             }
 
-            Move & move = moves[m++];
+            MoveCmd & move = moves[m++];
 
             move.from_ = fig.where();
             move.to_ = p;
             move.rindex_ = rindex;
+            move.new_type_ = 0;
           }
         }
       }

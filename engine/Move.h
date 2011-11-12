@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BasicTypes.h"
+#include "Field.h"
 
 #pragma pack (push, 1)
 
@@ -28,7 +29,10 @@ struct Move
 __declspec (align(1))
 struct MoveCmd : public Move
 {
-  MoveCmd(const Move & move) : Move(move) {}
+  /// fields, figure and rook moved to
+  Field field_to_;
+  Field field_rook_to_;
+
   /// index of moved figure
   int8 index_;
 
@@ -72,6 +76,9 @@ struct MoveCmd : public Move
   /// performs clear operation before doing movement. it clears only undo info
   void clearUndo()
   {
+    field_to_.clear();
+    field_rook_to_.clear();
+
     en_passant_ = -1;
     castle_ = 0;
     eaten_type_ = 0;
