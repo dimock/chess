@@ -382,6 +382,9 @@ int Board::findCheckingFigures(Figure::Color color, int pos)
 
     if ( !have_figure )
     {
+      if ( checkingNum_ > 1 )
+        return ++checkingNum_;
+
       checking_[checkingNum_++] = i;
     }
   }
