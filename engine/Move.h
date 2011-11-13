@@ -42,6 +42,12 @@ struct MoveCmd : public Move
   /// castle: 0 - no castle, 1 - short castle, 2 - long castle
   int8 castle_;
 
+  /// old position of rook while castle
+  int8 rook_from_;
+
+  /// new position of rook while castle
+  int8 rook_to_;
+
   /// true - if figure haven't moved yet
   bool first_move_;
 
@@ -57,6 +63,9 @@ struct MoveCmd : public Move
   /// do we need Undo
   bool need_undo_;
 
+  /// do we need unmake
+  bool need_unmake_;
+
   /// number of checking figures
   uint8 checkingNum_;
 
@@ -69,9 +78,16 @@ struct MoveCmd : public Move
   /// previous checking figures indices
   uint8 old_checking_[2];
 
+  /// save stage of current color
+  uint8 stage_;
+
   /// weight for sorting moves for alpha-betta
   WeightType weight_;
 
+  /// fifty moves rule
+  uint8 fifty_moves_;
+
+  bool can_win_[2];
 
   /// performs clear operation before doing movement. it clears only undo info
   void clearUndo()
@@ -87,6 +103,9 @@ struct MoveCmd : public Move
     first_move_ = false;
     checkingNum_ = 0;
     need_undo_ = false;
+    need_unmake_ = false;
+    rook_to_ = -1;
+    rook_from_ = -1;
   }
 };
 

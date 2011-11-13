@@ -6,12 +6,14 @@ Board::Board()
 {
   castle_[0] = castle_[1] = 0;
   checking_[0] = checking_[1] = 0;
+  can_win_[0] = can_win_[1] = true;
   checkingNum_ = 0;
   en_passant_ = -1;
   state_ = Invalid;
   color_ = Figure::ColorBlack;
   fiftyMovesCount_ = 0;
   movesCounter_ = 1;
+  stages_[0] = stages_[1] = 0;
 }
 
 void Board::clear()
@@ -304,6 +306,11 @@ bool Board::invalidate()
   if ( isAttacked(ocolor, king1.where()) )
     state_ = UnderCheck;
 
+  verifyChessDraw();
+
+  if ( drawState() )
+    return true;
+
   int cnum = findCheckingFigures(ocolor, king1.where());
   if ( cnum > 2 )
   {
@@ -314,6 +321,21 @@ bool Board::invalidate()
   {
     state_ = UnderCheck;
   }
+
+  // setup stages for each color
+  for (int c = 0; c < 2; ++c)
+  {
+    Figure::Color color =  (Figure::Color)c;
+    Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
+    stages_[color] = 0;
+    if ( !( (fmgr_.queens(ocolor) > 0 && fmgr_.rooks(ocolor)+fmgr_.knights(ocolor)+fmgr_.bishops(ocolor) > 0) ||
+            (fmgr_.rooks(ocolor) > 1 && fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 1) ||
+            (fmgr_.rooks(ocolor) > 0 && ((fmgr_.bishops_w(ocolor) > 0 && fmgr_.bishops_b(ocolor) > 0) || (fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 2))) ) )
+    {
+      stages_[color] = 1;
+    }
+  }
+
 
   MoveCmd moves[MovesMax];
   int snum = generateMoves(moves);
@@ -328,10 +350,10 @@ bool Board::invalidate()
     Board board0(*this);
 #endif
 
-    if ( doMove(move) )
+    if ( makeMove(move) )
       found = true;
 
-    undoMove(move);
+    unmakeMove(move);
 
     THROW_IF(board0 != *this, "board is not restored by undo move method");
   }
@@ -390,77 +412,6 @@ int Board::findCheckingFigures(Figure::Color color, int pos)
   }
 
   return checkingNum_;
-}
-
-
-/// is field 'pos' attacked by given color?
-bool Board::isAttacked(const Figure::Color c, int pos) const
-{
-  for (int i = KingIndex; i >= 0; --i)
-  {
-    const Figure & fig = getFigure(c, i);
-    if ( !fig )
-      continue;
-
-    int dir = FigureDir::dir(fig, pos);
-    if ( (dir < 0) || (Figure::TypePawn == fig.getType() && (2 == dir || 3 == dir)) || (Figure::TypeKing == fig.getType() && dir > 7) )
-      continue;
-
-    if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() || Figure::TypeKing == fig.getType() )
-      return true;
-
-    FPos dp = getDeltaPos(fig.where(), pos);
-
-    THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
-
-    FPos p = FPosIndexer::get(pos) + dp;
-    const FPos & figp = FPosIndexer::get(fig.where());
-    bool have_fig = false;
-    for ( ; p != figp; p += dp)
-    {
-      const Field & field = getField(p.index());
-      if ( !field )
-        continue;
-
-      if ( field.color() == c && Figure::TypeQueen == field.type() )
-      {
-        return true;
-      }
-
-      if ( field.color() == c && (Figure::TypeBishop == field.type() || Figure::TypeRook == field.type()) )
-      {
-        const Figure & afig = getFigure(c, field.index());
-        int dir = FigureDir::dir(afig, pos);
-        if ( dir >= 0 )
-          return true;
-
-        have_fig = true;
-        break;
-      }
-
-      if ( (Figure::TypeKnight == field.type()) || (field.color() != c && Figure::TypeKing != field.type()) || (field.color() == c && Figure::TypeKing == field.type()) )
-      {
-        have_fig = true;
-        break;
-      }
-
-      if ( Figure::TypePawn == field.type() )
-      {
-        const Figure & pawn = getFigure(field.color(), field.index());
-        int d = FigureDir::dir(pawn, pos);
-        if ( 0 == d || 1 == d )
-          return true;
-
-        have_fig = true;
-        break;
-      }
-    }
-
-    if ( !have_fig )
-      return true;
-  }
-
-  return false;
 }
 
 //////////////////////////////////////////////////////////////////////////

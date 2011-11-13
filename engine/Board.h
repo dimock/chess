@@ -24,23 +24,18 @@ public:
 
   /*! movements
    */
-  /// do move. fill undo info,, don't validate
-  bool doMove(MoveCmd & );
-
   /// really make move. perform validation
   bool makeMove(MoveCmd & );
-
-  /// undo move. restore old state after doMove
-  void undoMove(MoveCmd & );
 
   /// called after makeMove
   void unmakeMove(MoveCmd & );
 
   /// generate movements from this position. don't verify and sort them. only calculate sort weights. returns number of moves found
   int  generateMoves(MoveCmd (&)[MovesMax]);
-  /*! end of movements
-   */
+  /*! end of movements */
 
+  /// returns position evaluation that depends on color
+  WeightType evaluate() const;
 
   /// always use this method to get figure
   inline const Figure & getFigure(Figure::Color color, int index) const
@@ -85,8 +80,42 @@ public:
     return Stalemat == state || DrawReps == state || DrawInsuf == state || Draw50Moves == state;
   }
 
+  inline bool drawState() const { return isDraw(state_); }
+
   /// methods
 private:
+
+  /// calculates absolute position evaluation
+  WeightType calculateEval() const;
+  WeightType evaluatePawns(Figure::Color color, int stage) const;
+  WeightType evaluateWinnerLoser() const;
+
+  /// do move. fill undo info, don't validate
+  bool doMove(MoveCmd & );
+
+  /// undo move. restore old state after doMove
+  void undoMove(MoveCmd & );
+
+  /// verify position after movement
+  inline bool wasMoveValid(const MoveCmd & move) const
+  {
+    if ( UnderCheck == move.old_state_ )
+      return wasValidUnderCheck(move);
+    else
+      return wasValidWithoutCheck(move);
+  }
+
+  void verifyChessDraw();
+
+  /// gets index of figure, attacking from given direction
+  int getAttackedFrom(Figure::Color color, int apt) const;
+
+  bool wasValidUnderCheck(const MoveCmd & ) const;
+
+  bool wasValidWithoutCheck(const MoveCmd & ) const;
+
+  /// return true if current color is checking
+  bool isChecking(MoveCmd &) const;
 
   /// is field 'pos' attacked by given color?
   bool isAttacked(const Figure::Color c, int pos) const;
@@ -114,6 +143,12 @@ private:
 
   /// indices of checking figures
   int8 checking_[2];
+
+  /// for chess draw detector
+  bool can_win_[2];
+
+  /// game stage - opening, middle-game, etc...
+  uint8 stages_[2];
 
   /// number of checking figures
   int8 checkingNum_;

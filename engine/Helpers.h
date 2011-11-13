@@ -212,38 +212,38 @@ public:
 //  }
 //};
 
-//class DistanceCounter
-//{
-//  int array_[4096];
-//
-//  int dist_dP(FPos dp) const
-//  {
-//    int x = dp.x();
-//    int y = dp.y();
-//    if ( x < 0 )
-//      x = -x;
-//    if ( dp.y() < 0 )
-//      y = -y;
-//    return std::max(x, y);
-//  }
-//
-//public:
-//
-//  DistanceCounter()
-//  {
-//    for (int i = 0; i < 4096; ++i)
-//    {
-//      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
-//      array_[i] = dist_dP(dp);
-//    }
-//  }
-//
-//  int operator [] (int i) const
-//  {
-//    return array_[i];
-//  }
-//};
-//
+class DistanceCounter
+{
+  int array_[4096];
+
+  int dist_dP(FPos dp) const
+  {
+    int x = dp.x();
+    int y = dp.y();
+    if ( x < 0 )
+      x = -x;
+    if ( dp.y() < 0 )
+      y = -y;
+    return std::max(x, y);
+  }
+
+public:
+
+  DistanceCounter()
+  {
+    for (int i = 0; i < 4096; ++i)
+    {
+      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
+      array_[i] = dist_dP(dp);
+    }
+  }
+
+  int operator [] (int i) const
+  {
+    return array_[i];
+  }
+};
+
 //
 //class BorderDistanceCounter
 //{
@@ -307,12 +307,12 @@ inline const FPos & getDeltaPos(int to, int from)
 //}
 
 // returns distance between 2 points - 'a' & 'b'
-//inline int getDistance(int a, int b)
-//{
-//  static DistanceCounter distance_counter;
-//  THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
-//  return distance_counter[(a<<6) | b];
-//}
+inline int getDistance(int a, int b)
+{
+  static DistanceCounter distance_counter;
+  THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
+  return distance_counter[(a<<6) | b];
+}
 
 // returns distance from point to the nearest border
 //inline int distToBorder(int p)

@@ -75,6 +75,7 @@ private:
   bool turned_;
 
   long long ticks_;
+  WeightType wmax_;
 
   volatile bool working_;
 };

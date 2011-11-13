@@ -42,7 +42,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //Board & board = *alg_.getCurrent();
 
 
-  if ( !board_.initialize( "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10" ) )//"rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7" ) )
+  if ( !board_.initialize( "rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
     return false;
 
   return true;
@@ -264,6 +264,8 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     mov dword ptr [ecx], eax
     mov dword ptr [ecx+4], edx
   }
+
+
   num = board_.generateMoves(moves);
 
   if ( !num )
@@ -272,8 +274,8 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
+  wmax_ = -std::numeric_limits<WeightType>::max();
   //ticks_ /= num;
-
   for (int i = 0; i < num; ++i)
   {
     MoveCmd & move = moves[i];
@@ -284,12 +286,15 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 #endif
 
     int index = board_.getField(move.from_).index();
-    if ( board_.doMove(move) )
+    if ( board_.makeMove(move) )
     {
       if ( index == selectedFigure_.getIndex() )
         selectedPositions_.insert(move.to_);
+      WeightType w = board_.evaluate();
+      if ( w > wmax_ )
+        wmax_ = w;
     }
-    board_.undoMove(move);
+    board_.unmakeMove(move);
 
     THROW_IF(board0 != board_, "board is not restored by undo move method");
   }

@@ -284,6 +284,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CheckDetector.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\debut.cpp"
 				>
 			</File>

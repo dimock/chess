@@ -5,111 +5,12 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
 {
   int m = 0;
   Figure::Color ocolor = Figure::otherColor(color_);
-  for (int n = 0; n < NumOfFigures; ++n)
+  for (int n = KingIndex; n >= 0; --n)
   {
     const Figure & fig = getFigure(color_, n);
 
     switch ( fig.getType() )
     {
-    case Figure::TypePawn:
-      {
-        int8 * table = MovesTable::pawn(color_, fig.where());
-
-        for (int i = 0; i < 2; ++i, ++table)
-        {
-          if ( *table < 0 )
-            continue;
-
-          const Field & field = getField(*table);
-          int rindex = -1;
-          if ( field && field.color() == ocolor )
-            rindex = field.index();
-          else if ( en_passant_ >= 0 )
-          {
-            const Figure & rfig = getFigure(ocolor, en_passant_);
-            int8 to = rfig.where();
-            static const int8 delta_pos[] = {8, -8};
-            to += delta_pos[ocolor];
-            if ( to == *table )
-              rindex = en_passant_;
-          }
-
-          if ( rindex < 0 )
-            continue;
-
-          const Figure & rfig = getFigure(ocolor, rindex);
-
-          MoveCmd & move = moves[m++];
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = rfig.getIndex();
-          move.new_type_ = 0;
-
-          if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
-          {
-            move.new_type_ = Figure::TypeQueen;
-
-            moves[m] = move;
-            moves[m++].new_type_ = Figure::TypeRook;
-
-            moves[m] = move;
-            moves[m++].new_type_ = Figure::TypeBishop;
-
-            moves[m] = move;
-            moves[m++].new_type_ = Figure::TypeKnight;
-          }
-        }
-
-        for (; *table >= 0 && !getField(*table); ++table)
-        {
-          MoveCmd & move = moves[m++];
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = -1;
-          move.new_type_ = 0;
-
-          if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
-          {
-            move.new_type_ = Figure::TypeQueen;
-
-            moves[m] = move;
-            moves[m++].new_type_ = Figure::TypeRook;
-
-            moves[m] = move;
-            moves[m++].new_type_ = Figure::TypeBishop;
-
-            moves[m] = move;
-            moves[m++].new_type_ = Figure::TypeKnight;
-          }
-        }
-      }
-      break;
-
-    case Figure::TypeKnight:
-      {
-        int8 * table = MovesTable::knight(fig.where());
-
-        for (; *table >= 0; ++table)
-        {
-          const Field & field = getField(*table);
-          int rindex = -1;
-          if ( field )
-          {
-            if ( field.color() == color_ )
-              continue;
-            rindex = field.index();
-          }
-
-          MoveCmd & move = moves[m++];
-          
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = rindex;
-          move.new_type_ = 0;
-        }
-      }
-      break;
-
     case Figure::TypeKing:
       {
         int8 * table = MovesTable::king(fig.where());
@@ -133,7 +34,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
           move.new_type_ = 0;
         }
 
-        if ( fig.isFirstStep() )
+        if ( fig.isFirstStep() && state_ != UnderCheck )
         {
           {
             const Field & kfield = getField(fig.where()+3);
@@ -209,7 +110,110 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
         }
       }
       break;
+
+    case Figure::TypeKnight:
+      {
+        int8 * table = MovesTable::knight(fig.where());
+
+        for (; *table >= 0; ++table)
+        {
+          const Field & field = getField(*table);
+          int rindex = -1;
+          if ( field )
+          {
+            if ( field.color() == color_ )
+              continue;
+            rindex = field.index();
+          }
+
+          MoveCmd & move = moves[m++];
+
+          move.from_ = fig.where();
+          move.to_ = *table;
+          move.rindex_ = rindex;
+          move.new_type_ = 0;
+        }
+      }
+      break;
+
+    case Figure::TypePawn:
+      {
+        int8 * table = MovesTable::pawn(color_, fig.where());
+
+        for (int i = 0; i < 2; ++i, ++table)
+        {
+          if ( *table < 0 )
+            continue;
+
+          const Field & field = getField(*table);
+          int rindex = -1;
+          if ( field && field.color() == ocolor )
+            rindex = field.index();
+          else if ( en_passant_ >= 0 )
+          {
+            const Figure & rfig = getFigure(ocolor, en_passant_);
+            int8 to = rfig.where();
+            static const int8 delta_pos[] = {8, -8};
+            to += delta_pos[ocolor];
+            if ( to == *table )
+              rindex = en_passant_;
+          }
+
+          if ( rindex < 0 )
+            continue;
+
+          const Figure & rfig = getFigure(ocolor, rindex);
+
+          MoveCmd & move = moves[m++];
+          move.from_ = fig.where();
+          move.to_ = *table;
+          move.rindex_ = rfig.getIndex();
+          move.new_type_ = 0;
+
+          if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
+          {
+            move.new_type_ = Figure::TypeQueen;
+
+            moves[m] = move;
+            moves[m++].new_type_ = Figure::TypeRook;
+
+            moves[m] = move;
+            moves[m++].new_type_ = Figure::TypeBishop;
+
+            moves[m] = move;
+            moves[m++].new_type_ = Figure::TypeKnight;
+          }
+        }
+
+        for (; *table >= 0 && !getField(*table); ++table)
+        {
+          MoveCmd & move = moves[m++];
+          move.from_ = fig.where();
+          move.to_ = *table;
+          move.rindex_ = -1;
+          move.new_type_ = 0;
+
+          if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
+          {
+            move.new_type_ = Figure::TypeQueen;
+
+            moves[m] = move;
+            moves[m++].new_type_ = Figure::TypeRook;
+
+            moves[m] = move;
+            moves[m++].new_type_ = Figure::TypeBishop;
+
+            moves[m] = move;
+            moves[m++].new_type_ = Figure::TypeKnight;
+          }
+        }
+      }
+      break;
     }
+
+    // only king's movements are available
+    if ( checkingNum_ > 1 )
+      break;
   }
 
   return m;
