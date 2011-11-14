@@ -82,6 +82,8 @@ public:
 
   inline bool drawState() const { return isDraw(state_); }
 
+  void zeroMovesFound();
+
   /// methods
 private:
 

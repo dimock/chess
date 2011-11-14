@@ -273,6 +273,15 @@ bool Board::initialize(const char * fen)
 }
 
 //////////////////////////////////////////////////////////////////////////
+void Board::zeroMovesFound()
+{
+  if ( UnderCheck == state_ )
+    state_ = ChessMat;
+  else if ( !drawState() )
+    state_ = Stalemat;
+}
+
+//////////////////////////////////////////////////////////////////////////
 /// verification of move/unmove methods
 bool Board::operator != (const Board & other) const
 {

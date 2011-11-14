@@ -13,7 +13,7 @@ std::auto_ptr<QImage> ChessPosition::fimages_[12];
 
 using namespace std;
 
-ChessPosition::ChessPosition() : working_(false), turned_(false)
+ChessPosition::ChessPosition() : working_(false), turned_(false), currentMove_(-1)
 {
   //lastStep_.clear();
 
@@ -41,7 +41,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
 
   //Board & board = *alg_.getCurrent();
 
-
+  currentMove_ = -1;
   if ( !board_.initialize( "rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
     return false;
 
@@ -380,7 +380,7 @@ bool ChessPosition::makeMovement(const QPoint & pt)
   if ( idx < 0 )
     return false;
 
-  return applyMove(moves[idx]);
+  return applyMove(moves[idx], true);
 }
 
 //const Figure * ChessPosition::getSelection() const
@@ -427,7 +427,7 @@ Board ChessPosition::getBoard() const
 //  return depth;
 //}
 //
-bool ChessPosition::applyMove(const MoveCmd & move)
+bool ChessPosition::applyMove(const MoveCmd & move, bool append)
 {
   if ( working_ )
     return false;
@@ -437,7 +437,41 @@ bool ChessPosition::applyMove(const MoveCmd & move)
 
   if ( board_.makeMove(mmove) )
   {
-    moves_.push_back(mmove);
+    if ( append )
+    {
+      if ( currentMove_ < (int)moves_.size() && currentMove_ >= -1 && moves_.size() > 0 )
+      {
+        currentMove_++;
+        moves_.erase(moves_.begin()+currentMove_, moves_.end());
+      }
+
+      moves_.push_back(mmove);
+      currentMove_ = moves_.size()-1;
+    }
+
+    // verify if there is draw or mat
+#ifndef NDEBUG
+    Board board0 = board_;
+#endif
+
+    MoveCmd moves[Board::MovesMax];
+    int num = board_.generateMoves(moves);
+    bool found = false;
+    for (int i = 0; !found && i < num; ++i)
+    {
+      MoveCmd & m = moves[i];
+      m.clearUndo();
+      if ( board_.makeMove(m) )
+        found = true;
+
+      board_.unmakeMove(m);
+
+      THROW_IF(board0 != board_, "board is not restored by undo move method");
+    }
+
+    if ( !found )
+      board_.zeroMovesFound();
+
     return true;
   }
   else
@@ -445,17 +479,6 @@ bool ChessPosition::applyMove(const MoveCmd & move)
     board_.unmakeMove(mmove);
     return false;
   }
-
-  //Step astep = step;
-  //alg_.applyStep(astep);
-  //if ( alg_.getCurrent() )
-  //  board_ = *alg_.getCurrent();
-
-  //lastStep_.clear();
-  //if ( alg_.lastStep() )
-  //  lastStep_ = *alg_.lastStep();
-
-  //return true;
 }
 
 int ChessPosition::movesCount() const
@@ -479,33 +502,24 @@ int ChessPosition::movesCount() const
 //  return alg_.calculateSteps(steps);
 //}
 //
-//void ChessPosition::prevPos()
-//{
-//  if ( working_ )
-//    return;
-//
-//  alg_.prevPos();
-//  if ( alg_.getCurrent() )
-//    board_ = *alg_.getCurrent();
-//
-//  lastStep_.clear();
-//  if ( alg_.lastStep() )
-//    lastStep_ = *alg_.lastStep();
-//}
-//
-//void ChessPosition::nextPos()
-//{
-//  if ( working_ )
-//    return;
-//
-//  alg_.nextPos();
-//  if ( alg_.getCurrent() )
-//    board_ = *alg_.getCurrent();
-//
-//  lastStep_.clear();
-//  if ( alg_.lastStep() )
-//    lastStep_ = *alg_.lastStep();
-//}
+void ChessPosition::prevPos()
+{
+  if ( working_ || currentMove_ < 0 )
+    return;
+
+  MoveCmd move = moves_[currentMove_--];
+  board_.unmakeMove(move);
+}
+
+void ChessPosition::nextPos()
+{
+  if ( working_ || currentMove_ >= (int)moves_.size()-1 || currentMove_ < -1 )
+    return;
+
+  MoveCmd move = moves_[++currentMove_];
+
+  applyMove(move, false);
+}
 
 bool ChessPosition::save() const
 {

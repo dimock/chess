@@ -28,12 +28,12 @@ public:
 
   Board getBoard() const;
   //int doStep(CalcResult & cres);
-  bool applyMove(const MoveCmd & );
+  bool applyMove(const MoveCmd & , bool append);
   int movesCount() const;
   //void stop();
   //bool calculateSteps(std::vector<Step> & steps);
-  //void prevPos();
-  //void nextPos();
+  void prevPos();
+  void nextPos();
   bool save() const;
   bool load();
 
@@ -56,6 +56,7 @@ private:
 	void drawFigures(QPainter *, QSize & ) const;
   void drawCurrentMoving(QPainter * , QSize & , const QPoint & cursorPt) const;
 
+  int currentMove_;
   std::vector<MoveCmd> moves_; 
   std::vector<MoveCmd> selectedMoves_;
   std::set<int> selectedPositions_;
