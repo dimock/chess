@@ -21,14 +21,14 @@ public:
   bool initialize(bool enableBook, int depthMax);
   void setUpLeft(const QPoint & upleft) const { upleft_ = upleft; }
 	void draw(QWidget * view, const QPoint & cursorPt) const;
-  //bool makeFigureStep(const QPoint & pt);
+  bool makeMovement(const QPoint & pt);
   bool selectFigure(const QPoint & pt);
   void setTurned(bool t) { turned_ = t; }
   void clearSelected();
 
   Board getBoard() const;
   //int doStep(CalcResult & cres);
-  //bool applyStep(const Step & step);
+  bool applyMove(const MoveCmd & );
   int movesCount() const;
   //void stop();
   //bool calculateSteps(std::vector<Step> & steps);
@@ -50,16 +50,14 @@ private:
   int  getPositionOnPt(const QPoint & pt) const;
   //const Figure * getSelection() const;
 
-  //void clearSteps();
-
   //ChessAlgorithm alg_;
 
 	void drawBoard(QPainter *, QSize & ) const;
 	void drawFigures(QPainter *, QSize & ) const;
   void drawCurrentMoving(QPainter * , QSize & , const QPoint & cursorPt) const;
 
-  //std::vector<Step> steps_; 
-  //std::vector<Step> selectedSteps_;
+  std::vector<MoveCmd> moves_; 
+  std::vector<MoveCmd> selectedMoves_;
   std::set<int> selectedPositions_;
   //Step lastStep_;
   Board board_;

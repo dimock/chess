@@ -246,10 +246,12 @@ bool ChessPosition::selectFigure(const QPoint & pt)
   if ( working_ )
     return false;
 
+  selectedMoves_.clear();
   selectedPositions_.clear();
+
   if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board_.getColor() )
   {
-    selectedFigure_.setType(Figure::TypeNone);
+    selectedFigure_.clear();
     return false;
   }
 
@@ -289,7 +291,10 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     if ( board_.makeMove(move) )
     {
       if ( index == selectedFigure_.getIndex() )
+      {
         selectedPositions_.insert(move.to_);
+        selectedMoves_.push_back(move);
+      }
       WeightType w = board_.evaluate();
       if ( w > wmax_ )
         wmax_ = w;
@@ -315,70 +320,68 @@ bool ChessPosition::selectFigure(const QPoint & pt)
   return true;
 }
 
-//bool ChessPosition::makeFigureStep(const QPoint & pt)
-//{
-//  if ( working_ )
-//    return false;
-//
-//  int pos = getPositionOnPt(pt);
-//  if ( pos < 0 )
-//  {
-//    clearSteps();
-//    return false;
-//  }
-//
-//  std::vector<Step> steps;
-//  for (size_t i = 0; i < selectedSteps_.size(); ++i)
-//  {
-//    const Step & step = selectedSteps_[i];
-//    if ( step.to_ == pos )
-//      steps.push_back(step);
-//  }
-//  clearSteps();
-//
-//  if ( steps.size() == 0 )
-//    return false;
-//
-//  int idx = -1;
-//  if ( steps.size() == 1 )
-//    idx = 0;
-//  else
-//  {
-//    SelectFigureDlg dlg;
-//    Figure::Type type = Figure::TypeNone;
-//    if ( dlg.exec() == QDialog::Accepted )
-//    {
-//      if ( dlg.rbBishop_->isChecked() )
-//        type = Figure::TypeBishop;
-//      else if ( dlg.rbKnight_->isChecked() )
-//        type = Figure::TypeKnight;
-//      else if ( dlg.rbRook_->isChecked() )
-//        type = Figure::TypeRook;
-//      else if ( dlg.rbQueen_->isChecked() )
-//        type = Figure::TypeQueen;
-//    }
-//    if ( Figure::TypeNone != type )
-//    {
-//      for (size_t i = 0; i < steps.size(); ++i)
-//      {
-//        Step & step = steps[i];
-//        if ( step.newType_ == type )
-//        {
-//          idx = i;
-//          break;
-//        }
-//      }
-//    }
-//  }
-//
-//  clearSteps();
-//
-//  if ( idx < 0 )
-//    return false;
-//
-//  applyStep(steps[idx]);
-//  return true;
-//}
+bool ChessPosition::makeMovement(const QPoint & pt)
+{
+  if ( working_ )
+    return false;
+
+  int pos = getPositionOnPt(pt);
+  if ( pos < 0 )
+  {
+    clearSelected();
+    return false;
+  }
+
+  std::vector<MoveCmd> moves;
+  for (size_t i = 0; i < selectedMoves_.size(); ++i)
+  {
+    const MoveCmd & move = selectedMoves_[i];
+    if ( move.to_ == pos )
+      moves.push_back(move);
+  }
+
+  clearSelected();
+
+  if ( moves.size() == 0 )
+    return false;
+
+  int idx = -1;
+  if ( moves.size() == 1 )
+    idx = 0;
+  else
+  {
+    SelectFigureDlg dlg;
+    Figure::Type type = Figure::TypeNone;
+    if ( dlg.exec() == QDialog::Accepted )
+    {
+      if ( dlg.rbBishop_->isChecked() )
+        type = Figure::TypeBishop;
+      else if ( dlg.rbKnight_->isChecked() )
+        type = Figure::TypeKnight;
+      else if ( dlg.rbRook_->isChecked() )
+        type = Figure::TypeRook;
+      else if ( dlg.rbQueen_->isChecked() )
+        type = Figure::TypeQueen;
+    }
+    if ( Figure::TypeNone != type )
+    {
+      for (size_t i = 0; i < moves.size(); ++i)
+      {
+        MoveCmd & move = moves[i];
+        if ( move.new_type_ == type )
+        {
+          idx = i;
+          break;
+        }
+      }
+    }
+  }
+
+  if ( idx < 0 )
+    return false;
+
+  return applyMove(moves[idx]);
+}
 
 //const Figure * ChessPosition::getSelection() const
 //{
@@ -390,8 +393,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
 void ChessPosition::clearSelected()
 {
-  //steps_.clear();
-  //selectedSteps_.clear();
+  selectedMoves_.clear();
   selectedFigure_.clear();
   selectedPositions_.clear();
 }
@@ -425,23 +427,37 @@ Board ChessPosition::getBoard() const
 //  return depth;
 //}
 //
-//bool ChessPosition::applyStep(const Step & step)
-//{
-//  if ( working_ )
-//    return false;
-//
-//  Step astep = step;
-//  alg_.applyStep(astep);
-//  if ( alg_.getCurrent() )
-//    board_ = *alg_.getCurrent();
-//
-//  lastStep_.clear();
-//  if ( alg_.lastStep() )
-//    lastStep_ = *alg_.lastStep();
-//
-//  return true;
-//}
-//
+bool ChessPosition::applyMove(const MoveCmd & move)
+{
+  if ( working_ )
+    return false;
+
+  MoveCmd mmove = move;
+  mmove.clearUndo();
+
+  if ( board_.makeMove(mmove) )
+  {
+    moves_.push_back(mmove);
+    return true;
+  }
+  else
+  {
+    board_.unmakeMove(mmove);
+    return false;
+  }
+
+  //Step astep = step;
+  //alg_.applyStep(astep);
+  //if ( alg_.getCurrent() )
+  //  board_ = *alg_.getCurrent();
+
+  //lastStep_.clear();
+  //if ( alg_.lastStep() )
+  //  lastStep_ = *alg_.lastStep();
+
+  //return true;
+}
+
 int ChessPosition::movesCount() const
 {
   if ( working_ )

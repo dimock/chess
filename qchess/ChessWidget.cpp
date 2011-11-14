@@ -368,13 +368,13 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
 
   if ( e->button() == Qt::LeftButton )
   {
-    cpos_.clearSelected();
-    //if ( cpos_.makeFigureStep(curPt_) )
-    //{
-    //  changed_ = true;
-    //  stepsCount_ = cpos_.stepsCount();
-    //  onGo();
-    //}
+//    cpos_.clearSelected();
+    if ( cpos_.makeMovement(curPt_) )
+    {
+      changed_ = true;
+      movesCount_ = cpos_.movesCount();
+      //onGo();
+    }
   }
   //else if ( e->button() == Qt::RightButton )
   //{

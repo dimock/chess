@@ -190,7 +190,8 @@ bool Board::makeMove(MoveCmd & move)
     return false;
   }
 
-  isChecking(move);
+  if ( isChecking(move) )
+    state_ = UnderCheck;
 
   move.can_win_[0] = can_win_[0];
   move.can_win_[1] = can_win_[1];
@@ -198,7 +199,11 @@ bool Board::makeMove(MoveCmd & move)
   verifyChessDraw();
 
   if ( drawState() )
+  {
+    can_win_[0] = move.can_win_[0];
+    can_win_[1] = move.can_win_[1];
     return true;
+  }
 
   move.need_unmake_ = true;
 
@@ -216,19 +221,12 @@ bool Board::makeMove(MoveCmd & move)
   }
 
   move.old_checkingNum_ = checkingNum_;
-  if ( checkingNum_ > 0 )
-  {
-    move.old_checking_[0] = checking_[0];
-    move.old_checking_[1] = checking_[1];
-  }
+  move.old_checking_[0] = checking_[0];
+  move.old_checking_[1] = checking_[1];
 
   checkingNum_ = move.checkingNum_;
-  if ( checkingNum_ > 0 )
-  {
-    checking_[0] = move.checking_[0];
-    checking_[1] = move.checking_[1];
-    state_ = UnderCheck;
-  }
+  checking_[0] = move.checking_[0];
+  checking_[1] = move.checking_[1];
 
   THROW_IF( isAttacked(color_, getFigure(Figure::otherColor(color_), KingIndex).where()) && UnderCheck != state_, "check isn't detected" );
 
@@ -245,16 +243,15 @@ void Board::unmakeMove(MoveCmd & move)
   {
     fmgr_.hashColor();
     color_ = Figure::otherColor(color_);
+
     checkingNum_ = move.old_checkingNum_;
+    checking_[0] = move.old_checking_[0];
+    checking_[1] = move.old_checking_[1];
+
+    stages_[color_] = move.stage_;
 
     can_win_[0] = move.can_win_[0];
     can_win_[1] = move.can_win_[1];
-
-    if ( checkingNum_ > 0 )
-    {
-      checking_[0] = move.old_checking_[0];
-      checking_[1] = move.old_checking_[1];
-    }
   }
 
   undoMove(move);
