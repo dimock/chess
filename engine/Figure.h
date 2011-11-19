@@ -13,6 +13,7 @@ public:
 
   // position evaluation. 0 - debut, 1 - endgame; color,type,pos
   static WeightType positionEvaluations_[2][8][64];
+  static uint8 mirrorIndex_[64];
 
 public:
 
@@ -21,10 +22,27 @@ public:
   static WeightType pawnPassed_[2][8];
 
   enum Weights { WeightDraw = 0, WeightMat = 32000 };
-	enum Type    { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
-	enum Color   { ColorBlack, ColorWhite };
+  enum Type  : uint8  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
+  enum Color : uint8  { ColorBlack, ColorWhite };
 
-  static WeightType positionEvaluation(int stage, int color, int type, int pos);
+  static inline WeightType positionEvaluation(uint8 stage, uint8 color, uint8 type, int8 pos)
+  {
+    THROW_IF( stage > 1 || color > 1 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
+
+    //if ( color )
+    //{
+    //  int x = pos & 7;
+    //  int y = 7 - (pos >> 3);
+    //  pos = x | (y << 3);
+    //}
+
+    uint8 cmask = ((int8)(color << 7)) >> 7;
+    uint8 icmask = ~cmask;
+    uint8 i = (mirrorIndex_[pos] & cmask) | (pos | icmask);
+
+    WeightType e = positionEvaluations_[stage][type][i];
+    return e;
+  }
 
   Figure();
 	Figure(Type type, Color c, int x, int y, bool firstStep = false);
@@ -37,7 +55,7 @@ public:
   Type  getType() const{ return (Figure::Type)type_; }
 	void  setMoved() { first_step_ = false; }
   bool  isFirstStep() const { return first_step_; }
-  void  setUnmoved() { first_step_ = true; }
+  void  setFirstStep(bool first_step) { first_step_ = first_step; }
   int   getIndex() const { return index_; }
   void  setIndex(int8 idx) { index_ = idx; }
   int8  where() const { return pos_; }
@@ -228,6 +246,7 @@ class FiguresManager
 {
   static uint64 s_zobristCodes_[64*2*8];
   static uint64 s_zobristColor_;
+  static uint8  s_transposeIndex_[64];
 
 public:
 
@@ -257,10 +276,7 @@ public:
 
     if ( fig.getType() == Figure::TypePawn )
     {
-      int x = fig.where() & 7;
-      int y = fig.where() >> 3;
-      int bit = y | (x << 3);
-
+      int bit = s_transposeIndex_[fig.where()];
       pawn_mask_[fig.getColor()] |= 1ULL << bit;
     }
   }
@@ -275,10 +291,7 @@ public:
 
     if ( fig.getType() == Figure::TypePawn )
     {
-      int x = fig.where() & 7;
-      int y = fig.where() >> 3;
-      int bit = y | (x << 3);
-
+      int bit = s_transposeIndex_[fig.where()];
       pawn_mask_[fig.getColor()] ^= 1ULL << bit;
       THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit), "invalid pawn mask" );
     }
@@ -297,16 +310,13 @@ public:
     mask_[fig.getColor()] ^= 1ULL << from;
     mask_[fig.getColor()] |= 1ULL << to;
 
+    THROW_IF(mask_[fig.getColor()] & (1ULL << from), "invalid figures mask");
+
     if ( fig.getType() != Figure::TypePawn )
       return;
 
-    int xfrom = from & 7;
-    int yfrom = from >> 3;
-    int xto = to & 7;
-    int yto = to >> 3;
-
-    int bit_from = yfrom | (xfrom << 3);
-    int bit_to = yto | (xto << 3);
+    int bit_from = s_transposeIndex_[from];
+    int bit_to = s_transposeIndex_[to];
 
     pawn_mask_[fig.getColor()] ^= 1ULL << bit_from;
     THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit_from), "invalid pawn mask" );

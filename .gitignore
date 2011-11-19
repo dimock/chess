@@ -29,3 +29,5 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 qchess/ui_selfiguredlg.h
 qchess/moc_setparamsdlg.cpp
+chess-helpers/transp.cpp
+chess-helpers/mirror.cpp

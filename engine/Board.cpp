@@ -205,8 +205,8 @@ bool Board::initialize(const char * fen)
         Figure & king = getFigure(fk.color(), fk.index());
         Figure & rook = getFigure(fr.color(), fr.index());
 
-        king.setUnmoved();
-        rook.setUnmoved();
+        king.setFirstStep(true);
+        rook.setFirstStep(true);
       }
 
       ++i;
@@ -371,56 +371,6 @@ bool Board::invalidate()
     state_ = UnderCheck == state_ ? ChessMat : Stalemat;
 
   return true;
-}
-
-int Board::findCheckingFigures(Figure::Color color, int pos)
-{
-  checkingNum_ = 0;
-  for (int i = 0; i < KingIndex; ++i)
-  {
-    const Figure & fig = getFigure(color, i);
-    if ( !fig )
-      continue;
-
-    int dir = FigureDir::dir(fig, pos);
-    if ( (dir < 0) || (Figure::TypePawn == fig.getType() && (2 == dir || 3 == dir)) || (Figure::TypeKing == fig.getType() && dir > 7) )
-      continue;
-
-    if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() )
-    {
-      if ( checkingNum_ > 1 )
-        return ++checkingNum_;
-
-      checking_[checkingNum_++] = i;
-    }
-
-    FPos dp = getDeltaPos(fig.where(), pos);
-
-    THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
-
-    FPos p = FPosIndexer::get(pos) + dp;
-    const FPos & figp = FPosIndexer::get(fig.where());
-    bool have_figure = false;
-    for ( ; p != figp; p += dp)
-    {
-      const Field & field = getField(p.index());
-      if ( field )
-      {
-        have_figure = true;
-        break;
-      }
-    }
-
-    if ( !have_figure )
-    {
-      if ( checkingNum_ > 1 )
-        return ++checkingNum_;
-
-      checking_[checkingNum_++] = i;
-    }
-  }
-
-  return checkingNum_;
 }
 
 //////////////////////////////////////////////////////////////////////////

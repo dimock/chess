@@ -291,11 +291,11 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     int index = board_.getField(move.from_).index();
     if ( board_.makeMove(move) )
     {
-      if ( index == selectedFigure_.getIndex() )
-      {
-        selectedPositions_.insert(move.to_);
-        selectedMoves_.push_back(move);
-      }
+      //if ( index == selectedFigure_.getIndex() )
+      //{
+      //  selectedPositions_.insert(move.to_);
+      //  selectedMoves_.push_back(move);
+      //}
       WeightType w = board_.evaluate();
       if ( w > wmax_ )
         wmax_ = w;

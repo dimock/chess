@@ -145,23 +145,48 @@ WeightType Figure::pawnPassed_[2][8] = {
 
 //////////////////////////////////////////////////////////////////////////
 
-WeightType Figure::positionEvaluation(int stage, int color, int type, int pos)
-{
-  THROW_IF( stage < 0 || stage > 1 || color < 0 || color > 1 || type < 0 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
 
-  if ( color )
-  {
-    int x = pos & 7;
-    int y = 7 - (pos >> 3);
-    pos = x | (y << 3);
-  }
+#define EVALUATE_PAWN_COLUMN(wght, color, icol)\
+{\
+  const Figure & pawn = getFigure(color, (icol));\
+  if ( pawn.getType() == Figure::TypePawn )\
+  {\
+    const uint64 & passmsk = PawnMasks::mask_passed(color, pawn.where());\
+    const uint64 & blckmsk = PawnMasks::mask_blocked(color, pawn.where());\
+    if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )\
+    {\
+      int y = pawn.where() >> 3;\
+      wght += Figure::pawnPassed_[color][y]/* << stage*/;\
+      const uint64 & guardmsk = PawnMasks::mask_guarded(color, pawn.where());\
+      if ( pmsk & guardmsk )\
+      wght += Figure::pawnGuarded_;\
+    }\
+    const uint64 & isomask = PawnMasks::mask_isolated(pawn.where() & 7);\
+    if ( !(pmsk & isomask) && fmgr_.pawns(color) > 1 )\
+    wght += Figure::pawnIsolated_;\
+  }\
+  uint8 column = ((uint8*)&pmsk)[(icol)];\
+  int dblNum = numBitsInByte(column);\
+  WeightType dblMask = ~((dblNum-1) >> 31);\
+  wght -= ((dblNum-1) << 3) & dblMask;/* *Figure::pawnDoubled_;*/\
+}
 
-  WeightType e = positionEvaluations_[stage][type][pos];
-  return e;
+#define EVALUATE_PAWNS(wght, color)\
+{\
+  const uint64 & pmsk = fmgr_.pawn_mask(color);\
+  Figure::Color ocolor = Figure::otherColor(color);\
+  const uint64 & opmsk = fmgr_.pawn_mask(ocolor);\
+  EVALUATE_PAWN_COLUMN(wght, color, 0);\
+  EVALUATE_PAWN_COLUMN(wght, color, 1);\
+  EVALUATE_PAWN_COLUMN(wght, color, 2);\
+  EVALUATE_PAWN_COLUMN(wght, color, 3);\
+  EVALUATE_PAWN_COLUMN(wght, color, 4);\
+  EVALUATE_PAWN_COLUMN(wght, color, 5);\
+  EVALUATE_PAWN_COLUMN(wght, color, 6);\
+  EVALUATE_PAWN_COLUMN(wght, color, 7);\
 }
 
 //////////////////////////////////////////////////////////////////////////
-
 WeightType Board::evaluate() const
 {
   WeightType weight = calculateEval();
@@ -237,61 +262,87 @@ WeightType Board::calculateEval() const
   weight -= kingEval[0];
   weight += kingEval[1];
 
-  if ( fmgr_.pawns() > 0 )
+  if ( fmgr_.pawns(Figure::ColorBlack) )
   {
-    weight -= evaluatePawns(Figure::ColorBlack, stages_[0]);
-    weight += evaluatePawns(Figure::ColorWhite, stages_[1]);
+    WeightType pweight0 = 0;
+    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
+    weight -= pweight0;
   }
 
-  if ( UnderCheck == state_ )
+  if ( fmgr_.pawns(Figure::ColorWhite) )
   {
-    static WeightType s_checkWeight[2] = { 2, -2 };
-    weight += s_checkWeight[color_];
+    WeightType pweight1 = 0;
+    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
+    weight += pweight1;
   }
+
+  //if ( fmgr_.pawns() > 0 )
+  //{
+  //  weight -= evaluatePawns(Figure::ColorBlack, stages_[0]);
+  //  weight += evaluatePawns(Figure::ColorWhite, stages_[1]);
+  //}
+
+  //if ( UnderCheck == state_ )
+  //{
+  //  static WeightType s_checkWeight[2] = { 2, -2 };
+  //  weight += s_checkWeight[color_];
+  //}
 
   return weight;
 }
 
-WeightType Board::evaluatePawns(Figure::Color color, int stage) const
-{
-  const uint64 & pmsk = fmgr_.pawn_mask(color);
 
-  if ( !pmsk )
-    return 0;
 
-  WeightType weight = 0;
-  Figure::Color ocolor = Figure::otherColor(color);
-  const uint64 & opmsk = fmgr_.pawn_mask(ocolor);
-
-  for (int i = 0; i < 8; ++i)
-  {
-    const Figure & pawn = getFigure(color, i);
-    if ( pawn.getType() == Figure::TypePawn )
-    {
-      const uint64 & passmsk = PawnMasks::mask_passed(color, pawn.where());
-      const uint64 & blckmsk = PawnMasks::mask_blocked(color, pawn.where());
-      if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
-      {
-        int y = pawn.where() >> 3;
-        weight += Figure::pawnPassed_[color][y]/* << stage*/;
-
-		    const uint64 & guardmsk = PawnMasks::mask_guarded(color, pawn.where());
-		    if ( pmsk & guardmsk )
-		      weight += Figure::pawnGuarded_;
-      }
-
-      const uint64 & isomask = PawnMasks::mask_isolated(pawn.where() & 7);
-      if ( !(pmsk & isomask) && fmgr_.pawns(color) > 1 )
-        weight += Figure::pawnIsolated_;
-    }
-
-    uint8 column = ((uint8*)&pmsk)[i];
-    int dblNum = numBitsInByte(column);
-    if ( dblNum > 1 )
-      weight += (dblNum-1) * Figure::pawnDoubled_;
-  }
-  return weight;
-}
+//WeightType Board::evaluatePawns(Figure::Color color, int stage) const
+//{
+//  const uint64 & pmsk = fmgr_.pawn_mask(color);
+//
+//  if ( !pmsk )
+//    return 0;
+//
+//  WeightType weight = 0;
+//  Figure::Color ocolor = Figure::otherColor(color);
+//  const uint64 & opmsk = fmgr_.pawn_mask(ocolor);
+//
+//  EVALUATE_PAWN_COLUMN(0);
+//  EVALUATE_PAWN_COLUMN(1);
+//  EVALUATE_PAWN_COLUMN(2);
+//  EVALUATE_PAWN_COLUMN(3);
+//  EVALUATE_PAWN_COLUMN(4);
+//  EVALUATE_PAWN_COLUMN(5);
+//  EVALUATE_PAWN_COLUMN(6);
+//  EVALUATE_PAWN_COLUMN(7);
+//
+//  //for (int i = 0; i < 8; ++i)
+//  //{
+//  //  const Figure & pawn = getFigure(color, i);
+//  //  if ( pawn.getType() == Figure::TypePawn )
+//  //  {
+//  //    const uint64 & passmsk = PawnMasks::mask_passed(color, pawn.where());
+//  //    const uint64 & blckmsk = PawnMasks::mask_blocked(color, pawn.where());
+//  //    if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
+//  //    {
+//  //      int y = pawn.where() >> 3;
+//  //      weight += Figure::pawnPassed_[color][y]/* << stage*/;
+//
+//		//    const uint64 & guardmsk = PawnMasks::mask_guarded(color, pawn.where());
+//		//    if ( pmsk & guardmsk )
+//		//      weight += Figure::pawnGuarded_;
+//  //    }
+//
+//  //    const uint64 & isomask = PawnMasks::mask_isolated(pawn.where() & 7);
+//  //    if ( !(pmsk & isomask) && fmgr_.pawns(color) > 1 )
+//  //      weight += Figure::pawnIsolated_;
+//  //  }
+//
+//  //  uint8 column = ((uint8*)&pmsk)[i];
+//  //  int dblNum = numBitsInByte(column);
+//  //  WeightType dblMask = ~((dblNum-1) >> 31);
+//  //  weight -= ((dblNum-1) << 3) & dblMask;//* Figure::pawnDoubled_;
+//  //}
+//
+//  return weight;
+//}
 
 WeightType Board::evaluateWinnerLoser() const
 {
@@ -338,17 +389,30 @@ WeightType Board::evaluateWinnerLoser() const
   if ( win_color == Figure::ColorBlack )
     weight = -weight;
 
-  if ( fmgr_.pawns() > 0 )
+  //if ( fmgr_.pawns() > 0 )
+  //{
+  //  weight -= evaluatePawns(Figure::ColorBlack, 1);
+  //  weight += evaluatePawns(Figure::ColorWhite, 1);
+  //}
+  if ( fmgr_.pawns(Figure::ColorBlack) )
   {
-    weight -= evaluatePawns(Figure::ColorBlack, 1);
-    weight += evaluatePawns(Figure::ColorWhite, 1);
+    WeightType pweight0 = 0;
+    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
+    weight -= pweight0;
   }
 
-  if ( UnderCheck == state_ )
+  if ( fmgr_.pawns(Figure::ColorWhite) )
   {
-    static WeightType s_checkWeight[2] = { 5, -5 };
-    weight += s_checkWeight[color_];
+    WeightType pweight1 = 0;
+    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
+    weight += pweight1;
   }
+
+  //if ( UnderCheck == state_ )
+  //{
+  //  static WeightType s_checkWeight[2] = { 5, -5 };
+  //  weight += s_checkWeight[color_];
+  //}
 
   return weight;
 }

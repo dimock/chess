@@ -60,14 +60,11 @@ bool Board::doMove(MoveCmd & move)
     rfig.setType(Figure::TypeNone);
   }
 
-  if ( Figure::TypePawn == fig.getType() && fig.isFirstStep() )
+  int pw_dy = move.to_ - fig.where();
+  if ( Figure::TypePawn == fig.getType() && fig.isFirstStep() && (16 == pw_dy || -16 == pw_dy) )
   {
-    int dy = move.to_ - fig.where();
-    if ( 16 == dy || -16 == dy )
-    {
-      en_passant_ = fig.getIndex();
-      fmgr_.hashEnPassant(fig.where(), color_);
-    }
+    en_passant_ = fig.getIndex();
+    fmgr_.hashEnPassant(fig.where(), color_);
   }
 
   move.first_move_ = fig.isFirstStep();
@@ -130,8 +127,7 @@ void Board::undoMove(MoveCmd & move)
 
   // restore position and field
   getField(move.to_) = move.field_to_;
-  if ( move.first_move_ )
-    fig.setUnmoved();
+  fig.setFirstStep(move.first_move_);
   getField(fig.where()).set(fig);
 
   // restore en-passant hash code
@@ -162,10 +158,9 @@ void Board::undoMove(MoveCmd & move)
     getField(move.rook_to_) = move.field_rook_to_;
 
     Figure & rook = getFigure(color_, move.rook_index_);
-
     fmgr_.move(rook, move.rook_from_);
 
-    rook.setUnmoved();
+    rook.setFirstStep(true);
     Field & rfield = getField(rook.where());
     rfield.set(rook);
 
@@ -196,9 +191,7 @@ bool Board::makeMove(MoveCmd & move)
   move.can_win_[0] = can_win_[0];
   move.can_win_[1] = can_win_[1];
 
-  verifyChessDraw();
-
-  if ( drawState() )
+  if ( drawState() || verifyChessDraw() )
   {
     can_win_[0] = move.can_win_[0];
     can_win_[1] = move.can_win_[1];
@@ -209,16 +202,13 @@ bool Board::makeMove(MoveCmd & move)
 
   move.stage_ = stages_[color_];
 
-  if ( move.rindex_ >= 0 && 0 == stages_[color_] ) // do we need to go to endgame if there is capture
-  {
-    Figure::Color ocolor = Figure::otherColor((Figure::Color)color_);
-    if ( !( (fmgr_.queens(ocolor) > 0 && fmgr_.rooks(ocolor)+fmgr_.knights(ocolor)+fmgr_.bishops(ocolor) > 0) ||
-            (fmgr_.rooks(ocolor) > 1 && fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 1) ||
-            (fmgr_.rooks(ocolor) > 0 && ((fmgr_.bishops_w(ocolor) > 0 && fmgr_.bishops_b(ocolor) > 0) || (fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 2))) ) )
-    {
-      stages_[color_] = 1;
-    }
-  }
+  Figure::Color ocolor = Figure::otherColor((Figure::Color)color_);
+  
+  // we need to go to endgame if there is capture and most of material is lost
+  stages_[color_] |= ( (move.rindex_ >= 0 && 0 == stages_[color_]) &&
+    ( !((fmgr_.queens(ocolor) > 0 && fmgr_.rooks(ocolor)+fmgr_.knights(ocolor)+fmgr_.bishops(ocolor) > 0) ||
+        (fmgr_.rooks (ocolor) > 1 && fmgr_.bishops(ocolor)+fmgr_.knights(ocolor) > 1) ||
+        (fmgr_.rooks (ocolor) > 0 && ((fmgr_.bishops_w(ocolor) > 0 && fmgr_.bishops_b(ocolor) > 0) || (fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 2)))) ) ) & 1;
 
   move.old_checkingNum_ = checkingNum_;
   move.old_checking_[0] = checking_[0];
@@ -231,7 +221,7 @@ bool Board::makeMove(MoveCmd & move)
   THROW_IF( isAttacked(color_, getFigure(Figure::otherColor(color_), KingIndex).where()) && UnderCheck != state_, "check isn't detected" );
 
   // now change color
-  color_ = Figure::otherColor(color_);
+  color_ = ocolor;
   fmgr_.hashColor();
 
   return true;
@@ -257,34 +247,27 @@ void Board::unmakeMove(MoveCmd & move)
   undoMove(move);
 }
 
-void Board::verifyChessDraw()
+bool Board::verifyChessDraw()
 {
-  if ( drawState() )
-    return;
-
-  if ( fiftyMovesCount_ == 100 && UnderCheck != state_ || fiftyMovesCount_ > 100 )
+  if ( (fiftyMovesCount_ == 100 && UnderCheck != state_) || (fiftyMovesCount_ > 100) )
   {
     state_ = Draw50Moves;
-    return;
+    return true;
   }
 
-  can_win_[0] = can_win_[1] = true;
-  for (int n = 0; n < 2; ++n)
-  {
-    Figure::Color c = (Figure::Color)n;
-    Figure::Color oc = (Figure::Color)((n + 1) & 1);
-    if ( fmgr_.pawns(c) > 0 || fmgr_.rooks(c) > 0 || fmgr_.queens(c) > 0 )
-      continue;
+  can_win_[0] = ( fmgr_.pawns(Figure::ColorBlack) > 0 || fmgr_.rooks(Figure::ColorBlack) > 0 || fmgr_.queens(Figure::ColorBlack) > 0 ) ||
+                ( fmgr_.knights(Figure::ColorBlack) + fmgr_.bishops(Figure::ColorBlack) > 0 ) ||
+                ( fmgr_.bishops_b(Figure::ColorBlack) + fmgr_.bishops_w(Figure::ColorBlack) > 0 );
 
-    if ( (fmgr_.count(c) == 0) ||
-         (fmgr_.knights(c) <= 2 &&  fmgr_.bishops(c) == 0) ||
-         (fmgr_.knights(c) == 0 && (fmgr_.bishops_b(c) == 0 || fmgr_.bishops_w(c) == 0)) )
-    {
-      can_win_[n] = false;
-      continue;
-    }
-  }
+  can_win_[1] = ( fmgr_.pawns(Figure::ColorWhite) > 0 || fmgr_.rooks(Figure::ColorWhite) > 0 || fmgr_.queens(Figure::ColorWhite) > 0 ) ||
+                ( fmgr_.knights(Figure::ColorWhite) + fmgr_.bishops(Figure::ColorWhite) > 0 ) ||
+                ( fmgr_.bishops_b(Figure::ColorWhite) + fmgr_.bishops_w(Figure::ColorWhite) > 0 );
 
   if ( !can_win_[0] && !can_win_[1] )
+  {
     state_ = DrawInsuf;
+    return true;
+  }
+
+  return false;
 }

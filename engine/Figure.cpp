@@ -1,5 +1,17 @@
 #include "Figure.h"
 
+uint8 Figure::mirrorIndex_[] =
+{
+  56, 57, 58, 59, 60, 61, 62, 63, 
+  48, 49, 50, 51, 52, 53, 54, 55, 
+  40, 41, 42, 43, 44, 45, 46, 47, 
+  32, 33, 34, 35, 36, 37, 38, 39, 
+  24, 25, 26, 27, 28, 29, 30, 31, 
+  16, 17, 18, 19, 20, 21, 22, 23, 
+   8,  9, 10, 11, 12, 13, 14, 15, 
+   0,  1,  2,  3,  4,  5,  6,  7
+};
+
 Figure::Figure() :
   color_(ColorBlack), type_(TypeNone), first_step_(0), index_(-1), pos_(-1)
 {
@@ -45,6 +57,18 @@ const char * Figure::name() const
 }
 
 //////////////////////////////////////////////////////////////////////////
+uint8 FiguresManager::s_transposeIndex_[] =
+{
+  0,  8, 16, 24, 32, 40, 48, 56, 
+  1,  9, 17, 25, 33, 41, 49, 57, 
+  2, 10, 18, 26, 34, 42, 50, 58, 
+  3, 11, 19, 27, 35, 43, 51, 59, 
+  4, 12, 20, 28, 36, 44, 52, 60, 
+  5, 13, 21, 29, 37, 45, 53, 61, 
+  6, 14, 22, 30, 38, 46, 54, 62, 
+  7, 15, 23, 31, 39, 47, 55, 63
+};
+
 uint64 FiguresManager::s_zobristColor_ = 0x929d03167393eb95;
 
 uint64 FiguresManager::s_zobristCodes_ [] = { 0x21c31356ab938c26, 0x4d52c6acefbaf9ec, 0x8af0d2462a35fd4a, 0xc32708cd3f32424c, 0xb8f25b5802933eb2, 0xa74b4465b58e6a78, 0xd9f7cafd84912b9e, 0x396af4c513f6b7d7, 0xdf4482842c103d4b, 0x9796577f6d2bb1a1, 0xbecb3b32173abd63, 0x75996d281d4b4bdb, 0xea73fe137a062e50, 0xec87dc8d3bfb6c3b, 0x4cf65c4ca1a22eef, 0xfdb340f51d19b51a, 

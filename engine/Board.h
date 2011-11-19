@@ -89,7 +89,7 @@ private:
 
   /// calculates absolute position evaluation
   WeightType calculateEval() const;
-  WeightType evaluatePawns(Figure::Color color, int stage) const;
+  //WeightType evaluatePawns(Figure::Color color, int stage) const;
   WeightType evaluateWinnerLoser() const;
 
   /// do move. fill undo info, don't validate
@@ -107,7 +107,7 @@ private:
       return wasValidWithoutCheck(move);
   }
 
-  void verifyChessDraw();
+  bool verifyChessDraw();
 
   /// gets index of figure, attacking from given direction
   int getAttackedFrom(Figure::Color color, int apt) const;
