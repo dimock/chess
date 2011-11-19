@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="qchess"
 	ProjectGUID="{D539E96B-6A8D-3A87-9693-BE8C07B270B3}"
 	RootNamespace="qchess"
@@ -25,6 +25,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="create Qt meta object"
+				CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -119,6 +121,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="create Qt meta object"
+				CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

@@ -21,6 +21,7 @@ ChessPosition::ChessPosition() : working_(false), turned_(false), currentMove_(-
   borderWidth_ = 16;
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
   ticks_ = 0;
+  numOfMoves_ = 0;
 }
 
 void ChessPosition::setMaxDepth(int d)
@@ -257,7 +258,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
   MoveCmd moves[Board::MovesMax];
 
-  int num = 0;
+  numOfMoves_ = 0;
   long long t0, t1;
   _asm
   {
@@ -268,9 +269,9 @@ bool ChessPosition::selectFigure(const QPoint & pt)
   }
 
 
-  num = board_.generateMoves(moves);
+  numOfMoves_ = board_.generateMoves(moves);
 
-  if ( !num )
+  if ( !numOfMoves_ )
   {
     selectedFigure_.setType(Figure::TypeNone);
     return false;
@@ -278,7 +279,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
   wmax_ = -std::numeric_limits<WeightType>::max();
   //ticks_ /= num;
-  for (int i = 0; i < num; ++i)
+  for (int i = 0; i < numOfMoves_; ++i)
   {
     MoveCmd & move = moves[i];
     move.clearUndo();

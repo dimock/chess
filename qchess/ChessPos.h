@@ -38,6 +38,7 @@ public:
   bool load();
 
   long long getTicks() const { return ticks_; }
+  int numOfMoves() const { return numOfMoves_; }
 
 
 private:
@@ -74,6 +75,7 @@ private:
   bool turned_;
 
   long long ticks_;
+  int numOfMoves_;
   WeightType wmax_;
 
   volatile bool working_;
