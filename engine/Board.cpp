@@ -2,27 +2,22 @@
 #include "fpos.h"
 #include "FigureDirs.h"
 
+// static data
+MoveCmd Board::moves_[GameLength];
+char Board::fen_[FENsize];
+const char * Board::stdFEN_ = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 Board::Board()
 {
   clear();
-  //castle_index_[0][0] = castle_index_[0][1] = false;
-  //castle_index_[1][0] = castle_index_[1][1] = false;
-  //castle_[0] = castle_[1] = 0;
-  //checking_[0] = checking_[1] = 0;
-  //can_win_[0] = can_win_[1] = true;
-  //checkingNum_ = 0;
-  //en_passant_ = -1;
-  //state_ = Invalid;
-  //color_ = Figure::ColorBlack;
-  //fiftyMovesCount_ = 0;
-  //movesCounter_ = 1;
-  //halfmovesCounter_ = 0;
-  //stages_[0] = stages_[1] = 0;
 }
 
 void Board::clear()
 {
   fmgr_.clear();
+
+  // clear global FEN
+  fen_[0] = 0;
 
   castle_index_[0][0] = castle_index_[0][1] = false;
   castle_index_[1][0] = castle_index_[1][1] = false;
@@ -54,6 +49,11 @@ bool Board::initialize(const char * fen)
 {
   clear();
 
+  if ( !fen )
+    fen = stdFEN_;
+
+  strncpy(fen_, fen, FENsize);
+
   const char * s = fen;
   int x = 0, y = 7;
   for ( ; s && y >= 0; ++s)
@@ -61,7 +61,7 @@ bool Board::initialize(const char * fen)
     char c = *s;
     if ( '/' == c )
       continue;
-    else if ( c >= '0' && c <= '9')
+    else if ( c >= '0' && c <= '9' )
     {
       int dx = c - '0';
       x += dx;
@@ -475,4 +475,141 @@ bool Board::addFigure(const Figure & fig)
   }
 
   return false;
+}
+
+//////////////////////////////////////////////////////////////////////////
+bool Board::load(Board & board, std::istream & is)
+{
+  const int N = 1024;
+  char str[N];
+  const char * sepr  = " \t\n\r";
+  const char * strmv = "123456789abcdefgh+-OxPNBRQK=#";
+  bool fen_expected = false, fen_init = false;
+
+  const int ML = 16;
+  char smoves[GameLength][ML];
+  int  hmovesN = 0;
+
+  bool annot = false;
+  bool stop = false;
+  while ( !stop && is.getline(str, N-1, '\n') )
+  {
+    bool skip = false;
+    char * s = str;
+    for ( ; *s && !skip; ++s)
+    {
+      // skip separators
+      if ( strchr(sepr, *s) )
+        continue;
+
+      // skip annotations {}
+      if ( '{' == *s )
+        annot = true;
+
+      if ( annot && '}' != *s )
+        continue;
+
+      annot = false;
+
+      // skip comment string
+      if ( '%' == *s )
+      {
+        skip = true;
+        break;
+      }
+
+      if ( '.' == *s ) // skip .
+        continue;
+      else if ( isdigit(*s) && (*(s+1) && (isdigit(*(s+1)) || strchr(sepr, *(s+1)) || '.' == *(s+1))) ) // skip move number
+      {
+        for ( ;*s && isdigit(*s); ++s);
+        if ( !*s )
+          skip = true;
+      }
+      else if ( isalpha(*s) || (isdigit(*s) && (*(s+1) && isalpha(*(s+1)))) ) // read move
+      {
+        int i = 0;
+        for ( ;*s && i < ML && strchr(strmv, *s); ++s)
+          smoves[hmovesN][i++] = *s;
+        if ( i < ML )
+          smoves[hmovesN][i] = 0;
+        hmovesN++;
+        if ( !*s )
+          skip = true;
+      }
+      else if ( '*' == *s || isdigit(*s) && (*(s+1) && '-' == *(s+1)) ) // end game
+      {
+        skip = true;
+        stop = true;
+      }
+      else if ( '[' == *s ) // read some extra params, like FEN
+      {
+        char param[N]= {'\0'};
+        char value[N]= {'\0'};
+        for ( ; *s && ']' != *s; ++s)
+        {
+          // skip separators
+          if ( strchr(sepr, *s) )
+            continue;
+
+          // read param name
+          if ( isalpha(*s) && !param[0] )
+          {
+            for (int i = 0; *s && i < N && !strchr(sepr, *s); ++s, ++i)
+              param[i] = *s;
+            continue;
+          }
+
+          // read value
+          if ( '"' == *s && !value[0] )
+          {
+            s++;
+            for (int i = 0; *s && i < N && '"' != *s; ++s, ++i)
+              value[i] = *s;
+            continue;
+          }
+        }
+
+        if ( strcmp(param, "SetUp") == 0 && '1' == value[0] )
+          fen_expected = true;
+        else if ( strcmp(param, "FEN") == 0 && fen_expected )
+        {
+          if ( !board.initialize(value) )
+            return false;
+          fen_init = true;
+        }
+        skip = true;
+      }
+    }
+  }
+
+  if ( !fen_init )
+    board.initialize(0);
+
+  for (int i = 0; i < hmovesN; ++i)
+  {
+    const char * smove = smoves[i];
+    Move move;
+    if ( !parseSAN(board, smove, move) )
+      return false;
+
+    if ( !board.makeMove(move) )
+    {
+      board.unmakeMove();
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool Board::save(const Board & board, std::ostream & os)
+{
+  if ( strlen(fen_) > 0 )
+  {
+    os << "[SetUp \"1\"] " << std::endl;
+    os << "[FEN \"" << fen_ << "\"]" << std::endl;
+  }
+
+  return true;
 }

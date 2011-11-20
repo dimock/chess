@@ -552,7 +552,7 @@ bool ChessPosition::load()
 //////////////////////////////////////////////////////////////////////////
 bool ChessPosition::doSave() const
 {
-	QDir dir(QObject::tr(".\\saved"), QObject::tr("*.pos"));
+	QDir dir(QObject::tr(".\\games"), QObject::tr("*.pgn"));
 	QString fname;
 	int num = 0;
 	if ( dir.exists() )
@@ -567,7 +567,7 @@ bool ChessPosition::doSave() const
 		}
 		if ( fname.size() > 0 )
 		{
-			QRegExp re(QObject::tr("(board_)(\\d+)"), Qt::CaseInsensitive);
+			QRegExp re(QObject::tr("(game_)(\\d+)"), Qt::CaseInsensitive);
 			if ( re.indexIn(fname) != -1 )
 			{
 				QString str = re.cap(2);
@@ -581,21 +581,20 @@ bool ChessPosition::doSave() const
 	else
 	{
 		QDir d(QObject::tr("."));
-		d.mkdir(QObject::tr(".\\saved"));
+		d.mkdir(QObject::tr(".\\games"));
 	}
 	QString name;
-	name.sprintf( "board_%03d.pos", num + 1 );
+	name.sprintf( "game_%03d.pgn", num + 1 );
 	fname = dir.filePath(name);
 
 	std::ofstream out(fname.toAscii());
 
-	//alg_.save(out);
-	return true;
+  return Board::save(board_, out);
 }
 
 bool ChessPosition::doLoad()
 {
-	QString fname = QFileDialog::getOpenFileName(0, QObject::tr("Open position"), QObject::tr(".\\saved"), QObject::tr("Position Files (*.pos)"));
+	QString fname = QFileDialog::getOpenFileName(0, QObject::tr("Read game in PGN format"), QObject::tr(".\\games"), QObject::tr("PGN files (*.pgn)"));
 	if ( fname.size() == 0 )
 		return false;
 
@@ -604,7 +603,6 @@ bool ChessPosition::doLoad()
 	if ( !in )
 		return false;
 
-	//alg_.load(in);
-
-	return true;
+  bool res = Board::load(board_, in);
+  halfmovesNumber_ = board_.halfmovesCount();
 }

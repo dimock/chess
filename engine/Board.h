@@ -12,12 +12,15 @@ public:
 
   /// constants
   enum State { Invalid, Ok, Castle, UnderCheck, Stalemat, DrawReps, DrawInsuf, Draw50Moves, ChessMat };
-  enum { PawnIndex, KnightIndex = 8, BishopIndex = 10, RookIndex = 12, QueenIndex = 14, KingIndex = 15, NumOfFigures = 16, NumOfFields = 64, MovesMax = 256, GameLength = 4096 };
+  enum { PawnIndex, KnightIndex = 8, BishopIndex = 10, RookIndex = 12, QueenIndex = 14, KingIndex = 15, NumOfFigures = 16, NumOfFields = 64, MovesMax = 256, FENsize = 512, GameLength = 4096 };
 
   bool operator != (const Board & ) const;
 
   /// c-tor
   Board();
+
+  static bool load(Board & , std::istream &);
+  static bool save(const Board & , std::ostream &);
 
   /// initialize from FEN
   bool initialize(const char * fen);
@@ -150,6 +153,9 @@ private:
 
   /// data
 private:
+
+  static const char * stdFEN_;
+  static char fen_[FENsize];
 
   /// index of castle's possibility
   bool castle_index_[2][2];

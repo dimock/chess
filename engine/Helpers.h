@@ -326,3 +326,6 @@ inline int getDistance(int a, int b)
 //bool moveToStr(const StepId & sid, char * str);
 //bool strToMove(char * str, Board * board, StepId & sid);
 //bool formatMove(StepId & sid, char * str);
+
+struct Move;
+bool parseSAN(Board & board, const char * str, Move & move);

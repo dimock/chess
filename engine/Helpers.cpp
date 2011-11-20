@@ -23,6 +23,141 @@ unsigned long xorshf96()
 }
 
 //////////////////////////////////////////////////////////////////////////
+Figure::Type toFtype(char c)
+{
+  if ( 'N' == c )
+    return Figure::TypeKnight;
+  else if ( 'B' == c )
+    return Figure::TypeBishop;
+  else if ( 'R' == c )
+    return Figure::TypeRook;
+  else if ( 'Q' == c )
+    return Figure::TypeQueen;
+  else if ( 'K' == c )
+    return Figure::TypeKing;
+  return Figure::TypeNone;
+}
+
+bool iscolumn(char c)
+{
+  return c >= 'a' && c <= 'h';
+}
+
+bool parseSAN(Board & board, const char * str, Move & move)
+{
+  if ( !str )
+    return false;
+
+  Figure::Type type = Figure::TypePawn;
+  Figure::Type new_type = Figure::TypeNone;
+
+  int xfrom = -1, yfrom = -1;
+  int from  = -1, to = -1;
+  bool capture = false;
+  bool check = false;
+  bool chessmat = false;
+
+  const char * s = str;
+
+  if ( strchr("PNBRQK", *s) )
+  {
+    type = toFtype(*s);
+    s++;
+  }
+  else if ( strcmp("O-O", s) == 0 )
+  {
+    from = board.getColor() ? 4 : 60;
+    to   = board.getColor() ? 7 : 63;
+  }
+  else if ( strcmp("O-O-O", s) == 0 )
+  {
+    from = board.getColor() ? 4 : 60;
+    to   = board.getColor() ? 0 : 56;
+  }
+
+  // should be at least 2 chars
+  int n = strlen(s);
+  if ( n < 2 )
+    return false;
+
+  if ( to < 0 ) // not found yet
+  {
+    if ( isdigit(s[0]) && iscolumn(s[1]) ) // from row number
+    {
+      yfrom = s[0] - '1';
+      s++;
+    }
+    else if ( iscolumn(s[0]) && (iscolumn(s[1]) || 'x' == s[1]) ) // from column number
+    {
+      xfrom = s[0] - 'a';
+      s++;
+    }
+    else if ( n > 2 && iscolumn(s[0]) && isdigit(s[1]) && iscolumn(s[2]) ) // exact from point
+    {
+      xfrom = s[0] - 'a';
+      yfrom = s[1] - '1';
+      s += 2;
+    }
+    
+    if ( 'x' == s[0] ) // capture
+    {
+      capture = true;
+      s++;
+    }
+
+    n = strlen(s);
+    if ( !*s || !iscolumn(s[0]) || n < 2 )
+      return false;
+
+    to = (s[0] - 'a') | ((s[1] - '1') << 3);
+    s += 2;
+    n = strlen(s);
+
+    if ( '=' == s[0] )
+    {
+      if ( n < 2 )
+        return false;
+      new_type = toFtype(s[1]);
+      s += 2;
+      n = strlen(s);
+    }
+
+    if ( '+' == s[0] )
+      check = true;
+    else if ( '#' == s[0] )
+      chessmat = true;
+  }
+
+  if ( to < 0 )
+    return false;
+
+  if ( xfrom >= 0 && yfrom >= 0 )
+    from = xfrom | (yfrom << 3);
+
+  Move moves[Board::MovesMax];
+  int num = board.generateMoves(moves);
+  for (int i = 0; i < num; ++i)
+  {
+    const Move & m = moves[i];
+    bool valid = false;
+    if ( board.makeMove(m) )
+      valid = true;
+    board.unmakeMove();
+
+    if ( !valid )
+      continue;
+
+    const Field & field = board.getField(m.from_);
+    if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && 
+        (from > 0 && from == m.from_ || xfrom >= 0 && (m.from_ & 7) == xfrom || yfrom >= 0 && (m.from_ >>3) == yfrom || xfrom < 0 && yfrom < 0))
+    {
+      move = m;
+      return true;
+    }
+  }
+  return false;
+}
+//////////////////////////////////////////////////////////////////////////
 
 DebutsTable::DebutsTable() :
   current_(-1)

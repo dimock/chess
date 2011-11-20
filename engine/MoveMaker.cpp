@@ -1,7 +1,5 @@
 #include "Board.h"
 
-MoveCmd Board::moves_[GameLength];
-
 bool Board::doMove()
 {
   MoveCmd & move = moves_[halfmovesCounter_-1];
