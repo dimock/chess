@@ -290,6 +290,11 @@ void Board::zeroMovesFound()
     state_ = ChessMat;
   else if ( !drawState() )
     state_ = Stalemat;
+
+  THROW_IF(halfmovesCounter_ <= 0, "invalid halfmoves counter in zero moves found method");
+
+  MoveCmd & move = moves_[halfmovesCounter_-1];
+  move.state_ = state_;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -357,14 +362,13 @@ bool Board::invalidate()
   }
 
 
-  MoveCmd moves[MovesMax];
+  Move moves[MovesMax];
   int snum = generateMoves(moves);
 
   bool found = false;
   for (int i = 0; !found && i < snum; ++i)
   {
-    MoveCmd & move = moves[i];
-    move.clearUndo();
+    Move & move = moves[i];
 
 #ifndef NDEBUG
     Board board0(*this);
@@ -373,7 +377,7 @@ bool Board::invalidate()
     if ( makeMove(move) )
       found = true;
 
-    unmakeMove(move);
+    unmakeMove();
 
     THROW_IF(board0 != *this, "board is not restored by undo move method");
   }

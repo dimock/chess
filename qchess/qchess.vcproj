@@ -323,7 +323,7 @@
 						Description="create Qt meta object"
 						CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp"
 						AdditionalDependencies=""
-						Outputs=".\moc_setparamsdlg.cpp"
+						Outputs="moc_setparamsdlg.cpp"
 					/>
 				</FileConfiguration>
 			</File>

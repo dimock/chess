@@ -24,19 +24,31 @@ struct Move
   int8 rindex_;
 };
 
-__declspec (align(1))
-struct MoveKey
-{
-  Move move_;
-  uint64 zcode_;
-  bool irreversible_;
-};
-
 /*! complete move structure with all necessary unmove information
   */
 __declspec (align(1))
 struct MoveCmd : public Move
 {
+  MoveCmd() {}
+
+  MoveCmd(const Move & move) : Move(move)
+  {}
+
+  MoveCmd & operator = (const Move & move)
+  {
+    *((Move*)this) = move;
+    return *this;
+  }
+
+  /// Zobrist key - used in fifty-move-rule detector
+  uint64 zcode_;
+
+  /// if this move is irreversible, we don't need to enumerate any move in fifty-move-rule detector
+  bool  irreversible_;
+
+  /// state of board after move
+  uint8 state_;
+
   /// fields, figure and rook moved to
   Field field_to_;
   Field field_rook_to_;
@@ -111,6 +123,7 @@ struct MoveCmd : public Move
     eaten_type_ = 0;
     rook_index_ = -1;
     old_state_ = 0;
+    state_ = 0;
     first_move_ = false;
     checkingNum_ = 0;
     need_undo_ = false;

@@ -182,13 +182,13 @@ bool ChessWidget::onSave()
 
 void ChessWidget::onNext()
 {
-  cpos_.nextPos();
+  cpos_.redo();
   update();
 }
 
 void ChessWidget::onPrev()
 {
-  cpos_.prevPos();
+  cpos_.undo();
   update();
 }
 

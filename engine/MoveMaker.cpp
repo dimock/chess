@@ -1,14 +1,19 @@
 #include "Board.h"
 
-MoveKey Board::moves_[GameLength];
+MoveCmd Board::moves_[GameLength];
 
-bool Board::doMove(MoveCmd & move)
+bool Board::doMove()
 {
+  MoveCmd & move = moves_[halfmovesCounter_-1];
+
   Figure & fig = getFigure(color_, getField(move.from_).index());
   Figure::Color ocolor = Figure::otherColor(color_);
   move.en_passant_ = en_passant_;
   move.old_state_ = state_;
   move.index_ = fig.getIndex();
+
+  if ( drawState() || ChessMat == state_ )
+    return false;
 
   state_ = Ok;
 
@@ -128,31 +133,37 @@ bool Board::doMove(MoveCmd & move)
 
   if ( Figure::TypePawn == fig.getType() || move.rindex_ >= 0 )
   {
-    moves_[halfmovesCounter_].irreversible_ = true;
+    move.irreversible_ = true;
     fiftyMovesCount_ = 0;
   }
   else
   {
-    moves_[halfmovesCounter_].irreversible_ = false;
+    move.irreversible_ = false;
     fiftyMovesCount_++;
   }
 
   // remember hash code for threefold repetition detection
   fmgr_.hashColor();
-  moves_[halfmovesCounter_].move_  = move;
-  moves_[halfmovesCounter_].zcode_ = fmgr_.hashCode();
-  halfmovesCounter_++;
+  move.zcode_ = fmgr_.hashCode();
+
+  if ( !color_ )
+    movesCounter_++;
 
   return true;
 }
 
-void Board::undoMove(MoveCmd & move)
+void Board::undoMove()
 {
+  MoveCmd & move = moves_[halfmovesCounter_];
+
   // always restore state, because we have changed it
   state_ = (State)move.old_state_;
 
   if ( !move.need_undo_ )
     return;
+
+  if ( !color_ )
+    movesCounter_--;
 
   // restore hash color. we change it early for 3-fold repetition detection
   fmgr_.hashColor();
@@ -228,13 +239,20 @@ void Board::undoMove(MoveCmd & move)
     castle_[color_] = 0;
   }
 
-  halfmovesCounter_--;
   fiftyMovesCount_ = move.fifty_moves_;
 }
 
-bool Board::makeMove(MoveCmd & move)
+bool Board::makeMove(const Move & mv)
 {
-  if ( !doMove(move) )
+  THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
+
+  halfmovesCounter_++;
+
+  MoveCmd & move = moves_[halfmovesCounter_-1];
+  move.clearUndo();
+  move = mv;
+
+  if ( !doMove() )
   {
     state_ = Invalid;
     return false;
@@ -259,6 +277,7 @@ bool Board::makeMove(MoveCmd & move)
     return true;
   }
 
+  move.state_ = state_;
   move.need_unmake_ = true;
 
   move.stage_ = stages_[color_];
@@ -287,8 +306,14 @@ bool Board::makeMove(MoveCmd & move)
   return true;
 }
 
-void Board::unmakeMove(MoveCmd & move)
+void Board::unmakeMove()
 {
+  THROW_IF(halfmovesCounter_ <= 0 || halfmovesCounter_ > GameLength, "number of halfmoves is invalid");
+
+  halfmovesCounter_--;
+
+  MoveCmd & move = moves_[halfmovesCounter_];
+
   if ( move.need_unmake_ )
   {
     color_ = Figure::otherColor(color_);
@@ -303,7 +328,7 @@ void Board::unmakeMove(MoveCmd & move)
     can_win_[1] = move.can_win_[1];
   }
 
-  undoMove(move);
+  undoMove();
 }
 
 bool Board::verifyChessDraw()

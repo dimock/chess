@@ -25,13 +25,13 @@ public:
   /*! movements
    */
   /// really make move. perform validation
-  bool makeMove(MoveCmd & );
+  bool makeMove(const Move & );
 
   /// called after makeMove
-  void unmakeMove(MoveCmd & );
+  void unmakeMove();
 
   /// generate movements from this position. don't verify and sort them. only calculate sort weights. returns number of moves found
-  int  generateMoves(MoveCmd (&)[MovesMax]);
+  int  generateMoves(Move (&)[MovesMax]);
   /*! end of movements */
 
   /// returns position evaluation that depends on color
@@ -65,8 +65,17 @@ public:
     return fields_[index];
   }
 
-  /// returns number of moves. started from 1
+  /// returns number of moves. starts from 1
   int movesCount() const { return movesCounter_; }
+
+  /// returns number of half-moves from beginning of game. starts from 0
+  int halfmovesCount() const { return halfmovesCounter_; }
+
+  const MoveCmd & getMove(int i) const
+  {
+    THROW_IF( i < 0 || i >= GameLength, "there was no move" );
+    return moves_[i];
+  }
 
   /// returns current move color
   Figure::Color getColor() const { return color_; }
@@ -84,6 +93,8 @@ public:
 
   void zeroMovesFound();
 
+  void restoreState(State state) { state_ = state; }
+
   /// methods
 private:
 
@@ -93,10 +104,10 @@ private:
   WeightType evaluateWinnerLoser() const;
 
   /// do move. fill undo info, don't validate
-  bool doMove(MoveCmd & );
+  bool doMove();
 
   /// undo move. restore old state after doMove
-  void undoMove(MoveCmd & );
+  void undoMove();
 
   /// verify position after movement
   inline bool wasMoveValid(const MoveCmd & move) const
@@ -178,5 +189,5 @@ private:
 
   int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
 
-  static MoveKey moves_[GameLength];
+  static MoveCmd moves_[GameLength];
 };

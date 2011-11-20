@@ -1,7 +1,7 @@
 #include "Board.h"
 #include "MovesTable.h"
 
-int Board::generateMoves(MoveCmd (&moves)[MovesMax])
+int Board::generateMoves(Move (&moves)[MovesMax])
 {
   int m = 0;
   Figure::Color ocolor = Figure::otherColor(color_);
@@ -26,7 +26,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
             rindex = field.index();
           }
 
-          MoveCmd & move = moves[m++];
+          Move & move = moves[m++];
 
           move.from_ = fig.where();
           move.to_ = *table;
@@ -43,7 +43,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
               const Figure & krook = getFigure(color_, kfield.index());
               if ( krook.isFirstStep() )
               {
-                MoveCmd & move = moves[m++];
+                Move & move = moves[m++];
 
                 move.from_ = fig.where();
                 move.to_ = fig.where() + 2;
@@ -60,7 +60,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
               const Figure & qrook = getFigure(color_, qfield.index());
               if ( qrook.isFirstStep() )
               {
-                MoveCmd & move = moves[m++];
+                Move & move = moves[m++];
 
                 move.from_ = fig.where();
                 move.to_ = fig.where() - 2;
@@ -100,7 +100,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
               rindex = field.index();
             }
 
-            MoveCmd & move = moves[m++];
+            Move & move = moves[m++];
 
             move.from_ = fig.where();
             move.to_ = p;
@@ -126,7 +126,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
             rindex = field.index();
           }
 
-          MoveCmd & move = moves[m++];
+          Move & move = moves[m++];
 
           move.from_ = fig.where();
           move.to_ = *table;
@@ -164,7 +164,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
 
           const Figure & rfig = getFigure(ocolor, rindex);
 
-          MoveCmd & move = moves[m++];
+          Move & move = moves[m++];
           move.from_ = fig.where();
           move.to_ = *table;
           move.rindex_ = rfig.getIndex();
@@ -187,7 +187,7 @@ int Board::generateMoves(MoveCmd (&moves)[MovesMax])
 
         for (; *table >= 0 && !getField(*table); ++table)
         {
-          MoveCmd & move = moves[m++];
+          Move & move = moves[m++];
           move.from_ = fig.where();
           move.to_ = *table;
           move.rindex_ = -1;

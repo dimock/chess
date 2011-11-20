@@ -13,7 +13,7 @@ std::auto_ptr<QImage> ChessPosition::fimages_[12];
 
 using namespace std;
 
-ChessPosition::ChessPosition() : working_(false), turned_(false), currentMove_(-1)
+ChessPosition::ChessPosition() : working_(false), turned_(false)
 {
   //lastStep_.clear();
 
@@ -22,6 +22,7 @@ ChessPosition::ChessPosition() : working_(false), turned_(false), currentMove_(-
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
   ticks_ = 0;
   numOfMoves_ = 0;
+  halfmovesNumber_ = 0;
 }
 
 void ChessPosition::setMaxDepth(int d)
@@ -42,7 +43,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
 
   //Board & board = *alg_.getCurrent();
 
-  currentMove_ = -1;
+  halfmovesNumber_ = 0;
   if ( !board_.initialize( "rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
     return false;
 
@@ -256,7 +257,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
-  MoveCmd moves[Board::MovesMax];
+  Move moves[Board::MovesMax];
 
   numOfMoves_ = 0;
   long long t0, t1;
@@ -281,8 +282,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
   //ticks_ /= num;
   for (int i = 0; i < numOfMoves_; ++i)
   {
-    MoveCmd & move = moves[i];
-    move.clearUndo();
+    Move & move = moves[i];
 
 #ifndef NDEBUG
     Board board0 = board_;
@@ -300,7 +300,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
       if ( w > wmax_ )
         wmax_ = w;
     }
-    board_.unmakeMove(move);
+    board_.unmakeMove();
 
     THROW_IF(board0 != board_, "board is not restored by undo move method");
   }
@@ -333,10 +333,10 @@ bool ChessPosition::makeMovement(const QPoint & pt)
     return false;
   }
 
-  std::vector<MoveCmd> moves;
+  std::vector<Move> moves;
   for (size_t i = 0; i < selectedMoves_.size(); ++i)
   {
-    const MoveCmd & move = selectedMoves_[i];
+    const Move & move = selectedMoves_[i];
     if ( move.to_ == pos )
       moves.push_back(move);
   }
@@ -368,7 +368,7 @@ bool ChessPosition::makeMovement(const QPoint & pt)
     {
       for (size_t i = 0; i < moves.size(); ++i)
       {
-        MoveCmd & move = moves[i];
+        Move & move = moves[i];
         if ( move.new_type_ == type )
         {
           idx = i;
@@ -381,7 +381,7 @@ bool ChessPosition::makeMovement(const QPoint & pt)
   if ( idx < 0 )
     return false;
 
-  return applyMove(moves[idx], true);
+  return applyMove(moves[idx]);
 }
 
 //const Figure * ChessPosition::getSelection() const
@@ -428,58 +428,47 @@ Board ChessPosition::getBoard() const
 //  return depth;
 //}
 //
-bool ChessPosition::applyMove(const MoveCmd & move, bool append)
+bool ChessPosition::applyMove(const Move & move)
 {
   if ( working_ )
     return false;
 
-  MoveCmd mmove = move;
-  mmove.clearUndo();
-
-  if ( board_.makeMove(mmove) )
+  if ( board_.makeMove(move) )
   {
-    if ( append )
-    {
-      if ( currentMove_ < (int)moves_.size() && currentMove_ >= -1 && moves_.size() > 0 )
-      {
-        currentMove_++;
-        moves_.erase(moves_.begin()+currentMove_, moves_.end());
-      }
-
-      moves_.push_back(mmove);
-      currentMove_ = moves_.size()-1;
-    }
-
-    // verify if there is draw or mat
-#ifndef NDEBUG
-    Board board0 = board_;
-#endif
-
-    MoveCmd moves[Board::MovesMax];
-    int num = board_.generateMoves(moves);
-    bool found = false;
-    for (int i = 0; !found && i < num; ++i)
-    {
-      MoveCmd & m = moves[i];
-      m.clearUndo();
-      if ( board_.makeMove(m) )
-        found = true;
-
-      board_.unmakeMove(m);
-
-      THROW_IF(board0 != board_, "board is not restored by undo move method");
-    }
-
-    if ( !found )
-      board_.zeroMovesFound();
-
+    halfmovesNumber_ = board_.halfmovesCount();
+    verifyState();
     return true;
   }
   else
   {
-    board_.unmakeMove(mmove);
+    board_.unmakeMove();
     return false;
   }
+}
+
+void ChessPosition::verifyState()
+{
+  // verify if there is draw or mat
+  #ifndef NDEBUG
+  Board board0 = board_;
+  #endif
+
+  Move moves[Board::MovesMax];
+  int num = board_.generateMoves(moves);
+  bool found = false;
+  for (int i = 0; !found && i < num; ++i)
+  {
+    const Move & m = moves[i];
+    if ( board_.makeMove(m) )
+      found = true;
+
+    board_.unmakeMove();
+
+    THROW_IF(board0 != board_, "board is not restored by undo move method");
+  }
+
+  if ( !found )
+    board_.zeroMovesFound();
 }
 
 int ChessPosition::movesCount() const
@@ -503,23 +492,35 @@ int ChessPosition::movesCount() const
 //  return alg_.calculateSteps(steps);
 //}
 //
-void ChessPosition::prevPos()
+void ChessPosition::undo()
 {
-  if ( working_ || currentMove_ < 0 )
+  if ( working_ )
     return;
 
-  MoveCmd move = moves_[currentMove_--];
-  board_.unmakeMove(move);
+  if ( board_.halfmovesCount() > 0 )
+    board_.unmakeMove();
 }
 
-void ChessPosition::nextPos()
+
+void ChessPosition::redo()
 {
-  if ( working_ || currentMove_ >= (int)moves_.size()-1 || currentMove_ < -1 )
+  if ( working_ )
     return;
 
-  MoveCmd move = moves_[++currentMove_];
+  int i = board_.halfmovesCount();
+  if ( i >= halfmovesNumber_ )
+    return;
 
-  applyMove(move, false);
+  const MoveCmd & move = board_.getMove(i);
+  Board::State state = (Board::State)move.state_;
+
+  if ( !board_.makeMove(move) )
+  {
+    board_.unmakeMove();
+    return;
+  }
+
+  board_.restoreState(state);
 }
 
 bool ChessPosition::save() const

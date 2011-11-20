@@ -28,12 +28,12 @@ public:
 
   Board getBoard() const;
   //int doStep(CalcResult & cres);
-  bool applyMove(const MoveCmd & , bool append);
+  bool applyMove(const Move &);
   int movesCount() const;
   //void stop();
   //bool calculateSteps(std::vector<Step> & steps);
-  void prevPos();
-  void nextPos();
+  void undo();
+  void redo();
   bool save() const;
   bool load();
 
@@ -51,18 +51,20 @@ private:
   int  getPositionOnPt(const QPoint & pt) const;
   //const Figure * getSelection() const;
 
+  // verify move possibility from current position
+  void verifyState();
+
+
   //ChessAlgorithm alg_;
 
 	void drawBoard(QPainter *, QSize & ) const;
 	void drawFigures(QPainter *, QSize & ) const;
   void drawCurrentMoving(QPainter * , QSize & , const QPoint & cursorPt) const;
 
-  int currentMove_;
-  std::vector<MoveCmd> moves_; 
-  std::vector<MoveCmd> selectedMoves_;
+  std::vector<Move> selectedMoves_;
   std::set<int> selectedPositions_;
-  //Step lastStep_;
   Board board_;
+  int halfmovesNumber_;
 
   mutable Figure selectedFigure_;
   mutable QPoint upleft_;
