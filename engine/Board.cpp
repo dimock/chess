@@ -4,6 +4,28 @@
 
 Board::Board()
 {
+  clear();
+  //castle_index_[0][0] = castle_index_[0][1] = false;
+  //castle_index_[1][0] = castle_index_[1][1] = false;
+  //castle_[0] = castle_[1] = 0;
+  //checking_[0] = checking_[1] = 0;
+  //can_win_[0] = can_win_[1] = true;
+  //checkingNum_ = 0;
+  //en_passant_ = -1;
+  //state_ = Invalid;
+  //color_ = Figure::ColorBlack;
+  //fiftyMovesCount_ = 0;
+  //movesCounter_ = 1;
+  //halfmovesCounter_ = 0;
+  //stages_[0] = stages_[1] = 0;
+}
+
+void Board::clear()
+{
+  fmgr_.clear();
+
+  castle_index_[0][0] = castle_index_[0][1] = false;
+  castle_index_[1][0] = castle_index_[1][1] = false;
   castle_[0] = castle_[1] = 0;
   checking_[0] = checking_[1] = 0;
   can_win_[0] = can_win_[1] = true;
@@ -13,21 +35,8 @@ Board::Board()
   color_ = Figure::ColorBlack;
   fiftyMovesCount_ = 0;
   movesCounter_ = 1;
+  halfmovesCounter_ = 0;
   stages_[0] = stages_[1] = 0;
-}
-
-void Board::clear()
-{
-  fmgr_.clear();
-
-  castle_[0] = castle_[1] = 0;
-  checking_[0] = checking_[1] = 0;
-  checkingNum_ = 0;
-  en_passant_ = -1;
-  state_ = Invalid;
-  color_ = Figure::ColorBlack;
-  fiftyMovesCount_ = 0;
-  movesCounter_ = 1;
 
   for (int i = 0; i < NumOfFields; ++i)
     fields_[i].clear();
@@ -167,6 +176,7 @@ bool Board::initialize(const char * fen)
           fr = getField(63);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorBlack )
             return false;
+          castle_index_[0][0] = true;
           break;
 
         case 'K':
@@ -176,26 +186,27 @@ bool Board::initialize(const char * fen)
           fr = getField(7);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorWhite )
             return false;
+          castle_index_[1][0] = true;
           break;
 
         case 'q':
           fk = getField(60);
           if ( fk.type() != Figure::TypeKing || fk.color() != Figure::ColorBlack )
             return false;
-
           fr = getField(56);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorBlack )
             return false;
+          castle_index_[0][1] = true;
           break;
 
         case 'Q':
           fk = getField(4);
           if ( fk.type() != Figure::TypeKing || fk.color() != Figure::ColorWhite )
             return false;
-
           fr = getField(0);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorWhite )
             return false;
+          castle_index_[1][1] = true;
           break;
 
         default:

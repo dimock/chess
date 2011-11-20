@@ -24,6 +24,14 @@ struct Move
   int8 rindex_;
 };
 
+__declspec (align(1))
+struct MoveKey
+{
+  Move move_;
+  uint64 zcode_;
+  bool irreversible_;
+};
+
 /*! complete move structure with all necessary unmove information
   */
 __declspec (align(1))
@@ -86,6 +94,9 @@ struct MoveCmd : public Move
 
   /// fifty moves rule
   uint8 fifty_moves_;
+
+  // index of castle's possibility for zobrist key. 0 - short, 1 - long
+  bool castle_index_[2];
 
   bool can_win_[2];
 

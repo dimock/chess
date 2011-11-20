@@ -1,5 +1,6 @@
 #include "Board.h"
 
+MoveKey Board::moves_[GameLength];
 
 bool Board::doMove(MoveCmd & move)
 {
@@ -47,6 +48,41 @@ bool Board::doMove(MoveCmd & move)
 
     castle_[color_] = 1 + (((unsigned)d & 0x80000000) >> 31);//d > 0 ? 1 : 2;
     state_ = Castle;
+
+    THROW_IF(!castle_index_[color_][0] && !castle_index_[color_][1], "try to castle while it is impossible");
+  }
+
+  /// hashing castle
+  move.castle_index_[0] = castle_index_[color_][0];
+  move.castle_index_[1] = castle_index_[color_][1];
+
+  if ( fig.getType() == Figure::TypeKing )
+  {
+    if ( castle_index_[color_][0] )
+    {
+      castle_index_[color_][0] = false;
+      fmgr_.hashCastling(color_, 0);
+    }
+
+    if ( castle_index_[color_][1] )
+    {
+      castle_index_[color_][1] = false;
+      fmgr_.hashCastling(color_, 1);
+    }
+  }
+  else if ( fig.getType() == Figure::TypeRook && (fig.where() & 7) == 7 && castle_index_[color_][0] )
+  {
+    THROW_IF( !fig.isFirstStep(), "castle possibility doesn't respect to flag" );
+
+    castle_index_[color_][0] = false;
+    fmgr_.hashCastling(color_, 0);
+  }
+  else if ( fig.getType() == Figure::TypeRook && (fig.where() & 7) == 0 && castle_index_[color_][1] )
+  {
+    THROW_IF( !fig.isFirstStep(), "castle possibility doesn't respect to flag" );
+
+    castle_index_[color_][1] = false;
+    fmgr_.hashCastling(color_, 1);
   }
 
   en_passant_ = -1;
@@ -88,14 +124,24 @@ bool Board::doMove(MoveCmd & move)
 
   move.need_undo_ = true;
 
-  movesCounter_++;
-
   move.fifty_moves_ = fiftyMovesCount_;
 
   if ( Figure::TypePawn == fig.getType() || move.rindex_ >= 0 )
+  {
+    moves_[halfmovesCounter_].irreversible_ = true;
     fiftyMovesCount_ = 0;
+  }
   else
+  {
+    moves_[halfmovesCounter_].irreversible_ = false;
     fiftyMovesCount_++;
+  }
+
+  // remember hash code for threefold repetition detection
+  fmgr_.hashColor();
+  moves_[halfmovesCounter_].move_  = move;
+  moves_[halfmovesCounter_].zcode_ = fmgr_.hashCode();
+  halfmovesCounter_++;
 
   return true;
 }
@@ -107,6 +153,9 @@ void Board::undoMove(MoveCmd & move)
 
   if ( !move.need_undo_ )
     return;
+
+  // restore hash color. we change it early for 3-fold repetition detection
+  fmgr_.hashColor();
 
   Figure & fig = getFigure(color_, getField(move.to_).index());
 
@@ -149,6 +198,18 @@ void Board::undoMove(MoveCmd & move)
     fmgr_.incr(rfig);
   }
 
+  // restore castle possibility
+  if ( move.castle_index_[0] != castle_index_[color_][0] )
+  {
+    fmgr_.hashCastling(color_, 0);
+    castle_index_[color_][0] = move.castle_index_[0];
+  }
+  if ( move.castle_index_[1] != castle_index_[color_][1] )
+  {
+    fmgr_.hashCastling(color_, 1);
+    castle_index_[color_][1] = move.castle_index_[1];
+  }
+
   // restore king and rook after castling
   if ( move.rook_index_ >= 0 )
   {
@@ -167,7 +228,7 @@ void Board::undoMove(MoveCmd & move)
     castle_[color_] = 0;
   }
 
-  movesCounter_--;
+  halfmovesCounter_--;
   fiftyMovesCount_ = move.fifty_moves_;
 }
 
@@ -222,7 +283,6 @@ bool Board::makeMove(MoveCmd & move)
 
   // now change color
   color_ = ocolor;
-  fmgr_.hashColor();
 
   return true;
 }
@@ -231,7 +291,6 @@ void Board::unmakeMove(MoveCmd & move)
 {
   if ( move.need_unmake_ )
   {
-    fmgr_.hashColor();
     color_ = Figure::otherColor(color_);
 
     checkingNum_ = move.old_checkingNum_;
@@ -267,6 +326,26 @@ bool Board::verifyChessDraw()
   {
     state_ = DrawInsuf;
     return true;
+  }
+
+  // we don't need to verify threefold repetition if there was capture or pawn's move
+  if ( 0 == fiftyMovesCount_ )
+    return false;
+
+  int reps = 1;
+  for (int i = halfmovesCounter_-3; i >= 0; i -= 2)
+  {
+    if ( moves_[i].zcode_ == fmgr_.hashCode() )
+      reps++;
+
+    if ( reps >= 3 )
+    {
+      state_ = DrawReps;
+      return true;
+    }
+
+    if ( moves_[i].irreversible_ )
+      break;
   }
 
   return false;

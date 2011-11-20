@@ -12,7 +12,7 @@ public:
 
   /// constants
   enum State { Invalid, Ok, Castle, UnderCheck, Stalemat, DrawReps, DrawInsuf, Draw50Moves, ChessMat };
-  enum { PawnIndex, KnightIndex = 8, BishopIndex = 10, RookIndex = 12, QueenIndex = 14, KingIndex = 15, NumOfFigures = 16, NumOfFields = 64, MovesMax = 256 };
+  enum { PawnIndex, KnightIndex = 8, BishopIndex = 10, RookIndex = 12, QueenIndex = 14, KingIndex = 15, NumOfFigures = 16, NumOfFields = 64, MovesMax = 256, GameLength = 4096 };
 
   bool operator != (const Board & ) const;
 
@@ -140,6 +140,9 @@ private:
   /// data
 private:
 
+  /// index of castle's possibility
+  bool castle_index_[2][2];
+
   /// 0 - no castle, 1 - short, 2 - long
   uint8 castle_[2];
 
@@ -173,5 +176,7 @@ private:
   /// fields array 8 x 8
   Field fields_[NumOfFields];
 
-  int fiftyMovesCount_, movesCounter_;
+  int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
+
+  static MoveKey moves_[GameLength];
 };

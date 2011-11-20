@@ -31,3 +31,4 @@ qchess/ui_selfiguredlg.h
 qchess/moc_setparamsdlg.cpp
 chess-helpers/transp.cpp
 chess-helpers/mirror.cpp
+chess-helpers/zobrist.cpp

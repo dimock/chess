@@ -246,6 +246,7 @@ class FiguresManager
 {
   static uint64 s_zobristCodes_[64*2*8];
   static uint64 s_zobristColor_;
+  static uint64 s_zobristCastle_[2][2];
   static uint8  s_transposeIndex_[64];
 
 public:
@@ -323,17 +324,17 @@ public:
     pawn_mask_[fig.getColor()] |= 1ULL << bit_to;
   }
 
-  void hashEnPassant(int pos, int color)
+  void hashEnPassant(uint8 pos, uint8 color)
   {
     const uint64 & enpassantCode = s_zobristCodes_[ (pos<<4) | (color<<3)/* | fig.getType() - use 0 instead*/ ];
     hashCode_ ^= enpassantCode;
   }
 
-  //void hashCastling(int color)
-  //{
-  //  const uint64 & castleCode = s_zobristCodes_[ (color<<3) | 7 ];
-  //  hashCode_ ^= castleCode;
-  //}
+  void hashCastling(uint8 color, uint8 index /* 0 - short, 1 - long */)
+  {
+    const uint64 & castleCode = s_zobristCastle_[color][index];
+    hashCode_ ^= castleCode;
+  }
 
   void hashColor()
   {
