@@ -436,7 +436,7 @@ bool ChessPosition::applyMove(const Move & move)
   if ( board_.makeMove(move) )
   {
     halfmovesNumber_ = board_.halfmovesCount();
-    verifyState();
+    board_.verifyState();
     return true;
   }
   else
@@ -444,31 +444,6 @@ bool ChessPosition::applyMove(const Move & move)
     board_.unmakeMove();
     return false;
   }
-}
-
-void ChessPosition::verifyState()
-{
-  // verify if there is draw or mat
-  #ifndef NDEBUG
-  Board board0 = board_;
-  #endif
-
-  Move moves[Board::MovesMax];
-  int num = board_.generateMoves(moves);
-  bool found = false;
-  for (int i = 0; !found && i < num; ++i)
-  {
-    const Move & m = moves[i];
-    if ( board_.makeMove(m) )
-      found = true;
-
-    board_.unmakeMove();
-
-    THROW_IF(board0 != board_, "board is not restored by undo move method");
-  }
-
-  if ( !found )
-    board_.zeroMovesFound();
 }
 
 int ChessPosition::movesCount() const
@@ -512,7 +487,6 @@ void ChessPosition::redo()
     return;
 
   const MoveCmd & move = board_.getMove(i);
-  Board::State state = (Board::State)move.state_;
 
   if ( !board_.makeMove(move) )
   {
@@ -520,7 +494,9 @@ void ChessPosition::redo()
     return;
   }
 
-  board_.restoreState(state);
+  // it could be draw or mat if there is last move
+  if ( halfmovesNumber_ == board_.halfmovesCount() )
+    board_.verifyState();
 }
 
 bool ChessPosition::save() const
@@ -605,4 +581,5 @@ bool ChessPosition::doLoad()
 
   bool res = Board::load(board_, in);
   halfmovesNumber_ = board_.halfmovesCount();
+  return res;
 }

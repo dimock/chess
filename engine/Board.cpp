@@ -52,7 +52,17 @@ bool Board::initialize(const char * fen)
   if ( !fen )
     fen = stdFEN_;
 
+  // trim left
+  const char * sepr =" \t\r\n";
+  for ( ; *fen && strchr(sepr, *fen); ++fen);
+  
+  // copy
   strncpy(fen_, fen, FENsize);
+  
+  // trim right
+  int n = strlen(fen_) - 1;
+  for (; n >= 0 && strchr(sepr, fen_[n]); --n);
+  fen_[n+1] = 0;
 
   const char * s = fen;
   int x = 0, y = 7;
@@ -284,21 +294,7 @@ bool Board::initialize(const char * fen)
 }
 
 //////////////////////////////////////////////////////////////////////////
-void Board::zeroMovesFound()
-{
-  if ( UnderCheck == state_ )
-    state_ = ChessMat;
-  else if ( !drawState() )
-    state_ = Stalemat;
-
-  THROW_IF(halfmovesCounter_ <= 0, "invalid halfmoves counter in zero moves found method");
-
-  MoveCmd & move = moves_[halfmovesCounter_-1];
-  move.state_ = state_;
-}
-
-//////////////////////////////////////////////////////////////////////////
-/// verification of move/unmove methods
+/// verification of move/unmove methods; use it for debug only
 bool Board::operator != (const Board & other) const
 {
   const char * buf0 = reinterpret_cast<const char*>(this);
@@ -600,16 +596,48 @@ bool Board::load(Board & board, std::istream & is)
     }
   }
 
+  board.verifyState();
+
   return true;
 }
 
 bool Board::save(const Board & board, std::ostream & os)
 {
-  if ( strlen(fen_) > 0 )
+  if ( strlen(fen_) > 0 && strcmp(fen_, stdFEN_) != 0 )
   {
     os << "[SetUp \"1\"] " << std::endl;
     os << "[FEN \"" << fen_ << "\"]" << std::endl;
   }
+
+  Board sboard = board;
+  int num = sboard.halfmovesCount();
+  while ( sboard.halfmovesCount() > 0 )
+    sboard.unmakeMove();
+
+  for (int i = 0; i < num; ++i)
+  {
+    Figure::Color color = sboard.getColor();
+    int moveNum = sboard.movesCount();
+
+    char str[16];
+    if ( !printSAN(sboard, i, str) )
+      return false;
+
+    if ( color || !i )
+      os << moveNum << ". ";
+    
+    if ( !i && !color )
+      os << " ... ";
+
+    os << str;
+
+    if ( !color )
+      os << std::endl;
+    else
+      os << " ";
+  }
+
+  sboard.verifyState();
 
   return true;
 }

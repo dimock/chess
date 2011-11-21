@@ -38,6 +38,32 @@ Figure::Type toFtype(char c)
   return Figure::TypeNone;
 }
 
+char fromFtype(Figure::Type t)
+{
+  switch ( t )
+  {
+  case Figure::TypePawn:
+    return 'P';
+
+  case Figure::TypeKnight:
+    return 'N';
+
+  case Figure::TypeBishop:
+    return 'B';
+
+  case Figure::TypeRook:
+    return 'R';
+
+  case Figure::TypeQueen:
+    return 'Q';
+
+  case Figure::TypeKing:
+    return 'K';
+  }
+
+  return Figure::TypeNone;
+}
+
 bool iscolumn(char c)
 {
   return c >= 'a' && c <= 'h';
@@ -148,7 +174,7 @@ bool parseSAN(Board & board, const char * str, Move & move)
       continue;
 
     const Field & field = board.getField(m.from_);
-    if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && 
+    if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && ((m.rindex_ >= 0) == capture) &&
         (from > 0 && from == m.from_ || xfrom >= 0 && (m.from_ & 7) == xfrom || yfrom >= 0 && (m.from_ >>3) == yfrom || xfrom < 0 && yfrom < 0))
     {
       move = m;
@@ -156,6 +182,116 @@ bool parseSAN(Board & board, const char * str, Move & move)
     }
   }
   return false;
+}
+
+bool printSAN(Board & board, int i, char * str)
+{
+  MoveCmd move = board.getMove(i);
+
+  Field field = board.getField(move.from_);
+
+  int disambiguations = 0;
+  int same_x = 0, same_y = 0;
+  int xfrom = move.from_ & 7;
+  int yfrom = move.from_ >>3;
+  int xto = move.to_ & 7;
+  int yto = move.to_ >>3;
+
+  Move moves[Board::MovesMax];
+  int num = board.generateMoves(moves);
+  for (int i = 0; i < num; ++i)
+  {
+    const Move & m = moves[i];
+    bool valid = false;
+    if ( board.makeMove(m) )
+      valid = true;
+    board.unmakeMove();
+
+    const Field & f = board.getField(m.from_);
+
+    if ( !valid || m.to_ != move.to_ || f.type() != field.type() || m.new_type_ != move.new_type_ )
+      continue;
+
+    // check for disambiguation in 'from' position
+    if ( (m.from_ & 7) == xfrom )
+      same_x++;
+    
+    if ( (m.from_ >>3) == yfrom )
+      same_y++;
+
+    disambiguations++;
+  }
+
+  if ( !board.makeMove(move) )
+    return false;
+
+  char * s = str;
+  if ( field.type() != Figure::TypePawn )
+  {
+    *s = fromFtype(field.type());
+    ++s;
+  }
+  
+  // stupid Arena doesn't understand pawn's capture, even if other movies are illegal
+  if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.rindex_ >= 0) )
+  {
+    if ( same_x <= 1 )
+    {
+      // x different
+      *s = 'a' + xfrom;
+      ++s;
+    }
+    else if ( same_y <= 1 )
+    {
+      // y different
+      *s = '1' + yfrom;
+      ++s;
+    }
+    else
+    {
+      // write both
+      *s = 'a' + xfrom;
+      s++;
+      *s = '1' + yfrom;
+      s++;
+    }
+  }
+  // capture
+  if ( move.rindex_ >= 0 )
+  {
+    *s = 'x';
+    ++s;
+  }
+
+  *s = 'a' + xto;
+  ++s;
+
+  *s = '1' + yto;
+  ++s;
+
+  if ( move.new_type_ > 0 )
+  {
+    *s = '=';
+    ++s;
+
+    *s = fromFtype((Figure::Type)move.new_type_);
+    ++s;
+  }
+
+  if ( Board::UnderCheck == move.state_ )
+  {
+    *s = '+';
+    ++s;
+  }
+  else if ( Board::ChessMat == move.state_ )
+  {
+    *s = '#';
+    ++s;
+  }
+
+  *s = 0;
+
+  return true;
 }
 //////////////////////////////////////////////////////////////////////////
 

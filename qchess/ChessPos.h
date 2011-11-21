@@ -51,9 +51,6 @@ private:
   int  getPositionOnPt(const QPoint & pt) const;
   //const Figure * getSelection() const;
 
-  // verify move possibility from current position
-  void verifyState();
-
 
   //ChessAlgorithm alg_;
 

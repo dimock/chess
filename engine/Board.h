@@ -37,6 +37,9 @@ public:
   int  generateMoves(Move (&)[MovesMax]);
   /*! end of movements */
 
+  /// verify if there is draw or mat
+  void verifyState();
+
   /// returns position evaluation that depends on color
   WeightType evaluate() const;
 
@@ -93,10 +96,6 @@ public:
   }
 
   inline bool drawState() const { return isDraw(state_); }
-
-  void zeroMovesFound();
-
-  void restoreState(State state) { state_ = state; }
 
   /// methods
 private:

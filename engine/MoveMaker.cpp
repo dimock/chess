@@ -373,3 +373,38 @@ bool Board::verifyChessDraw()
 
   return false;
 }
+
+void Board::verifyState()
+{
+  // verify if there is draw or mat
+#ifndef NDEBUG
+  Board board0 = *this;
+#endif
+
+  Move moves[Board::MovesMax];
+  int num = generateMoves(moves);
+  bool found = false;
+  for (int i = 0; !found && i < num; ++i)
+  {
+    const Move & m = moves[i];
+    if ( makeMove(m) )
+      found = true;
+
+    unmakeMove();
+
+    THROW_IF(board0 != *this, "board is not restored by undo move method");
+  }
+
+  if ( !found )
+  {
+    if ( UnderCheck == state_ )
+      state_ = ChessMat;
+    else if ( !drawState() )
+      state_ = Stalemat;
+
+    THROW_IF(halfmovesCounter_ <= 0, "invalid halfmoves counter in zero moves found method");
+
+    MoveCmd & move = moves_[halfmovesCounter_-1];
+    move.state_ = state_;
+  }
+}

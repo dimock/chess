@@ -329,3 +329,4 @@ inline int getDistance(int a, int b)
 
 struct Move;
 bool parseSAN(Board & board, const char * str, Move & move);
+bool printSAN(Board & board, int i, char * str);
