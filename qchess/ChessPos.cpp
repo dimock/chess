@@ -44,7 +44,7 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //Board & board = *alg_.getCurrent();
 
   halfmovesNumber_ = 0;
-  if ( !board_.initialize( "rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
+  if ( !board_.initialize(0) ) //"rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
     return false;
 
   return true;

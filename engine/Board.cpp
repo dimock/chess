@@ -603,11 +603,26 @@ bool Board::load(Board & board, std::istream & is)
 
 bool Board::save(const Board & board, std::ostream & os)
 {
-  if ( strlen(fen_) > 0 && strcmp(fen_, stdFEN_) != 0 )
+  if ( strcmp(fen_, stdFEN_) != 0 )
   {
     os << "[SetUp \"1\"] " << std::endl;
     os << "[FEN \"" << fen_ << "\"]" << std::endl;
   }
+
+  const char * sres = "*";
+  if ( board.getState() == Board::ChessMat )
+  {
+    if ( board.getColor() )
+      sres = "0-1";
+    else
+      sres = "1-0";
+  }
+  else if ( board.drawState() )
+    sres = "1/2-1/2";
+
+  os << "[Result \"";
+  os << sres;
+  os << "\"]" << std::endl;
 
   Board sboard = board;
   int num = sboard.halfmovesCount();
@@ -636,6 +651,8 @@ bool Board::save(const Board & board, std::ostream & os)
     else
       os << " ";
   }
+
+  os << sres << std::endl;
 
   sboard.verifyState();
 

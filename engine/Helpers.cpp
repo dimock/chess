@@ -90,24 +90,28 @@ bool parseSAN(Board & board, const char * str, Move & move)
     type = toFtype(*s);
     s++;
   }
-  else if ( strcmp("O-O", s) == 0 )
+  else if ( strstr(s, "O-O-O") ) // long castle
   {
     from = board.getColor() ? 4 : 60;
-    to   = board.getColor() ? 7 : 63;
+    to   = board.getColor() ? 2 : 58;
+    s += 5;
+    type = Figure::TypeKing;
   }
-  else if ( strcmp("O-O-O", s) == 0 )
+  else if ( strstr(s, "O-O") ) // short castle
   {
     from = board.getColor() ? 4 : 60;
-    to   = board.getColor() ? 0 : 56;
+    to   = board.getColor() ? 6 : 62;
+    s += 3;
+    type = Figure::TypeKing;
   }
-
-  // should be at least 2 chars
-  int n = strlen(s);
-  if ( n < 2 )
-    return false;
 
   if ( to < 0 ) // not found yet
   {
+    // should be at least 2 chars
+    int n = strlen(s);
+    if ( n < 2 )
+      return false;
+
     if ( isdigit(s[0]) && iscolumn(s[1]) ) // from row number
     {
       yfrom = s[0] - '1';
@@ -226,56 +230,72 @@ bool printSAN(Board & board, int i, char * str)
     return false;
 
   char * s = str;
-  if ( field.type() != Figure::TypePawn )
+  if ( field.type() == Figure::TypeKing && (2 == move.to_ - move.from_ || -2 == move.to_ - move.from_) )// castle
   {
-    *s = fromFtype(field.type());
-    ++s;
-  }
-  
-  // stupid Arena doesn't understand pawn's capture, even if other movies are illegal
-  if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.rindex_ >= 0) )
-  {
-    if ( same_x <= 1 )
+    if ( move.to_ > move.from_ ) // short castle
     {
-      // x different
-      *s = 'a' + xfrom;
-      ++s;
-    }
-    else if ( same_y <= 1 )
-    {
-      // y different
-      *s = '1' + yfrom;
-      ++s;
+      strcpy(s, "O-O");
+      s += 3;
     }
     else
     {
-      // write both
-      *s = 'a' + xfrom;
-      s++;
-      *s = '1' + yfrom;
-      s++;
+      strcpy(s, "O-O-O");
+      s += 5;
     }
   }
-  // capture
-  if ( move.rindex_ >= 0 )
+  else
   {
-    *s = 'x';
+    if ( field.type() != Figure::TypePawn )
+    {
+      *s = fromFtype(field.type());
+      ++s;
+    }
+    
+    // stupid Arena doesn't understand pawn's capture, even if other movies are illegal
+    if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.rindex_ >= 0) )
+    {
+      if ( same_x <= 1 )
+      {
+        // x different
+        *s = 'a' + xfrom;
+        ++s;
+      }
+      else if ( same_y <= 1 )
+      {
+        // y different
+        *s = '1' + yfrom;
+        ++s;
+      }
+      else
+      {
+        // write both
+        *s = 'a' + xfrom;
+        s++;
+        *s = '1' + yfrom;
+        s++;
+      }
+    }
+    // capture
+    if ( move.rindex_ >= 0 )
+    {
+      *s = 'x';
+      ++s;
+    }
+
+    *s = 'a' + xto;
     ++s;
-  }
 
-  *s = 'a' + xto;
-  ++s;
-
-  *s = '1' + yto;
-  ++s;
-
-  if ( move.new_type_ > 0 )
-  {
-    *s = '=';
+    *s = '1' + yto;
     ++s;
 
-    *s = fromFtype((Figure::Type)move.new_type_);
-    ++s;
+    if ( move.new_type_ > 0 )
+    {
+      *s = '=';
+      ++s;
+
+      *s = fromFtype((Figure::Type)move.new_type_);
+      ++s;
+    }
   }
 
   if ( Board::UnderCheck == move.state_ )
