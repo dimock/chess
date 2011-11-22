@@ -399,7 +399,8 @@ bool ChessPosition::findMove(SearchResult & sres)
   working_ = true;
 
   bool b = player_.findMove(sres);
-  vboard_ = player_.getBoard();
+  if ( b )
+    b = applyMove(sres.best_);
 
   working_ = false;
 
@@ -408,9 +409,6 @@ bool ChessPosition::findMove(SearchResult & sres)
 
 bool ChessPosition::applyMove(const Move & move)
 {
-  if ( working_ )
-    return false;
-
   Board & board = player_.getBoard();
 
   if ( board.makeMove(move) )
@@ -436,9 +434,14 @@ int ChessPosition::movesCount() const
   return board.movesCount();
 }
 
-void ChessPosition::stop()
+void ChessPosition::setTimeLimit(int ms)
 {
-  player_.stop();
+  player_.setTimeLimit(ms);
+}
+
+void ChessPosition::pleaseStop()
+{
+  player_.pleaseStop();
 }
 
 void ChessPosition::undo()

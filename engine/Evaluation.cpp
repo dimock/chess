@@ -191,7 +191,7 @@ ScoreType Board::evaluate() const
 {
   ScoreType weight = calculateEval();
 
-  if ( Figure::ColorWhite  == color_ )
+  if ( Figure::ColorBlack  == color_ )
     weight = -weight;
 
   return weight;

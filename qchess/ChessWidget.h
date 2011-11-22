@@ -50,7 +50,7 @@ private slots:
   void onPrev();
   void onGo();
   void onMoveFound();
-  void onTimeoutStop();
+  //void onTimeoutStop();
   void onTurnBoard(bool t);
   void onSettings();
 

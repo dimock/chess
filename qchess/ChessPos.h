@@ -17,7 +17,9 @@ public:
 
 	ChessPosition();
 
+  void pleaseStop();
   void setMaxDepth(int d);
+  void setTimeLimit(int ms);
   bool initialize(bool enableBook, int depthMax);
   void setUpLeft(const QPoint & upleft) const { upleft_ = upleft; }
 	void draw(QWidget * view, const QPoint & cursorPt) const;
@@ -28,12 +30,9 @@ public:
 
   // making move
   bool findMove(SearchResult & sres);
-  bool applyMove(const Move &);
 
   const Board & getBoard() const;
   int movesCount() const;
-
-  void stop();
 
   void undo();
   void redo();
@@ -45,6 +44,8 @@ public:
 
 
 private:
+
+  bool applyMove(const Move &);
 
 	bool doSave() const;
 	bool doLoad();

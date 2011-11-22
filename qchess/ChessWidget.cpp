@@ -45,7 +45,7 @@ ChessWidget::ChessWidget(QWidget * parent) :
 
   onNew();
 
-  connect(&thread_, SIGNAL(finished()), this, SLOT(onStepDone()));
+  connect(&thread_, SIGNAL(finished()), this, SLOT(onMoveFound()));
 }
 
 ChessWidget::~ChessWidget()
@@ -127,6 +127,7 @@ void ChessWidget::onSettings()
   timelimit_ = dlg.getStepTime()*1000;
 
   cpos_.setMaxDepth(depthMax_);
+  cpos_.setTimeLimit(timelimit_);
 }
 
 void ChessWidget::onNew()
@@ -136,6 +137,8 @@ void ChessWidget::onNew()
 
   if ( !cpos_.initialize(enableBook_, depthMax_) )
     return;
+
+  cpos_.setTimeLimit(timelimit_);
 
   dt_ = 0;
   full_t_ = 0;
@@ -196,7 +199,7 @@ void ChessWidget::onGo()
     if ( useTimer_ )
     {
       thread_.start();
-      QTimer::singleShot(timelimit_, this, SLOT(onTimeoutStop()));
+//      QTimer::singleShot(timelimit_, this, SLOT(onTimeoutStop()));
       enableActions(false);
     }
     //else
@@ -226,10 +229,10 @@ void ChessWidget::onMoveFound()
   }
 }
 
-void ChessWidget::onTimeoutStop()
-{
-  cpos_.stop();
-}
+//void ChessWidget::onTimeoutStop()
+//{
+//  cpos_.stop();
+//}
 
 void ChessWidget::onTurnBoard(bool t)
 {
@@ -258,7 +261,7 @@ bool ChessWidget::okToReset()
 void ChessWidget::closeEvent(QCloseEvent *event)
 {
   goingToClose_ = true;
-  cpos_.stop();
+  cpos_.pleaseStop();
   thread_.wait();
 
   if ( !okToReset() )
@@ -308,23 +311,23 @@ void ChessWidget::drawInfo()
   QPainter painter(this);
   QString infoText;
 
-  double nps = 0, nps_curr = 0;
-  if ( full_t_ > 0 )
-  {
-    nps = 0;//movesCount_/(double)full_t_;
-    nps_curr = sres_.totalMoves_/(double)dt_;
-  }
+  //double nps = 0, nps_curr = 0;
+  //if ( full_t_ > 0 )
+  //{
+  //  nps = 0;//movesCount_/(double)full_t_;
+  //  nps_curr = sres_.totalNodes_/(double)dt_;
+  //}
 
-  double mavg = 0;
-  double davg = 0;
-  double step_dt = 0;
+  //double mavg = 0;
+  //double davg = 0;
+  //double step_dt = 0;
 
-  if ( bs_count_ > 0 )
-  {
-    mavg = moves_avg_base_/bs_count_;
-    davg = depth_avg_/bs_count_;
-    step_dt = (((double)full_t_)/(1000.0*bs_count_));
-  }
+  //if ( bs_count_ > 0 )
+  //{
+  //  mavg = moves_avg_base_/bs_count_;
+  //  davg = depth_avg_/bs_count_;
+  //  step_dt = (((double)full_t_)/(1000.0*bs_count_));
+  //}
 
   //double base_real = depth_ > 0 ? exp(log((double)(movesCurr_-forcesCount_-additionalCount_))/depth_) : 0;
   //infoText.sprintf("Moves base (avg) = %5.2f Step time = %5.2f (s) Steps = %d\n%5.2f kNodes/s Depth = %d Depth (avg) = %4.1f Eval = %4.2f\nCurrent step %5.2f kNodes/s  Moves base (current) = %5.2f\ntotal = %d moves = %d forced = %d additional = %d base = %5.2f\nnull moves = %d\n%s",
@@ -336,8 +339,11 @@ void ChessWidget::drawInfo()
   long long ticks = cpos_.getTicks();
   int tickPerMove = 0;
   if ( cpos_.numOfMoves() )
-	tickPerMove = ticks/cpos_.numOfMoves();
-  infoText.sprintf("%d ticks total, %d ticks per move, %d moves", (int)ticks, tickPerMove, cpos_.numOfMoves());
+	  tickPerMove = ticks/cpos_.numOfMoves();
+  //infoText.sprintf("%d ticks total, %d ticks per move, %d moves", (int)ticks, tickPerMove, cpos_.numOfMoves());
+  int nps = dt_ > 0 ? sres_.nodesCount_*1000.0/dt_ : 0;
+  infoText.sprintf("depth = %d, nodes count = %d, time = %d (ms), %d nps", sres_.depth_, sres_.nodesCount_, dt_, nps);
+
   painter.drawText(QRect(00, 450, 450, 50), Qt::AlignCenter, infoText);
 }
 
@@ -398,7 +404,7 @@ void ChessWidget::findMove()
 
   if ( depth_ > 0 )
   {
-    moves_base_ = exp(log((double)sres_.movesCount_)/depth_);
+    moves_base_ = exp(log((double)sres_.nodesCount_)/depth_);
     moves_avg_base_ += moves_base_;
   }
   depth_avg_ += depth_;

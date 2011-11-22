@@ -1,11 +1,13 @@
 
 #include "Player.h"
 
+#undef NO_TIME_LIMIT
+
 SearchResult::SearchResult() :
-  movesCount_(0),
-  totalMoves_(0),
-  forcedMoves_(0),
-  additionalMoves_(0),
+  nodesCount_(0),
+  totalNodes_(0),
+  forcedNodes_(0),
+  additionalNodes_(0),
   nullMovesCount_(0),
   depth_(0),
   score_(0)
@@ -15,18 +17,103 @@ SearchResult::SearchResult() :
     pv_[i].clear();
 }
 
-Player::Player()
+Player::Player() :
+  stop_(false),
+  timeLimitMS_(0),
+  tstart_(0)
 {
 }
 
 bool Player::initialize(const char * fen)
 {
+  stop_ = false;
+  timeLimitMS_ = 0;
   return board_.initialize(fen);
 }
 
 bool Player::findMove(SearchResult & sres)
 {
   sres = SearchResult();
-  stop_ = true;
-  return false;
+
+  stop_ = false;
+  nodesCounter_ = 0;
+  tstart_ = clock();
+
+  for (int depth = 2; !stop_ && depth <= 6; ++depth)
+  {
+    Move best;
+    ScoreType score = -alphaBetta(depth, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), best);
+    if ( !stop_ )
+    {
+      sres.score_ = score;
+      sres.best_  = best;
+      sres.depth_ = depth;
+    }
+  }
+
+  sres.nodesCount_ = nodesCounter_;
+
+  return sres.best_.to_ >= 0;
+}
+
+void Player::testTimer()
+{
+#ifndef NO_TIME_LIMIT
+  int t = clock();
+  stop_ = stop_ || ( (t - tstart_) > timeLimitMS_);
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////////
+ScoreType Player::alphaBetta(int depth, ScoreType alpha, ScoreType betta, Move & move)
+{
+  if ( depth <= 0 )
+    return board_.evaluate();
+
+
+  if ( stop_ )
+    return alpha;
+
+  Move moves[Board::MovesMax];
+  int num = board_.generateMoves(moves);
+  int counter = 0;
+  for (int i = 0; !stop_ && alpha < betta && i < num; ++i)
+  {
+    const Move & mv = moves[i];
+    if ( nodesCounter_ && !(nodesCounter_ & 0xffff) )
+      testTimer();
+    if ( stop_ )
+      break;
+    nodesCounter_++;
+    if ( board_.makeMove(mv) )
+    {
+      counter++;
+      ScoreType s = alpha;
+      if ( board_.drawState() )
+        s = 0;
+      else
+      {
+        Move m;
+        s = -alphaBetta(depth-1, -betta, -alpha, m);
+      }
+
+      if ( s > alpha )
+      {
+        alpha = s;
+        move = mv;
+      }
+    }
+    board_.unmakeMove();
+  }
+
+  if ( stop_ )
+    return alpha;
+
+  if ( 0 == counter )
+  {
+    board_.setNoMoves();
+    return board_.evaluate();
+  }
+
+  return alpha;
 }

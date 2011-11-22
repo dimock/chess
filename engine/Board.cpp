@@ -386,10 +386,7 @@ void Board::verifyState()
 
   if ( !found )
   {
-    if ( UnderCheck == state_ )
-      state_ = ChessMat;
-    else if ( !drawState() )
-      state_ = Stalemat;
+    setNoMoves();
 
     // update move's state because it is last one
     if ( halfmovesCounter_ > 0 )

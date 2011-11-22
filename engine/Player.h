@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Board.h"
+#include <time.h>
 
 class SearchResult
 {
@@ -9,10 +10,10 @@ public:
   SearchResult();
 
   /// statistic
-  int movesCount_;
-  int totalMoves_;
-  int forcedMoves_;
-  int additionalMoves_;
+  int nodesCount_;
+  int totalNodes_;
+  int forcedNodes_;
+  int additionalNodes_;
   int nullMovesCount_;
 
   /// result
@@ -32,12 +33,36 @@ public:
 
   bool initialize(const char * fen);
   bool findMove(SearchResult & );
-  Board & getBoard() { return board_; }
-  const Board & getBoard() const { return board_; }
-  void stop() { stop_ = true; }
+  
+  Board & getBoard()
+  {
+    return board_;
+  }
+  
+  const Board & getBoard() const
+  {
+    return board_;
+  }
+
+  void pleaseStop()
+  {
+    stop_ = true;
+  }
+  
+  void setTimeLimit(int ms)
+  {
+    timeLimitMS_ = ms;
+  }
 
 private:
 
+  ScoreType alphaBetta(int depth, ScoreType alpha, ScoreType betta, Move & move);
+
+  void testTimer();
+
   volatile bool stop_;
   Board board_;
+  int timeLimitMS_;
+  int nodesCounter_;
+  int64 tstart_;
 };

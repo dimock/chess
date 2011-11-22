@@ -97,6 +97,14 @@ public:
 
   inline bool drawState() const { return isDraw(state_); }
 
+  inline void setNoMoves()
+  {
+    if ( UnderCheck == state_ )
+      state_ = ChessMat;
+    else if ( !drawState() )
+      state_ = Stalemat;
+  }
+
   /// methods
 private:
 
