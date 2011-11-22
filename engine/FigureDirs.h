@@ -23,6 +23,8 @@ public:
   // from 'figure' to 'p'
   static inline int dir(const Figure & fig, int p)
 	{
+    static FigureDir fdir;
+
     THROW_IF( p < 0 || p > 63, "invalid point to get direction" );
     unsigned u = (p << 6) | fig.where();
 		return *(s_dirs_ + ((fig.getType()<<13) | (fig.getColor()<<12) | u));

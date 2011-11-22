@@ -12,20 +12,20 @@ public:
 #endif
 
   // position evaluation. 0 - debut, 1 - endgame; color,type,pos
-  static WeightType positionEvaluations_[2][8][64];
+  static ScoreType positionEvaluations_[2][8][64];
   static uint8 mirrorIndex_[64];
 
 public:
 
-  static WeightType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-  static WeightType pawnGuarded_, pawnDoubled_, pawnIsolated_;
-  static WeightType pawnPassed_[2][8];
+  static ScoreType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
+  static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_;
+  static ScoreType pawnPassed_[2][8];
 
   enum Weights { WeightDraw = 0, WeightMat = 32000 };
   enum Type  : uint8  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
   enum Color : uint8  { ColorBlack, ColorWhite };
 
-  static inline WeightType positionEvaluation(uint8 stage, uint8 color, uint8 type, int8 pos)
+  static inline ScoreType positionEvaluation(uint8 stage, uint8 color, uint8 type, int8 pos)
   {
     THROW_IF( stage > 1 || color > 1 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
 
@@ -40,7 +40,7 @@ public:
     uint8 icmask = ~cmask;
     uint8 i = (mirrorIndex_[pos] & cmask) | (pos | icmask);
 
-    WeightType e = positionEvaluations_[stage][type][i];
+    ScoreType e = positionEvaluations_[stage][type][i];
     return e;
   }
 
@@ -226,8 +226,8 @@ public:
   int knights() const { return knights_; }
   int rooks() const { return rooks_; }
   int queens() const { return queens_; }
-  WeightType weight() const { return weight_; }
-  WeightType eval(int i) const { return eval_[i]; } // position
+  ScoreType weight() const { return weight_; }
+  ScoreType eval(int i) const { return eval_[i]; } // position
 
 private:
 
@@ -239,7 +239,7 @@ private:
   uint8 queens_;
   uint8 count_;
 
-  WeightType weight_, eval_[2];
+  ScoreType weight_, eval_[2];
 };
 
 class FiguresManager
@@ -351,10 +351,10 @@ public:
   int knights(Figure::Color color) const { return fcounter_[color].knights(); }
   int rooks(Figure::Color color) const { return fcounter_[color].rooks(); }
   int queens(Figure::Color color) const { return fcounter_[color].queens(); }
-  WeightType weight(Figure::Color color) const { return fcounter_[color].weight(); }
-  WeightType weight() const { return weight(Figure::ColorWhite) - weight(Figure::ColorBlack); }
-  WeightType eval(Figure::Color color, int stage) const { return fcounter_[color].eval(stage); }
-  WeightType eval(int stage) const { return fcounter_[Figure::ColorWhite].eval(stage) - fcounter_[Figure::ColorBlack].eval(stage); }
+  ScoreType weight(Figure::Color color) const { return fcounter_[color].weight(); }
+  ScoreType weight() const { return weight(Figure::ColorWhite) - weight(Figure::ColorBlack); }
+  ScoreType eval(Figure::Color color, int stage) const { return fcounter_[color].eval(stage); }
+  ScoreType eval(int stage) const { return fcounter_[Figure::ColorWhite].eval(stage) - fcounter_[Figure::ColorBlack].eval(stage); }
   const uint64 & hashCode() const { return hashCode_; }
   const uint64 & pawn_mask(Figure::Color color) const { return pawn_mask_[color]; }
   const uint64 & mask(Figure::Color color) const { return mask_[color]; }

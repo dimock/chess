@@ -2,9 +2,9 @@
 #include "Board.h"
 
 // TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-WeightType Figure::figureWeight_[7] = { 0, 100, 320, 330, 500, 950, 0 };
+ScoreType Figure::figureWeight_[7] = { 0, 100, 320, 330, 500, 950, 0 };
 
-WeightType Figure::positionEvaluations_[2][8][64] = {
+ScoreType Figure::positionEvaluations_[2][8][64] = {
   // begin
   {
     // empty
@@ -130,15 +130,15 @@ WeightType Figure::positionEvaluations_[2][8][64] = {
   }
 };
 
-WeightType Figure::pawnGuarded_  =  8;
-WeightType Figure::pawnDoubled_  = -8;
-WeightType Figure::pawnIsolated_ = -8;
+ScoreType Figure::pawnGuarded_  =  8;
+ScoreType Figure::pawnDoubled_  = -8;
+ScoreType Figure::pawnIsolated_ = -8;
 
-WeightType Figure::pawnPassed_[2][8] = {
+ScoreType Figure::pawnPassed_[2][8] = {
   { 0, 40, 25, 20, 15, 10, 5, 0 },
   { 0, 5, 10, 15, 20, 25, 40, 0 }
 };
-//WeightType Figure::pawnPassed_[2][8] = {
+//ScoreType Figure::pawnPassed_[2][8] = {
 //	{ 0, 50, 30, 25, 20, 15, 10, 0 },
 //	{ 0, 10, 15, 20, 25, 30, 50, 0 }
 //};
@@ -167,7 +167,7 @@ WeightType Figure::pawnPassed_[2][8] = {
   }\
   uint8 column = ((uint8*)&pmsk)[(icol)];\
   int dblNum = numBitsInByte(column);\
-  WeightType dblMask = ~((dblNum-1) >> 31);\
+  ScoreType dblMask = ~((dblNum-1) >> 31);\
   wght -= ((dblNum-1) << 3) & dblMask;/* *Figure::pawnDoubled_;*/\
 }
 
@@ -187,9 +187,9 @@ WeightType Figure::pawnPassed_[2][8] = {
 }
 
 //////////////////////////////////////////////////////////////////////////
-WeightType Board::evaluate() const
+ScoreType Board::evaluate() const
 {
-  WeightType weight = calculateEval();
+  ScoreType weight = calculateEval();
 
   if ( Figure::ColorWhite  == color_ )
     weight = -weight;
@@ -197,11 +197,11 @@ WeightType Board::evaluate() const
   return weight;
 }
 
-WeightType Board::calculateEval() const
+ScoreType Board::calculateEval() const
 {
   if ( ChessMat == state_ )
   {
-    static WeightType mat_weights[2] = { Figure::WeightMat, -Figure::WeightMat };
+    static ScoreType mat_weights[2] = { Figure::WeightMat, -Figure::WeightMat };
     return mat_weights[color_];
   }
   else if ( drawState() )
@@ -214,9 +214,9 @@ WeightType Board::calculateEval() const
 
   static int castleWeights[] = { -8, 8, 4 };
 
-  WeightType weight = fmgr_.weight();
+  ScoreType weight = fmgr_.weight();
 
-  WeightType kingEval[2] = { 0, 0 };
+  ScoreType kingEval[2] = { 0, 0 };
   for (int color = 0; color < 2; ++color)
   {
     if ( stages_[color] > 0 )
@@ -243,7 +243,7 @@ WeightType Board::calculateEval() const
 
       static uint8 pmask_king[2] = { 96, 6 };
       static uint8 shifts[2] = { 5, 1 };
-      static WeightType king_penalties[2][4] = { {10, 5, 0, 0}, {10, 0, 5, 0} };
+      static ScoreType king_penalties[2][4] = { {10, 5, 0, 0}, {10, 0, 5, 0} };
 
       const uint8 * pmsk = (const uint8*)&fmgr_.pawn_mask((Figure::Color)color);
 
@@ -264,14 +264,14 @@ WeightType Board::calculateEval() const
 
   if ( fmgr_.pawns(Figure::ColorBlack) )
   {
-    WeightType pweight0 = 0;
+    ScoreType pweight0 = 0;
     EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
     weight -= pweight0;
   }
 
   if ( fmgr_.pawns(Figure::ColorWhite) )
   {
-    WeightType pweight1 = 0;
+    ScoreType pweight1 = 0;
     EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
     weight += pweight1;
   }
@@ -284,7 +284,7 @@ WeightType Board::calculateEval() const
 
   //if ( UnderCheck == state_ )
   //{
-  //  static WeightType s_checkWeight[2] = { 2, -2 };
+  //  static ScoreType s_checkWeight[2] = { 2, -2 };
   //  weight += s_checkWeight[color_];
   //}
 
@@ -293,14 +293,14 @@ WeightType Board::calculateEval() const
 
 
 
-//WeightType Board::evaluatePawns(Figure::Color color, int stage) const
+//ScoreType Board::evaluatePawns(Figure::Color color, int stage) const
 //{
 //  const uint64 & pmsk = fmgr_.pawn_mask(color);
 //
 //  if ( !pmsk )
 //    return 0;
 //
-//  WeightType weight = 0;
+//  ScoreType weight = 0;
 //  Figure::Color ocolor = Figure::otherColor(color);
 //  const uint64 & opmsk = fmgr_.pawn_mask(ocolor);
 //
@@ -337,24 +337,24 @@ WeightType Board::calculateEval() const
 //
 //  //  uint8 column = ((uint8*)&pmsk)[i];
 //  //  int dblNum = numBitsInByte(column);
-//  //  WeightType dblMask = ~((dblNum-1) >> 31);
+//  //  ScoreType dblMask = ~((dblNum-1) >> 31);
 //  //  weight -= ((dblNum-1) << 3) & dblMask;//* Figure::pawnDoubled_;
 //  //}
 //
 //  return weight;
 //}
 
-WeightType Board::evaluateWinnerLoser() const
+ScoreType Board::evaluateWinnerLoser() const
 {
   Figure::Color win_color = can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
   Figure::Color lose_color = Figure::otherColor(win_color);
 
-  WeightType weight = fmgr_.weight(win_color);
+  ScoreType weight = fmgr_.weight(win_color);
 
   const Figure & king_w = getFigure(win_color, KingIndex);
   const Figure & king_l = getFigure(lose_color, KingIndex);
 
-  WeightType kingEval = 0;
+  ScoreType kingEval = 0;
   if ( fmgr_.pawns(win_color) > 0 && fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeRook] )
   {
     int yw = king_w.where() >> 3;
@@ -396,21 +396,21 @@ WeightType Board::evaluateWinnerLoser() const
   //}
   if ( fmgr_.pawns(Figure::ColorBlack) )
   {
-    WeightType pweight0 = 0;
+    ScoreType pweight0 = 0;
     EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
     weight -= pweight0;
   }
 
   if ( fmgr_.pawns(Figure::ColorWhite) )
   {
-    WeightType pweight1 = 0;
+    ScoreType pweight1 = 0;
     EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
     weight += pweight1;
   }
 
   //if ( UnderCheck == state_ )
   //{
-  //  static WeightType s_checkWeight[2] = { 5, -5 };
+  //  static ScoreType s_checkWeight[2] = { 5, -5 };
   //  weight += s_checkWeight[color_];
   //}
 
@@ -422,9 +422,9 @@ WeightType Board::evaluateWinnerLoser() const
 ////////////////////////////////////////////////////////////////////////////
 //
 //#ifndef NDEBUG
-//WeightType Board::calculatePositionEval(int stage)
+//ScoreType Board::calculatePositionEval(int stage)
 //{
-//  WeightType weight = 0;
+//  ScoreType weight = 0;
 //  for (int color = 0; color < 2; ++color)
 //  {
 //    for (int i = 0; i < NumOfFigures; ++i)
@@ -433,7 +433,7 @@ WeightType Board::evaluateWinnerLoser() const
 //      if ( !fig )
 //        continue;
 //
-//      WeightType w = Figure::positionEvaluation(stage, color, fig.getType(), fig.where());
+//      ScoreType w = Figure::positionEvaluation(stage, color, fig.getType(), fig.where());
 //
 //      if ( !color )
 //        w = -w;

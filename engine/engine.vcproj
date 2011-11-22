@@ -323,6 +323,10 @@
 				RelativePath=".\MovesTable.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Player.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -367,6 +371,10 @@
 			</File>
 			<File
 				RelativePath=".\MovesTable.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Player.h"
 				>
 			</File>
 		</Filter>

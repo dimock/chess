@@ -96,6 +96,7 @@ public:
 
   static inline const FPos & get(int i)
   {
+    static FPosIndexer fposind;
     THROW_IF( i < 0 || i > 63, "invalid index" );
     return s_fromIndex_[i];
   }

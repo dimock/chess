@@ -15,8 +15,6 @@ using namespace std;
 
 ChessPosition::ChessPosition() : working_(false), turned_(false)
 {
-  //lastStep_.clear();
-
   squareSize_ = 44;
   borderWidth_ = 16;
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
@@ -27,7 +25,6 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
 
 void ChessPosition::setMaxDepth(int d)
 {
-  //alg_.setDepth(d);
 }
 
 bool ChessPosition::initialize(bool enableBook, int depthMax)
@@ -39,13 +36,13 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //alg_.enableBook(enableBook);
   //alg_.setDepth(depthMax);
 
-  //clearSteps();
-
-  //Board & board = *alg_.getCurrent();
+  Board & board = player_.getBoard();
 
   halfmovesNumber_ = 0;
-  if ( !board_.initialize(0) ) //"rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
+  if ( !board.initialize(0) ) //"rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
     return false;
+
+  vboard_ = board;
 
   return true;
 }
@@ -62,7 +59,6 @@ void ChessPosition::draw(QWidget * view, const QPoint & cursorPt) const
 
 	drawBoard(&painter, sz);
 	drawFigures(&painter, sz);
-  //drawFake(&painter, sz);
   drawCurrentMoving(&painter, sz, cursorPt);
 }
 
@@ -141,7 +137,7 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
   {
     for (int index = 0; index < Board::NumOfFigures; ++index)
     {
-      Figure fig = board_.getFigure((Figure::Color)color, index);
+      Figure fig = vboard_.getFigure((Figure::Color)color, index);
       if ( !fig || fig == selectedFigure_ )
         continue;
 
@@ -235,11 +231,11 @@ bool ChessPosition::getFigureOnPt(const QPoint & pt, Figure & fig) const
   if ( pos < 0 )
     return false;
 
-  const Field & field = board_.getField(pos);
+  const Field & field = vboard_.getField(pos);
   if ( !field )
     return false;
 
-  fig = board_.getFigure(field.color(), field.index());
+  fig = vboard_.getFigure(field.color(), field.index());
   return true;
 }
 
@@ -251,7 +247,9 @@ bool ChessPosition::selectFigure(const QPoint & pt)
   selectedMoves_.clear();
   selectedPositions_.clear();
 
-  if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board_.getColor() )
+  Board & board = player_.getBoard();
+
+  if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board.getColor() )
   {
     selectedFigure_.clear();
     return false;
@@ -270,7 +268,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
   }
 
 
-  numOfMoves_ = board_.generateMoves(moves);
+  numOfMoves_ = board.generateMoves(moves);
 
   if ( !numOfMoves_ )
   {
@@ -278,31 +276,26 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
-  wmax_ = -std::numeric_limits<WeightType>::max();
-  //ticks_ /= num;
   for (int i = 0; i < numOfMoves_; ++i)
   {
     Move & move = moves[i];
 
 #ifndef NDEBUG
-    Board board0 = board_;
+    Board board0 = board;
 #endif
 
-    int index = board_.getField(move.from_).index();
-    if ( board_.makeMove(move) )
+    int index = board.getField(move.from_).index();
+    if ( board.makeMove(move) )
     {
       if ( index == selectedFigure_.getIndex() )
       {
         selectedPositions_.insert(move.to_);
         selectedMoves_.push_back(move);
       }
-      WeightType w = board_.evaluate();
-      if ( w > wmax_ )
-        wmax_ = w;
     }
-    board_.unmakeMove();
+    board.unmakeMove();
 
-    THROW_IF(board0 != board_, "board is not restored by undo move method");
+    THROW_IF(board0 != board, "board is not restored by undo move method");
   }
   _asm
   {
@@ -384,14 +377,6 @@ bool ChessPosition::makeMovement(const QPoint & pt)
   return applyMove(moves[idx]);
 }
 
-//const Figure * ChessPosition::getSelection() const
-//{
-//  if ( selectedFigure_.getType() == Figure::TypeNone || !selectedFigure_ )
-//    return 0;
-//
-//  return &selectedFigure_;
-//}
-
 void ChessPosition::clearSelected()
 {
   selectedMoves_.clear();
@@ -401,47 +386,43 @@ void ChessPosition::clearSelected()
 
 
 //////////////////////////////////////////////////////////////////////////
-Board ChessPosition::getBoard() const
+const Board & ChessPosition::getBoard() const
 {
-  return board_;
+  return vboard_;
 }
 
-//int ChessPosition::doStep(CalcResult & cres)
-//{
-//  if ( working_ )
-//    return 0;
-//
-//  working_ = true;
-//
-//  int depth = alg_.doBestStep(cres, cout);
-//
-//  if ( alg_.getCurrent() )
-//    board_ = *alg_.getCurrent();
-//
-//  if ( alg_.lastStep() )
-//    lastStep_ = *alg_.lastStep();
-//  else
-//    lastStep_.clear();
-//
-//  working_ = false;
-//
-//  return depth;
-//}
-//
+bool ChessPosition::findMove(SearchResult & sres)
+{
+  if ( working_ )
+    return false;
+
+  working_ = true;
+
+  bool b = player_.findMove(sres);
+  vboard_ = player_.getBoard();
+
+  working_ = false;
+
+  return b;
+}
+
 bool ChessPosition::applyMove(const Move & move)
 {
   if ( working_ )
     return false;
 
-  if ( board_.makeMove(move) )
+  Board & board = player_.getBoard();
+
+  if ( board.makeMove(move) )
   {
-    halfmovesNumber_ = board_.halfmovesCount();
-    board_.verifyState();
+    halfmovesNumber_ = board.halfmovesCount();
+    board.verifyState();
+    vboard_ = board;
     return true;
   }
   else
   {
-    board_.unmakeMove();
+    board.unmakeMove();
     return false;
   }
 }
@@ -451,29 +432,24 @@ int ChessPosition::movesCount() const
   if ( working_ )
     return -1;
 
-  return board_.movesCount();
+  const Board & board = player_.getBoard();
+  return board.movesCount();
 }
-//
-//void ChessPosition::stop()
-//{
-//  alg_.stop();
-//}
-//
-//bool ChessPosition::calculateSteps(std::vector<Step> & steps)
-//{
-//  if ( working_ )
-//    return false;
-//
-//  return alg_.calculateSteps(steps);
-//}
-//
+
+void ChessPosition::stop()
+{
+  player_.stop();
+}
+
 void ChessPosition::undo()
 {
   if ( working_ )
     return;
 
-  if ( board_.halfmovesCount() > 0 )
-    board_.unmakeMove();
+  Board & board = player_.getBoard();
+  if ( board.halfmovesCount() > 0 )
+    board.unmakeMove();
+  vboard_ = board;
 }
 
 
@@ -482,21 +458,24 @@ void ChessPosition::redo()
   if ( working_ )
     return;
 
-  int i = board_.halfmovesCount();
+  Board & board = player_.getBoard();
+  int i = board.halfmovesCount();
   if ( i >= halfmovesNumber_ )
     return;
 
-  const MoveCmd & move = board_.getMove(i);
+  const MoveCmd & move = board.getMove(i);
 
-  if ( !board_.makeMove(move) )
+  if ( !board.makeMove(move) )
   {
-    board_.unmakeMove();
+    board.unmakeMove();
     return;
   }
 
   // it could be draw or mat if there is last move
-  if ( halfmovesNumber_ == board_.halfmovesCount() )
-    board_.verifyState();
+  if ( halfmovesNumber_ == board.halfmovesCount() )
+    board.verifyState();
+
+  vboard_ = board;
 }
 
 bool ChessPosition::save() const
@@ -514,13 +493,6 @@ bool ChessPosition::load()
 
   if ( !doLoad() )
     return false;
-
-  //if ( alg_.getCurrent() )
-  //  board_ = *alg_.getCurrent();
-
-  //lastStep_.clear();
-  //if ( alg_.lastStep() )
-  //  lastStep_ = *alg_.lastStep();
 
   return true;
 }
@@ -565,7 +537,10 @@ bool ChessPosition::doSave() const
 
 	std::ofstream out(fname.toAscii());
 
-  return Board::save(board_, out);
+  const Board & board = player_.getBoard();
+  bool res = Board::save(board, out);
+
+  return res;
 }
 
 bool ChessPosition::doLoad()
@@ -579,7 +554,10 @@ bool ChessPosition::doLoad()
 	if ( !in )
 		return false;
 
-  bool res = Board::load(board_, in);
-  halfmovesNumber_ = board_.halfmovesCount();
+  Board & board = player_.getBoard();
+  bool res = Board::load(board, in);
+  halfmovesNumber_ = board.halfmovesCount();
+  vboard_ = board;
+
   return res;
 }

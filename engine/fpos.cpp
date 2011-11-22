@@ -2,8 +2,6 @@
 
 FPos FPosIndexer::s_fromIndex_[64];
 
-FPosIndexer s_fposIndexer_;
-
 FPosIndexer::FPosIndexer()
 {
   for (int i = 0; i < 64; ++i)

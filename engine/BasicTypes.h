@@ -27,7 +27,7 @@ typedef unsigned uint32;
 typedef __int64 int64;
 typedef unsigned __int64 uint64;
 
-typedef int16 WeightType;
+typedef int16 ScoreType;
 
 enum { MaxDepth = 48 };
 

@@ -3,8 +3,6 @@
 
 int FigureDir::s_dirs_[8*2*4096];
 
-namespace { FigureDir s_figureDir; }
-
 FigureDir::FigureDir()
 {
 	for (int i = 0; i < 8*2*4096; ++i)

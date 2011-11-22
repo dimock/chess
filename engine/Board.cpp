@@ -309,6 +309,7 @@ bool Board::operator != (const Board & other) const
   return false;
 }
 
+//////////////////////////////////////////////////////////////////////////
 bool Board::invalidate()
 {
   Figure::Color ocolor = Figure::otherColor(color_);
@@ -357,20 +358,25 @@ bool Board::invalidate()
     }
   }
 
+  verifyState();
 
-  Move moves[MovesMax];
-  int snum = generateMoves(moves);
+  return true;
+}
 
-  bool found = false;
-  for (int i = 0; !found && i < snum; ++i)
-  {
-    Move & move = moves[i];
-
+// verify if there is draw or mat
+void Board::verifyState()
+{
 #ifndef NDEBUG
-    Board board0(*this);
+  Board board0(*this);
 #endif
 
-    if ( makeMove(move) )
+  Move moves[Board::MovesMax];
+  int num = generateMoves(moves);
+  bool found = false;
+  for (int i = 0; !found && i < num; ++i)
+  {
+    const Move & m = moves[i];
+    if ( makeMove(m) )
       found = true;
 
     unmakeMove();
@@ -379,9 +385,19 @@ bool Board::invalidate()
   }
 
   if ( !found )
-    state_ = UnderCheck == state_ ? ChessMat : Stalemat;
+  {
+    if ( UnderCheck == state_ )
+      state_ = ChessMat;
+    else if ( !drawState() )
+      state_ = Stalemat;
 
-  return true;
+    // update move's state because it is last one
+    if ( halfmovesCounter_ > 0 )
+    {
+      MoveCmd & move = moves_[halfmovesCounter_-1];
+      move.state_ = state_;
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////

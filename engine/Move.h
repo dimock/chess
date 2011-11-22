@@ -22,6 +22,14 @@ struct Move
 
   /// index of eaten (removed) figure
   int8 rindex_;
+
+  void clear()
+  {
+    from_ = -1;
+    to_ = -1;
+    new_type_ = 0;
+    rindex_ = -1;
+  }
 };
 
 /*! complete move structure with all necessary unmove information
@@ -102,7 +110,7 @@ struct MoveCmd : public Move
   uint8 stage_;
 
   /// weight for sorting moves for alpha-betta
-  WeightType weight_;
+  ScoreType weight_;
 
   /// fifty moves rule
   uint8 fifty_moves_;

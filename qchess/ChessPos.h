@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Board.h"
+#include "Player.h"
 #include <QPoint>
 #include <QSize>
 #include <set>
@@ -26,12 +26,15 @@ public:
   void setTurned(bool t) { turned_ = t; }
   void clearSelected();
 
-  Board getBoard() const;
-  //int doStep(CalcResult & cres);
+  // making move
+  bool findMove(SearchResult & sres);
   bool applyMove(const Move &);
+
+  const Board & getBoard() const;
   int movesCount() const;
-  //void stop();
-  //bool calculateSteps(std::vector<Step> & steps);
+
+  void stop();
+
   void undo();
   void redo();
   bool save() const;
@@ -49,10 +52,7 @@ private:
   QPoint coordByField(int) const;
   bool getFigureOnPt(const QPoint & pt, Figure & fig) const;
   int  getPositionOnPt(const QPoint & pt) const;
-  //const Figure * getSelection() const;
 
-
-  //ChessAlgorithm alg_;
 
 	void drawBoard(QPainter *, QSize & ) const;
 	void drawFigures(QPainter *, QSize & ) const;
@@ -60,7 +60,7 @@ private:
 
   std::vector<Move> selectedMoves_;
   std::set<int> selectedPositions_;
-  Board board_;
+  Board vboard_;
   int halfmovesNumber_;
 
   mutable Figure selectedFigure_;
@@ -75,7 +75,13 @@ private:
 
   long long ticks_;
   int numOfMoves_;
-  WeightType wmax_;
 
+
+  /*! Player is the main class of engine
+      it performs search of best move
+   */
+  Player player_;
+
+  /// indicates that search is in progress
   volatile bool working_;
 };

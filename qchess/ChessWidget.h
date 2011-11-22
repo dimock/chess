@@ -49,7 +49,7 @@ private slots:
   void onNext();
   void onPrev();
   void onGo();
-  void onStepDone();
+  void onMoveFound();
   void onTimeoutStop();
   void onTurnBoard(bool t);
   void onSettings();
@@ -59,20 +59,21 @@ private:
   void enableActions(bool on);
   void drawState();
   void drawInfo();
-  //void doBestStep();
+  void findMove();
 
   bool okToReset();
 
   QPoint curPt_;
   QPoint upleft_;
   ChessPosition cpos_;
+  SearchResult sres_;
+  int movesCount_;
   int full_t_, dt_;
   int bs_count_;
   int depth_;
-  int movesCount_, totalCurr_, movesCurr_, forcesCount_, additionalCount_, nullMovesCount_;
   char pv_str_[256];
   double moves_avg_base_, depth_avg_, moves_base_;
-  WeightType w_;
+  ScoreType score_;
   bool goingToClose_;
   bool changed_;
 

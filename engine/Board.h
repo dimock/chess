@@ -41,7 +41,7 @@ public:
   void verifyState();
 
   /// returns position evaluation that depends on color
-  WeightType evaluate() const;
+  ScoreType evaluate() const;
 
   /// always use this method to get figure
   inline const Figure & getFigure(Figure::Color color, int index) const
@@ -101,9 +101,9 @@ public:
 private:
 
   /// calculates absolute position evaluation
-  WeightType calculateEval() const;
-  //WeightType evaluatePawns(Figure::Color color, int stage) const;
-  WeightType evaluateWinnerLoser() const;
+  ScoreType calculateEval() const;
+  //ScoreType evaluatePawns(Figure::Color color, int stage) const;
+  ScoreType evaluateWinnerLoser() const;
 
   /// do move. fill undo info, don't validate
   bool doMove();

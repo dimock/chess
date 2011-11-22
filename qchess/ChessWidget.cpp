@@ -22,15 +22,15 @@ void ChessAlgThread::run()
   if ( !widget_ )
     return;
 
-  //widget_->doBestStep();
+  widget_->findMove();
 }
 
 //////////////////////////////////////////////////////////////////////////
 ChessWidget::ChessWidget(QWidget * parent) :
-  QMainWindow(parent), upleft_(30, 50), full_t_(0), depth_(0), w_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
-  moves_base_(0), movesCurr_(0), totalCurr_(0), dt_(0),
+  QMainWindow(parent), upleft_(30, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
+  moves_base_(0), dt_(0),
   thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), computerAnswers_(true), timelimit_(1000),
-  forcesCount_(0), additionalCount_(0), nullMovesCount_(0), depthMax_(2), enableBook_(true)
+  depthMax_(2), enableBook_(true)
 {
   QSettings settings(tr("Dimock"), tr("qchess"));
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
@@ -140,18 +140,12 @@ void ChessWidget::onNew()
   dt_ = 0;
   full_t_ = 0;
   depth_ = 0;
-  w_ = 0;
   bs_count_ = 0;
   moves_avg_base_ = 0;
   depth_avg_ = 0;
   movesCount_ = 0;
   changed_ = false;
   moves_base_ = 0;
-  movesCurr_ = 0;
-  totalCurr_ = 0;
-  forcesCount_ = 0;
-  additionalCount_ = 0;
-  nullMovesCount_ = 0;
   pv_str_[0] = 0;
 
   update();
@@ -213,7 +207,7 @@ void ChessWidget::onGo()
   changed_ = true;
 }
 
-void ChessWidget::onStepDone()
+void ChessWidget::onMoveFound()
 {
   enableActions(true);
   update();
@@ -234,7 +228,7 @@ void ChessWidget::onStepDone()
 
 void ChessWidget::onTimeoutStop()
 {
-  //cpos_.stop();
+  cpos_.stop();
 }
 
 void ChessWidget::onTurnBoard(bool t)
@@ -264,7 +258,7 @@ bool ChessWidget::okToReset()
 void ChessWidget::closeEvent(QCloseEvent *event)
 {
   goingToClose_ = true;
-  //cpos_.stop();
+  cpos_.stop();
   thread_.wait();
 
   if ( !okToReset() )
@@ -286,7 +280,7 @@ void ChessWidget::paintEvent(QPaintEvent * )
 
 void ChessWidget::drawState()
 {
-  Board board = cpos_.getBoard();
+  const Board & board = cpos_.getBoard();
   Figure::Color color = board.getColor();
   Board::State state = board.getState();
 
@@ -318,7 +312,7 @@ void ChessWidget::drawInfo()
   if ( full_t_ > 0 )
   {
     nps = 0;//movesCount_/(double)full_t_;
-    nps_curr = totalCurr_/(double)dt_;
+    nps_curr = sres_.totalMoves_/(double)dt_;
   }
 
   double mavg = 0;
@@ -378,7 +372,7 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
     {
       changed_ = true;
       movesCount_ = cpos_.movesCount();
-      //onGo();
+      onGo();
     }
   }
   //else if ( e->button() == Qt::RightButton )
@@ -389,47 +383,37 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
   update();
 }
 
-//void ChessWidget::doBestStep()
-//{
-//  QTime tm;
-//  tm.start();
-//
-//  CalcResult cres;
-//  depth_ = cpos_.doStep(cres);
-//  if ( 0 == depth_ )
-//    return;
-//
-//  w_ = cres.weight_;
-//  if ( cres.wminus_ )
-//    w_ = -w_;
-//
-//  dt_ = tm.elapsed();
-//  full_t_ += dt_;
-//  bs_count_++;
-//  movesCurr_ = cres.movesCount_;
-//  totalCurr_ = cres.totalMoves_;
-//  movesCount_ += cres.totalMoves_;
-//  nullMovesCount_ = cres.nullMovesCount_;
-//  forcesCount_ = cres.forcedMoves_;
-//  additionalCount_ = cres.additionalMoves_;
-//  if ( depth_ > 0 )
-//  {
-//    moves_base_ = exp(log((double)cres.movesCount_)/depth_);
-//    moves_avg_base_ += moves_base_;
-//  }
-//  depth_avg_ += depth_;
-//  stepsCount_ = cpos_.stepsCount();
-//
-//  pv_str_[0] = 0;
-//  for (int i = 0; i < cres.depth_; ++i)
-//  {
-//    char str[32];
-//    if ( !formatMove(cres.steps_[i], str) )
-//      break;
-//    strcat(pv_str_, str);
-//    strcat(pv_str_, " ");
-//  }
-//}
+void ChessWidget::findMove()
+{
+  QTime tm;
+  tm.start();
+
+  depth_ = cpos_.findMove(sres_);
+  if ( 0 == depth_ )
+    return;
+
+  dt_ = tm.elapsed();
+  full_t_ += dt_;
+  bs_count_++;
+
+  if ( depth_ > 0 )
+  {
+    moves_base_ = exp(log((double)sres_.movesCount_)/depth_);
+    moves_avg_base_ += moves_base_;
+  }
+  depth_avg_ += depth_;
+  movesCount_ = cpos_.movesCount();
+
+  pv_str_[0] = 0;
+  //for (int i = 0; i < sres.depth_; ++i)
+  //{
+  //  char str[32];
+  //  if ( !formatMove(cres.steps_[i], str) )
+  //    break;
+  //  strcat(pv_str_, str);
+  //  strcat(pv_str_, " ");
+  //}
+}
 
 void ChessWidget::mouseMoveEvent(QMouseEvent * e)
 {
