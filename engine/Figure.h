@@ -29,13 +29,6 @@ public:
   {
     THROW_IF( stage > 1 || color > 1 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
 
-    //if ( color )
-    //{
-    //  int x = pos & 7;
-    //  int y = 7 - (pos >> 3);
-    //  pos = x | (y << 3);
-    //}
-
     uint8 cmask = ((int8)(color << 7)) >> 7;
     uint8 icmask = ~cmask;
     uint8 i = (mirrorIndex_[pos] & cmask) | (pos | icmask);
@@ -80,9 +73,12 @@ protected:
 
 __declspec (align(1)) class FiguresCounter
 {
+  static uint8  s_transposeIndex_[64];
+
 public:
 
-  FiguresCounter() : pawns_(0), wbishops_(0), bbishops_(0), knights_(0), rooks_(0), queens_(0), count_(0), weight_(0)
+  FiguresCounter() : pawns_(0), wbishops_(0), bbishops_(0), knights_(0), rooks_(0), queens_(0), count_(0), weight_(0),
+    pawn_mask_(0ULL), knight_mask_(0ULL), bishop_mask_(0ULL), rook_mask_(0ULL), queen_mask_(0ULL)
   {
     eval_[0] = 0;
     eval_[1] = 0;
@@ -100,6 +96,11 @@ public:
     weight_ = 0;
     eval_[0] = 0;
     eval_[1] = 0;
+    pawn_mask_ = 0ULL;
+    knight_mask_ = 0ULL;
+    bishop_mask_ = 0ULL;
+    rook_mask_ = 0ULL;
+    queen_mask_ = 0ULL;
   }
 
   void incr(const Figure & fig)
@@ -107,26 +108,44 @@ public:
     switch ( fig.getType() )
     {
     case Figure::TypePawn:
-      pawns_++;
+      {
+        count_++;
+        weight_ += Figure::figureWeight_[fig.getType()];
+        pawns_++;
+        int bit = s_transposeIndex_[fig.where()];
+        pawn_mask_ |= 1ULL << bit;
+      }
+      break;
+
+    case Figure::TypeKnight:
+      count_++;
+      weight_ += Figure::figureWeight_[fig.getType()];
+      knights_++;
+      knight_mask_ |= 1ULL << fig.where();
       break;
 
     case Figure::TypeBishop:
+      count_++;
+      weight_ += Figure::figureWeight_[fig.getType()];
+      bishop_mask_ |= 1ULL << fig.where();
       if ( FieldColors::isWhite(fig.where()) )
         wbishops_++;
       else
         bbishops_++;
       break;
 
-    case Figure::TypeKnight:
-      knights_++;
-      break;
-
     case Figure::TypeRook:
+      count_++;
+      weight_ += Figure::figureWeight_[fig.getType()];
       rooks_++;
+      rook_mask_ |= 1ULL << fig.where();
       break;
 
     case Figure::TypeQueen:
+      count_++;
+      weight_ += Figure::figureWeight_[fig.getType()];
       queens_++;
+      queen_mask_ |= 1ULL << fig.where();
       break;
 
 	  case Figure::TypeKing:
@@ -136,11 +155,11 @@ public:
       return;
     }
 
-	  if ( fig.getType() != Figure::TypeKing )
-	  {
-		  count_++;
-		  weight_ += Figure::figureWeight_[fig.getType()];
-	  }
+	  //if ( fig.getType() != Figure::TypeKing )
+	  //{
+		 // count_++;
+		 // weight_ += Figure::figureWeight_[fig.getType()];
+	  //}
 
     eval_[0] += Figure::positionEvaluation(0, fig.getColor(), fig.getType(), fig.where());
     eval_[1] += Figure::positionEvaluation(1, fig.getColor(), fig.getType(), fig.where());
@@ -154,11 +173,31 @@ public:
     switch ( fig.getType() )
     {
     case Figure::TypePawn:
-      pawns_--;
-      THROW_IF(pawns_ > 8, "number of pawns is invalid");
+      {
+        count_--;
+        weight_ -= Figure::figureWeight_[fig.getType()];
+        pawns_--;
+        THROW_IF(pawns_ > 8, "number of pawns is invalid");
+        int bit = s_transposeIndex_[fig.where()];
+        pawn_mask_ ^= 1ULL << bit;
+        THROW_IF( pawn_mask_ & (1ULL << bit), "invalid pawn mask" );
+      }
+      break;
+
+    case Figure::TypeKnight:
+      count_--;
+      weight_ -= Figure::figureWeight_[fig.getType()];
+      knights_--;
+      knight_mask_ ^= 1ULL << fig.where();
+      THROW_IF( knight_mask_ & (1ULL << fig.where()), "invalid knight mask" );
+      THROW_IF(knights_ > 10, "number of knights is invalid");
       break;
 
     case Figure::TypeBishop:
+      count_--;
+      weight_ -= Figure::figureWeight_[fig.getType()];
+      bishop_mask_ ^= 1ULL << fig.where();
+      THROW_IF( bishop_mask_ & (1ULL << fig.where()), "invalid bishop mask" );
       if ( FieldColors::isWhite(fig.where()) )
       {
         wbishops_--;
@@ -171,18 +210,21 @@ public:
       }
       break;
 
-    case Figure::TypeKnight:
-      knights_--;
-      THROW_IF(knights_ > 10, "number of knights is invalid");
-      break;
-
     case Figure::TypeRook:
+      count_--;
+      weight_ -= Figure::figureWeight_[fig.getType()];
       rooks_--;
+      rook_mask_ ^= 1ULL << fig.where();
+      THROW_IF( rook_mask_ & (1ULL << fig.where()), "invalid rook mask" );
       THROW_IF(rooks_ > 10, "number of rooks is invalid");
       break;
 
     case Figure::TypeQueen:
+      count_--;
+      weight_ -= Figure::figureWeight_[fig.getType()];
       queens_--;
+      queen_mask_ ^= 1ULL << fig.where();
+      THROW_IF( queen_mask_ & (1ULL << fig.where()), "invalid queen mask" );
       THROW_IF(queens_ > 9, "number of queens is invalid");
       break;
 
@@ -193,11 +235,11 @@ public:
       return;
     }
 
-    if ( fig.getType() != Figure::TypeKing )
-    {
-      count_--;
-      weight_ -= Figure::figureWeight_[fig.getType()];
-    }
+    //if ( fig.getType() != Figure::TypeKing )
+    //{
+    //  count_--;
+    //  weight_ -= Figure::figureWeight_[fig.getType()];
+    //}
 
     eval_[0] -= Figure::positionEvaluation(0, fig.getColor(), fig.getType(), fig.where());
     eval_[1] -= Figure::positionEvaluation(1, fig.getColor(), fig.getType(), fig.where());;
@@ -215,6 +257,51 @@ public:
     eval_[1] -= Figure::positionEvaluation(1, fig.getColor(), fig.getType(), fig.where());
     eval_[1] += Figure::positionEvaluation(1, fig.getColor(), fig.getType(), to);
 
+    switch ( fig.getType() )
+    {
+    case Figure::TypePawn:
+      {
+        int bit_from = s_transposeIndex_[fig.where()];
+        int bit_to   = s_transposeIndex_[to];
+        pawn_mask_ ^= 1ULL << bit_from;
+        THROW_IF( pawn_mask_ & (1ULL << bit_from), "invalid pawn mask" );
+        pawn_mask_ |= 1ULL << bit_to;
+      }
+      break;
+
+    case Figure::TypeKnight:
+      {
+        knight_mask_ ^= 1ULL << fig.where();
+        THROW_IF( knight_mask_ & (1ULL << fig.where()), "invalid knight mask" );
+        knight_mask_ |= 1ULL << to;
+      }
+      break;
+
+    case Figure::TypeBishop:
+      {
+        bishop_mask_ ^= 1ULL << fig.where();
+        THROW_IF( bishop_mask_ & (1ULL << fig.where()), "invalid bishop mask" );
+        bishop_mask_ |= 1ULL << to;
+      }
+      break;
+
+    case Figure::TypeRook:
+      {
+        rook_mask_ ^= 1ULL << fig.where();
+        THROW_IF( rook_mask_ & (1ULL << fig.where()), "invalid rook mask" );
+        rook_mask_ |= 1ULL << to;
+      }
+      break;
+
+    case Figure::TypeQueen:
+      {
+        queen_mask_ ^= 1ULL << fig.where();
+        THROW_IF( queen_mask_ & (1ULL << fig.where()), "invalid queen mask" );
+        queen_mask_ |= 1ULL << to;
+      }
+      break;
+    }
+
     fig.go(to);
   }
 
@@ -228,6 +315,11 @@ public:
   int queens() const { return queens_; }
   ScoreType weight() const { return weight_; }
   ScoreType eval(int i) const { return eval_[i]; } // position
+  const uint64 & pawn_mask() const { return pawn_mask_; }
+  const uint64 & knight_mask() const { return knight_mask_; }
+  const uint64 & bishop_mask() const { return bishop_mask_; }
+  const uint64 & rook_mask() const { return rook_mask_; }
+  const uint64 & queen_mask() const { return queen_mask_; }
 
 private:
 
@@ -239,6 +331,21 @@ private:
   uint8 queens_;
   uint8 count_;
 
+  /// pawns. transposed for optimization
+  uint64 pawn_mask_;
+
+  /// knights
+  uint64 knight_mask_;
+
+  /// bishops
+  uint64 bishop_mask_;
+
+  /// rooks
+  uint64 rook_mask_;
+
+  /// queens
+  uint64 queen_mask_;
+
   ScoreType weight_, eval_[2];
 };
 
@@ -247,20 +354,17 @@ class FiguresManager
   static uint64 s_zobristCodes_[64*2*8];
   static uint64 s_zobristColor_;
   static uint64 s_zobristCastle_[2][2];
-  static uint8  s_transposeIndex_[64];
 
 public:
 
   FiguresManager() : hashCode_(0ULL)
   {
-    pawn_mask_[0] = pawn_mask_[1] = 0ULL;
     mask_[0] = mask_[1] = 0ULL;
   }
 
   void clear()
   {
     hashCode_ = 0ULL;
-    pawn_mask_[0] = pawn_mask_[1] = 0ULL;
     mask_[0] = mask_[1] = 0ULL;
 
     fcounter_[0].clear();
@@ -274,12 +378,6 @@ public:
     hashCode_ ^= uc;
 
     mask_[fig.getColor()] |= 1ULL << fig.where();
-
-    if ( fig.getType() == Figure::TypePawn )
-    {
-      int bit = s_transposeIndex_[fig.where()];
-      pawn_mask_[fig.getColor()] |= 1ULL << bit;
-    }
   }
 
   void decr(const Figure & fig)
@@ -289,13 +387,6 @@ public:
     hashCode_ ^= uc;
 
     mask_[fig.getColor()] ^= 1ULL << fig.where();
-
-    if ( fig.getType() == Figure::TypePawn )
-    {
-      int bit = s_transposeIndex_[fig.where()];
-      pawn_mask_[fig.getColor()] ^= 1ULL << bit;
-      THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit), "invalid pawn mask" );
-    }
   }
 
   void move(Figure & fig, int to)
@@ -306,22 +397,13 @@ public:
     const uint64 & uc1 = code(fig, to);
     hashCode_ ^= uc0;
     hashCode_ ^= uc1;
+
     fcounter_[fig.getColor()].move(fig, to);
 
     mask_[fig.getColor()] ^= 1ULL << from;
     mask_[fig.getColor()] |= 1ULL << to;
 
     THROW_IF(mask_[fig.getColor()] & (1ULL << from), "invalid figures mask");
-
-    if ( fig.getType() != Figure::TypePawn )
-      return;
-
-    int bit_from = s_transposeIndex_[from];
-    int bit_to = s_transposeIndex_[to];
-
-    pawn_mask_[fig.getColor()] ^= 1ULL << bit_from;
-    THROW_IF( pawn_mask_[fig.getColor()] & (1ULL << bit_from), "invalid pawn mask" );
-    pawn_mask_[fig.getColor()] |= 1ULL << bit_to;
   }
 
   void hashEnPassant(uint8 pos, uint8 color)
@@ -356,7 +438,11 @@ public:
   ScoreType eval(Figure::Color color, int stage) const { return fcounter_[color].eval(stage); }
   ScoreType eval(int stage) const { return fcounter_[Figure::ColorWhite].eval(stage) - fcounter_[Figure::ColorBlack].eval(stage); }
   const uint64 & hashCode() const { return hashCode_; }
-  const uint64 & pawn_mask(Figure::Color color) const { return pawn_mask_[color]; }
+  const uint64 & pawn_mask(Figure::Color color) const { return fcounter_[color].pawn_mask(); }
+  const uint64 & knight_mask(Figure::Color color) const { return fcounter_[color].knight_mask(); }
+  const uint64 & bishop_mask(Figure::Color color) const { return fcounter_[color].bishop_mask(); }
+  const uint64 & rook_mask(Figure::Color color) const { return fcounter_[color].rook_mask(); }
+  const uint64 & queen_mask(Figure::Color color) const { return fcounter_[color].queen_mask(); }
   const uint64 & mask(Figure::Color color) const { return mask_[color]; }
 
 private:
@@ -368,9 +454,6 @@ private:
 
   /// all figures mask
   uint64 mask_[2];
-
-  /// only pawns. transposed for optimization
-  uint64 pawn_mask_[2];
 
   FiguresCounter fcounter_[2];
   uint64 hashCode_;

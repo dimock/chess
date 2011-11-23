@@ -105,6 +105,8 @@ public:
       state_ = Stalemat;
   }
 
+  void verifyMasks() const;
+
   /// methods
 private:
 

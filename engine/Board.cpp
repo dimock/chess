@@ -671,3 +671,57 @@ bool Board::save(const Board & board, std::ostream & os)
 
   return true;
 }
+
+//////////////////////////////////////////////////////////////////////////
+void Board::verifyMasks() const
+{
+  for (int c = 0; c < 2; ++c)
+  {
+    uint64 pawn_mask = 0ULL;
+    uint64 knight_mask = 0ULL;
+    uint64 bishop_mask = 0ULL;
+    uint64 rook_mask = 0ULL;
+    uint64 queen_mask = 0ULL;
+    uint64 all_mask = 0ULL;
+
+    Figure::Color color = (Figure::Color)c;
+    for (int i = 0; i < NumOfFigures; ++i)
+    {
+      const Figure & f = getFigure(color, i);
+      all_mask |= 1ULL << f.where();
+
+      switch ( f.getType() )
+      {
+      case Figure::TypePawn:
+        {
+          int x = f.where() & 7;
+          int y = f.where() >>3;
+          pawn_mask |= 1ULL << ((x << 3) | y);
+        }
+        break;
+
+      case Figure::TypeKnight:
+        knight_mask |= 1ULL << f.where();
+        break;
+
+      case Figure::TypeBishop:
+        bishop_mask |= 1ULL << f.where();
+        break;
+
+      case Figure::TypeRook:
+        rook_mask |= 1ULL << f.where();
+        break;
+
+      case Figure::TypeQueen:
+        queen_mask |= 1ULL << f.where();
+        break;
+      }
+    }
+
+    THROW_IF( pawn_mask != fmgr_.pawn_mask(color), "pawn mask invalid" );
+    THROW_IF( knight_mask != fmgr_.knight_mask(color), "knight mask invalid" );
+    THROW_IF( bishop_mask != fmgr_.bishop_mask(color), "bishop mask invalid" );
+    THROW_IF( rook_mask != fmgr_.rook_mask(color), "rook mask invalid" );
+    THROW_IF( queen_mask != fmgr_.queen_mask(color), "queen mask invalid" );
+  }
+}

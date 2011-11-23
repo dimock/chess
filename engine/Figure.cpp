@@ -57,7 +57,7 @@ const char * Figure::name() const
 }
 
 //////////////////////////////////////////////////////////////////////////
-uint8 FiguresManager::s_transposeIndex_[] =
+uint8 FiguresCounter::s_transposeIndex_[] =
 {
   0,  8, 16, 24, 32, 40, 48, 56, 
   1,  9, 17, 25, 33, 41, 49, 57, 
