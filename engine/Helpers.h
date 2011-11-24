@@ -85,7 +85,7 @@ public:
 
   FieldColors();
 
-  static bool isWhite(int8 i)
+  static int8 isWhite(int8 i)
   {
     THROW_IF( (uint8)i > 63, "invalid position for field color detection" );
     return colors_[i];
@@ -93,7 +93,7 @@ public:
 
 private:
 
-  static bool colors_[64];
+  static int8 colors_[64];
 };
 
 class BitsCounter

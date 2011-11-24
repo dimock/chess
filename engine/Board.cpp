@@ -682,12 +682,15 @@ void Board::verifyMasks() const
     uint64 bishop_mask = 0ULL;
     uint64 rook_mask = 0ULL;
     uint64 queen_mask = 0ULL;
+    uint64 king_mask = 0ULL;
     uint64 all_mask = 0ULL;
 
     Figure::Color color = (Figure::Color)c;
     for (int i = 0; i < NumOfFigures; ++i)
     {
       const Figure & f = getFigure(color, i);
+      if ( !f )
+        continue;
       all_mask |= 1ULL << f.where();
 
       switch ( f.getType() )
@@ -715,6 +718,10 @@ void Board::verifyMasks() const
       case Figure::TypeQueen:
         queen_mask |= 1ULL << f.where();
         break;
+
+      case Figure::TypeKing:
+        king_mask |= 1ULL << f.where();
+        break;
       }
     }
 
@@ -723,5 +730,8 @@ void Board::verifyMasks() const
     THROW_IF( bishop_mask != fmgr_.bishop_mask(color), "bishop mask invalid" );
     THROW_IF( rook_mask != fmgr_.rook_mask(color), "rook mask invalid" );
     THROW_IF( queen_mask != fmgr_.queen_mask(color), "queen mask invalid" );
+    THROW_IF( king_mask != fmgr_.king_mask(color), "king mask invalid" );
+    THROW_IF( all_mask != fmgr_.mask(color), "invalid all figures mask" );
+
   }
 }

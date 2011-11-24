@@ -778,7 +778,7 @@ PawnMasks::PawnMasks()
 
 static FieldColors s_fieldColors;
 
-bool FieldColors::colors_[64];
+int8 FieldColors::colors_[64];
 
 FieldColors::FieldColors()
 {

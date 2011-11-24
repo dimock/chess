@@ -1,7 +1,7 @@
 
 #include "Player.h"
 
-#define NO_TIME_LIMIT
+#undef NO_TIME_LIMIT
 
 SearchResult::SearchResult() :
   nodesCount_(0),
@@ -39,7 +39,7 @@ bool Player::findMove(SearchResult & sres)
   nodesCounter_ = 0;
   tstart_ = clock();
 
-  for (int depth = 2; !stop_ && depth <= 3; ++depth)
+  for (int depth = 2; !stop_ && depth <= 8; ++depth)
   {
     Move best;
     ScoreType score = -alphaBetta(depth, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), best);
@@ -67,10 +67,6 @@ void Player::testTimer()
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta(int depth, ScoreType alpha, ScoreType betta, Move & move)
 {
-  //if ( depth <= 0 )
-  //  return board_.evaluate();
-
-
   if ( stop_ )
     return alpha;
 
