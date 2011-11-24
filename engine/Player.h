@@ -54,15 +54,22 @@ public:
     timeLimitMS_ = ms;
   }
 
+  void setMaxDepth(int d)
+  {
+    if ( d > 1 && d < 17 )
+      depthMax_ = d;
+  }
+
 private:
 
-  ScoreType alphaBetta(int depth, ScoreType alpha, ScoreType betta, Move & move);
+  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, Move & move);
 
   void testTimer();
 
   volatile bool stop_;
   Board board_;
   int timeLimitMS_;
+  int depthMax_;
   int nodesCounter_;
   int64 tstart_;
 };

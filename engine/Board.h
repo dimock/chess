@@ -99,9 +99,11 @@ public:
 
   inline void setNoMoves()
   {
+    if ( Invalid == state_ || ChessMat == state_ || drawState() )
+      return;
     if ( UnderCheck == state_ )
       state_ = ChessMat;
-    else if ( !drawState() )
+    else
       state_ = Stalemat;
   }
 

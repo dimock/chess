@@ -20,7 +20,8 @@ SearchResult::SearchResult() :
 Player::Player() :
   stop_(false),
   timeLimitMS_(0),
-  tstart_(0)
+  tstart_(0),
+  depthMax_(4)
 {
 }
 
@@ -39,16 +40,19 @@ bool Player::findMove(SearchResult & sres)
   nodesCounter_ = 0;
   tstart_ = clock();
 
-  for (int depth = 2; !stop_ && depth <= 8; ++depth)
+  for (int depth = 2; !stop_ && depth <= depthMax_; ++depth)
   {
     Move best;
-    ScoreType score = -alphaBetta(depth, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), best);
+    ScoreType score = -alphaBetta(depth, 0, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), best);
     if ( !stop_ )
     {
       sres.score_ = score;
       sres.best_  = best;
       sres.depth_ = depth;
     }
+
+    if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
+      break;
   }
 
   sres.nodesCount_ = nodesCounter_;
@@ -65,7 +69,7 @@ void Player::testTimer()
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int depth, ScoreType alpha, ScoreType betta, Move & move)
+ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, Move & move)
 {
   if ( stop_ )
     return alpha;
@@ -94,7 +98,7 @@ ScoreType Player::alphaBetta(int depth, ScoreType alpha, ScoreType betta, Move &
       else
       {
         Move m;
-        s = -alphaBetta(depth-1, -betta, -alpha, m);
+        s = -alphaBetta(depth-1, ply+1, -betta, -alpha, m);
       }
 
       if ( s > alpha )
@@ -121,7 +125,10 @@ ScoreType Player::alphaBetta(int depth, ScoreType alpha, ScoreType betta, Move &
   if ( 0 == counter )
   {
     board_.setNoMoves();
-    return board_.evaluate();
+    ScoreType s = board_.evaluate();
+    if ( board_.getState() == Board::ChessMat )
+      s += ply;
+    return s;
   }
 
   return alpha;

@@ -189,6 +189,11 @@ ScoreType Figure::pawnPassed_[2][8] = {
 //////////////////////////////////////////////////////////////////////////
 ScoreType Board::evaluate() const
 {
+  if ( ChessMat == state_ )
+    return -Figure::WeightMat;
+  else if ( drawState() )
+    return Figure::WeightDraw;
+
   ScoreType weight = calculateEval();
 
   if ( Figure::ColorBlack  == color_ )
@@ -199,13 +204,6 @@ ScoreType Board::evaluate() const
 
 ScoreType Board::calculateEval() const
 {
-  if ( ChessMat == state_ )
-  {
-    static ScoreType mat_weights[2] = { Figure::WeightMat, -Figure::WeightMat };
-    return mat_weights[color_];
-  }
-  else if ( drawState() )
-    return Figure::WeightDraw;
 
   if ( can_win_[0] != can_win_[1] )
   {

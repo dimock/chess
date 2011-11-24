@@ -21,10 +21,12 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
   ticks_ = 0;
   numOfMoves_ = 0;
   halfmovesNumber_ = 0;
+  vmove_.clear();
 }
 
 void ChessPosition::setMaxDepth(int d)
 {
+  player_.setMaxDepth(d);
 }
 
 bool ChessPosition::initialize(bool enableBook, int depthMax)
@@ -32,11 +34,14 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   if ( working_)
     return false;
 
+  vmove_.clear();
+
   //alg_.init(Figure::ColorWhite);
   //alg_.enableBook(enableBook);
   //alg_.setDepth(depthMax);
 
   Board & board = player_.getBoard();
+  player_.setMaxDepth(depthMax);
 
   halfmovesNumber_ = 0;
   if ( !board.initialize(0) ) //"rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
@@ -117,8 +122,8 @@ void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
 
     Index fidx = turned_ ? Index(7-x, 7-y) : Index(x, y);
 
-    //if ( lastStep_ && fpos.index() == lastStep_.to_ )
-    //  color = wht ? lwhite : lblack;
+    if ( vmove_.to_ == fidx )
+      color = wht ? lwhite : lblack;
 
     if ( selectedPositions_.find(fidx) != selectedPositions_.end() )
       color = wht ? swhite : sblack;
@@ -416,13 +421,23 @@ bool ChessPosition::applyMove(const Move & move)
     halfmovesNumber_ = board.halfmovesCount();
     board.verifyState();
     vboard_ = board;
+    vmove_  = move;
     return true;
   }
   else
   {
     board.unmakeMove();
+    vmove_.clear();
     return false;
   }
+}
+
+void ChessPosition::saveLastMove(const Board & board)
+{
+  if ( board.halfmovesCount() > 0 )
+    vmove_  = board.getMove(board.halfmovesCount()-1);
+  else
+    vmove_.clear();
 }
 
 int ChessPosition::movesCount() const
@@ -452,6 +467,9 @@ void ChessPosition::undo()
   Board & board = player_.getBoard();
   if ( board.halfmovesCount() > 0 )
     board.unmakeMove();
+
+  saveLastMove(board);
+
   vboard_ = board;
 }
 
@@ -471,12 +489,15 @@ void ChessPosition::redo()
   if ( !board.makeMove(move) )
   {
     board.unmakeMove();
+    vmove_.clear();
     return;
   }
 
   // it could be draw or mat if there is last move
   if ( halfmovesNumber_ == board.halfmovesCount() )
     board.verifyState();
+
+  saveLastMove(board);
 
   vboard_ = board;
 }
@@ -561,6 +582,8 @@ bool ChessPosition::doLoad()
   bool res = Board::load(board, in);
   halfmovesNumber_ = board.halfmovesCount();
   vboard_ = board;
+
+  saveLastMove(board);
 
   return res;
 }

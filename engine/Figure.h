@@ -31,7 +31,7 @@ public:
 
     uint8 cmask = ((int8)(color << 7)) >> 7;
     uint8 icmask = ~cmask;
-    uint8 i = (mirrorIndex_[pos] & cmask) | (pos | icmask);
+    uint8 i = (mirrorIndex_[pos] & cmask) | (pos & icmask);
 
     ScoreType e = positionEvaluations_[stage][type][i];
     return e;

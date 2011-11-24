@@ -46,6 +46,7 @@ public:
 private:
 
   bool applyMove(const Move &);
+  void saveLastMove(const Board & board);
 
 	bool doSave() const;
 	bool doLoad();
@@ -62,6 +63,7 @@ private:
   std::vector<Move> selectedMoves_;
   std::set<int> selectedPositions_;
   Board vboard_;
+  Move  vmove_;
   int halfmovesNumber_;
 
   mutable Figure selectedFigure_;

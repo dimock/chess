@@ -731,7 +731,7 @@ void Board::verifyMasks() const
     THROW_IF( rook_mask != fmgr_.rook_mask(color), "rook mask invalid" );
     THROW_IF( queen_mask != fmgr_.queen_mask(color), "queen mask invalid" );
     THROW_IF( king_mask != fmgr_.king_mask(color), "king mask invalid" );
-    THROW_IF( all_mask != fmgr_.mask(color), "invalid all figures mask" );
+    //THROW_IF( all_mask != fmgr_.mask(color), "invalid all figures mask" );
 
   }
 }
