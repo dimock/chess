@@ -43,7 +43,7 @@ bool Player::findMove(SearchResult & sres)
   for (int depth = 2; !stop_ && depth <= depthMax_; ++depth)
   {
     Move best;
-    ScoreType score = -alphaBetta(depth, 0, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), best);
+    ScoreType score = alphaBetta(depth, 0, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), best);
     if ( !stop_ )
     {
       sres.score_ = score;
