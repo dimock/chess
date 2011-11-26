@@ -1,7 +1,7 @@
 
 #include "Player.h"
 
-#define NO_TIME_LIMIT
+#undef NO_TIME_LIMIT
 
 SearchResult::SearchResult() :
   nodesCount_(0),
@@ -90,10 +90,6 @@ bool Player::findMove(SearchResult & sres)
       sres.depth_ = depth;
       before = best;
     }
-    else
-    {
-      int ttt = 0;
-    }
 
     if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
       break;
@@ -122,45 +118,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   Move b;
   b.clear();
 
-//  if ( before && board_.validMove(before) )
-//  {
-//    nodesCounter_++;
-//    if ( board_.makeMove(before) )
-//    {
-//      counter++;
-//      ScoreType s = alpha;
-//      if ( board_.drawState() )
-//        s = 0;
-//      else if ( depth <= 1 )
-//      {
-//        s = -board_.evaluate();
-//      }
-//      else
-//      {
-//        Move m;
-//        bool f = false;
-//
-//        s = -alphaBetta(depth-1, ply+1, -betta, -alpha, b, m, f);
-//      }
-//
-//      if ( s > alpha )
-//      {
-//        alpha = s;
-//        move = before;
-//        found = true;
-//      }
-//    }
-//
-//#ifndef NDEBUG
-//    board_.verifyMasks();
-//#endif
-//
-//    board_.unmakeMove();
-//
-//#ifndef NDEBUG
-//    board_.verifyMasks();
-//#endif
-//  }
+  if ( before && board_.validMove(before) )
+  {
+    nodesCounter_++;
+    movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
+  }
 
   Move moves[Board::MovesMax];
   int num = board_.generateMoves(moves);
@@ -169,48 +131,15 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     const Move & mv = moves[i];
     if ( nodesCounter_ && !(nodesCounter_ & 0xffff) )
       testTimer();
+
     if ( stop_ )
       break;
+    
     nodesCounter_++;
 
     THROW_IF( !board_.validMove(mv), "move validation failed" );
-    
-    if ( board_.makeMove(mv) )
-    {
-      counter++;
-      ScoreType s = alpha;
-      if ( board_.drawState() )
-        s = 0;
-      else if ( depth <= 1 )
-      {
-        s = -board_.evaluate();
-      }
-      else
-      {
-        Move m;
-        bool f = false;
 
-        s = -alphaBetta(depth-1, ply+1, -betta, -alpha, b, m, f);
-      }
-
-      if ( s > alpha )
-      {
-        alpha = s;
-        move = mv;
-        if ( before == move )
-          found = true;
-      }
-    }
-
-#ifndef NDEBUG
-    board_.verifyMasks();
-#endif
-
-    board_.unmakeMove();
-
-#ifndef NDEBUG
-    board_.verifyMasks();
-#endif
+    movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
   }
 
   if ( stop_ )

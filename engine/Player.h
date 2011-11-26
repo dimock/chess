@@ -84,4 +84,47 @@ private:
   BetweenMask * g_betweenMasks;
   DeltaPosCounter * g_deltaPosCounter;
   DistanceCounter * g_distanceCounter;
+
+
+  //////////////////////////////////////////////////////////////////////////
+  inline void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & before, Move & b, const Move & mv, Move & move, bool & found, int & counter)
+  {
+    if ( board_.makeMove(mv) )
+    {
+      counter++;
+      ScoreType s = alpha;
+      if ( board_.drawState() )
+        s = 0;
+      else if ( depth <= 1 )
+      {
+        s = -board_.evaluate();
+      }
+      else
+      {
+        Move m;
+        bool f = false;
+
+        s = -alphaBetta(depth-1, ply+1, -betta, -alpha, b, m, f);
+      }
+
+      if ( !stop_ && s > alpha )
+      {
+        alpha = s;
+        move = mv;
+        if ( before == move )
+          found = true;
+      }
+    }
+
+#ifndef NDEBUG
+    board_.verifyMasks();
+#endif
+
+    board_.unmakeMove();
+
+#ifndef NDEBUG
+    board_.verifyMasks();
+#endif
+  }
+
 };
