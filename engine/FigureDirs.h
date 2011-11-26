@@ -4,7 +4,7 @@
 
 class FigureDir
 {
-	static int s_dirs_[8*2*4096];
+	int s_dirs_[8*2*4096];
 
 public:
 
@@ -21,7 +21,7 @@ public:
  // }
 
   // from 'figure' to 'p'
-  static inline int dir(const Figure & fig, int p)
+  inline int dir(const Figure & fig, int p)
 	{
     THROW_IF( p < 0 || p > 63, "invalid point to get direction" );
     unsigned u = (p << 6) | fig.where();
@@ -32,7 +32,7 @@ public:
 
 private:
 
-	static inline int & dir_ref(Figure::Type type, Figure::Color color, int idp)
+	inline int & dir_ref(Figure::Type type, Figure::Color color, int idp)
 	{
 		THROW_IF( (unsigned)type > Figure::TypeKing || (unsigned)color > 1, "try to get invalid direction" );
 		return *(s_dirs_ + ((type<<13) | (color<<12) | idp));

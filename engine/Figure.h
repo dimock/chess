@@ -73,7 +73,8 @@ protected:
 
 __declspec (align(1)) class FiguresCounter
 {
-  static uint8  s_transposeIndex_[64];
+  static uint8 s_transposeIndex_[64];
+  static  int8 s_whiteColors_[64];
 
 public:
 
@@ -101,7 +102,7 @@ public:
     static int8 mincr[8]  = { 0/*None*/, 1/*Pawn*/, 1/*Knight*/, 1/*bishop*/, 1/*rook*/, 1/*queen*/, 0/*king*/ };
     static ScoreType mscore[8] = { 0/*None*/, (ScoreType)65535/*Pawn*/, (ScoreType)65535/*Knight*/, (ScoreType)65535/*bishop*/, (ScoreType)65535/*rook*/, (ScoreType)65535/*queen*/, 0/*king*/ };
     
-    int8 fc = FieldColors::isWhite(fig.where()) & fcmask[fig.getType()];
+    int8 fc = s_whiteColors_[fig.where()] & fcmask[fig.getType()];
     
     tcount_[fig.getType()][fc]++;
     weight_ += Figure::figureWeight_[fig.getType()] & mscore[fig.getType()];
@@ -127,7 +128,7 @@ public:
     static int8 mdecr[8]  = { 0/*None*/, 1/*Pawn*/, 1/*Knight*/, 1/*bishop*/, 1/*rook*/, 1/*queen*/, 0/*king*/ };
     static ScoreType mscore[8] = { 0/*None*/, (ScoreType)65535/*Pawn*/, (ScoreType)65535/*Knight*/, (ScoreType)65535/*bishop*/, (ScoreType)65535/*rook*/, (ScoreType)65535/*queen*/, 0/*king*/ };
 
-    int8 fc = FieldColors::isWhite(fig.where()) & fcmask[fig.getType()];
+    int8 fc = s_whiteColors_[fig.where()] & fcmask[fig.getType()];
 
     tcount_[fig.getType()][fc]--;
     weight_ -= Figure::figureWeight_[fig.getType()] & mscore[fig.getType()];

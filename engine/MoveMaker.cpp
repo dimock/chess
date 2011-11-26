@@ -12,7 +12,7 @@ bool Board::validMove(const Move & move) const
   if ( !fig )
     return false;
 
-  int dir = FigureDir::dir(fig, move.to_);
+  int dir = g_figureDir->dir(fig, move.to_);
   if ( dir < 0 )
     return false;
 
@@ -66,7 +66,7 @@ bool Board::validMove(const Move & move) const
   case Figure::TypeRook:
   case Figure::TypeQueen:
     {
-      const uint64 & mask = BetweenMask::mask(move.from_, move.to_);
+      const uint64 & mask = g_betweenMasks->mask(move.from_, move.to_);
       const uint64 & black = fmgr_.mask(Figure::ColorBlack);
       const uint64 & white = fmgr_.mask(Figure::ColorWhite);
 
@@ -81,7 +81,7 @@ bool Board::validMove(const Move & move) const
 
 bool Board::doMove()
 {
-  MoveCmd & move = moves_[halfmovesCounter_-1];
+  MoveCmd & move = getMove(halfmovesCounter_-1);
 
   Figure & fig = getFigure(color_, getField(move.from_).index());
   Figure::Color ocolor = Figure::otherColor(color_);
@@ -132,7 +132,7 @@ bool Board::doMove()
     move.field_rook_to_ = field_rook_to;
     field_rook_to.set(rook);
 
-    castle_[color_] = 1 + (((unsigned)d & 0x80000000) >> 31);//d > 0 ? 1 : 2;
+    move.castle_ = castle_[color_] = 1 + (((unsigned)d & 0x80000000) >> 31);//d > 0 ? 1 : 2;
     state_ = Castle;
 
     THROW_IF(!castle_index_[color_][0] && !castle_index_[color_][1], "try to castle while it is impossible");
@@ -235,7 +235,7 @@ bool Board::doMove()
 
 void Board::undoMove()
 {
-  MoveCmd & move = moves_[halfmovesCounter_];
+  MoveCmd & move = getMove(halfmovesCounter_);
 
   // always restore state, because we have changed it
   state_ = (State)move.old_state_;
@@ -329,7 +329,7 @@ bool Board::makeMove(const Move & mv)
 
   halfmovesCounter_++;
 
-  MoveCmd & move = moves_[halfmovesCounter_-1];
+  MoveCmd & move = getMove(halfmovesCounter_-1);
   move.clearUndo();
   move = mv;
 
@@ -393,7 +393,7 @@ void Board::unmakeMove()
 
   halfmovesCounter_--;
 
-  MoveCmd & move = moves_[halfmovesCounter_];
+  MoveCmd & move = getMove(halfmovesCounter_);
 
   if ( move.need_unmake_ )
   {
@@ -441,7 +441,7 @@ bool Board::verifyChessDraw()
   int reps = 1;
   for (int i = halfmovesCounter_-3; i >= 0; i -= 2)
   {
-    if ( moves_[i].zcode_ == fmgr_.hashCode() )
+    if ( getMove(i).zcode_ == fmgr_.hashCode() )
       reps++;
 
     if ( reps >= 3 )
@@ -450,7 +450,7 @@ bool Board::verifyChessDraw()
       return true;
     }
 
-    if ( moves_[i].irreversible_ )
+    if ( getMove(i).irreversible_ )
       break;
   }
 

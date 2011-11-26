@@ -40,31 +40,31 @@ public:
 
   PawnMasks();
 
-  static const uint64 & mask_guarded(int color, int pos)
+  inline const uint64 & mask_guarded(int color, int pos)
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_guarded_[color][pos];
   }
 
-  static const uint64 & mask_backward(int color, int pos)
+  inline const uint64 & mask_backward(int color, int pos)
   {
 	  THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
 	  return pmasks_backward_[color][pos];
   }
 
-  static const uint64 & mask_passed(int color, int pos)
+  inline const uint64 & mask_passed(int color, int pos)
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_passed_[color][pos];
   }
 
-  static const uint64 & mask_blocked(int color, int pos)
+  inline const uint64 & mask_blocked(int color, int pos)
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_blocked_[color][pos];
   }
 
-  static const uint64 & mask_isolated(int x)
+  inline const uint64 & mask_isolated(int x)
   {
     THROW_IF( (unsigned)x > 7, "invalid pawn x or color" );
     return pmask_isolated_[x];
@@ -72,55 +72,27 @@ public:
 
 private:
 
-  static uint64 pmasks_guarded_[2][64];
-  static uint64 pmasks_passed_[2][64];
-  static uint64 pmasks_blocked_[2][64];
-  static uint64 pmasks_backward_[2][64];
-  static uint64 pmask_isolated_[8];
-};
+  void clearAll(int);
 
-class FieldColors
-{
-public:
-
-  FieldColors();
-
-  static int8 isWhite(int8 i)
-  {
-    THROW_IF( (uint8)i > 63, "invalid position for field color detection" );
-    return colors_[i];
-  }
-
-private:
-
-  static int8 colors_[64];
+  uint64 pmasks_guarded_[2][64];
+  uint64 pmasks_passed_[2][64];
+  uint64 pmasks_blocked_[2][64];
+  uint64 pmasks_backward_[2][64];
+  uint64 pmask_isolated_[8];
 };
 
 class BitsCounter
 {
   static int8 s_array_[256];
 
-  int8 countBits(uint8 byte) const
-  {
-    int8 n = 0;
-    for ( ; byte != 0; byte >>= 1)
-    {
-      if ( byte&1 )
-        n++;
-    }
-    return n;
-  }
-
 public:
 
-  BitsCounter();
-
-  inline static int numBitsInByte(uint8 byte)
+  static inline int8 numBitsInByte(uint8 byte)
   {
     return s_array_[byte];
   }
 
-  inline static int numBitsInWord(uint16 word)
+  static inline int8 numBitsInWord(uint16 word)
   {
     return numBitsInByte(word&0xff) + numBitsInByte(word>>8);
   }
@@ -128,7 +100,7 @@ public:
 
 class DeltaPosCounter
 {
-  static FPos s_array_[4096];
+  FPos s_array_[4096];
 
   FPos deltaP(FPos dp) const
   {
@@ -157,7 +129,7 @@ public:
   DeltaPosCounter();
 
   /// returns { 0, 0 }  if (to - from) isn't horizontal, vertical or diagonal
-  inline static const FPos & getDeltaPos(int to, int from)
+  inline const FPos & getDeltaPos(int to, int from)
   {
     THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
     return s_array_[(to<<6) | from];
@@ -168,14 +140,14 @@ public:
 class BetweenMask
 {
   // masks between two fields
-  static uint64 s_masks_[64][64];
+  uint64 s_masks_[64][64];
 
 public:
   
-  BetweenMask();
+  BetweenMask(DeltaPosCounter *);
 
   // mask contains only bits BETWEEN from & to
-  static const uint64 & mask(int8 from, int8 to)
+  inline const uint64 & mask(int8 from, int8 to)
   {
     THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
     return s_masks_[from][to];
@@ -186,7 +158,7 @@ public:
 
 class DistanceCounter
 {
-  static int s_array_[4096];
+  int s_array_[4096];
 
   int dist_dP(FPos dp) const
   {
@@ -204,7 +176,7 @@ public:
   DistanceCounter();
 
   // returns distance between 2 points - 'a' & 'b'
-  static inline int getDistance(int a, int b)
+  inline int getDistance(int a, int b)
   {
     THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
     return s_array_[(a<<6) | b];

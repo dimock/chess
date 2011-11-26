@@ -86,8 +86,6 @@ class FPosIndexer
 
 public:
 
-  FPosIndexer();
-
   static inline const FPos & get(int8 i)
   {
     THROW_IF( i < 0 || i > 63, "invalid index" );

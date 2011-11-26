@@ -3,11 +3,17 @@
 #include "FigureDirs.h"
 
 // static data
-MoveCmd Board::moves_[GameLength];
 char Board::fen_[FENsize];
 const char * Board::stdFEN_ = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-Board::Board()
+Board::Board() :
+  g_moves(0),
+  g_movesTable(0),
+  g_figureDir(0),
+  g_pawnMasks(0),
+  g_betweenMasks(0),
+  g_deltaPosCounter(0),
+  g_distanceCounter(0)
 {
   clear();
 }
@@ -45,7 +51,7 @@ void Board::clear()
 
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
 
-bool Board::initialize(const char * fen)
+bool Board::fromFEN(const char * fen)
 {
   clear();
 
@@ -391,7 +397,7 @@ void Board::verifyState()
     // update move's state because it is last one
     if ( halfmovesCounter_ > 0 )
     {
-      MoveCmd & move = moves_[halfmovesCounter_-1];
+      MoveCmd & move = getMove(halfmovesCounter_-1);
       move.state_ = state_;
     }
   }
@@ -583,7 +589,7 @@ bool Board::load(Board & board, std::istream & is)
           fen_expected = true;
         else if ( strcmp(param, "FEN") == 0 && fen_expected )
         {
-          if ( !board.initialize(value) )
+          if ( !board.fromFEN(value) )
             return false;
           fen_init = true;
         }
@@ -593,7 +599,7 @@ bool Board::load(Board & board, std::istream & is)
   }
 
   if ( !fen_init )
-    board.initialize(0);
+    board.fromFEN(0);
 
   for (int i = 0; i < hmovesN; ++i)
   {
@@ -638,7 +644,13 @@ bool Board::save(const Board & board, std::ostream & os)
   os << "\"]" << std::endl;
 
   Board sboard = board;
+  MoveCmd tempMoves[Board::GameLength];
+
   int num = sboard.halfmovesCount();
+  for (int i = 0; i < num; ++i)
+    tempMoves[i] = board.getMove(i);
+  sboard.set_moves(tempMoves);
+
   while ( sboard.halfmovesCount() > 0 )
     sboard.unmakeMove();
 
@@ -666,8 +678,6 @@ bool Board::save(const Board & board, std::ostream & os)
   }
 
   os << sres << std::endl;
-
-  sboard.verifyState();
 
   return true;
 }

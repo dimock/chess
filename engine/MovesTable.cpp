@@ -1,16 +1,46 @@
 #include "MovesTable.h"
 #include "Figure.h"
 
-int8  MovesTable::s_tablePawn_[2][64][6];
-int8  MovesTable::s_tableKnight_[64][10];
-int8  MovesTable::s_tableKing_[64][10];
-uint16 MovesTable::s_tableOther_[4][64][10];
 
-uint64 MovesTable::s_pawnsCaps_[2][64];
-uint64 MovesTable::s_otherCaps_[8][64];
+//////////////////////////////////////////////////////////////////////////
+MovesTable::MovesTable()
+{
+  for (int i = 0; i < 64; ++i)
+  {
+    resetAllTables(i);
 
+    initPawns(i);
+    initKnights(i);
+    initKings(i);
+    initBishops(i);
+    initRooks(i);
+    initQueens(i);
+  }
+}
 
-static MovesTable s_movesTable;
+void MovesTable::resetAllTables(int pos)
+{
+  for (int color = 0; color < 2; ++color)
+  {
+    for (int i = 0; i < 6; ++i)
+      s_tablePawn_[color][pos][i] = -1;
+  }
+
+  for (int i = 0; i < 10; ++i)
+  {
+    s_tableKnight_[pos][i] = -1;
+    s_tableKing_[pos][i] = -1;
+
+    for(int j = 0; j < 4; ++j)
+      s_tableOther_[j][pos][i] = 0;
+  }
+
+  for (int color = 0; color < 2; ++color)
+    s_pawnsCaps_[color][pos] = 0;
+
+  for (int type = 0; type < 8; ++type)
+    s_otherCaps_[type][pos] = 0;
+}
 
 //////////////////////////////////////////////////////////////////////////
 void MovesTable::initPawns(int pos)
@@ -21,11 +51,8 @@ void MovesTable::initPawns(int pos)
   for (int color = 0; color < 2; ++color)
   {
     if ( p.y() == 0 || p.y() == 7 )
-    {
-      for (int i = 0; i < 4; ++i)
-        s_tablePawn_[color][pos][i] = -1;
       continue;
-    }
+
     bool first = color ? p.y() == 1 : p.y() == 6;
     int n = first ? 4 : 3;
     s_tablePawn_[color][pos][3] = -1;
@@ -38,12 +65,13 @@ void MovesTable::initPawns(int pos)
       else
         s_tablePawn_[color][pos][i] = -1;
     }
-    for (int i = n; i < 6; ++i)
-      s_tablePawn_[color][pos][i] = -1;
 
     // fill captures masks
-    for (int i = 0; i < 2 && s_tablePawn_[color][pos][i] >= 0; ++i)
-      s_pawnsCaps_[color][pos] |= 1ULL << s_tablePawn_[color][pos][i];
+    for (int i = 0; i < 2; ++i)
+    {
+      if ( s_tablePawn_[color][pos][i] >= 0 )
+        s_pawnsCaps_[color][pos] |= 1ULL << s_tablePawn_[color][pos][i];
+    }
   }
 }
 
@@ -61,8 +89,6 @@ void MovesTable::initKnights(int pos)
       continue;
     s_tableKnight_[pos][j++] = q.index();
   }
-  for ( ; j < 10; ++j)
-    s_tableKnight_[pos][j] = -1;
 
   // fill captures masks
   for (int i = 0; i < 8 && s_tableKnight_[pos][i] >= 0; ++i)
@@ -83,8 +109,6 @@ void MovesTable::initKings(int pos)
       continue;
     s_tableKing_[pos][j++] = q.index();
   }
-  for ( ; j < 10; ++j)
-    s_tableKing_[pos][j] = -1;
 
   // fill captures masks
   for (int i = 0; i < 8 && s_tableKing_[pos][i] >= 0; ++i)
@@ -101,15 +125,17 @@ void MovesTable::initBishops(int pos)
   {
     const FPos & d = dpos[i];
     int n = 0;
-    for (FPos q = p + d; q; ++n, q += d);
+    for (FPos q = p + d; q; ++n, q += d)
+    {
+      // fill captures mask
+      s_otherCaps_[Figure::TypeBishop][pos] |= 1ULL << q.index();
+    }
+
     if ( !n )
       continue;
-    s_tableOther_[0][pos][j++] = (d.delta() << 8) | (n);
-  }
 
-  // fill captures masks
-  for (int i = 0; i < 4 && s_tableOther_[0][pos][i] >= 0; ++i)
-    s_otherCaps_[Figure::TypeBishop][pos] |= 1ULL << s_tableOther_[0][pos][i];
+    s_tableOther_[Figure::TypeBishop-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
+  }
 }
 
 void MovesTable::initRooks(int pos)
@@ -122,15 +148,16 @@ void MovesTable::initRooks(int pos)
   {
     const FPos & d = dpos[i];
     int n = 0;
-    for (FPos q = p + d; q; ++n, q += d);
+    for (FPos q = p + d; q; ++n, q += d)
+    {
+      // fill captures masks
+      s_otherCaps_[Figure::TypeRook][pos] |= 1ULL << q.index();
+    }
+    
     if ( !n )
       continue;
-    s_tableOther_[1][pos][j++] = (d.delta() << 8) | (n);
+    s_tableOther_[Figure::TypeRook-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
   }
-
-  // fill captures masks
-  for (int i = 0; i < 4 && s_tableOther_[1][pos][i] >= 0; ++i)
-    s_otherCaps_[Figure::TypeRook][pos] |= 1ULL << s_tableOther_[1][pos][i];
 }
 
 void MovesTable::initQueens(int pos)
@@ -143,27 +170,14 @@ void MovesTable::initQueens(int pos)
   {
     const FPos & d = dpos[i];
     int n = 0;
-    for (FPos q = p + d; q; ++n, q += d);
+    for (FPos q = p + d; q; ++n, q += d)
+    {
+      // fill captures masks
+      s_otherCaps_[Figure::TypeQueen][pos] |= 1ULL << q.index();
+    }
+
     if ( !n )
       continue;
-    s_tableOther_[2][pos][j++] = (d.delta() << 8) | (n);
-  }
-
-  // fill captures masks
-  for (int i = 0; i < 4 && s_tableOther_[2][pos][i] >= 0; ++i)
-    s_otherCaps_[Figure::TypeQueen][pos] |= 1ULL << s_tableOther_[2][pos][i];
-}
-
-//////////////////////////////////////////////////////////////////////////
-MovesTable::MovesTable()
-{
-  for (int i = 0; i < 64; ++i)
-  {
-    initPawns(i);
-    initKnights(i);
-    initKings(i);
-    initBishops(i);
-    initRooks(i);
-    initQueens(i);
+    s_tableOther_[Figure::TypeQueen-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
   }
 }

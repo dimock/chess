@@ -29,7 +29,7 @@ void ChessPosition::setMaxDepth(int d)
   player_.setMaxDepth(d);
 }
 
-bool ChessPosition::initialize(bool enableBook, int depthMax)
+bool ChessPosition::initialize(bool /*enableBook*/, int depthMax)
 {
   if ( working_)
     return false;
@@ -40,14 +40,13 @@ bool ChessPosition::initialize(bool enableBook, int depthMax)
   //alg_.enableBook(enableBook);
   //alg_.setDepth(depthMax);
 
-  Board & board = player_.getBoard();
   player_.setMaxDepth(depthMax);
 
   halfmovesNumber_ = 0;
-  if ( !board.initialize(0) ) //"rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
+  if ( !player_.fromFEN(0) ) //"rnbk1r2/pppp3p/7n/4p3/2B1P2q/7N/PPPP1P1P/RNBQK2R w KQ - 4 9") )// "rnbk1r2/ppppq2p/7n/4p3/4P3/8/PPPP1P1P/RNBQKBNR w KQ - 0 7"  "rnb1k3/ppppq1rp/7n/4p3/4P3/3B3N/PPPP1P1P/RNBQ1RK1 w - - 6 10"
     return false;
 
-  vboard_ = board;
+  vboard_ = player_.getBoard();
 
   return true;
 }
@@ -432,7 +431,7 @@ bool ChessPosition::applyMove(const Move & move)
   }
 }
 
-void ChessPosition::saveLastMove(const Board & board)
+void ChessPosition::setLastMove(const Board & board)
 {
   if ( board.halfmovesCount() > 0 )
     vmove_  = board.getMove(board.halfmovesCount()-1);
@@ -468,7 +467,7 @@ void ChessPosition::undo()
   if ( board.halfmovesCount() > 0 )
     board.unmakeMove();
 
-  saveLastMove(board);
+  setLastMove(board);
 
   vboard_ = board;
 }
@@ -484,7 +483,7 @@ void ChessPosition::redo()
   if ( i >= halfmovesNumber_ )
     return;
 
-  const MoveCmd & move = board.getMove(i);
+  const MoveCmd & move = ((const Board &)board).getMove(i);
 
   if ( !board.makeMove(move) )
   {
@@ -497,7 +496,7 @@ void ChessPosition::redo()
   if ( halfmovesNumber_ == board.halfmovesCount() )
     board.verifyState();
 
-  saveLastMove(board);
+  setLastMove(board);
 
   vboard_ = board;
 }
@@ -583,7 +582,7 @@ bool ChessPosition::doLoad()
   halfmovesNumber_ = board.halfmovesCount();
   vboard_ = board;
 
-  saveLastMove(board);
+  setLastMove(board);
 
   return res;
 }

@@ -13,7 +13,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
     {
     case Figure::TypeKing:
       {
-        int8 * table = MovesTable::king(fig.where());
+        int8 * table = g_movesTable->king(fig.where());
 
         for (; *table >= 0; ++table)
         {
@@ -61,7 +61,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
     case Figure::TypeRook:
     case Figure::TypeQueen:
       {
-        uint16 * table = MovesTable::move(fig.getType()-Figure::TypeBishop, fig.where());
+        uint16 * table = g_movesTable->move(fig.getType()-Figure::TypeBishop, fig.where());
 
         for (; *table; ++table)
         {
@@ -97,7 +97,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
 
     case Figure::TypeKnight:
       {
-        int8 * table = MovesTable::knight(fig.where());
+        int8 * table = g_movesTable->knight(fig.where());
 
         for (; *table >= 0; ++table)
         {
@@ -122,7 +122,7 @@ int Board::generateMoves(Move (&moves)[MovesMax])
 
     case Figure::TypePawn:
       {
-        int8 * table = MovesTable::pawn(color_, fig.where());
+        int8 * table = g_movesTable->pawn(color_, fig.where());
 
         for (int i = 0; i < 2; ++i, ++table)
         {

@@ -3,6 +3,8 @@
 #include "Figure.h"
 #include "Field.h"
 #include "Move.h"
+#include "MovesTable.h"
+#include "FigureDirs.h"
 
 /*! board representation
  */
@@ -22,8 +24,17 @@ public:
   static bool load(Board & , std::istream &);
   static bool save(const Board & , std::ostream &);
 
+  /// init global data
+  void set_moves(MoveCmd * moves) { g_moves = moves; }
+  void set_MovesTable(MovesTable * movesTable) { g_movesTable = movesTable; }
+  void set_FigureDir(FigureDir * figureDir) { g_figureDir = figureDir; }
+  void set_PawnMasks(PawnMasks * pawnMasks) { g_pawnMasks = pawnMasks; }
+  void set_BetweenMask(BetweenMask * betweenMask) { g_betweenMasks = betweenMask; }
+  void set_DeltaPosCounter(DeltaPosCounter * deltaPosCounter) { g_deltaPosCounter = deltaPosCounter; }
+  void set_DistanceCounter(DistanceCounter * distanceCounter) { g_distanceCounter = distanceCounter; }
+
   /// initialize from FEN
-  bool initialize(const char * fen);
+  bool fromFEN(const char * fen);
 
   /*! movements
    */
@@ -84,7 +95,7 @@ public:
   const MoveCmd & getMove(int i) const
   {
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
-    return moves_[i];
+    return g_moves[i];
   }
 
   /// returns current move color
@@ -115,6 +126,12 @@ public:
 
   /// methods
 private:
+
+  MoveCmd & getMove(int i)
+  {
+    THROW_IF( i < 0 || i >= GameLength, "there was no move" );
+    return g_moves[i];
+  }
 
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
@@ -211,5 +228,11 @@ private:
 
   int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
 
-  static MoveCmd moves_[GameLength];
+  MoveCmd * g_moves;
+  MovesTable * g_movesTable;
+  FigureDir * g_figureDir;
+  PawnMasks * g_pawnMasks;
+  BetweenMask * g_betweenMasks;
+  DeltaPosCounter * g_deltaPosCounter;
+  DistanceCounter * g_distanceCounter;
 };

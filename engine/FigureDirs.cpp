@@ -1,14 +1,8 @@
 #include "FigureDirs.h"
 
 
-int FigureDir::s_dirs_[8*2*4096];
-
-static FigureDir s_fdir;
-
 FigureDir::FigureDir()
 {
-  static FPosIndexer fposind;
-
 	for (int i = 0; i < 8*2*4096; ++i)
 		s_dirs_[i] = -1;
 

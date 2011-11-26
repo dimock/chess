@@ -69,6 +69,18 @@ uint8 FiguresCounter::s_transposeIndex_[] =
   7, 15, 23, 31, 39, 47, 55, 63
 };
 
+int8 FiguresCounter::s_whiteColors_[] =
+{
+  0, 1, 0, 1, 0, 1, 0, 1,
+  1, 0, 1, 0, 1, 0, 1, 0,
+  0, 1, 0, 1, 0, 1, 0, 1,
+  1, 0, 1, 0, 1, 0, 1, 0,
+  0, 1, 0, 1, 0, 1, 0, 1,
+  1, 0, 1, 0, 1, 0, 1, 0,
+  0, 1, 0, 1, 0, 1, 0, 1,
+  1, 0, 1, 0, 1, 0, 1, 0
+};
+
 uint64 FiguresManager::s_zobristColor_ = 0x929d03167393eb95;
 
 uint64 FiguresManager::s_zobristCastle_[2][2] = { {0x3cd26f386a9a70f8, 0xaf9e7fa97746b4a9}, {0xa4d594719b454679, 0xf791bf94729ed437} };

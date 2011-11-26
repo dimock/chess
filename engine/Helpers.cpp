@@ -4,16 +4,10 @@
 
 using namespace std;
 
-static FPosIndexer s_fposindexer;
-static BetweenMask s_betweenMasks;
-static BitsCounter s_bitsCounter;
-static DeltaPosCounter s_deltaPosCounter;
-static DistanceCounter s_distanceCounter;
-
 //////////////////////////////////////////////////////////////////////////
 unsigned long xorshf96()
 {
-  static unsigned long x= time(0) ^ clock(), y=362436069, z=521288629;
+  static unsigned long x= (unsigned long)time(0) ^ clock(), y=362436069, z=521288629;
 
   unsigned long t;
   x ^= x << 16;
@@ -29,20 +23,114 @@ unsigned long xorshf96()
 }
 
 //////////////////////////////////////////////////////////////////////////
-int8 BitsCounter::s_array_[256];
-
-BitsCounter::BitsCounter()
+int8 BitsCounter::s_array_[256] =
 {
-  for (int i = 0; i < 256; ++i)
-    s_array_[i] = countBits((uint8)i);
+  0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+  4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8
+};
+
+//////////////////////////////////////////////////////////////////////////
+PawnMasks::PawnMasks()
+{
+  for (int pos = 0; pos < 64; ++pos)
+    clearAll(pos);
+
+  for (int i = 0; i < 8; ++i)
+    pmask_isolated_[i] = 0;
+
+
+  for (int color = 0; color < 2; ++color)
+  {
+    for (int i = 0; i < 64; ++i)
+    {
+      int dy = color ? -1 : +1;
+      int x = i & 7;
+      int y = i >> 3;
+
+      if ( y > 0 && y < 7 )
+      {
+        if ( x < 7 )
+          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x+1) << 3));
+        if ( x > 0 )
+          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x-1) << 3));
+      }
+
+      uint8 pm = 0;
+      uint8 bm = 0;
+      if ( color )
+      {
+        for (int j = y+1; j < 7; ++j)
+          pm |= 1 << j;
+
+        if ( y < 6 )
+          bm = (1<<y) | (1<<(y+1));
+      }
+      else
+      {
+        for (int j = y-1; j > 0; --j)
+          pm |= 1 << j;
+
+        if ( y > 1 )
+          bm = (1<<y) | (1<<(y-1));
+      }
+
+      uint8 * ppmask = (uint8*)&pmasks_passed_[color][i];
+      uint8 * bpmask = (uint8*)&pmasks_backward_[color][i];
+      uint8 * blkmask = (uint8*)&pmasks_blocked_[color][i];
+
+      ppmask[x] = pm;
+      blkmask[x] = pm;
+      if ( x > 0 )
+      {
+        ppmask[x-1] = pm;
+        bpmask[x-1] = bm;
+      }
+      if ( x < 7 )
+      {
+        ppmask[x+1] = pm;
+        bpmask[x+1] = bm;
+      }
+    }
+  }
+
+  for (int x = 0; x < 8; ++x)
+  {
+    uint8 * ppmask = (uint8*)&pmask_isolated_[x];
+    if ( x > 0 )
+      ppmask[x-1] = 0xff;
+    if ( x < 7 )
+      ppmask[x+1] = 0xff;
+  }
+}
+
+void PawnMasks::clearAll(int pos)
+{
+  for (int color = 0; color < 2; ++color)
+  {
+    pmasks_guarded_[color][pos] = 0;
+    pmasks_passed_[color][pos] = 0;
+    pmasks_blocked_[color][pos] = 0;
+    pmasks_backward_[color][pos] = 0;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
-FPos DeltaPosCounter::s_array_[4096];
-
 DeltaPosCounter::DeltaPosCounter()
 {
-  static FPosIndexer s_fposindexer;
   for (int i = 0; i < 4096; ++i)
   {
     FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
@@ -51,17 +139,17 @@ DeltaPosCounter::DeltaPosCounter()
 }
 
 //////////////////////////////////////////////////////////////////////////
-uint64 BetweenMask::s_masks_[64][64];
-
-BetweenMask::BetweenMask()
+BetweenMask::BetweenMask(DeltaPosCounter * deltaPoscounter)
 {
-  static DeltaPosCounter s_deltaPoscounter;
   for (int i = 0; i < 64; ++i)
   {
     for (int j = 0; j < 64; ++j)
     {
+      // clear it first
+      s_masks_[i][j] = 0;
+
       ///  to <- from
-      FPos dp = DeltaPosCounter::getDeltaPos(j, i);
+      FPos dp = deltaPoscounter->getDeltaPos(j, i);
       if ( FPos(0, 0) == dp )
         continue;
 
@@ -77,18 +165,14 @@ BetweenMask::BetweenMask()
 }
 
 //////////////////////////////////////////////////////////////////////////
-int DistanceCounter::s_array_[4096];
-
 DistanceCounter::DistanceCounter()
 {
-  static FPosIndexer s_fposindexer;
   for (int i = 0; i < 4096; ++i)
   {
     FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
     s_array_[i] = dist_dP(dp);
   }
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 Figure::Type toFtype(char c)
@@ -258,7 +342,7 @@ bool parseSAN(Board & board, const char * str, Move & move)
 
 bool printSAN(Board & board, int i, char * str)
 {
-  MoveCmd move = board.getMove(i);
+  MoveCmd move = ((const Board &)board).getMove(i);
 
   Field field = board.getField(move.from_);
 
@@ -412,7 +496,7 @@ bool DebutsTable::readTable(const char * fname)
     if ( strlen(line) < 4 )
       continue;
 
-    strlwr(line);
+    _strlwr(line);
 
     tlines_.push_back(StepsList());
     StepsList & tline = tlines_.back();
@@ -768,92 +852,3 @@ void DebutsTable::initStatic()
 //	return true;
 //}
 
-//////////////////////////////////////////////////////////////////////////
-uint64 PawnMasks::pmasks_guarded_[2][64];
-uint64 PawnMasks::pmasks_passed_[2][64];
-uint64 PawnMasks::pmask_isolated_[8];
-uint64 PawnMasks::pmasks_backward_[2][64];
-uint64 PawnMasks::pmasks_blocked_[2][64];
-
-static PawnMasks s_pawnMask;
-
-PawnMasks::PawnMasks()
-{
-  for (int color = 0; color < 2; ++color)
-  {
-    for (int i = 0; i < 64; ++i)
-    {
-      int dy = color ? -1 : +1;
-      int x = i & 7;
-      int y = i >> 3;
-
-      if ( y > 0 && y < 7 )
-      {
-        if ( x < 7 )
-          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x+1) << 3));
-        if ( x > 0 )
-          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x-1) << 3));
-      }
-
-      uint8 pm = 0;
-      uint8 bm = 0;
-      if ( color )
-      {
-        for (int j = y+1; j < 7; ++j)
-          pm |= 1 << j;
-
-        if ( y < 6 )
-          bm = (1<<y) | (1<<(y+1));
-      }
-      else
-      {
-        for (int j = y-1; j > 0; --j)
-          pm |= 1 << j;
-
-        if ( y > 1 )
-          bm = (1<<y) | (1<<(y-1));
-      }
-
-      uint8 * ppmask = (uint8*)&pmasks_passed_[color][i];
-      uint8 * bpmask = (uint8*)&pmasks_backward_[color][i];
-      uint8 * blkmask = (uint8*)&pmasks_blocked_[color][i];
-
-      ppmask[x] = pm;
-      blkmask[x] = pm;
-      if ( x > 0 )
-      {
-        ppmask[x-1] = pm;
-        bpmask[x-1] = bm;
-      }
-      if ( x < 7 )
-      {
-        ppmask[x+1] = pm;
-        bpmask[x+1] = bm;
-      }
-    }
-  }
-
-  for (int x = 0; x < 8; ++x)
-  {
-    uint8 * ppmask = (uint8*)&pmask_isolated_[x];
-    if ( x > 0 )
-      ppmask[x-1] = 0xff;
-    if ( x < 7 )
-      ppmask[x+1] = 0xff;
-  }
-}
-
-
-static FieldColors s_fieldColors;
-
-int8 FieldColors::colors_[64];
-
-FieldColors::FieldColors()
-{
-  for (int i = 0; i < 64; ++i)
-  {
-    int x = i & 7;
-    int y = i >>3;
-    colors_[i] = (x + y) & 1;
-  }
-}

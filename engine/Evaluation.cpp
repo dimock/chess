@@ -151,17 +151,17 @@ ScoreType Figure::pawnPassed_[2][8] = {
   const Figure & pawn = getFigure(color, (icol));\
   if ( pawn.getType() == Figure::TypePawn )\
   {\
-    const uint64 & passmsk = PawnMasks::mask_passed(color, pawn.where());\
-    const uint64 & blckmsk = PawnMasks::mask_blocked(color, pawn.where());\
+    const uint64 & passmsk = g_pawnMasks->mask_passed(color, pawn.where());\
+    const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, pawn.where());\
     if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )\
     {\
       int y = pawn.where() >> 3;\
       wght += Figure::pawnPassed_[color][y]/* << stage*/;\
-      const uint64 & guardmsk = PawnMasks::mask_guarded(color, pawn.where());\
+      const uint64 & guardmsk = g_pawnMasks->mask_guarded(color, pawn.where());\
       if ( pmsk & guardmsk )\
       wght += Figure::pawnGuarded_;\
     }\
-    const uint64 & isomask = PawnMasks::mask_isolated(pawn.where() & 7);\
+    const uint64 & isomask = g_pawnMasks->mask_isolated(pawn.where() & 7);\
     if ( !(pmsk & isomask) && fmgr_.pawns(color) > 1 )\
     wght += Figure::pawnIsolated_;\
   }\
@@ -227,8 +227,8 @@ ScoreType Board::calculateEval() const
     {
       const Figure & king = getFigure((Figure::Color)color, KingIndex);
       const Figure & oking = getFigure(ocolor, KingIndex);
-      int dist  = DistanceCounter::getDistance(queen.where(), king.where());
-      int odist = DistanceCounter::getDistance(queen.where(), oking.where());
+      int dist  = g_distanceCounter->getDistance(queen.where(), king.where());
+      int odist = g_distanceCounter->getDistance(queen.where(), oking.where());
       kingEval[color] += (7 - odist);
       kingEval[color] += (7 - dist);
     }
@@ -369,7 +369,7 @@ ScoreType Board::evaluateWinnerLoser() const
   }
   else
   {
-    int dist  = DistanceCounter::getDistance(king_w.where(), king_l.where());
+    int dist  = g_distanceCounter->getDistance(king_w.where(), king_l.where());
     kingEval -= dist << 3;
     kingEval -= Figure::positionEvaluation(1, lose_color, Figure::TypeKing, king_l.where());
   }

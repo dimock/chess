@@ -23,23 +23,51 @@ Player::Player() :
   tstart_(0),
   depthMax_(4)
 {
+  g_moves = new MoveCmd[Board::GameLength];
+  g_deltaPosCounter = new DeltaPosCounter;
+  g_betweenMasks = new BetweenMask(g_deltaPosCounter);
+  g_distanceCounter = new DistanceCounter;
+  g_movesTable = new MovesTable;
+  g_figureDir = new FigureDir;
+  g_pawnMasks_ = new PawnMasks;
+
+  board_.set_moves(g_moves);
+  board_.set_MovesTable(g_movesTable);
+  board_.set_FigureDir(g_figureDir);
+  board_.set_DeltaPosCounter(g_deltaPosCounter);
+  board_.set_DistanceCounter(g_distanceCounter);
+  board_.set_BetweenMask(g_betweenMasks);
+  board_.set_PawnMasks(g_pawnMasks_);
 }
 
-bool Player::initialize(const char * fen)
+Player::~Player()
+{
+  board_.set_moves(0);
+  board_.set_MovesTable(0);
+  board_.set_FigureDir(0);
+  board_.set_DeltaPosCounter(0);
+  board_.set_DistanceCounter(0);
+  board_.set_BetweenMask(0);
+  board_.set_PawnMasks(0);
+
+  delete [] g_moves;
+  delete g_movesTable;
+  delete g_figureDir;
+  delete g_betweenMasks;
+  delete g_deltaPosCounter;
+  delete g_distanceCounter;
+  delete g_pawnMasks_;
+}
+
+bool Player::fromFEN(const char * fen)
 {
   stop_ = false;
   timeLimitMS_ = 0;
-  return board_.initialize(fen);
+  return board_.fromFEN(fen);
 }
 
 bool Player::findMove(SearchResult & sres)
 {
-  static FPosIndexer s_fposindexer;
-  static BetweenMask s_betweenMasks;
-  static BitsCounter s_bitsCounter;
-  static DeltaPosCounter s_deltaPosCounter;
-  static DistanceCounter s_distanceCounter;
-
   sres = SearchResult();
 
   stop_ = false;

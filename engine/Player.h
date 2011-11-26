@@ -29,9 +29,11 @@ class Player
 {
 public:
 
+  // initialize global arrays, tables, masks, etc. write them to it's board_
   Player();
+  ~Player();
 
-  bool initialize(const char * fen);
+  bool fromFEN(const char * fen);
   bool findMove(SearchResult & );
   
   Board & getBoard()
@@ -72,4 +74,14 @@ private:
   int depthMax_;
   int nodesCounter_;
   int64 tstart_;
+
+
+  // global data
+  MoveCmd * g_moves;
+  MovesTable * g_movesTable;
+  FigureDir * g_figureDir;
+  PawnMasks * g_pawnMasks_;
+  BetweenMask * g_betweenMasks;
+  DeltaPosCounter * g_deltaPosCounter;
+  DistanceCounter * g_distanceCounter;
 };

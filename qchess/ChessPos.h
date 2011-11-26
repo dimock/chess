@@ -46,7 +46,7 @@ public:
 private:
 
   bool applyMove(const Move &);
-  void saveLastMove(const Board & board);
+  void setLastMove(const Board & board);
 
 	bool doSave() const;
 	bool doLoad();
