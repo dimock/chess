@@ -62,7 +62,7 @@ public:
 
 private:
 
-  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, Move & move);
+  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, const Move & before, Move & move, bool & found);
 
   void testTimer();
 

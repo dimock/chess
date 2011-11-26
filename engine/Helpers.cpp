@@ -4,6 +4,12 @@
 
 using namespace std;
 
+static FPosIndexer s_fposindexer;
+static BetweenMask s_betweenMasks;
+static BitsCounter s_bitsCounter;
+static DeltaPosCounter s_deltaPosCounter;
+static DistanceCounter s_distanceCounter;
+
 //////////////////////////////////////////////////////////////////////////
 unsigned long xorshf96()
 {
@@ -21,6 +27,68 @@ unsigned long xorshf96()
 
   return z;
 }
+
+//////////////////////////////////////////////////////////////////////////
+int8 BitsCounter::s_array_[256];
+
+BitsCounter::BitsCounter()
+{
+  for (int i = 0; i < 256; ++i)
+    s_array_[i] = countBits((uint8)i);
+}
+
+//////////////////////////////////////////////////////////////////////////
+FPos DeltaPosCounter::s_array_[4096];
+
+DeltaPosCounter::DeltaPosCounter()
+{
+  static FPosIndexer s_fposindexer;
+  for (int i = 0; i < 4096; ++i)
+  {
+    FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
+    s_array_[i] = deltaP(dp);
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+uint64 BetweenMask::s_masks_[64][64];
+
+BetweenMask::BetweenMask()
+{
+  static DeltaPosCounter s_deltaPoscounter;
+  for (int i = 0; i < 64; ++i)
+  {
+    for (int j = 0; j < 64; ++j)
+    {
+      ///  to <- from
+      FPos dp = DeltaPosCounter::getDeltaPos(j, i);
+      if ( FPos(0, 0) == dp )
+        continue;
+
+      FPos p = FPosIndexer::get(i) + dp;
+      FPos q = FPosIndexer::get(j);
+
+      for ( ; p && p != q; p += dp)
+      {
+        s_masks_[i][j] |= 1ULL << p.index();
+      }
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+int DistanceCounter::s_array_[4096];
+
+DistanceCounter::DistanceCounter()
+{
+  static FPosIndexer s_fposindexer;
+  for (int i = 0; i < 4096; ++i)
+  {
+    FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
+    s_array_[i] = dist_dP(dp);
+  }
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 Figure::Type toFtype(char c)

@@ -14,7 +14,7 @@ public:
   }
 
   inline operator bool () const { return type_ != 0; }
-  inline int index() const { return type_ ? index_ : -1; }
+  inline int index() const { return type_ ? index_ : -1; } // OPTIMIZE
   inline Figure::Type  type() const { return (Figure::Type)type_; }
   inline Figure::Color color() const { return (Figure::Color)color_; }
 

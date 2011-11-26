@@ -1,83 +1,18 @@
 #include "MovesTable.h"
+#include "Figure.h"
 
 int8  MovesTable::s_tablePawn_[2][64][6];
 int8  MovesTable::s_tableKnight_[64][10];
 int8  MovesTable::s_tableKing_[64][10];
 uint16 MovesTable::s_tableOther_[4][64][10];
 
+uint64 MovesTable::s_pawnsCaps_[2][64];
+uint64 MovesTable::s_otherCaps_[8][64];
+
+
 static MovesTable s_movesTable;
 
 //////////////////////////////////////////////////////////////////////////
-class FPos
-{
-  int x_, y_;
-
-public:
-
-  FPos(int x, int y) : x_(x), y_(y) {}
-  FPos(int idx) { x_ = idx & 7; y_ = idx >> 3; }
-  FPos() : x_(0), y_(0) {}
-
-  int x() const { return x_; }
-  int y() const { return y_; }
-
-  FPos & operator += (const FPos & p)
-  {
-    x_ += p.x_;
-    y_ += p.y_;
-    return *this;
-  }
-
-  FPos & operator -= (const FPos & p)
-  {
-    x_ -= p.x_;
-    y_ -= p.y_;
-    return *this;
-  }
-
-  FPos operator + (const FPos & p) const
-  {
-    FPos q(*this);
-    q += p;
-    return q;
-  }
-
-  FPos operator - (const FPos & p) const
-  {
-    FPos q(*this);
-    q -= p;
-    return q;
-  }
-
-  bool operator == (const FPos & p) const
-  {
-    return x_ == p.x_ && y_ == p.y_;
-  }
-
-  bool operator != (const FPos & p) const
-  {
-    return x_ != p.x_ || y_ != p.y_;
-  }
-
-  int8 index() const
-  {
-    THROW_IF( !*this, "try to get index from invalid position" );
-    THROW_IF( (x_ | (y_<<3)) != (x_ + (y_<<3)), "invalid figure index aquired" );
-    return x_ | (y_<<3);
-  }
-
-  int8 delta() const
-  {
-    return x_ + (y_ << 3);
-  }
-
-  operator bool () const
-  {
-    return x_ >= 0 && x_ < 8 && y_ >= 0 && y_ < 8;
-  }
-};
-//////////////////////////////////////////////////////////////////////////
-
 void MovesTable::initPawns(int pos)
 {
   FPos p(pos);
@@ -103,8 +38,12 @@ void MovesTable::initPawns(int pos)
       else
         s_tablePawn_[color][pos][i] = -1;
     }
-    for (int i = 4; i < 6; ++i)
+    for (int i = n; i < 6; ++i)
       s_tablePawn_[color][pos][i] = -1;
+
+    // fill captures masks
+    for (int i = 0; i < 2 && s_tablePawn_[color][pos][i] >= 0; ++i)
+      s_pawnsCaps_[color][pos] |= 1ULL << s_tablePawn_[color][pos][i];
   }
 }
 
@@ -124,6 +63,10 @@ void MovesTable::initKnights(int pos)
   }
   for ( ; j < 10; ++j)
     s_tableKnight_[pos][j] = -1;
+
+  // fill captures masks
+  for (int i = 0; i < 8 && s_tableKnight_[pos][i] >= 0; ++i)
+    s_otherCaps_[Figure::TypeKnight][pos] |= 1ULL << s_tableKnight_[pos][i];
 }
 
 void MovesTable::initKings(int pos)
@@ -142,6 +85,10 @@ void MovesTable::initKings(int pos)
   }
   for ( ; j < 10; ++j)
     s_tableKing_[pos][j] = -1;
+
+  // fill captures masks
+  for (int i = 0; i < 8 && s_tableKing_[pos][i] >= 0; ++i)
+    s_otherCaps_[Figure::TypeKing][pos] |= 1ULL << s_tableKing_[pos][i];
 }
 
 void MovesTable::initBishops(int pos)
@@ -159,6 +106,10 @@ void MovesTable::initBishops(int pos)
       continue;
     s_tableOther_[0][pos][j++] = (d.delta() << 8) | (n);
   }
+
+  // fill captures masks
+  for (int i = 0; i < 4 && s_tableOther_[0][pos][i] >= 0; ++i)
+    s_otherCaps_[Figure::TypeBishop][pos] |= 1ULL << s_tableOther_[0][pos][i];
 }
 
 void MovesTable::initRooks(int pos)
@@ -176,6 +127,10 @@ void MovesTable::initRooks(int pos)
       continue;
     s_tableOther_[1][pos][j++] = (d.delta() << 8) | (n);
   }
+
+  // fill captures masks
+  for (int i = 0; i < 4 && s_tableOther_[1][pos][i] >= 0; ++i)
+    s_otherCaps_[Figure::TypeRook][pos] |= 1ULL << s_tableOther_[1][pos][i];
 }
 
 void MovesTable::initQueens(int pos)
@@ -193,6 +148,10 @@ void MovesTable::initQueens(int pos)
       continue;
     s_tableOther_[2][pos][j++] = (d.delta() << 8) | (n);
   }
+
+  // fill captures masks
+  for (int i = 0; i < 4 && s_tableOther_[2][pos][i] >= 0; ++i)
+    s_otherCaps_[Figure::TypeQueen][pos] |= 1ULL << s_tableOther_[2][pos][i];
 }
 
 //////////////////////////////////////////////////////////////////////////

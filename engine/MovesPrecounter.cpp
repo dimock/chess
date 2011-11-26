@@ -31,13 +31,12 @@ MovesTable::MovesTable()
     calcQueen(i);
     calcKing(i);
 
-	calcPawnAttack(i);
-	calcBishopAttack(i);
-	calcKnightAttack(i);
-	calcRookAttack(i);
-	calcQueenAttack(i);
-	calcKingAttack(i);
-
+	  calcPawnAttack(i);
+	  calcBishopAttack(i);
+	  calcKnightAttack(i);
+	  calcRookAttack(i);
+	  calcQueenAttack(i);
+	  calcKingAttack(i);
   }
 
   for (int i = 0; i < 64; ++i)

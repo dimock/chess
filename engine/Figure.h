@@ -22,8 +22,8 @@ public:
   static ScoreType pawnPassed_[2][8];
 
   enum Weights { WeightDraw = 0, WeightMat = 32000 };
-  enum Type  : uint8  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
-  enum Color : uint8  { ColorBlack, ColorWhite };
+  enum Type  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
+  enum Color { ColorBlack, ColorWhite };
 
   static inline ScoreType positionEvaluation(uint8 stage, uint8 color, uint8 type, int8 pos)
   {
@@ -220,7 +220,7 @@ public:
     fcounter_[fig.getColor()].incr(fig);
     const uint64 & uc = code(fig, fig.where());
     hashCode_ ^= uc;
-    //mask_[fig.getColor()] |= 1ULL << fig.where();
+    mask_[fig.getColor()] |= 1ULL << fig.where();
   }
 
   void decr(const Figure & fig)
@@ -228,7 +228,7 @@ public:
     fcounter_[fig.getColor()].decr(fig);
     const uint64 & uc = code(fig, fig.where());
     hashCode_ ^= uc;
-    //mask_[fig.getColor()] ^= 1ULL << fig.where();
+    mask_[fig.getColor()] ^= 1ULL << fig.where();
   }
 
   void move(Figure & fig, int to)
@@ -242,8 +242,8 @@ public:
 
     fcounter_[fig.getColor()].move(fig, to);
 
-    //mask_[fig.getColor()] ^= 1ULL << from;
-    //mask_[fig.getColor()] |= 1ULL << to;
+    mask_[fig.getColor()] ^= 1ULL << from;
+    mask_[fig.getColor()] |= 1ULL << to;
 
     THROW_IF(mask_[fig.getColor()] & (1ULL << from), "invalid figures mask");
   }

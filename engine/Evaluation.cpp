@@ -166,7 +166,7 @@ ScoreType Figure::pawnPassed_[2][8] = {
     wght += Figure::pawnIsolated_;\
   }\
   uint8 column = ((uint8*)&pmsk)[(icol)];\
-  int dblNum = numBitsInByte(column);\
+  int dblNum = BitsCounter::numBitsInByte(column);\
   ScoreType dblMask = ~((dblNum-1) >> 31);\
   wght -= ((dblNum-1) << 3) & dblMask;/* *Figure::pawnDoubled_;*/\
 }
@@ -227,8 +227,8 @@ ScoreType Board::calculateEval() const
     {
       const Figure & king = getFigure((Figure::Color)color, KingIndex);
       const Figure & oking = getFigure(ocolor, KingIndex);
-      int dist = getDistance(queen.where(), king.where());
-      int odist = getDistance(queen.where(), oking.where());
+      int dist  = DistanceCounter::getDistance(queen.where(), king.where());
+      int odist = DistanceCounter::getDistance(queen.where(), oking.where());
       kingEval[color] += (7 - odist);
       kingEval[color] += (7 - dist);
     }
@@ -369,7 +369,7 @@ ScoreType Board::evaluateWinnerLoser() const
   }
   else
   {
-    int dist = getDistance(king_w.where(), king_l.where());
+    int dist  = DistanceCounter::getDistance(king_w.where(), king_l.where());
     kingEval -= dist << 3;
     kingEval -= Figure::positionEvaluation(1, lose_color, Figure::TypeKing, king_l.where());
   }

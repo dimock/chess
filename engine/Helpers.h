@@ -98,7 +98,7 @@ private:
 
 class BitsCounter
 {
-  int8 array_[256];
+  static int8 s_array_[256];
 
   int8 countBits(uint8 byte) const
   {
@@ -113,21 +113,22 @@ class BitsCounter
 
 public:
 
-  BitsCounter()
+  BitsCounter();
+
+  inline static int numBitsInByte(uint8 byte)
   {
-    for (int i = 0; i < 256; ++i)
-      array_[i] = countBits((uint8)i);
+    return s_array_[byte];
   }
 
-  int operator [] (uint8 byte) const
+  inline static int numBitsInWord(uint16 word)
   {
-    return array_[byte];
+    return numBitsInByte(word&0xff) + numBitsInByte(word>>8);
   }
 };
 
 class DeltaPosCounter
 {
-  FPos array_[4096];
+  static FPos s_array_[4096];
 
   FPos deltaP(FPos dp) const
   {
@@ -153,68 +154,39 @@ class DeltaPosCounter
 
 public:
 
-  DeltaPosCounter()
-  {
-    for (int i = 0; i < 4096; ++i)
-    {
-      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
-      array_[i] = deltaP(dp);
-    }
-  }
+  DeltaPosCounter();
 
-  inline const FPos & operator [] (int i) const
+  /// returns { 0, 0 }  if (to - from) isn't horizontal, vertical or diagonal
+  inline static const FPos & getDeltaPos(int to, int from)
   {
-    return array_[i];
+    THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
+    return s_array_[(to<<6) | from];
   }
 };
 
-//class LengthCounter
-//{
-//  int array_[256];
-//
-//  int length_dP(FPos dp) const
-//  {
-//    int x = dp.x();
-//    int y = dp.y();
-//
-//    if ( x < 0 )
-//      x = -x;
-//    if ( y < 0 )
-//      y = -y;
-//
-//    if ( x != 0 && y != 0 && x != y )
-//      return -1;
-//
-//    if ( dp.x() != 0 )
-//      return x;
-//
-//    if ( dp.y() != 0 )
-//      return y;
-//
-//    return 0;
-//  }
-//
-//public:
-//
-//  LengthCounter()
-//  {
-//    for (int i = 0; i < 256; ++i)
-//    {
-//      FPos dp;
-//      dp.from_byte(i);
-//      array_[i] = length_dP(dp);
-//    }
-//  }
-//
-//  int operator [] (FPos dp) const
-//  {
-//    return array_[dp.to_byte()];
-//  }
-//};
+
+class BetweenMask
+{
+  // masks between two fields
+  static uint64 s_masks_[64][64];
+
+public:
+  
+  BetweenMask();
+
+  // mask contains only bits BETWEEN from & to
+  static const uint64 & mask(int8 from, int8 to)
+  {
+    THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
+    return s_masks_[from][to];
+  }
+
+};
+
 
 class DistanceCounter
 {
-  int array_[4096];
+  static int s_array_[4096];
 
   int dist_dP(FPos dp) const
   {
@@ -229,97 +201,18 @@ class DistanceCounter
 
 public:
 
-  DistanceCounter()
-  {
-    for (int i = 0; i < 4096; ++i)
-    {
-      FPos dp = FPosIndexer::get(i >> 6) - FPosIndexer::get(i & 63);
-      array_[i] = dist_dP(dp);
-    }
-  }
+  DistanceCounter();
 
-  int operator [] (int i) const
+  // returns distance between 2 points - 'a' & 'b'
+  static inline int getDistance(int a, int b)
   {
-    return array_[i];
+    THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
+    return s_array_[(a<<6) | b];
   }
 };
 
-//
-//class BorderDistanceCounter
-//{
-//  int array_[64];
-//
-//  int dist_dP(FPos p) const
-//  {
-//    if ( !p )
-//      return 0;
-//    int dist = p.x();
-//    if ( 7-p.x() < dist )
-//      dist = 7-p.x();
-//    if ( p.y() < dist )
-//      dist = p.y();
-//    if ( 7-p.y() < dist )
-//      dist = 7-p.y();
-//    return dist;
-//  }
-//
-//public:
-//
-//  BorderDistanceCounter()
-//  {
-//    for (int i = 0; i < 64; ++i)
-//    {
-//      array_[i] = dist_dP(FPosIndexer::get(i));
-//    }
-//  }
-//
-//  int operator [] (int i) const
-//  {
-//    return array_[i];
-//  }
-//};
 //////////////////////////////////////////////////////////////////////////
 
-inline int numBitsInByte(uint8 byte)
-{
-  static BitsCounter bcounter;
-  return bcounter[byte];
-}
-
-inline int numBitsInWord(uint16 word)
-{
-  return numBitsInByte(word&0xff) + numBitsInByte(word>>8);
-}
-
-/// returns { 0, 0 }  if (to - from) isn't horizontal, vertical or diagonal
-inline const FPos & getDeltaPos(int to, int from)
-{
-  static DeltaPosCounter dp_counter;
-  THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
-  return dp_counter[(to<<6) | from];
-}
-
-//// returns '-1' if dp isn't horizontal, vertical or diagonal
-//inline int getLength8(FPos dp)
-//{
-//  static LengthCounter length_counter;
-//  return length_counter[dp];
-//}
-
-// returns distance between 2 points - 'a' & 'b'
-inline int getDistance(int a, int b)
-{
-  static DistanceCounter distance_counter;
-  THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
-  return distance_counter[(a<<6) | b];
-}
-
-// returns distance from point to the nearest border
-//inline int distToBorder(int p)
-//{
-//  static BorderDistanceCounter distance_counter;
-//  return distance_counter[p];
-//}
 
 
 //bool moveToStrShort(const StepId & sid, char * str);

@@ -27,6 +27,10 @@ public:
 
   /*! movements
    */
+
+  /// verify 
+  bool validMove(const Move &) const;
+
   /// really make move. perform validation
   bool makeMove(const Move & );
 
@@ -169,6 +173,7 @@ private:
   static char fen_[FENsize];
 
   /// index of castle's possibility
+  /// indices: [0 - black, 1 - white] [0 - short (King), 1 - long (Queen)]
   bool castle_index_[2][2];
 
   /// 0 - no castle, 1 - short, 2 - long

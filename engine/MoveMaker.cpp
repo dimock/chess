@@ -1,4 +1,83 @@
 #include "Board.h"
+#include "FigureDirs.h"
+
+bool Board::validMove(const Move & move) const
+{
+  if ( move.to_ < 0 )
+    return false;
+
+  THROW_IF( move.from_ < 0 || move.rindex_ > 14, "invalid move given" );
+
+  const Figure & fig = getFigure(color_, getField(move.from_).index());
+  if ( !fig )
+    return false;
+
+  int dir = FigureDir::dir(fig, move.to_);
+  if ( dir < 0 )
+    return false;
+
+  // castle. don't check if there is piece in "to"-field
+  if ( fig.getType() == Figure::TypeKing && (8 == dir || 9 == dir) )
+    return move.rindex_ < 0 && fig.isFirstStep() && 0 == checkingNum_ && (fig.where() == 4 && color_ || fig.where() == 60 && !color_);
+
+  const Field & field = getField(move.to_);
+  
+  if ( field && ( field.color() == color_ || field.index() != move.rindex_ ) )
+    return false;
+
+  THROW_IF( field.type() > Figure::TypeQueen, "try to eat king" );
+
+  if ( fig.getType() == Figure::TypeKing || fig.getType() == Figure::TypeKnight )
+    return true;
+
+  switch ( fig.getType() )
+  {
+  case Figure::TypePawn:
+    {
+      int8 y = move.to_ >> 3;
+      if ( (y == 7 || y == 0) && !move.new_type_ )
+        return false;
+
+      THROW_IF( move.new_type_ < 0 || move.new_type_ > Figure::TypeQueen, "invalid promotion piece" );
+
+      if ( field )
+      {
+        THROW_IF( field.color() == color_ || field.index() != move.rindex_, "pawn does invalid capture" );
+        return 0 == dir || 1 == dir;
+      }
+      else if ( en_passant_ >= 0 && move.rindex_ == en_passant_ && (0 == dir || 1 == dir) )
+      {
+        int8 dy = (move.to_ >> 3) - (move.from_ >> 3);
+        const Figure & epawn = getFigure(Figure::otherColor(color_), en_passant_);
+        THROW_IF( !epawn, "there is no pawn for en-passant capture" );
+        int e_to = epawn.where() + (dy << 3);
+        return move.to_ == e_to;
+      }
+      else
+      {
+        int8 to3 = move.from_ + ((move.to_-move.from_) >> 1);
+        THROW_IF( (uint8)to3 > 63 || 3 == dir && to3 != move.from_ + (move.to_ > move.from_ ? 8 : -8), "pawn goes to invalid field" );
+        return (2 == dir) || (3 == dir && !getField(to3));
+      }
+    }
+    break;
+
+  case Figure::TypeBishop:
+  case Figure::TypeRook:
+  case Figure::TypeQueen:
+    {
+      const uint64 & mask = BetweenMask::mask(move.from_, move.to_);
+      const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+      const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+
+      bool ok = (mask & ~black & ~white) == mask;
+      return ok;
+    }
+    break;
+  }
+
+  return false;
+}
 
 bool Board::doMove()
 {
@@ -18,6 +97,7 @@ bool Board::doMove()
   int d = move.to_ - move.from_;
   if ( fig.getType() == Figure::TypeKing && (2 == d || -2 == d) )// castle
   {
+    // don't do castling under check
     if ( checkingNum_ > 0 )
       return false;
 
@@ -25,24 +105,27 @@ bool Board::doMove()
 
     move.rook_to_ = move.from_ + d;
 
+    // field, that rook or king is going to move to, is occupied
     if ( getField(move.rook_to_) || getField(move.to_) )
       return false;
 
     THROW_IF( isAttacked(ocolor, fig.where()), "can't do castling under check" );
     THROW_IF( move.rindex_ >= 0, "can't eat while castling" );
+    THROW_IF( !(fig.where() == 4 && color_ || fig.where() == 60 && !color_), "kings position is wrong" );
 
+    // then verify if there is suitable rook fo castling
     move.rook_from_ = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
-    move.rook_index_ = getField(move.rook_from_).index();
-    Figure & rook = getFigure(color_, move.rook_index_);
-
-    Field & field_rook_from = getField(rook.where());
-    THROW_IF( !rook.isFirstStep(), "rook was already moved" );
-    THROW_IF( !field_rook_from, "there is no rook for castling" );
-
-    if ( isAttacked(ocolor, move.rook_to_) )
+    Field & rf_field = getField(move.rook_from_);
+    if ( !rf_field )
       return false;
 
-    field_rook_from.clear();
+    move.rook_index_ = rf_field.index();
+    Figure & rook = getFigure(color_, move.rook_index_);
+
+    if ( rook.getType() != Figure::TypeRook || !rook.isFirstStep() || isAttacked(ocolor, move.rook_to_) )
+      return false;
+
+    rf_field.clear();
     fmgr_.move(rook, move.rook_to_);
     rook.setMoved();
     Field & field_rook_to  = getField(rook.where());
@@ -75,14 +158,14 @@ bool Board::doMove()
   }
   else if ( fig.getType() == Figure::TypeRook && (fig.where() & 7) == 7 && castle_index_[color_][0] )
   {
-    THROW_IF( !fig.isFirstStep(), "castle possibility doesn't respect to flag" );
+    THROW_IF( !fig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
 
     castle_index_[color_][0] = false;
     fmgr_.hashCastling(color_, 0);
   }
   else if ( fig.getType() == Figure::TypeRook && (fig.where() & 7) == 0 && castle_index_[color_][1] )
   {
-    THROW_IF( !fig.isFirstStep(), "castle possibility doesn't respect to flag" );
+    THROW_IF( !fig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
 
     castle_index_[color_][1] = false;
     fmgr_.hashCastling(color_, 1);
@@ -224,7 +307,7 @@ void Board::undoMove()
   {
     int d = (move.to_ - move.from_) >> 1;
 
-    // restore rook's field
+    // restore rook's field. copy old one to restore all bits
     getField(move.rook_to_) = move.field_rook_to_;
 
     Figure & rook = getFigure(color_, move.rook_index_);

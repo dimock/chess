@@ -30,6 +30,16 @@ struct Move
     new_type_ = 0;
     rindex_ = -1;
   }
+
+  operator bool () const
+  {
+    return to_ >= 0;
+  }
+
+  bool operator == (const Move & other) const
+  {
+    return *reinterpret_cast<const uint32*>(this) == *reinterpret_cast<const uint32*>(&other);
+  }
 };
 
 /*! complete move structure with all necessary unmove information

@@ -4,7 +4,7 @@
 
 bool Board::isChecking(MoveCmd & move) const
 {
-  int idx0 = -1;
+  int8 idx0 = -1;
   move.checkingNum_ = 0;
   Figure::Color ocolor = Figure::otherColor(color_);
   const Figure & fig = getFigure(color_, move.index_);
@@ -59,7 +59,7 @@ bool Board::isChecking(MoveCmd & move) const
 int Board::getAttackedFrom(Figure::Color color, int apt) const
 {
   const Figure & king = getFigure(color, KingIndex);
-  FPos dp = getDeltaPos(apt, king.where());
+  FPos dp = DeltaPosCounter::getDeltaPos(apt, king.where());
   if ( FPos(0, 0) == dp )
     return -1;
 
@@ -107,8 +107,8 @@ bool Board::wasValidUnderCheck(const MoveCmd & move) const
     if ( Figure::TypeKnight == afig.getType() || Figure::TypePawn == afig.getType() )
       return false;
 
-    FPos dp1 = getDeltaPos(move.to_, afig.where());
-    FPos dp2 = getDeltaPos(king.where(), move.to_);
+    FPos dp1 = DeltaPosCounter::getDeltaPos(move.to_, afig.where());
+    FPos dp2 = DeltaPosCounter::getDeltaPos(king.where(), move.to_);
 
     // can protect king. now check if we can move this figure
     if ( FPos(0, 0) != dp1 && dp1 == dp2 )
@@ -148,7 +148,7 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
     if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() || Figure::TypeKing == fig.getType() )
       return true;
 
-    FPos dp = getDeltaPos(fig.where(), pos);
+    FPos dp = DeltaPosCounter::getDeltaPos(fig.where(), pos);
 
     THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
 
@@ -223,7 +223,7 @@ int Board::findCheckingFigures(Figure::Color color, int pos)
       checking_[checkingNum_++] = i;
     }
 
-    FPos dp = getDeltaPos(fig.where(), pos);
+    FPos dp = DeltaPosCounter::getDeltaPos(fig.where(), pos);
 
     THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
 

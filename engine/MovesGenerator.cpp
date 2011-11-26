@@ -37,37 +37,21 @@ int Board::generateMoves(Move (&moves)[MovesMax])
         if ( fig.isFirstStep() && state_ != UnderCheck )
         {
           {
-            const Field & kfield = getField(fig.where()+3);
-            if ( kfield.type() == Figure::TypeRook && kfield.color() == color_ )
-            {
-              const Figure & krook = getFigure(color_, kfield.index());
-              if ( krook.isFirstStep() )
-              {
-                Move & move = moves[m++];
+            Move & move = moves[m++];
 
-                move.from_ = fig.where();
-                move.to_ = fig.where() + 2;
-                move.new_type_ = 0;
-                move.rindex_ = -1;
-              }
-            }
+            move.from_ = fig.where();
+            move.to_ = fig.where() + 2;
+            move.new_type_ = 0;
+            move.rindex_ = -1;
           }
 
           {
-            const Field & qfield = getField(fig.where()-4);
-            if ( qfield.type() == Figure::TypeRook && qfield.color() == color_ )
-            {
-              const Figure & qrook = getFigure(color_, qfield.index());
-              if ( qrook.isFirstStep() )
-              {
-                Move & move = moves[m++];
+            Move & move = moves[m++];
 
-                move.from_ = fig.where();
-                move.to_ = fig.where() - 2;
-                move.new_type_ = 0;
-                move.rindex_ = -1;
-              }
-            }
+            move.from_ = fig.where();
+            move.to_ = fig.where() - 2;
+            move.new_type_ = 0;
+            move.rindex_ = -1;
           }
         }
       }

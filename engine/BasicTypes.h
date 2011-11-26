@@ -40,7 +40,7 @@ __declspec (align(1)) class Index
 public:
 
   Index() : index_(-1) {}
-  Index(int i) : index_(i) {}
+  Index(int8 i) : index_(i) {}
   Index(int x, int y) { index_ = x | (y<<3); }
   Index(char x, char y) { index_ = (x-'a') | ((y-'1')<<3); }
 
@@ -54,25 +54,25 @@ public:
     return index_;
   }
 
-  int x() const
+  int8 x() const
   {
     THROW_IF(index_ < 0, "try to get x of invalid index");
     return index_&7;
   }
 
-  int y() const
+  int8 y() const
   {
     THROW_IF(index_ < 0, "try to get y of invalid index");
     return (index_>>3)&7;
   }
 
-  void set_x(int x)
+  void set_x(int8 x)
   {
     index_ &= ~7;
     index_ |= x & 7;
   }
 
-  void set_y(int y)
+  void set_y(int8 y)
   {
     index_ &= 7;
     index_ |= (y&7)<<3;
