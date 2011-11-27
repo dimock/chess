@@ -58,7 +58,7 @@ xCmd xParser::parse(char * str)
     { "quit",xCmd::xQuit }
   };
 
-  strlwr(str);
+  _strlwr(str);
 
   vector<string> params;
   split_str(str, params);

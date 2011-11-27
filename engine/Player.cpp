@@ -21,7 +21,9 @@ Player::Player() :
   stop_(false),
   timeLimitMS_(0),
   tstart_(0),
-  depthMax_(4)
+  nodesCount_(0),
+  totalNodes_(0),
+  depthMax_(2)
 {
   g_moves = new MoveCmd[Board::GameLength];
   g_deltaPosCounter = new DeltaPosCounter;
@@ -66,12 +68,24 @@ bool Player::fromFEN(const char * fen)
   return board_.fromFEN(fen);
 }
 
-bool Player::findMove(SearchResult & sres)
+void Player::printPV(SearchResult & sres, std::ostream * out)
+{
+  if ( !out )
+    return;
+
+  char str[64];
+  moveToStr(sres.best_, str, false);
+  int t = (clock() - tstart_) / 10;
+
+  *out << sres.depth_ << " " << sres.score_ << " " << t << " " << sres.nodesCount_ << " " << str << std::endl;
+}
+
+bool Player::findMove(SearchResult & sres, std::ostream * out)
 {
   sres = SearchResult();
 
   stop_ = false;
-  nodesCounter_ = 0;
+  totalNodes_ = 0;
   tstart_ = clock();
 
   Move before;
@@ -80,6 +94,7 @@ bool Player::findMove(SearchResult & sres)
   {
     Move best;
     bool found = false;
+    nodesCount_ = 0;
 
     ScoreType score = alphaBetta(depth, 0, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), before, best, found);
 
@@ -88,14 +103,17 @@ bool Player::findMove(SearchResult & sres)
       sres.score_ = score;
       sres.best_  = best;
       sres.depth_ = depth;
+      sres.nodesCount_ = nodesCount_;
       before = best;
+
+      printPV(sres, out);
     }
 
     if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
       break;
   }
 
-  sres.nodesCount_ = nodesCounter_;
+  sres.totalNodes_ = totalNodes_;
 
   return sres.best_.to_ >= 0;
 }
@@ -120,7 +138,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   if ( before && board_.validMove(before) )
   {
-    nodesCounter_++;
+    totalNodes_++;
+    nodesCount_++;
     movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
   }
 
@@ -129,13 +148,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   for (int i = 0; !stop_ && alpha < betta && i < num; ++i)
   {
     const Move & mv = moves[i];
-    if ( nodesCounter_ && !(nodesCounter_ & 0xffff) )
+    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & 0xffff) )
       testTimer();
 
     if ( stop_ )
       break;
     
-    nodesCounter_++;
+    totalNodes_++;
+    nodesCount_++;
 
     THROW_IF( !board_.validMove(mv), "move validation failed" );
 
@@ -152,6 +172,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     if ( board_.getState() == Board::ChessMat )
       s += ply;
     return s;
+  }
+
+  if ( 0 == ply && counter == 1 )
+  {
+    found = true;
+    stop_ = true;
   }
 
   return alpha;

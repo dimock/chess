@@ -188,10 +188,11 @@ public:
 
 
 //bool moveToStrShort(const StepId & sid, char * str);
-//bool moveToStr(const StepId & sid, char * str);
-//bool strToMove(char * str, Board * board, StepId & sid);
 //bool formatMove(StepId & sid, char * str);
-
 struct Move;
+
+bool moveToStr(const Move & move, char * str, bool full);
+bool strToMove(char * str, const Board & board, Move & move);
+
 bool parseSAN(Board & board, const char * str, Move & move);
 bool printSAN(Board & board, int i, char * str);

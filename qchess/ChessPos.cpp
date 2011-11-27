@@ -36,9 +36,7 @@ bool ChessPosition::initialize(bool /*enableBook*/, int depthMax)
 
   vmove_.clear();
 
-  //alg_.init(Figure::ColorWhite);
   //alg_.enableBook(enableBook);
-  //alg_.setDepth(depthMax);
 
   player_.setMaxDepth(depthMax);
 

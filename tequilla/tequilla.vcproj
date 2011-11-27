@@ -92,7 +92,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
+				CommandLine="xcopy /Y /R $(TargetPath) $(ARENA_PATH)\Engines\tequilla\*"
 			/>
 		</Configuration>
 		<Configuration
@@ -176,7 +176,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy /Y /R $(TargetPath) $(ARENA_PATH)\Engines\tequilla\*&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="xcopy /Y /R $(TargetPath) $(ARENA_PATH)\Engines\tequilla\*"
 			/>
 		</Configuration>
 	</Configurations>
@@ -188,14 +188,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath=".\qpf_timer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\StopTimer.cpp"
-				>
-			</File>
 			<File
 				RelativePath=".\tequilla.cpp"
 				>
@@ -215,15 +207,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\qpf_timer.h"
-				>
-			</File>
-			<File
 				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\StopTimer.h"
 				>
 			</File>
 			<File

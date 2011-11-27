@@ -34,7 +34,7 @@ public:
   ~Player();
 
   bool fromFEN(const char * fen);
-  bool findMove(SearchResult & );
+  bool findMove(SearchResult & , std::ostream * out = 0);
   
   Board & getBoard()
   {
@@ -63,6 +63,7 @@ public:
   }
 
 private:
+  void printPV(SearchResult & sres, std::ostream * out);
 
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, const Move & before, Move & move, bool & found);
 
@@ -72,7 +73,7 @@ private:
   Board board_;
   int timeLimitMS_;
   int depthMax_;
-  int nodesCounter_;
+  int nodesCount_, totalNodes_;
   int64 tstart_;
 
 

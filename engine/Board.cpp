@@ -49,8 +49,14 @@ void Board::clear()
   }
 }
 
-/* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
+bool Board::initEmpty(Figure::Color color)
+{
+  clear();
+  color_ = color;
+  return true;
+}
 
+/* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
 bool Board::fromFEN(const char * fen)
 {
   clear();
@@ -607,6 +613,12 @@ bool Board::load(Board & board, std::istream & is)
     Move move;
     if ( !parseSAN(board, smove, move) )
       return false;
+
+    //char str[64];
+    //moveToStr(move, str, false);
+
+    //Move mv;
+    //strToMove(str, board, mv);
 
     if ( !board.makeMove(move) )
     {

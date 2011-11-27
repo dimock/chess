@@ -156,14 +156,16 @@ bool Board::doMove()
       fmgr_.hashCastling(color_, 1);
     }
   }
-  else if ( fig.getType() == Figure::TypeRook && (fig.where() & 7) == 7 && castle_index_[color_][0] )
+  // short castling
+  else if ( fig.getType() == Figure::TypeRook && (fig.where() == 63 && !color_ || fig.where() == 7 && color_) && castle_index_[color_][0] )
   {
     THROW_IF( !fig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
 
     castle_index_[color_][0] = false;
     fmgr_.hashCastling(color_, 0);
   }
-  else if ( fig.getType() == Figure::TypeRook && (fig.where() & 7) == 0 && castle_index_[color_][1] )
+  // long castling
+  else if ( fig.getType() == Figure::TypeRook && (fig.where() == 56 && !color_ || fig.where() == 0 && color_) && castle_index_[color_][1] )
   {
     THROW_IF( !fig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
 

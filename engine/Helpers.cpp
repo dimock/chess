@@ -657,120 +657,120 @@ void DebutsTable::initStatic()
 //
 //	return true;
 //}
-//
-//bool moveToStr(const StepId & sid, char * str)
-//{
-//	if ( sid.index_ < 0 || sid.from_ < 0 || sid.to_ < 0 )
-//		return false;
-//
-//	Index from(sid.from_);
-//	Index to(sid.to_);
-//
-//	strcpy(str, "move ");
-//
-//	str[5] = 'a' + from.x();
-//	str[6] = '1' + from.y();
-//	str[7] = 'a' + to.x();
-//	str[8] = '1' + to.y();
-//	str[9] = 0;
-//
-//	if ( sid.newType_ > 0 )
-//	{
-//		switch ( sid.newType_ )
-//		{
-//		case Figure::TypeBishop:
-//			str[9] = 'b';
-//			break;
-//
-//		case Figure::TypeKnight:
-//			str[9] = 'n';
-//			break;
-//
-//		case Figure::TypeRook:
-//			str[9] = 'r';
-//			break;
-//
-//		case Figure::TypeQueen:
-//			str[9] = 'q';
-//			break;
-//		}
-//
-//		str[10] = 0;
-//	}
-//
-//	return true;
-//}
-//
-//bool strToMove(char * str, Board * board, Move & sid)
-//{
-//	if ( !str || !board || strlen(str) < 4 )
-//		return false;
-//
-//	strlwr(str);
-//	sid.clear();
-//
-//	Figure::Color color = board->getColor();
-//	Figure::Color ocolor = Figure::otherColor(color);
-//
-//	if ( isalpha(str[0]) && isdigit(str[1]) && isalpha(str[2]) && isdigit(str[3]) )
-//	{
-//		int xfrom = str[0] - 'a';
-//		int yfrom = str[1] - '1';
-//		int xto = str[2] - 'a';
-//		int yto = str[3] - '1';
-//
-//		int promote = 0;
-//		if ( strlen(str) > 4 && isalpha(str[4]) )
-//		{
-//			if ( 'b' == str[4] )
-//				promote = Figure::TypeBishop;
-//			else if ( 'n' == str[4] )
-//				promote = Figure::TypeKnight;
-//			else if ( 'r' == str[4] )
-//				promote = Figure::TypeRook;
-//			else if ( 'q' == str[4] )
-//				promote = Figure::TypeQueen;
-//		}
-//
-//		FPos fpos(xfrom, yfrom);
-//		Figure fig;
-//
-//		if ( !board->getFigure(fpos, fig) || fig.getColor() != color )
-//			return false;
-//
-//		sid.index_ = fig.getIndex();
-//		sid.ftype_ = fig.getType();
-//		sid.from_ = fpos.index();
-//		sid.to_ = FPos(xto, yto).index();
-//		if ( sid.to_ < 0 || sid.to_ > 63 )
-//			return false;
-//
-//		int dx =  Index(sid.from_).x() - Index(sid.to_).x();
-//		if ( dx < 0 )
-//			dx = -dx;
-//
-//		if ( fig.getType() == Figure::TypeKing && 2 == dx )
-//			sid.castle_ = 1;
-//
-//		const Field & field = board->getField(sid.to_);
-//		if ( field.index() >= 0 && field.color() == ocolor )
-//			sid.rindex_ = field.index();
-//		else if ( fig.getType() == Figure::TypePawn )
-//		{
-//			Figure fake;
-//			if ( board->getFake(fake) && fake.where() == sid.to_ )
-//				sid.rindex_ = fake.getIndex();
-//		}
-//
-//		if ( promote > 0 )
-//			sid.newType_ = promote;
-//
-//		return true;
-//	}
-//
-//	return false;
-//}
-//
+
+bool moveToStr(const Move & move, char * str, bool full)
+{
+	if ( move.from_ < 0 || move.to_ < 0 )
+		return false;
+
+	Index from(move.from_);
+	Index to(move.to_);
+
+  int n = 0;
+  if ( full )
+  {
+    strcpy(str, "move ");
+    n = strlen(str);
+  }
+
+	str[n++] = 'a' + from.x();
+	str[n++] = '1' + from.y();
+	str[n++] = 'a' + to.x();
+	str[n++] = '1' + to.y();
+	str[n] = 0;
+
+	if ( move.new_type_ <= 0 )
+    return true;
+
+	switch ( move.new_type_ )
+	{
+	case Figure::TypeBishop:
+		str[n++] = 'b';
+		break;
+
+	case Figure::TypeKnight:
+		str[n++] = 'n';
+		break;
+
+	case Figure::TypeRook:
+		str[n++] = 'r';
+		break;
+
+	case Figure::TypeQueen:
+		str[n++] = 'q';
+		break;
+	}
+
+	str[n] = 0;
+
+	return true;
+}
+
+bool strToMove(char * str, const Board & board, Move & move)
+{
+	if ( !str || strlen(str) < 4 )
+		return false;
+
+	_strlwr(str);
+	move.clear();
+
+	Figure::Color color = board.getColor();
+	Figure::Color ocolor = Figure::otherColor(color);
+
+	if ( !iscolumn(str[0]) || !isdigit(str[1]) && !iscolumn(str[2]) && !isdigit(str[3]) )
+    return false;
+
+	int xfrom = str[0] - 'a';
+	int yfrom = str[1] - '1';
+	int xto   = str[2] - 'a';
+	int yto   = str[3] - '1';
+
+	if ( strlen(str) > 4 && isalpha(str[4]) )
+	{
+		if ( 'b' == str[4] )
+			move.new_type_ = Figure::TypeBishop;
+		else if ( 'n' == str[4] )
+			move.new_type_ = Figure::TypeKnight;
+		else if ( 'r' == str[4] )
+			move.new_type_ = Figure::TypeRook;
+		else if ( 'q' == str[4] )
+			move.new_type_ = Figure::TypeQueen;
+	}
+
+  move.from_ = Index(xfrom, yfrom);
+  move.to_   = Index(xto, yto);
+
+  int to = move.to_;
+
+  const Field & ffrom = board.getField(move.from_);
+  if ( !ffrom || ffrom.color() != color )
+    return false;
+
+  // maybe en-passant
+  if ( ffrom.type() == Figure::TypePawn && board.getEnPassant() >= 0 )
+  {
+    int dy = (move.to_ >>3) - (move.from_ >>3);
+    int dx = (move.to_ & 7) - (move.from_ & 7);
+    if ( dx != 0 )
+    {
+      int yto = (move.to_ >> 3) - dy;
+      int epos = (move.to_ & 7) | (yto << 3);
+      const Figure & epawn = board.getFigure(ocolor, board.getEnPassant());
+      if ( epawn.where() == epos )
+        to = epos;
+    }
+  }
+
+  const Field & fto = board.getField(to);
+  if ( fto && fto.color() == ocolor )
+    move.rindex_ = fto.index();
+
+	if ( !board.validMove(move) )
+		return false;
+
+	return true;
+}
+
 //bool formatMove(StepId & sid, char * str)
 //{
 //	if ( !sid || !str )

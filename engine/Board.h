@@ -36,9 +36,11 @@ public:
   /// initialize from FEN
   bool fromFEN(const char * fen);
 
+  /// initialize empty board with given color to move
+  bool initEmpty(Figure::Color );
+
   /*! movements
    */
-
   /// verify 
   bool validMove(const Move &) const;
 
@@ -58,6 +60,15 @@ public:
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
 
+  /// add new figure. firstly find empty slot (index). try to put pawn to slots 0-7, knight to slots 8-9 etc...
+  bool addFigure(const Figure &);
+
+  /// set figure with given index to given position
+  void setFigure(const Figure &);
+
+  /// verify position and calculate checking figures
+  bool invalidate();
+
   /// always use this method to get figure
   inline const Figure & getFigure(Figure::Color color, int index) const
   {
@@ -70,6 +81,11 @@ public:
   {
     THROW_IF( (size_t)index >= NumOfFigures, "\"Figure & getFigure(Figure::Color, int) const\" - try to get invalid figure");
     return figures_[color][index];
+  }
+
+  inline int8 getEnPassant() const
+  {
+    return en_passant_;
   }
 
   /// always use this method to get field
@@ -170,15 +186,6 @@ private:
 
   // returns number of checking figures
   int findCheckingFigures(Figure::Color color, int pos);
-
-  /// verify position and calculate checking figures
-  bool invalidate();
-
-  /// add new figure. firstly find empty slot (index). try to put pawn to slots 0-7, knight to slots 8-9 etc...
-  bool addFigure(const Figure &);
-
-  /// set figure with given index to given position
-  void setFigure(const Figure &);
 
   /// clear board. remove all figures
   void clear();

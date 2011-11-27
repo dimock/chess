@@ -3,10 +3,10 @@
 #include <fstream>
 #include "xparser.h"
 #include "Thinking.h"
-#include "StopTimer.h"
+//#include "StopTimer.h"
 #include <io.h>
 
-#undef WRITE_LOG_FILE_
+#define WRITE_LOG_FILE_
 
 using namespace std;
 
@@ -43,12 +43,9 @@ int main(int argc, char * argv[])
 	ofstream ofs_log("log.txt");
 #endif
 
-	ChessAlgorithm calg;
 	cout.setf(ios_base::unitbuf);
 	int vNum = 1;
-	Thinking thk(&calg);
-
-	StopTimer stimer(&calg);
+	Thinking thk;
 
 	xParser parser;
 
@@ -141,30 +138,22 @@ int main(int argc, char * argv[])
 			break;
 
 		case xCmd::xSt:
-			stimer.setDt( cmd.asInt(0)*1000 );
-			thk.setDepth(16);
-      thk.setMode(0);
+      thk.setTimePerMove(cmd.asInt(0)*1000);
 			break;
 
 		case xCmd::xSd:
 			thk.setDepth(cmd.asInt(0));
-			stimer.setDt(-1);
-      thk.setMode(0);
 			break;
 
     case xCmd::xTime:
-      thk.setDepth(16);
-      stimer.setTime(cmd.asInt(0)*10);
+      thk.setXtime(cmd.asInt(0)*10);
       break;
 
     case xCmd::xOtime:
-      thk.setDepth(16);
-      stimer.setOTime(cmd.asInt(0)*10);
       break;
 
     case xCmd::xLevel:
-      thk.setDepth(16);
-      stimer.setMovesLeft(cmd.asInt(0));
+      thk.setMovesLeft(cmd.asInt(0));
       break;
 
 		case xCmd::xUndo:
@@ -179,16 +168,12 @@ int main(int argc, char * argv[])
 		case xCmd::xGo:
 			{
 				force = false;
-				stimer.start();
 				char str[256];
         Board::State state = Board::Invalid;
 				bool white;
 				bool b = thk.reply(str, state, white);
-				stimer.stop();
 				if ( b )
 				{
-          stimer.nextMove();
-
 #ifdef WRITE_LOG_FILE_
 					ofs_log << " " << str << endl;
 #endif
@@ -216,11 +201,6 @@ int main(int argc, char * argv[])
 				bool white;
 				if ( thk.move(cmd, state, white) )
 				{
-          int mleft = stimer.nextMove();
-
-#ifdef WRITE_LOG_FILE_
-          ofs_log << "  " << mleft << " moves left" << endl;
-#endif
 					if ( Board::isDraw(state) || Board::ChessMat == state )
 					{
 						out_state(cout, state, white);
@@ -234,15 +214,11 @@ int main(int argc, char * argv[])
 					}
 					else if ( !force )
 					{
-						stimer.start();
 						char str[256];
 						bool b = thk.reply(str, state, white);
 						if ( b )
 						{
-              int mleft = stimer.nextMove();
-
 #ifdef WRITE_LOG_FILE_
-              ofs_log << "  " << mleft << " moves left" << endl;
 							ofs_log << " ... " << str << endl; 
 #endif
 

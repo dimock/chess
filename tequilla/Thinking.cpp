@@ -5,8 +5,9 @@
 
 using namespace std;
 
-Thinking::Thinking(ChessAlgorithm * pcalg) :
-	pcalg_(pcalg), boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite)
+Thinking::Thinking() :
+	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
+  xtimeMS_(0), movesLeft_(0), timePerMoveMS_(0), maxDepth_(-1)
 {
 }
 
@@ -16,146 +17,92 @@ Thinking::~Thinking()
 
 void Thinking::setDepth(int depth)
 {
-	if ( !pcalg_ )
-		return;
+  xtimeMS_ = 0;
+  movesLeft_ = 0;
+  timePerMoveMS_ = -1;
+  if ( depth < 2 )
+    depth = 2;
+  maxDepth_ = depth;
+	player_.setMaxDepth(depth);
+  player_.setTimeLimit(timePerMoveMS_);
+}
 
-	pcalg_->setDepth(depth);
-  pcalg_->setMode(0);
+void Thinking::setTimePerMove(int ms)
+{
+  maxDepth_ = -1;
+  xtimeMS_ = 0;
+  movesLeft_ = 0;
+  timePerMoveMS_ = ms;
+  if ( timePerMoveMS_ < 100 )
+    timePerMoveMS_ = 100;
+  player_.setTimeLimit(ms);
+  player_.setMaxDepth(16);
+}
+
+void Thinking::setXtime(int ms)
+{
+  maxDepth_ = -1;
+  xtimeMS_ = ms;
+  if ( xtimeMS_ < 100 )
+    xtimeMS_ = 100;
+  timePerMoveMS_ = -1;
+  player_.setMaxDepth(16);
+}
+
+void Thinking::setMovesLeft(int mleft)
+{
+  maxDepth_ = -1;
+  movesLeft_ = mleft;
+  timePerMoveMS_ = -1;
+  player_.setMaxDepth(16);
 }
 
 void Thinking::enableBook(int v)
 {
-  if ( pcalg_ )
-    pcalg_->enableBook(v != 0);
-}
-
-void Thinking::setMode(int mode)
-{
-  if ( pcalg_ )
-    pcalg_->setMode(mode);
 }
 
 void Thinking::undo()
 {
-	if ( !pcalg_ )
-		return;
-
-	pcalg_->prevPos();
+  Board & board = player_.getBoard();
+  if ( board.halfmovesCount() > 0 )
+    board.unmakeMove();
 }
 
 void Thinking::setMemory(int mb)
 {
-  if ( !pcalg_ )
-    return;
-
-  pcalg_->setMemory(mb);
 }
 
 bool Thinking::init()
 {
-	if ( !pcalg_ )
-		return false;
-
-	pcalg_->init(Figure::ColorWhite);
-  pcalg_->setMode(0);
-
-	Board & board = *pcalg_->getCurrent();
-
-	for (char i = 'a'; i <= 'h'; ++i)
-	{
-		Figure pawn(Figure::TypePawn, i, 7, Figure::ColorBlack, true);
-		board.addFigure(pawn);
-	}
-
-	for (char i = 'a'; i <= 'h'; ++i)
-	{
-		Figure pawn(Figure::TypePawn, i, 2, Figure::ColorWhite, true);
-		board.addFigure(pawn);
-	}
-
-	{
-		Figure knight1(Figure::TypeKnight, 'b', 8, Figure::ColorBlack, true);
-		Figure knight2(Figure::TypeKnight, 'g', 8, Figure::ColorBlack, true);
-
-		Figure bishop1(Figure::TypeBishop, 'c', 8, Figure::ColorBlack, true);
-		Figure bishop2(Figure::TypeBishop, 'f', 8, Figure::ColorBlack, true);
-
-		Figure rook1(Figure::TypeRook, 'a', 8, Figure::ColorBlack, true);
-		Figure rook2(Figure::TypeRook, 'h', 8, Figure::ColorBlack, true);
-
-		Figure queen(Figure::TypeQueen, 'd', 8, Figure::ColorBlack, true);
-		Figure king(Figure::TypeKing, 'e', 8, Figure::ColorBlack, true);
-
-		board.addFigure(knight1);
-		board.addFigure(knight2);
-
-		board.addFigure(bishop1);
-		board.addFigure(bishop2);
-
-		board.addFigure(rook1);
-		board.addFigure(rook2);
-
-		board.addFigure(queen);
-		board.addFigure(king);
-	}
-	{
-		Figure knight1(Figure::TypeKnight, 'b', 1, Figure::ColorWhite, true);
-		Figure knight2(Figure::TypeKnight, 'g', 1, Figure::ColorWhite, true);
-
-		Figure bishop1(Figure::TypeBishop, 'c', 1, Figure::ColorWhite, true);
-		Figure bishop2(Figure::TypeBishop, 'f', 1, Figure::ColorWhite, true);
-
-		Figure rook1(Figure::TypeRook, 'a', 1, Figure::ColorWhite, true);
-		Figure rook2(Figure::TypeRook, 'h', 1, Figure::ColorWhite, true);
-
-		Figure queen(Figure::TypeQueen, 'd', 1, Figure::ColorWhite, true);
-		Figure king(Figure::TypeKing, 'e', 1, Figure::ColorWhite, true);
-
-		board.addFigure(knight1);
-		board.addFigure(knight2);
-
-		board.addFigure(bishop1);
-		board.addFigure(bishop2);
-
-		board.addFigure(rook1);
-		board.addFigure(rook2);
-
-		board.addFigure(queen);
-		board.addFigure(king);
-	}
-
-	return true;
+  return player_.fromFEN(0);
 }
 
-bool Thinking::reply(char * smove, Board::State & state, bool & white)
+bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 {
-	if ( !pcalg_ || !pcalg_->getCurrent() )
-		return false;
+  updateTiming();
 
-	white = Figure::ColorWhite == pcalg_->getCurrent()->getColor();
-
-  Board & board0 = *pcalg_->getCurrent();
-  state = board0.getState();
+  Board & board = player_.getBoard();
+	white = Figure::ColorWhite == board.getColor();
+  state = board.getState();
 
   if ( Board::isDraw(state) || Board::ChessMat == state )
     return true;
 
-	CalcResult cres;
-	int depth = pcalg_->doBestStep(cres, cout);
-	if ( 0 == depth || !cres.best_ )
-    return false;
+	SearchResult sres;
+  if ( player_.findMove(sres, &cout) )
+  {
+    if ( board.makeMove(sres.best_) )
+      board.verifyState();
+    else
+    {
+      board.unmakeMove();
+      return false;
+    }
+  }
 
-	Step step;
-	if ( pcalg_->lastStep() )
-		step = *pcalg_->lastStep();
+  state = board.getState();
 
-	if ( !step )
-		return false;
-
-	Board & board = *pcalg_->getCurrent();
-	state = board.getState();
-
-	if ( !moveToStr(step, smove) )
+	if ( !moveToStr(sres.best_, smove, true) )
 		return false;
 
 	return true;
@@ -163,59 +110,41 @@ bool Thinking::reply(char * smove, Board::State & state, bool & white)
 
 bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 {
-	if ( !pcalg_ || !pcalg_->getCurrent() || moveCmd.type() != xCmd::xMove )
+	if ( moveCmd.type() != xCmd::xMove )
 		return false;
 
-	Figure::Color color = pcalg_->getCurrent()->getColor();
+  Board & board = player_.getBoard();
+	Figure::Color color = board.getColor();
 	Figure::Color ocolor = Figure::otherColor(color);
-
-  Board & board0 = *pcalg_->getCurrent();
-  state = board0.getState();
+  state = board.getState();
 
   if ( Board::isDraw(state) || Board::ChessMat == state )
     return true;
 
 	white = Figure::ColorWhite == color;
 
-	StepId sid;
-	if ( !strToMove(moveCmd.str(), pcalg_->getCurrent(), sid) )
+	Move move;
+	if ( !strToMove(moveCmd.str(), board, move) )
 		return false;
 
-	vector<Step> steps;
-	if ( !pcalg_->calculateSteps(steps) )
+  if ( board.makeMove(move) )
+    board.verifyState();
+  else
+  {
+    board.unmakeMove();
     return false;
+  }
 
-	Step step;
-	step.clear();
-
-	for (size_t i = 0; i < steps.size(); ++i)
-	{
-		Step & s = steps[i];
-		if ( sid == s )
-		{
-			step = s;
-			break;
-		}
-	}
-
-	if ( !step )
-		return false;
-
-	pcalg_->applyStep(step);
-
-	Board & board1 = *pcalg_->getCurrent();
-	state = board1.getState();
-
+	state = board.getState();
+  updateTiming();
 	return true;
 }
 
 void Thinking::save()
 {
-	if ( !pcalg_ || !pcalg_->getCurrent() )
-		return;
-
-	ofstream ofs("board_001.pos");
-	pcalg_->save(ofs);
+	ofstream ofs("game_001.pgn");
+  const Board & board = player_.getBoard();
+  bool res = Board::save(board, ofs);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -223,14 +152,11 @@ void Thinking::save()
 //////////////////////////////////////////////////////////////////////////
 void Thinking::editCmd(xCmd & cmd)
 {
-	if ( !pcalg_ )
-		return;
-
 	switch ( cmd.type() )
 	{
 	case xCmd::xEdit:
 		figureColor_ = Figure::ColorWhite;
-		boardColor_ = pcalg_->getCurrent() ? pcalg_->getCurrent()->getColor() : Figure::ColorWhite;
+		boardColor_ = player_.getBoard().getColor();
 		break;
 
 	case xCmd::xChgColor:
@@ -238,7 +164,7 @@ void Thinking::editCmd(xCmd & cmd)
 		break;
 
 	case xCmd::xClearBoard:
-		pcalg_->init(boardColor_);
+      player_.getBoard().initEmpty(boardColor_);
 		break;
 
 	case xCmd::xSetFigure:
@@ -246,24 +172,27 @@ void Thinking::editCmd(xCmd & cmd)
 		break;
 
 	case xCmd::xLeaveEdit:
-		if ( pcalg_->getCurrent() )
-			pcalg_->getCurrent()->validatePosition();
+    player_.getBoard().invalidate();
 		break;
 	}
 }
 
 void Thinking::setFigure(xCmd & cmd)
 {
-	if ( !pcalg_ || !pcalg_->getCurrent() || !cmd.str() || strlen(cmd.str()) < 3 )
+	if ( !cmd.str() || strlen(cmd.str()) < 3 )
 		return;
 
 	char str[16];
 
 	strncpy(str, cmd.str(), sizeof(str));
-	strlwr(str);
+	_strlwr(str);
 
-	int y = str[2] - '1' + 1;
-	if ( y < 1 || y > 8 )
+  int x = str[1] - 'a';
+  if ( x < 0 || x > 7 )
+    return;
+
+	int y = str[2] - '1';
+	if ( y < 0 || y > 7 )
 		return;
 
 	Figure::Type ftype = Figure::TypeNone;
@@ -299,9 +228,7 @@ void Thinking::setFigure(xCmd & cmd)
 		return;
 
 	bool firstStep = false;
-	if ( Figure::TypeKing == ftype &&
-		( (Figure::ColorWhite == figureColor_ && 'e' == str[1] && '1' == str[2]) ||
-		  (Figure::ColorBlack == figureColor_ && 'e' == str[1] && '8' == str[2]) ) )
+	if ( Figure::TypeKing == ftype && ((Figure::ColorWhite == figureColor_ && 'e' == str[1] && '1' == str[2]) || (Figure::ColorBlack == figureColor_ && 'e' == str[1] && '8' == str[2])) )
 	{
 		firstStep = true;
 	}
@@ -312,7 +239,37 @@ void Thinking::setFigure(xCmd & cmd)
 			firstStep = Figure::ColorWhite == figureColor_ && '1' == str[2] || Figure::ColorBlack == figureColor_ && '8' == str[2];
 	}
 
-	Figure fig(ftype, str[1], y, figureColor_, firstStep);
+	Figure fig(ftype, figureColor_, x, y, firstStep);
 
-	pcalg_->getCurrent()->addFigure(fig);
+	player_.getBoard().addFigure(fig);
+}
+
+//////////////////////////////////////////////////////////////////////////
+void Thinking::updateTiming()
+{
+  if ( maxDepth_ > 0 )
+  {
+    player_.setTimeLimit(-1);
+    return;
+  }
+
+  if ( timePerMoveMS_ > 0 )
+  {
+    player_.setTimeLimit(timePerMoveMS_);
+    return;
+  }
+
+  if ( movesLeft_ <= 0 && xtimeMS_ > 0 )
+  {
+    player_.setTimeLimit(xtimeMS_/40);
+    return;
+  }
+
+  int mcount = player_.getBoard().movesCount();
+  if ( movesLeft_ > 0 && xtimeMS_ > 0 )
+  {
+    mcount = movesLeft_ - (mcount-1) % movesLeft_;
+    mcount += 3;
+    player_.setTimeLimit(xtimeMS_/mcount);
+  }
 }
