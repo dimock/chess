@@ -74,7 +74,9 @@ void Player::printPV(SearchResult & sres, std::ostream * out)
     return;
 
   char str[64];
-  moveToStr(sres.best_, str, false);
+  if ( !printSAN(board_, sres.best_, str) )
+    str[0] = 0;
+  //moveToStr(sres.best_, str, false);
   int t = (clock() - tstart_) / 10;
 
   *out << sres.depth_ << " " << sres.score_ << " " << t << " " << sres.nodesCount_ << " " << str << std::endl;
@@ -169,7 +171,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     board_.setNoMoves();
     ScoreType s = board_.evaluate();
-    if ( board_.getState() == Board::ChessMat )
+    if ( Board::ChessMat == board_.getState() )
       s += ply;
     return s;
   }

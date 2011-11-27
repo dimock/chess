@@ -671,8 +671,15 @@ bool Board::save(const Board & board, std::ostream & os)
     Figure::Color color = sboard.getColor();
     int moveNum = sboard.movesCount();
 
+    // stash move
+    Move move = board.getMove(i);
+
     char str[16];
-    if ( !printSAN(sboard, i, str) )
+    if ( !printSAN(sboard, move, str) )
+      return false;
+
+    // now apply move
+    if ( !sboard.makeMove(move) )
       return false;
 
     if ( color || !i )

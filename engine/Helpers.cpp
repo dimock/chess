@@ -340,18 +340,22 @@ bool parseSAN(Board & board, const char * str, Move & move)
   return false;
 }
 
-bool printSAN(Board & board, int i, char * str)
+bool printSAN(Board & board, const Move & move, char * str)
 {
-  MoveCmd move = ((const Board &)board).getMove(i);
-
   Field field = board.getField(move.from_);
+  Board::State state = Board::Invalid;
 
+  bool found = false;
   int disambiguations = 0;
   int same_x = 0, same_y = 0;
   int xfrom = move.from_ & 7;
   int yfrom = move.from_ >>3;
   int xto = move.to_ & 7;
   int yto = move.to_ >>3;
+
+#ifndef NDEBUG
+  Board board0(board);
+#endif
 
   Move moves[Board::MovesMax];
   int num = board.generateMoves(moves);
@@ -361,7 +365,18 @@ bool printSAN(Board & board, int i, char * str)
     bool valid = false;
     if ( board.makeMove(m) )
       valid = true;
+
+    if ( m == move )
+    {
+      THROW_IF(!valid, "invalid move given to printSAN");
+      board.verifyState();
+      state = board.getState();
+      found = true;
+    }
+
     board.unmakeMove();
+
+    THROW_IF(board0 != board, "board is not restored by undo move method");
 
     const Field & f = board.getField(m.from_);
 
@@ -378,7 +393,7 @@ bool printSAN(Board & board, int i, char * str)
     disambiguations++;
   }
 
-  if ( !board.makeMove(move) )
+  if ( !found )
     return false;
 
   char * s = str;
@@ -450,12 +465,12 @@ bool printSAN(Board & board, int i, char * str)
     }
   }
 
-  if ( Board::UnderCheck == move.state_ )
+  if ( Board::UnderCheck == state )
   {
     *s = '+';
     ++s;
   }
-  else if ( Board::ChessMat == move.state_ )
+  else if ( Board::ChessMat == state )
   {
     *s = '#';
     ++s;
