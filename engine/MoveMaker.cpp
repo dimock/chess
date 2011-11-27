@@ -357,6 +357,7 @@ bool Board::makeMove(const Move & mv)
   {
     can_win_[0] = move.can_win_[0];
     can_win_[1] = move.can_win_[1];
+    move.state_ = state_;
     return true;
   }
 

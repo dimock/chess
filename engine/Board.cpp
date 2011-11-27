@@ -378,6 +378,9 @@ bool Board::invalidate()
 // verify if there is draw or mat
 void Board::verifyState()
 {
+  if ( ChessMat == state_ || drawState() )
+    return;
+
 #ifndef NDEBUG
   Board board0(*this);
 #endif
