@@ -32,6 +32,7 @@ public:
 		xClearBoard,
 		xSetFigure,
 		xSaveBoard,
+    xSetboardFEN,
 		xQuit
 	};
 
@@ -94,6 +95,17 @@ public:
 	{
 		return str_;
 	}
+
+  std::string packParams() const
+  {
+    std::string res;
+    for (size_t i = 0; i < params_.size(); ++i)
+    {
+      res += params_.at(i);
+      res += " ";
+    }
+    return res;
+  }
 
 private:
 

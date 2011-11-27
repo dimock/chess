@@ -148,6 +148,20 @@ void Thinking::save()
 }
 
 //////////////////////////////////////////////////////////////////////////
+bool Thinking::fromFEN(xCmd & cmd)
+{
+  if ( !cmd.paramsNum() )
+    return false;
+
+  std::string str = cmd.packParams();
+  if ( str.empty() )
+    return false;
+
+  const char * fen = str.c_str();
+  return player_.fromFEN(fen);
+}
+
+//////////////////////////////////////////////////////////////////////////
 // edit mode
 //////////////////////////////////////////////////////////////////////////
 void Thinking::editCmd(xCmd & cmd)

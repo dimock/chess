@@ -51,6 +51,7 @@ int main(int argc, char * argv[])
 
 	bool stop = false;
 	bool force = false;
+  bool fenOk = true;
 
 	for ( ; !stop; )
 	{
@@ -108,6 +109,7 @@ int main(int argc, char * argv[])
       if ( vNum > 1 )
       {
         cout << "feature done=0" << endl;
+        cout << "feature setboard=1" << endl;
         cout << "feature myname=\"Tequilla 1.0\" memory=1" << endl;
         cout << "feature option=\"enablebook -check 1\"" << endl;
         cout << "feature done=1" << endl;
@@ -117,6 +119,19 @@ int main(int argc, char * argv[])
 		case xCmd::xSaveBoard:
 			thk.save();
 			break;
+
+    case xCmd::xSetboardFEN:
+      if ( !(fenOk = thk.fromFEN(cmd)) )
+      {
+#ifdef WRITE_LOG_FILE_
+        if ( cmd.paramsNum() > 0 )
+          ofs_log << "invalid FEN given: " << cmd.packParams() << endl;
+        else
+          ofs_log << "there is no FEN in setboard command" << endl;
+#endif
+        cout << "tellusererror Illegal position" << endl;
+      }
+      break;
 
 		case xCmd::xEdit:
 		case xCmd::xChgColor:
@@ -166,7 +181,15 @@ int main(int argc, char * argv[])
 			break;
 
 		case xCmd::xGo:
-			{
+      if ( !fenOk )
+      {
+#ifdef WRITE_LOG_FILE_
+        ofs_log << " illegal move. fen is invalid" << endl;
+#endif
+        cout << "Illegal move" << endl;
+      }
+      else
+      {
 				force = false;
 				char str[256];
         Board::State state = Board::Invalid;
@@ -196,7 +219,15 @@ int main(int argc, char * argv[])
 			break;
 
 		case xCmd::xMove:
-			{
+      if ( !fenOk )
+      {
+#ifdef WRITE_LOG_FILE_
+        ofs_log << " illegal move. fen is invalid" << endl;
+#endif
+        cout << "Illegal move" << endl;
+      }
+      else
+      {
 				Board::State state;
 				bool white;
 				if ( thk.move(cmd, state, white) )
@@ -246,8 +277,8 @@ int main(int argc, char * argv[])
 					ofs_log << " Illegal move: " << cmd.str() << endl;
 #endif
 				}
-				break;
 			}
+      break;
 		}
 	}
 

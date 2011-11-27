@@ -22,6 +22,7 @@ public:
 
 	void save();
 
+  bool fromFEN(xCmd & cmd);
 	void editCmd(xCmd & cmd);
 
 	bool move(xCmd & moveCmd, Board::State & state, bool & white);

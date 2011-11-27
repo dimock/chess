@@ -55,10 +55,11 @@ xCmd xParser::parse(char * str)
     { "c", xCmd::xChgColor },
     { ".", xCmd::xLeaveEdit }, 
     { "protover", xCmd::xProtover },
+    { "setboard", xCmd::xSetboardFEN },
     { "quit",xCmd::xQuit }
   };
 
-  _strlwr(str);
+  //_strlwr(str);
 
   vector<string> params;
   split_str(str, params);
