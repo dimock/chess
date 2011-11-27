@@ -3,6 +3,12 @@
 
 #undef NO_TIME_LIMIT
 
+#ifndef NDEBUG
+  #define TIMING_FLAG 0xFFF
+#else
+  #define TIMING_FLAG 0xFFFF
+#endif
+
 SearchResult::SearchResult() :
   nodesCount_(0),
   totalNodes_(0),
@@ -163,7 +169,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   for (int i = 0; !stop_ && alpha < betta && i < num; ++i)
   {
     const Move & mv = moves[i];
-    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & 0xffff) )
+    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
       testTimer();
 
     if ( stop_ )
