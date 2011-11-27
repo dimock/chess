@@ -83,7 +83,7 @@ bool Board::fromFEN(const char * fen)
     char c = *s;
     if ( '/' == c )
       continue;
-    else if ( c >= '0' && c <= '9' )
+    else if ( isdigit(c) )
     {
       int dx = c - '0';
       x += dx;
@@ -98,43 +98,12 @@ bool Board::fromFEN(const char * fen)
       Figure::Type  ftype = Figure::TypeNone;
       Figure::Color color = Figure::ColorBlack;
 
-      if ( c >= 'A' && c <= 'Z' )
+      if ( isupper(c) )
         color = Figure::ColorWhite;
 
-      switch ( c )
-      {
-      case 'r':
-      case 'R':
-        ftype = Figure::TypeRook;
-        break;
+      ftype = toFtype(toupper(c));
 
-      case 'p':
-      case 'P':
-        ftype = Figure::TypePawn;
-        break;
-
-      case 'n':
-      case 'N':
-        ftype = Figure::TypeKnight;
-        break;
-
-      case 'b':
-      case 'B':
-        ftype = Figure::TypeBishop;
-        break;
-
-      case 'q':
-      case 'Q':
-        ftype = Figure::TypeQueen;
-        break;
-
-      case 'k':
-      case 'K':
-        ftype = Figure::TypeKing;
-        break;
-      }
-
-      if ( !ftype )
+      if ( Figure::TypeNone == ftype )
         return false;
 
       bool firstStep = false;
@@ -306,6 +275,125 @@ bool Board::fromFEN(const char * fen)
 }
 
 //////////////////////////////////////////////////////////////////////////
+bool Board::toFEN(char * fen) const
+{
+  if ( !fen )
+    return false;
+
+  char * s = fen;
+
+  // 1 - write figures
+  for (int y = 7; y >= 0; --y)
+  {
+    int n = 0;
+    for (int x = 0; x < 8; ++x)
+    {
+      Index idx(x, y);
+      const Field & field = getField(idx);
+      if ( !field )
+      {
+        ++n;
+        continue;
+      }
+
+      if ( n > 0 )
+      {
+        *s++ = '0' + n;
+        n = 0;
+      }
+
+      char c = fromFtype(field.type());
+      if ( field.color() == Figure::ColorBlack )
+        c = tolower(c);
+
+      *s++ = c;
+    }
+    
+    if ( n > 0 )
+      *s++ = '0' + n;
+
+    if ( y > 0 )
+      *s++ = '/';
+  }
+
+  // 2 - color to move
+  {
+    *s++ = ' ';
+    if ( Figure::ColorBlack == color_ )
+      *s++ = 'b';
+    else
+      *s++ = 'w';
+  }
+
+  // 3 - castling possibility
+  {
+    *s++ = ' ';
+    if ( !castle_index_[0][0] && !castle_index_[0][1] && !castle_index_[1][0] && !castle_index_[1][1] )
+    {
+      *s++ = '-';
+    }
+    else
+    {
+      if ( castle_index_[1][0] )
+        *s++ = 'K';
+      if ( castle_index_[1][1] )
+        *s++ = 'Q';
+      if ( castle_index_[0][0] )
+        *s++ = 'k';
+      if ( castle_index_[0][1] )
+        *s++ = 'q';
+    }
+  }
+
+  // 4 - en passant
+  {
+    *s++ = ' ';
+    if ( en_passant_ >= 0 )
+    {
+      const Figure & epawn = getFigure(Figure::otherColor(color_), en_passant_);
+      THROW_IF( !epawn, "en-passant pawn is absent but has index" );
+      int x = epawn.where() & 7;
+      int y = epawn.where() >>3;
+      if ( color_ )
+        y++;
+      else
+        y--;
+      char cx = 'a' + x;
+      char cy = '1' + y;
+      *s++ = cx;
+      *s++ = cy;
+    }
+    else
+      *s++ = '-';
+
+    // 5 - fifty move rule
+    {
+      *s++ = ' ';
+      char str[8];
+      _itoa(fiftyMovesCount_, str, 10);
+      char * sf = str;
+      for ( ; *sf; ++sf, ++s)
+        *s = *sf;
+    }
+
+    // 6 - moves counter
+    {
+      *s++ = ' ';
+      char str[8];
+      _itoa(movesCounter_, str, 10);
+      char * sf = str;
+      for ( ; *sf; ++sf, ++s)
+        *s = *sf;
+    }
+  }
+
+  // terminal
+  *s++ = 0;
+
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
 /// verification of move/unmove methods; use it for debug only
 bool Board::operator != (const Board & other) const
 {
@@ -368,6 +456,38 @@ bool Board::invalidate()
     {
       stages_[color] = 1;
     }
+  }
+
+  // update castle possibility
+  for (int color = 0; color < 2; ++color)
+  {
+    const Figure & king = getFigure((Figure::Color)color, KingIndex);
+    if ( !king )
+      return false;
+
+    if ( !king.isFirstStep() )
+    {
+      castle_index_[color][0] = castle_index_[color][1] = false;
+      continue;
+    }
+
+    const Field & kr_field = getField(color ? 7 : 63);
+    if ( kr_field )
+    {
+      const Figure & krook = getFigure((Figure::Color)color, kr_field.index());
+      castle_index_[color][0] = krook.getType() == Figure::TypeRook && krook.isFirstStep();
+    }
+    else
+      castle_index_[color][0] = false;
+
+    const Field & qr_field = getField(color ? 0 : 56);
+    if ( qr_field )
+    {
+      const Figure & qrook = getFigure((Figure::Color)color, qr_field.index());
+      castle_index_[color][1] = qrook.getType() == Figure::TypeRook && qrook.isFirstStep();
+    }
+    else
+      castle_index_[color][1] = false;
   }
 
   verifyState();
@@ -637,12 +757,6 @@ bool Board::load(Board & board, std::istream & is)
 
 bool Board::save(const Board & board, std::ostream & os)
 {
-  if ( strcmp(fen_, stdFEN_) != 0 )
-  {
-    os << "[SetUp \"1\"] " << std::endl;
-    os << "[FEN \"" << fen_ << "\"]" << std::endl;
-  }
-
   const char * sres = "*";
   if ( board.getState() == Board::ChessMat )
   {
@@ -654,10 +768,6 @@ bool Board::save(const Board & board, std::ostream & os)
   else if ( board.drawState() )
     sres = "1/2-1/2";
 
-  os << "[Result \"";
-  os << sres;
-  os << "\"]" << std::endl;
-
   Board sboard = board;
   MoveCmd tempMoves[Board::GameLength];
 
@@ -668,6 +778,17 @@ bool Board::save(const Board & board, std::ostream & os)
 
   while ( sboard.halfmovesCount() > 0 )
     sboard.unmakeMove();
+
+  char fen[FENsize];
+  if ( sboard.toFEN(fen) && strcmp(fen, stdFEN_) != 0 )
+  {
+    os << "[SetUp \"1\"] " << std::endl;
+    os << "[FEN \"" << fen << "\"]" << std::endl;
+  }
+
+  os << "[Result \"";
+  os << sres;
+  os << "\"]" << std::endl;
 
   for (int i = 0; i < num; ++i)
   {

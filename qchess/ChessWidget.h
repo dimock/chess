@@ -48,6 +48,8 @@ private slots:
   bool onSave();
   void onNext();
   void onPrev();
+  void onGetFEN();
+  void onPutFEN() const;
   void onGo();
   void onMoveFound();
   //void onTimeoutStop();

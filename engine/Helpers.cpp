@@ -175,46 +175,6 @@ DistanceCounter::DistanceCounter()
 }
 
 //////////////////////////////////////////////////////////////////////////
-Figure::Type toFtype(char c)
-{
-  if ( 'N' == c )
-    return Figure::TypeKnight;
-  else if ( 'B' == c )
-    return Figure::TypeBishop;
-  else if ( 'R' == c )
-    return Figure::TypeRook;
-  else if ( 'Q' == c )
-    return Figure::TypeQueen;
-  else if ( 'K' == c )
-    return Figure::TypeKing;
-  return Figure::TypeNone;
-}
-
-char fromFtype(Figure::Type t)
-{
-  switch ( t )
-  {
-  case Figure::TypePawn:
-    return 'P';
-
-  case Figure::TypeKnight:
-    return 'N';
-
-  case Figure::TypeBishop:
-    return 'B';
-
-  case Figure::TypeRook:
-    return 'R';
-
-  case Figure::TypeQueen:
-    return 'Q';
-
-  case Figure::TypeKing:
-    return 'K';
-  }
-
-  return Figure::TypeNone;
-}
 
 bool iscolumn(char c)
 {
@@ -300,6 +260,8 @@ bool parseSAN(Board & board, const char * str, Move & move)
       if ( n < 2 )
         return false;
       new_type = toFtype(s[1]);
+      if ( new_type < Figure::TypeKnight || new_type > Figure::TypeQueen )
+        return false;
       s += 2;
       n = strlen(s);
     }

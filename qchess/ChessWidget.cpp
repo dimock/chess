@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <QSettings>
+#include <QClipboard>
 #include "setparamsdlg.h"
 
 
@@ -187,6 +188,33 @@ void ChessWidget::onPrev()
 {
   cpos_.undo();
   update();
+}
+
+void ChessWidget::onGetFEN()
+{
+  QString qfen = QApplication::clipboard()->text();
+  if ( cpos_.fromFEN(qfen.toAscii().data()) )
+  {
+    dt_ = 0;
+    full_t_ = 0;
+    depth_ = 0;
+    bs_count_ = 0;
+    moves_avg_base_ = 0;
+    depth_avg_ = 0;
+    movesCount_ = 0;
+    changed_ = false;
+    moves_base_ = 0;
+    pv_str_[0] = 0;
+    update();
+  }
+}
+
+void ChessWidget::onPutFEN() const
+{
+  char fen[Board::FENsize];
+  cpos_.toFEN(fen);
+  QString qstr(fen);
+  QApplication::clipboard()->setText(qstr);
 }
 
 void ChessWidget::onGo()
@@ -435,12 +463,36 @@ void ChessWidget::keyReleaseEvent(QKeyEvent * e)
   if ( !e )
     return;
 
-  if  ( e->key() == Qt::Key_F2 )
+  switch ( e->key() )
+  {
+  case Qt::Key_F2:
     onSave();
-  else if ( e->key() == Qt::Key_F3 )
+    break;
+
+  case Qt::Key_F3:
     onLoad();
-  else if ( e->key() == Qt::Key_PageUp )
+    break;
+
+  case Qt::Key_PageUp:
     onNext();
-  else if ( e->key() == Qt::Key_PageDown )
+    break;
+
+  case Qt::Key_PageDown:
     onPrev();
+    break;
+
+  case Qt::Key_C:
+    if ( e->modifiers() & Qt::ControlModifier )
+    {
+      onPutFEN();
+    }
+    break;
+
+  case Qt::Key_V:
+    if ( e->modifiers() & Qt::ControlModifier )
+    {
+      onGetFEN();
+    }
+    break;
+  }
 }

@@ -71,6 +71,10 @@ protected:
         first_step_ : 1;
 };
 
+Figure::Type toFtype(char c);
+char fromFtype(Figure::Type t);
+
+
 __declspec (align(1)) class FiguresCounter
 {
   static uint8 s_transposeIndex_[64];

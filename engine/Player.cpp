@@ -64,8 +64,21 @@ Player::~Player()
 bool Player::fromFEN(const char * fen)
 {
   stop_ = false;
-  timeLimitMS_ = 0;
+  
+  Board tboard(board_);
+  MoveCmd tmoves[16];
+  tboard.set_moves(tmoves);
+
+  // verify FEN first
+  if ( !tboard.fromFEN(fen) )
+    return false;
+
   return board_.fromFEN(fen);
+}
+
+bool Player::toFEN(char * fen) const
+{
+  return board_.toFEN(fen);
 }
 
 void Player::printPV(SearchResult & sres, std::ostream * out)

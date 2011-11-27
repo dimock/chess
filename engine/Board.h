@@ -36,6 +36,9 @@ public:
   /// initialize from FEN
   bool fromFEN(const char * fen);
 
+  /// save current position to FEN
+  bool toFEN(char * fen) const;
+
   /// initialize empty board with given color to move
   bool initEmpty(Figure::Color );
 

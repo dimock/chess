@@ -26,6 +26,49 @@ Figure::Figure(Type type, Color color, int x, int y, bool firstStep) :
   THROW_IF( pos_ < 0 || pos_ > 63, "invalid figure position");
 }
 
+Figure::Type toFtype(char c)
+{
+  if ( 'P' == c )
+    return Figure::TypePawn;
+  else if ( 'N' == c )
+    return Figure::TypeKnight;
+  else if ( 'B' == c )
+    return Figure::TypeBishop;
+  else if ( 'R' == c )
+    return Figure::TypeRook;
+  else if ( 'Q' == c )
+    return Figure::TypeQueen;
+  else if ( 'K' == c )
+    return Figure::TypeKing;
+  return Figure::TypeNone;
+}
+
+char fromFtype(Figure::Type t)
+{
+  switch ( t )
+  {
+  case Figure::TypePawn:
+    return 'P';
+
+  case Figure::TypeKnight:
+    return 'N';
+
+  case Figure::TypeBishop:
+    return 'B';
+
+  case Figure::TypeRook:
+    return 'R';
+
+  case Figure::TypeQueen:
+    return 'Q';
+
+  case Figure::TypeKing:
+    return 'K';
+  }
+
+  return Figure::TypeNone;
+}
+
 bool Figure::operator == ( const Figure & other ) const
 {
   return color_ == other.color_ && type_ == other.type_ && index_ == other.index_ && pos_ == other.pos_;

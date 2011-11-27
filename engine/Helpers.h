@@ -185,10 +185,6 @@ public:
 
 //////////////////////////////////////////////////////////////////////////
 
-
-
-//bool moveToStrShort(const StepId & sid, char * str);
-//bool formatMove(StepId & sid, char * str);
 struct Move;
 
 bool moveToStr(const Move & move, char * str, bool full);

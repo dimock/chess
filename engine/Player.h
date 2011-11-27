@@ -34,6 +34,8 @@ public:
   ~Player();
 
   bool fromFEN(const char * fen);
+  bool toFEN(char * fen) const;
+
   bool findMove(SearchResult & , std::ostream * out = 0);
   
   Board & getBoard()

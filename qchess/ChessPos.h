@@ -34,6 +34,9 @@ public:
   const Board & getBoard() const;
   int movesCount() const;
 
+  bool fromFEN(const char * fen);
+  bool toFEN(char * fen) const;
+
   void undo();
   void redo();
   bool save() const;
