@@ -32,6 +32,7 @@ public:
   bool findMove(SearchResult & sres);
 
   const Board & getBoard() const;
+  Board & getBoardT() { return player_.getBoard(); }
   int movesCount() const;
 
   bool fromFEN(const char * fen);

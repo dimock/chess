@@ -370,7 +370,8 @@ void ChessWidget::drawInfo()
 	  tickPerMove = ticks/cpos_.numOfMoves();
   //infoText.sprintf("%d ticks total, %d ticks per move, %d moves", (int)ticks, tickPerMove, cpos_.numOfMoves());
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
-  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps, score = %d", cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_);
+  int ticksN = cpos_.getBoardT().ticks_;
+  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d", cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN);
 
   painter.drawText(QRect(00, 450, 450, 50), Qt::AlignCenter, infoText);
 }
@@ -422,6 +423,10 @@ void ChessWidget::findMove()
   QTime tm;
   tm.start();
 
+  Board & board = cpos_.getBoardT();
+  board.ticks_ = 0;
+  board.tcounter_ = 0;
+
   depth_ = cpos_.findMove(sres_);
   if ( 0 == depth_ )
     return;
@@ -437,6 +442,7 @@ void ChessWidget::findMove()
   }
   depth_avg_ += depth_;
   movesCount_ = cpos_.movesCount();
+  board.ticks_ /= board.tcounter_;
 
   pv_str_[0] = 0;
   //for (int i = 0; i < sres.depth_; ++i)

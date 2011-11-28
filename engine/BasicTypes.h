@@ -32,6 +32,44 @@ typedef int16 ScoreType;
 enum { MaxDepth = 48 };
 
 
+class QpfTimer
+{
+  int64 t0_;
+
+public:
+
+  QpfTimer()
+  {
+    __asm
+    {
+      mov ecx, this
+      lea ecx, [ecx]this.t0_
+      rdtsc
+      mov dword ptr [ecx], eax
+      mov dword ptr [ecx+4], edx
+    }
+  }
+
+  inline int64 dt()
+  {
+    int64 t;
+    __asm
+    {
+      lea esi, [t]
+      mov edi, this
+      lea edi, [edi]this.t0_
+      rdtsc
+      sub eax, dword ptr [edi]
+      sbb edx, dword ptr [edi+4]
+      sub eax, 105                ; rdtsc takes 105 ticks
+      sbb edx, 0
+      mov dword ptr [esi], eax
+      mov dword ptr [esi+4], edx
+    }
+    return t;
+  }
+};
+
 #pragma pack (push, 1)
 
 

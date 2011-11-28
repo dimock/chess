@@ -29,6 +29,7 @@ bool Board::isChecking(MoveCmd & move) const
     else
     {
       idx0 = isAttackedBy(ocolor, fig);
+
       THROW_IF( getAttackedFrom(ocolor, move.to_) != idx0, "index of attacking figure isn't detected correctly" );
 
       //idx0 = getAttackedFrom(ocolor, move.to_);
@@ -42,7 +43,13 @@ bool Board::isChecking(MoveCmd & move) const
 
   if ( !move.castle_ )
   {
+    QpfTimer qpt;
+
     int idx1 = fastAttackedFrom( ocolor, move.from_ );
+
+    ticks_ += qpt.dt();
+    tcounter_++;
+
     THROW_IF( idx1 != getAttackedFrom( ocolor, move.from_ ), "fastAttackedFrom() failed" );
 
     if ( idx1 >= 0 && idx1 != idx0 )
@@ -127,7 +134,12 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
   const Figure & fig = getFigure(color_, move.index_);
   Figure::Color ocolor = Figure::otherColor(color_);
   if ( Figure::TypeKing == fig.getType() )
-    return !isAttacked(ocolor, fig.where());
+  {
+
+    bool r = !isAttacked(ocolor, fig.where());
+
+    return r;
+  }
 
   int idx = fastAttackedFrom(color_, move.from_);
   THROW_IF( idx != getAttackedFrom(color_, move.from_), "fastAttackedFrom() failed" );

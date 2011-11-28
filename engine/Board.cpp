@@ -6,6 +6,9 @@
 char Board::fen_[FENsize];
 const char * Board::stdFEN_ = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+int64 Board::ticks_;
+int   Board::tcounter_;
+
 Board::Board() :
   g_moves(0),
   g_movesTable(0),
