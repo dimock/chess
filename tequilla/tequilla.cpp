@@ -43,6 +43,13 @@ int main(int argc, char * argv[])
 	ofstream ofs_log("log.txt");
 #endif
 
+#ifdef WRITE_LOG_FILE_
+#ifndef NDEBUG
+  try
+  {
+#endif
+#endif
+
 	cout.setf(ios_base::unitbuf);
 	int vNum = 1;
 	Thinking thk;
@@ -282,6 +289,15 @@ int main(int argc, char * argv[])
 		}
 	}
 
+#ifdef WRITE_LOG_FILE_
+#ifndef NDEBUG
+  }
+  catch ( const std::exception & e )
+  {
+    ofs_log << "exception: " << e.what() << endl;
+  }
+#endif
+#endif
 
 	return 0;
 }

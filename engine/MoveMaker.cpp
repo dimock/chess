@@ -66,7 +66,7 @@ bool Board::validMove(const Move & move) const
   case Figure::TypeRook:
   case Figure::TypeQueen:
     {
-      const uint64 & mask = g_betweenMasks->mask(move.from_, move.to_);
+      const uint64 & mask = g_betweenMasks->between(move.from_, move.to_);
       const uint64 & black = fmgr_.mask(Figure::ColorBlack);
       const uint64 & white = fmgr_.mask(Figure::ColorWhite);
 

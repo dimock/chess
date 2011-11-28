@@ -2,6 +2,7 @@
 #include "fpos.h"
 #include "FigureDirs.h"
 
+//////////////////////////////////////////////////////////////////////////
 bool Board::isChecking(MoveCmd & move) const
 {
   int8 idx0 = -1;
@@ -9,7 +10,13 @@ bool Board::isChecking(MoveCmd & move) const
   Figure::Color ocolor = Figure::otherColor(color_);
   const Figure & fig = getFigure(color_, move.index_);
   if ( move.castle_ )
-    idx0 = getAttackedFrom(ocolor, move.rook_to_);
+  {
+    const Figure & rook = getFigure(color_, move.rook_index_);
+    idx0 = isAttackedBy(ocolor, rook);
+    THROW_IF( getAttackedFrom(ocolor, move.rook_to_) != idx0, "castling rook attack isn't correctly detected" );
+
+//    idx0 = getAttackedFrom(ocolor, move.rook_to_);
+  }
   else
   {
     if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() )
@@ -20,7 +27,12 @@ bool Board::isChecking(MoveCmd & move) const
         idx0 = move.index_;
     }
     else
-      idx0 = getAttackedFrom(ocolor, move.to_);
+    {
+      idx0 = isAttackedBy(ocolor, fig);
+      THROW_IF( getAttackedFrom(ocolor, move.to_) != idx0, "index of attacking figure isn't detected correctly" );
+
+      //idx0 = getAttackedFrom(ocolor, move.to_);
+    }
 
     THROW_IF( idx0 >= 0 && idx0 != move.index_, "attacked by wrong figure" );
   }
@@ -30,7 +42,9 @@ bool Board::isChecking(MoveCmd & move) const
 
   if ( !move.castle_ )
   {
-    int idx1 = getAttackedFrom( ocolor, move.from_ );
+    int idx1 = fastAttackedFrom( ocolor, move.from_ );
+    THROW_IF( idx1 != getAttackedFrom( ocolor, move.from_ ), "fastAttackedFrom() failed" );
+
     if ( idx1 >= 0 && idx1 != idx0 )
       move.checking_[move.checkingNum_++] = idx1;
 
@@ -43,7 +57,9 @@ bool Board::isChecking(MoveCmd & move) const
 
       if ( fakePos == move.to_ )
       {
-        int idx2 = getAttackedFrom(ocolor, fake.where());
+        int idx2 = fastAttackedFrom(ocolor, fake.where());
+        THROW_IF( idx2 != getAttackedFrom( ocolor, fake.where() ), "fastAttackedFrom() failed" );
+
         if ( idx2 >= 0 && idx2 != idx0 && idx2 != idx1 )
           move.checking_[move.checkingNum_++] = idx2;
       }
@@ -56,6 +72,72 @@ bool Board::isChecking(MoveCmd & move) const
   return move.checkingNum_ > 0;
 }
 
+//////////////////////////////////////////////////////////////////////////
+bool Board::wasValidUnderCheck(const MoveCmd & move) const
+{
+  const Figure & fig = getFigure(color_, move.index_);
+  Figure::Color ocolor = Figure::otherColor(color_);
+  if ( Figure::TypeKing == fig.getType() )
+    return !move.castle_ && !isAttacked(ocolor, fig.where());
+
+  if ( 1 == checkingNum_ )
+  {
+    THROW_IF( checking_[0] < 0 || checking_[0] >= NumOfFigures, "invalid checking figure index" );
+
+    const Figure & king = getFigure(color_, KingIndex);
+
+    if ( move.rindex_ == checking_[0] )
+    {
+      // maybe attacked from direction, my figure goes from
+      int idx = fastAttackedFrom(color_, move.from_);
+      THROW_IF( idx != getAttackedFrom(color_, move.from_), "fastAttackedFrom() failed" );
+      return idx < 0;
+    }
+
+    const Figure & afig = getFigure(ocolor, checking_[0]);
+    THROW_IF( Figure::TypeKing == afig.getType(), "king is attacking king" );
+    THROW_IF( !afig, "king is attacked by non existing figure" );
+
+    // Pawn and Knight could be only removed to escape from check
+    if ( Figure::TypeKnight == afig.getType() || Figure::TypePawn == afig.getType() )
+      return false;
+
+    FPos dp1 = g_deltaPosCounter->getDeltaPos(move.to_, afig.where());
+    FPos dp2 = g_deltaPosCounter->getDeltaPos(king.where(), move.to_);
+
+    // we can protect king by putting figure between it and attacking figure.
+    if ( FPos(0, 0) != dp1 && dp1 == dp2 )
+    {
+      // at the last we have to check if it's safe to move this figure
+      int idx = fastAttackedFrom(color_, move.from_);
+      THROW_IF( idx != getAttackedFrom(color_, move.from_), "fastAttackedFrom() failed" );
+      return idx < 0;
+    }
+
+    return false;
+  }
+
+  THROW_IF(2 != checkingNum_, "invalid number of checking figures");
+  return false;
+}
+
+//////////////////////////////////////////////////////////////////////////
+bool Board::wasValidWithoutCheck(const MoveCmd & move) const
+{
+  const Figure & fig = getFigure(color_, move.index_);
+  Figure::Color ocolor = Figure::otherColor(color_);
+  if ( Figure::TypeKing == fig.getType() )
+    return !isAttacked(ocolor, fig.where());
+
+  int idx = fastAttackedFrom(color_, move.from_);
+  THROW_IF( idx != getAttackedFrom(color_, move.from_), "fastAttackedFrom() failed" );
+  return idx < 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+/// gets index of figure, attacking from given direction
+/// check only bishops, rook and queens
 int Board::getAttackedFrom(Figure::Color color, int apt) const
 {
   const Figure & king = getFigure(color, KingIndex);
@@ -83,54 +165,94 @@ int Board::getAttackedFrom(Figure::Color color, int apt) const
   return -1;
 }
 
-
-bool Board::wasValidUnderCheck(const MoveCmd & move) const
+// return least significant bit index, clear it
+inline int least_bit_number(uint64 & mask)
 {
-  const Figure & fig = getFigure(color_, move.index_);
-  Figure::Color ocolor = Figure::otherColor(color_);
-  if ( Figure::TypeKing == fig.getType() )
-    return !move.castle_ && !isAttacked(ocolor, fig.where());
-
-  if ( 1 == checkingNum_ )
+  int n = -1;
+  __asm
   {
-    THROW_IF( checking_[0] < 0 || checking_[0] >= NumOfFigures, "invalid checking figure index" );
+    ; scan lower dword
+    mov edi, mask
+    mov eax, dword ptr [edi]
+    bsf edx, eax
+    jz nxt
+    mov cl, dl
+    ;xor ebx, ebx
+    ;inc ebx
+    mov ebx, 1
+    shl ebx, cl
+    xor eax, ebx
+    mov dword ptr [edi], eax
+    mov dword ptr [n], edx
+    jmp end
 
-    const Figure & king = getFigure(color_, KingIndex);
+    ; scan upper dword
+nxt:mov eax, dword ptr [edi+4]
+    bsf edx, eax
+    mov cl, dl
+    ;xor ebx, ebx
+    ;inc ebx
+    mov ebx, 1
+    shl ebx, cl
+    xor eax, ebx
+    mov dword ptr [edi+4], eax
+    add edx, 32
+    mov dword ptr [n], edx
 
-    if ( move.rindex_ == checking_[0] )
-      return getAttackedFrom(color_, move.from_) < 0;
+end:nop ;xor eax, eax
+  }
+  return n;
+}
 
-    const Figure & afig = getFigure(ocolor, checking_[0]);
-    THROW_IF( Figure::TypeKing == afig.getType(), "king is attacking king" );
-    THROW_IF( !afig, "king is attacked by non existing figure" );
+int Board::fastAttackedFrom(Figure::Color color, int apt) const
+{
+  const Figure & king = getFigure(color, KingIndex);
+  const uint64 & mask = g_betweenMasks->from(king.where(), apt);
+  if ( !mask )
+    return -1;
 
-    if ( Figure::TypeKnight == afig.getType() || Figure::TypePawn == afig.getType() )
-      return false;
+  Figure::Color ocolor = Figure::otherColor(color);
+  const uint64 & bishops = fmgr_.bishop_mask(ocolor);
+  const uint64 & rooks = fmgr_.rook_mask(ocolor);
+  const uint64 & queens = fmgr_.queen_mask(ocolor);
 
-    FPos dp1 = g_deltaPosCounter->getDeltaPos(move.to_, afig.where());
-    FPos dp2 = g_deltaPosCounter->getDeltaPos(king.where(), move.to_);
+  uint64 all = (bishops | rooks | queens) & mask;
+  if ( !all )
+    return -1;
 
-    // can protect king. now check if we can move this figure
-    if ( FPos(0, 0) != dp1 && dp1 == dp2 )
-      return getAttackedFrom(color_, move.from_) < 0;
+  const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+  const uint64 & white = fmgr_.mask(Figure::ColorWhite);
 
-    return false;
+  uint64 figs_mask = ~(black | white);
+
+  for ( ; all; )
+  {
+    int n = least_bit_number(all);
+    
+    THROW_IF( (unsigned)n > 63, "least siginficant bit is invalid" );
+
+    const Field & field = getField(n);
+    THROW_IF( !field || field.color() == color, "there should be some figure of opponent's color on this field" );
+    
+    THROW_IF( field.type() != Figure::TypeBishop && field.type() != Figure::TypeRook && field.type() != Figure::TypeQueen, "figure should be bishop, rook or queen" );
+
+    const Figure & afig = getFigure(ocolor, field.index());
+    THROW_IF( !afig, "no figure, but bit in mask isn't zero" );
+
+    int dir = g_figureDir->dir(afig, king.where());
+    if ( dir < 0 )
+      continue;
+
+    const uint64 & btw_msk = g_betweenMasks->between(afig.where(), king.where());
+
+    if ( (figs_mask & btw_msk) != btw_msk )
+      continue;
+
+    return afig.getIndex();
   }
 
-  THROW_IF(2 != checkingNum_, "invalid number of checking figures");
-  return false;
+  return -1;
 }
-
-bool Board::wasValidWithoutCheck(const MoveCmd & move) const
-{
-  const Figure & fig = getFigure(color_, move.index_);
-  Figure::Color ocolor = Figure::otherColor(color_);
-  if ( Figure::TypeKing == fig.getType() )
-    return !isAttacked(ocolor, fig.where());
-
-  return getAttackedFrom(color_, move.from_) < 0;
-}
-
 
 /// is field 'pos' attacked by given color?
 bool Board::isAttacked(const Figure::Color c, int pos) const
@@ -202,6 +324,9 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
   return false;
 }
 
+//////////////////////////////////////////////////////////////////////////
+// returns number of checking figures.
+// very slow. used only for initial validation
 int Board::findCheckingFigures(Figure::Color color, int pos)
 {
   checkingNum_ = 0;

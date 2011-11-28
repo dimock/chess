@@ -140,19 +140,28 @@ public:
 class BetweenMask
 {
   // masks between two fields
-  uint64 s_masks_[64][64];
+  uint64 s_between_[64][64];
+
+  // mask from field in given direction. until border
+  uint64 s_from_[64][64];
 
 public:
   
   BetweenMask(DeltaPosCounter *);
 
   // mask contains only bits BETWEEN from & to
-  inline const uint64 & mask(int8 from, int8 to)
+  inline const uint64 & between(int8 from, int8 to)
   {
     THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
-    return s_masks_[from][to];
+    return s_between_[from][to];
   }
 
+  // mask contains bits along from-to direction starting from and finishing at border
+  inline const uint64 & from(int8 from, int8 to)
+  {
+    THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
+    return s_from_[from][to];
+  }
 };
 
 

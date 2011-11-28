@@ -70,6 +70,7 @@ public:
   void setFigure(const Figure &);
 
   /// verify position and calculate checking figures
+  /// very slow. should be used only while initialization
   bool invalidate();
 
   /// always use this method to get figure
@@ -146,6 +147,9 @@ public:
   /// methods
 private:
 
+  /// clear board. remove all figures. reset all fields, number of moves etc...
+  void clear();
+
   MoveCmd & getMove(int i)
   {
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
@@ -154,6 +158,7 @@ private:
 
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
+
   //ScoreType evaluatePawns(Figure::Color color, int stage) const;
   ScoreType evaluateWinnerLoser() const;
 
@@ -174,24 +179,48 @@ private:
 
   bool verifyChessDraw();
 
-  /// gets index of figure, attacking from given direction
-  int getAttackedFrom(Figure::Color color, int apt) const;
+  /// return true if current color is checking
+  /// also find all checking figures
+  bool isChecking(MoveCmd &) const;
 
+  /// validate current move. set invalid state_
   bool wasValidUnderCheck(const MoveCmd & ) const;
 
   bool wasValidWithoutCheck(const MoveCmd & ) const;
 
-  /// return true if current color is checking
-  bool isChecking(MoveCmd &) const;
+  /// is king of given color attacked by given figure
+  /// returns index of figure if attacked or -1 otherwise
+  inline int isAttackedBy(Figure::Color color, const Figure & fig) const
+  {
+    const Figure & king = getFigure(color, KingIndex);
+    int dir = g_figureDir->dir(fig, king.where());
+    if ( dir < 0 )
+      return -1;
+
+    const uint64 & mask = g_betweenMasks->between(fig.where(), king.where());
+    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+    if ( (~black & mask) != mask )
+      return -1;
+
+    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+    if ( (~white & mask) != mask )
+      return -1;
+
+    return fig.getIndex();
+  }
+
+  /// gets index of figure, attacking from given direction
+  /// check only bishops, rook and queens
+  int getAttackedFrom(Figure::Color color, int apt) const;
+  int fastAttackedFrom(Figure::Color color, int apt) const;
 
   /// is field 'pos' attacked by given color?
   bool isAttacked(const Figure::Color c, int pos) const;
 
-  // returns number of checking figures
+  // returns number of checking figures.
+  // very slow. used only for initial validation
   int findCheckingFigures(Figure::Color color, int pos);
 
-  /// clear board. remove all figures
-  void clear();
 
   /// data
 private:

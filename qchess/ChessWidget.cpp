@@ -369,7 +369,7 @@ void ChessWidget::drawInfo()
   if ( cpos_.numOfMoves() )
 	  tickPerMove = ticks/cpos_.numOfMoves();
   //infoText.sprintf("%d ticks total, %d ticks per move, %d moves", (int)ticks, tickPerMove, cpos_.numOfMoves());
-  int nps = dt_ > 0 ? sres_.nodesCount_*1000.0/dt_ : 0;
+  int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
   infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps, score = %d", cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_);
 
   painter.drawText(QRect(00, 450, 450, 50), Qt::AlignCenter, infoText);
