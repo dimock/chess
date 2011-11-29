@@ -76,7 +76,7 @@ private:
   int timeLimitMS_;
   int depthMax_;
   int nodesCount_, totalNodes_;
-  int64 tstart_;
+  clock_t tstart_, tprev_;
 
 
   // global data
@@ -92,6 +92,8 @@ private:
   //////////////////////////////////////////////////////////////////////////
   inline void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & before, Move & b, const Move & mv, Move & move, bool & found, int & counter)
   {
+	totalNodes_++;
+	nodesCount_++;
     if ( board_.makeMove(mv) )
     {
       counter++;

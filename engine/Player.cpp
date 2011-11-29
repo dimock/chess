@@ -95,10 +95,12 @@ void Player::printPV(SearchResult & sres, std::ostream * out)
   char str[64];
   if ( !printSAN(board_, sres.best_, str) )
     str[0] = 0;
-  //moveToStr(sres.best_, str, false);
-  int t = (clock() - tstart_) / 10;
 
-  *out << sres.depth_ << " " << sres.score_ << " " << t << " " << sres.nodesCount_ << " " << str << std::endl;
+  clock_t t  = clock();
+  clock_t dt = (t - tprev_) / 10;
+  tprev_ = t;
+
+  *out << sres.depth_ << " " << sres.score_ << " " << (int)dt << " " << sres.nodesCount_ << " " << str << std::endl;
 }
 
 bool Player::findMove(SearchResult & sres, std::ostream * out)
@@ -107,7 +109,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
   stop_ = false;
   totalNodes_ = 0;
-  tstart_ = clock();
+  tprev_ = tstart_ = clock();
 
   Move before;
   before.clear();
@@ -159,8 +161,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   if ( before && board_.validMove(before) )
   {
-    totalNodes_++;
-    nodesCount_++;
     movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
   }
 
@@ -175,9 +175,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     if ( stop_ )
       break;
     
-    totalNodes_++;
-    nodesCount_++;
-
     THROW_IF( !board_.validMove(mv), "move validation failed" );
 
     movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);

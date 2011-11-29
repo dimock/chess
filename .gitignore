@@ -33,3 +33,4 @@ chess-helpers/transp.cpp
 chess-helpers/mirror.cpp
 chess-helpers/zobrist.cpp
 *.pgn
+tequilla/log.txt
