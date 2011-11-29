@@ -109,7 +109,7 @@ bool Board::doMove()
     if ( getField(move.rook_to_) || getField(move.to_) )
       return false;
 
-    THROW_IF( isAttacked(ocolor, fig.where()), "can't do castling under check" );
+    THROW_IF( isAttacked(ocolor, fig.where(), fastAttacked(ocolor, fig.where())), "can't do castling under check" );
     THROW_IF( move.rindex_ >= 0, "can't eat while castling" );
     THROW_IF( !(fig.where() == 4 && color_ || fig.where() == 60 && !color_), "kings position is wrong" );
 
@@ -122,7 +122,9 @@ bool Board::doMove()
     move.rook_index_ = rf_field.index();
     Figure & rook = getFigure(color_, move.rook_index_);
 
-    if ( rook.getType() != Figure::TypeRook || !rook.isFirstStep() || isAttacked(ocolor, move.rook_to_) )
+    THROW_IF( isAttacked(ocolor, move.rook_to_, fastAttacked(ocolor, move.rook_to_)) != fastAttacked(ocolor, move.rook_to_), "fast attacked returned wrong result");
+
+    if ( rook.getType() != Figure::TypeRook || !rook.isFirstStep() || fastAttacked(ocolor, move.rook_to_) )
       return false;
 
     rf_field.clear();
@@ -382,7 +384,7 @@ bool Board::makeMove(const Move & mv)
   checking_[0] = move.checking_[0];
   checking_[1] = move.checking_[1];
 
-  THROW_IF( isAttacked(color_, getFigure(Figure::otherColor(color_), KingIndex).where()) && UnderCheck != state_, "check isn't detected" );
+  THROW_IF( isAttacked(color_, getFigure(Figure::otherColor(color_), KingIndex).where(), fastAttacked(color_, getFigure(Figure::otherColor(color_), KingIndex).where())) && UnderCheck != state_, "check isn't detected" );
 
   // now change color
   color_ = ocolor;

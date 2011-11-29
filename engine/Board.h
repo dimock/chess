@@ -197,7 +197,7 @@ private:
   {
     const Figure & king = getFigure(color, KingIndex);
     int dir = g_figureDir->dir(fig, king.where());
-    if ( dir < 0 )
+    if ( dir < 0 || Figure::TypeKing == fig.getType() && dir > 7 )
       return -1;
 
     const uint64 & mask = g_betweenMasks->between(fig.where(), king.where());
@@ -218,7 +218,8 @@ private:
   int fastAttackedFrom(Figure::Color color, int apt) const;
 
   /// is field 'pos' attacked by given color?
-  bool isAttacked(const Figure::Color c, int pos) const;
+  bool isAttacked(const Figure::Color c, int pos, bool) const;
+  bool fastAttacked(const Figure::Color c, int8 pos) const;
 
   // returns number of checking figures.
   // very slow. used only for initial validation

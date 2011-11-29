@@ -50,8 +50,8 @@ void MovesTable::initPawns(int pos)
 
   for (int color = 0; color < 2; ++color)
   {
-    if ( p.y() == 0 || p.y() == 7 )
-      continue;
+    //if ( p.y() == 0 || p.y() == 7 )
+    //  continue;
 
     bool first = color ? p.y() == 1 : p.y() == 6;
     int n = first ? 4 : 3;

@@ -34,6 +34,43 @@ private:
   static const char * s_table_[N][M];
 };
 
+// return least significant bit index, clear it
+inline int least_bit_number(uint64 & mask)
+{
+  int n = -1;
+  __asm
+  {
+    ; scan lower dword
+
+    mov edi, mask
+    mov eax, dword ptr [edi]
+    bsf edx, eax
+    jz  nxt
+    mov cl, dl
+    mov ebx, 1
+    shl ebx, cl
+    xor eax, ebx
+    mov dword ptr [edi], eax
+    jmp end
+
+
+    ; scan upper dword
+
+nxt:mov eax, dword ptr [edi+4]
+    bsf edx, eax
+    mov cl, dl
+    mov ebx, 1
+    shl ebx, cl
+    xor eax, ebx
+    mov dword ptr [edi+4], eax
+    add edx, 32
+
+end:mov dword ptr [n], edx
+  }
+  return n;
+}
+
+
 class PawnMasks
 {
 public:

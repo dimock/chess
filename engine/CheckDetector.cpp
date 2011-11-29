@@ -74,7 +74,7 @@ bool Board::isChecking(MoveCmd & move) const
   }
 
   THROW_IF( move.checkingNum_ > 2, "more than 2 figures attacking king" );
-  THROW_IF( !move.checkingNum_ && wasMoveValid(move) && isAttacked(color_, getFigure(ocolor, KingIndex).where()), "ckeck wasn't detected" );
+  THROW_IF( !move.checkingNum_ && wasMoveValid(move) && isAttacked(color_, getFigure(ocolor, KingIndex).where(), fastAttacked(color_, getFigure(ocolor, KingIndex).where())), "ckeck wasn't detected" );
 
   return move.checkingNum_ > 0;
 }
@@ -85,7 +85,10 @@ bool Board::wasValidUnderCheck(const MoveCmd & move) const
   const Figure & fig = getFigure(color_, move.index_);
   Figure::Color ocolor = Figure::otherColor(color_);
   if ( Figure::TypeKing == fig.getType() )
-    return !move.castle_ && !isAttacked(ocolor, fig.where());
+  {
+    THROW_IF(fastAttacked(ocolor, fig.where()) != isAttacked(ocolor, fig.where(), fastAttacked(ocolor, fig.where())), "fast attacked returned wrong result");
+    return !move.castle_ && !fastAttacked(ocolor, fig.where());
+  }
 
   if ( 1 == checkingNum_ )
   {
@@ -136,9 +139,16 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
   if ( Figure::TypeKing == fig.getType() )
   {
 
-    bool r = !isAttacked(ocolor, fig.where());
+    //QpfTimer qpt;
 
-    return r;
+    bool a = fastAttacked(ocolor, fig.where());
+
+    //ticks_ += qpt.dt();
+    //tcounter_++;
+
+    THROW_IF( a != isAttacked(ocolor, fig.where(), a), "fast attacked returned wrong result");
+
+    return !a;
   }
 
   int idx = fastAttackedFrom(color_, move.from_);
@@ -177,45 +187,6 @@ int Board::getAttackedFrom(Figure::Color color, int apt) const
   return -1;
 }
 
-// return least significant bit index, clear it
-inline int least_bit_number(uint64 & mask)
-{
-  int n = -1;
-  __asm
-  {
-    ; scan lower dword
-    mov edi, mask
-    mov eax, dword ptr [edi]
-    bsf edx, eax
-    jz nxt
-    mov cl, dl
-    ;xor ebx, ebx
-    ;inc ebx
-    mov ebx, 1
-    shl ebx, cl
-    xor eax, ebx
-    mov dword ptr [edi], eax
-    mov dword ptr [n], edx
-    jmp end
-
-    ; scan upper dword
-nxt:mov eax, dword ptr [edi+4]
-    bsf edx, eax
-    mov cl, dl
-    ;xor ebx, ebx
-    ;inc ebx
-    mov ebx, 1
-    shl ebx, cl
-    xor eax, ebx
-    mov dword ptr [edi+4], eax
-    add edx, 32
-    mov dword ptr [n], edx
-
-end:nop ;xor eax, eax
-  }
-  return n;
-}
-
 int Board::fastAttackedFrom(Figure::Color color, int apt) const
 {
   const Figure & king = getFigure(color, KingIndex);
@@ -235,7 +206,7 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
   const uint64 & black = fmgr_.mask(Figure::ColorBlack);
   const uint64 & white = fmgr_.mask(Figure::ColorWhite);
 
-  uint64 figs_mask = ~(black | white);
+  uint64 figs_msk_inv = ~(black | white);
 
   for ( ; all; )
   {
@@ -257,7 +228,7 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
 
     const uint64 & btw_msk = g_betweenMasks->between(afig.where(), king.where());
 
-    if ( (figs_mask & btw_msk) != btw_msk )
+    if ( (figs_msk_inv & btw_msk) != btw_msk )
       continue;
 
     return afig.getIndex();
@@ -267,7 +238,7 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
 }
 
 /// is field 'pos' attacked by given color?
-bool Board::isAttacked(const Figure::Color c, int pos) const
+bool Board::isAttacked(const Figure::Color c, int pos, bool fa) const
 {
   for (int i = KingIndex; i >= 0; --i)
   {
@@ -280,7 +251,13 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
       continue;
 
     if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() || Figure::TypeKing == fig.getType() )
+    {
+      if ( !fa )
+      {
+        int gsjgksdjg = 1;
+      }
       return true;
+    }
 
     FPos dp = g_deltaPosCounter->getDeltaPos(fig.where(), pos);
 
@@ -297,6 +274,10 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
 
       if ( field.color() == c && Figure::TypeQueen == field.type() )
       {
+        if ( !fa )
+        {
+          int gsjgksdjg = 1;
+        }
         return true;
       }
 
@@ -305,7 +286,13 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
         const Figure & afig = getFigure(c, field.index());
         int dir = g_figureDir->dir(afig, pos);
         if ( dir >= 0 )
+        {
+          if ( !fa )
+          {
+            int gsjgksdjg = 1;
+          }
           return true;
+        }
 
         have_fig = true;
         break;
@@ -322,7 +309,13 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
         const Figure & pawn = getFigure(field.color(), field.index());
         int d = g_figureDir->dir(pawn, pos);
         if ( 0 == d || 1 == d )
+        {
+          if ( !fa )
+          {
+            int gsjgksdjg = 1;
+          }
           return true;
+        }
 
         have_fig = true;
         break;
@@ -330,6 +323,78 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
     }
 
     if ( !have_fig )
+    {
+      if ( !fa )
+      {
+        int gsjgksdjg = 1;
+      }
+      return true;
+    }
+  }
+  if ( fa )
+  {
+    int gsjgksdjg = 1;
+  }
+
+  return false;
+}
+
+/// is field 'pos' attacked by given color?
+bool Board::fastAttacked(const Figure::Color c, int8 pos) const
+{
+  Figure::Color ocolor = Figure::otherColor(c);
+
+  // 1st - pawns. masks are transposed
+  const uint64 & p_caps = g_movesTable->pawnCaps(ocolor, pos);
+  const uint64 & pawn_msk = fmgr_.pawn_mask(c);
+  if ( p_caps & pawn_msk )
+    return true;
+
+  // 2nd - king
+  const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
+  const uint64 & king_msk = fmgr_.king_mask(c);
+  if ( k_caps & king_msk )
+    return true;
+
+  // 3rd - knights
+  const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
+  const uint64 & knight_msk = fmgr_.knight_mask(c);
+  if ( n_caps & knight_msk )
+    return true;
+
+  // at the last other figures
+  const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
+  uint64 attack_msk = fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c);
+  attack_msk &= q_caps;
+  if ( !attack_msk )
+    return false;
+
+  const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+  const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+  uint64 figs_msk_inv = ~(black | white);
+
+  for ( ; attack_msk; )
+  {
+    int n = least_bit_number(attack_msk);
+
+    THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+
+    const Field & field = getField(n);
+
+    THROW_IF( !field, "no figure but mask bit is 1" );
+    THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+
+    const Figure & fig = getFigure(c, field.index());
+
+    THROW_IF( !fig, "no figure in occupied field" );
+
+    // can current figure attack given field?
+    int dir = g_figureDir->dir(fig, pos);
+    if ( dir < 0 )
+      continue;
+
+    const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+    if ( (figs_msk_inv & btw_msk) == btw_msk )
       return true;
   }
 

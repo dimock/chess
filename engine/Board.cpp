@@ -422,13 +422,13 @@ bool Board::invalidate()
 
   state_ = Ok;
 
-  if ( isAttacked(color_, king2.where()) )
+  if ( isAttacked(color_, king2.where(), fastAttacked(color_, king2.where())) )
   {
     state_ = Invalid;
     return false;
   }
 
-  if ( isAttacked(ocolor, king1.where()) )
+  if ( isAttacked(ocolor, king1.where(), fastAttacked(ocolor, king1.where())) )
     state_ = UnderCheck;
 
   verifyChessDraw();
