@@ -442,7 +442,8 @@ void ChessWidget::findMove()
   }
   depth_avg_ += depth_;
   movesCount_ = cpos_.movesCount();
-  board.ticks_ /= board.tcounter_;
+  if ( board.tcounter_ )
+    board.ticks_ /= board.tcounter_;
 
   pv_str_[0] = 0;
   //for (int i = 0; i < sres.depth_; ++i)

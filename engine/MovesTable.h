@@ -50,6 +50,7 @@ public:
     return s_tableOther_[type][pos];
   }
 
+  // transposed
   inline const uint64 & pawnCaps(int color, int pos)
   {
     THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");

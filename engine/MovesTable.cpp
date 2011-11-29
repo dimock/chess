@@ -70,7 +70,7 @@ void MovesTable::initPawns(int pos)
     for (int i = 0; i < 2; ++i)
     {
       if ( s_tablePawn_[color][pos][i] >= 0 )
-        s_pawnsCaps_[color][pos] |= 1ULL << s_tablePawn_[color][pos][i];
+        s_pawnsCaps_[color][pos] |= 1ULL << FiguresCounter::s_transposeIndex_[s_tablePawn_[color][pos][i]];
     }
   }
 }

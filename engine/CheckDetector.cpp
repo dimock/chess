@@ -43,12 +43,12 @@ bool Board::isChecking(MoveCmd & move) const
 
   if ( !move.castle_ )
   {
-    QpfTimer qpt;
+    //QpfTimer qpt;
 
     int idx1 = fastAttackedFrom( ocolor, move.from_ );
 
-    ticks_ += qpt.dt();
-    tcounter_++;
+    //ticks_ += qpt.dt();
+    //tcounter_++;
 
     THROW_IF( idx1 != getAttackedFrom( ocolor, move.from_ ), "fastAttackedFrom() failed" );
 

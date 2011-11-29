@@ -77,10 +77,11 @@ char fromFtype(Figure::Type t);
 
 __declspec (align(1)) class FiguresCounter
 {
-  static uint8 s_transposeIndex_[64];
   static  int8 s_whiteColors_[64];
 
 public:
+
+  static uint8 s_transposeIndex_[64];
 
   FiguresCounter()
   {
