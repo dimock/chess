@@ -1,5 +1,6 @@
 
 #include "Player.h"
+#include "MovesGenerator.h"
 
 #undef NO_TIME_LIMIT
 
@@ -8,6 +9,8 @@
 #else
   #define TIMING_FLAG 0xFFFF
 #endif
+
+//////////////////////////////////////////////////////////////////////////
 
 SearchResult::SearchResult() :
   nodesCount_(0),
@@ -164,11 +167,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
   }
 
-  Move moves[Board::MovesMax];
-  int num = board_.generateMoves(moves);
-  for (int i = 0; !stop_ && alpha < betta && i < num; ++i)
+  MovesGenerator mg(board_);
+
+  for ( ; !stop_ && alpha < betta ; )
   {
-    const Move & mv = moves[i];
+    const Move & mv = mg.move();
+    if ( !mv )
+      break;
+
     if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
       testTimer();
 

@@ -1,4 +1,5 @@
 #include "ChessPos.h"
+#include "MovesGenerator.h"
 #include <QDir>
 #include <QFileDialog>
 #include <QWidget>
@@ -18,8 +19,6 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
   squareSize_ = 44;
   borderWidth_ = 16;
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
-  ticks_ = 0;
-  numOfMoves_ = 0;
   halfmovesNumber_ = 0;
   vmove_.clear();
 }
@@ -272,30 +271,19 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     return false;
   }
 
-  Move moves[Board::MovesMax];
+  MovesGenerator mg(board);
 
-  numOfMoves_ = 0;
-  long long t0, t1;
-  _asm
-  {
-    rdtsc
-    lea ecx, [t0]
-    mov dword ptr [ecx], eax
-    mov dword ptr [ecx+4], edx
-  }
-
-
-  numOfMoves_ = board.generateMoves(moves);
-
-  if ( !numOfMoves_ )
+  if ( !mg )
   {
     selectedFigure_.setType(Figure::TypeNone);
     return false;
   }
 
-  for (int i = 0; i < numOfMoves_; ++i)
+  for ( ;; )
   {
-    Move & move = moves[i];
+    Move & move = mg.move();
+    if ( !move )
+      break;
 
 #ifndef NDEBUG
     Board board0 = board;
@@ -314,14 +302,6 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
     THROW_IF(board0 != board, "board is not restored by undo move method");
   }
-  _asm
-  {
-    rdtsc
-    lea ecx, [t1]
-    mov dword ptr [ecx], eax
-    mov dword ptr [ecx+4], edx
-  }
-  ticks_ = (t1 - t0 - 105);
 
   if ( selectedPositions_.size() == 0 )
   {

@@ -6,10 +6,14 @@
 #include "MovesTable.h"
 #include "FigureDirs.h"
 
+class MovesGenerator;
+
 /*! board representation
  */
 class Board
 {
+  friend class MovesGenerator;
+
 public:
 
   static int64 ticks_;
@@ -55,9 +59,6 @@ public:
 
   /// called after makeMove
   void unmakeMove();
-
-  /// generate movements from this position. don't verify and sort them. only calculate sort weights. returns number of moves found
-  int  generateMoves(Move (&)[MovesMax]);
   /*! end of movements */
 
   /// verify if there is draw or mat

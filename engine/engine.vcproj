@@ -370,6 +370,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MovesGenerator.h"
+				>
+			</File>
+			<File
 				RelativePath=".\MovesTable.h"
 				>
 			</File>

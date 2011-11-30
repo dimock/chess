@@ -1,5 +1,6 @@
 #include "Helpers.h"
 #include "Board.h"
+#include "MovesGenerator.h"
 #include <time.h>
 
 using namespace std;
@@ -286,11 +287,13 @@ bool parseSAN(Board & board, const char * str, Move & move)
   if ( xfrom >= 0 && yfrom >= 0 )
     from = xfrom | (yfrom << 3);
 
-  Move moves[Board::MovesMax];
-  int num = board.generateMoves(moves);
-  for (int i = 0; i < num; ++i)
+  MovesGenerator mg(board);
+  for ( ;; )
   {
-    const Move & m = moves[i];
+    const Move & m = mg.move();
+    if ( !m )
+      break;
+
     bool valid = false;
     if ( board.makeMove(m) )
       valid = true;
@@ -327,11 +330,13 @@ bool printSAN(Board & board, const Move & move, char * str)
   Board board0(board);
 #endif
 
-  Move moves[Board::MovesMax];
-  int num = board.generateMoves(moves);
-  for (int i = 0; i < num; ++i)
+  MovesGenerator mg(board);
+  for ( ;; )
   {
-    const Move & m = moves[i];
+    const Move & m = mg.move();
+    if ( !m )
+      break;
+
     bool valid = false;
     if ( board.makeMove(m) )
       valid = true;

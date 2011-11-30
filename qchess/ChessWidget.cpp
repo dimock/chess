@@ -339,36 +339,6 @@ void ChessWidget::drawInfo()
   QPainter painter(this);
   QString infoText;
 
-  //double nps = 0, nps_curr = 0;
-  //if ( full_t_ > 0 )
-  //{
-  //  nps = 0;//movesCount_/(double)full_t_;
-  //  nps_curr = sres_.totalNodes_/(double)dt_;
-  //}
-
-  //double mavg = 0;
-  //double davg = 0;
-  //double step_dt = 0;
-
-  //if ( bs_count_ > 0 )
-  //{
-  //  mavg = moves_avg_base_/bs_count_;
-  //  davg = depth_avg_/bs_count_;
-  //  step_dt = (((double)full_t_)/(1000.0*bs_count_));
-  //}
-
-  //double base_real = depth_ > 0 ? exp(log((double)(movesCurr_-forcesCount_-additionalCount_))/depth_) : 0;
-  //infoText.sprintf("Moves base (avg) = %5.2f Step time = %5.2f (s) Steps = %d\n%5.2f kNodes/s Depth = %d Depth (avg) = %4.1f Eval = %4.2f\nCurrent step %5.2f kNodes/s  Moves base (current) = %5.2f\ntotal = %d moves = %d forced = %d additional = %d base = %5.2f\nnull moves = %d\n%s",
-  //  mavg, dt_/1000.0, stepsCount_, nps, depth_, davg, w_/100.0f,
-  //  nps_curr, moves_base_,
-  //  totalCurr_, movesCurr_, forcesCount_, additionalCount_, base_real, nullMovesCount_, pv_str_);
-
-  //infoText.sprintf("%d: [%d] %s (%0.2f) (%d)", cpos_.movesCount(), depth_, pv_str_, w_/100.0, (int)cpos_.getTicks());
-  long long ticks = cpos_.getTicks();
-  int tickPerMove = 0;
-  if ( cpos_.numOfMoves() )
-	  tickPerMove = ticks/cpos_.numOfMoves();
-  //infoText.sprintf("%d ticks total, %d ticks per move, %d moves", (int)ticks, tickPerMove, cpos_.numOfMoves());
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
   int ticksN = cpos_.getBoardT().ticks_;
   infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d", cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN);

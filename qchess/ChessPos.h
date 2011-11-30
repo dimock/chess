@@ -43,9 +43,6 @@ public:
   bool save() const;
   bool load();
 
-  long long getTicks() const { return ticks_; }
-  int numOfMoves() const { return numOfMoves_; }
-
 
 private:
 
@@ -79,9 +76,6 @@ private:
   int borderWidth_;
   QSize boardSize_;
   bool turned_;
-
-  long long ticks_;
-  int numOfMoves_;
 
 
   /*! Player is the main class of engine

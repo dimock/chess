@@ -1,6 +1,7 @@
 #include "Board.h"
 #include "fpos.h"
 #include "FigureDirs.h"
+#include "MovesGenerator.h"
 
 // static data
 char Board::fen_[FENsize];
@@ -508,12 +509,14 @@ void Board::verifyState()
   Board board0(*this);
 #endif
 
-  Move moves[Board::MovesMax];
-  int num = generateMoves(moves);
+  MovesGenerator mg(*this);
   bool found = false;
-  for (int i = 0; !found && i < num; ++i)
+  for ( ; !found; )
   {
-    const Move & m = moves[i];
+    const Move & m = mg.move();
+    if ( !m )
+      break;
+
     if ( makeMove(m) )
       found = true;
 
