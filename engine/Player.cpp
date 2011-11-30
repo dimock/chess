@@ -19,7 +19,8 @@ SearchResult::SearchResult() :
   additionalNodes_(0),
   nullMovesCount_(0),
   depth_(0),
-  score_(0)
+  score_(0),
+  dt_(0)
 {
   best_.clear();
   for (int i = 0; i < MaxDepth; ++i)
@@ -99,11 +100,7 @@ void Player::printPV(SearchResult & sres, std::ostream * out)
   if ( !printSAN(board_, sres.best_, str) )
     str[0] = 0;
 
-  clock_t t  = clock();
-  clock_t dt = (t - tprev_) / 10;
-  tprev_ = t;
-
-  *out << sres.depth_ << " " << sres.score_ << " " << (int)dt << " " << sres.nodesCount_ << " " << str << std::endl;
+  *out << sres.depth_ << " " << sres.score_ << " " << (int)sres.dt_ << " " << sres.nodesCount_ << " " << str << std::endl;
 }
 
 bool Player::findMove(SearchResult & sres, std::ostream * out)
@@ -126,10 +123,15 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
     if ( !stop_ || (stop_ && found) )
     {
+      clock_t t  = clock();
+      clock_t dt = (t - tprev_) / 10;
+      tprev_ = t;
+
       sres.score_ = score;
       sres.best_  = best;
       sres.depth_ = depth;
-      sres.nodesCount_ = nodesCount_;
+      sres.nodesCount_ = totalNodes_;
+      sres.dt_ = dt;
       before = best;
 
       printPV(sres, out);

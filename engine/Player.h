@@ -15,6 +15,7 @@ public:
   int forcedNodes_;
   int additionalNodes_;
   int nullMovesCount_;
+  clock_t dt_;
 
   /// result
   Move best_;

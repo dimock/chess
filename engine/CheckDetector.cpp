@@ -74,7 +74,7 @@ bool Board::isChecking(MoveCmd & move) const
   }
 
   THROW_IF( move.checkingNum_ > 2, "more than 2 figures attacking king" );
-  THROW_IF( !move.checkingNum_ && wasMoveValid(move) && isAttacked(color_, getFigure(ocolor, KingIndex).where(), fastAttacked(color_, getFigure(ocolor, KingIndex).where())), "ckeck wasn't detected" );
+  THROW_IF( !move.checkingNum_ && wasMoveValid(move) && isAttacked(color_, getFigure(ocolor, KingIndex).where()), "ckeck wasn't detected" );
 
   return move.checkingNum_ > 0;
 }
@@ -86,7 +86,7 @@ bool Board::wasValidUnderCheck(const MoveCmd & move) const
   Figure::Color ocolor = Figure::otherColor(color_);
   if ( Figure::TypeKing == fig.getType() )
   {
-    THROW_IF(fastAttacked(ocolor, fig.where()) != isAttacked(ocolor, fig.where(), fastAttacked(ocolor, fig.where())), "fast attacked returned wrong result");
+    THROW_IF(fastAttacked(ocolor, fig.where()) != isAttacked(ocolor, fig.where()), "fast attacked returned wrong result");
     return !move.castle_ && !fastAttacked(ocolor, fig.where());
   }
 
@@ -146,7 +146,7 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
     //ticks_ += qpt.dt();
     //tcounter_++;
 
-    THROW_IF( a != isAttacked(ocolor, fig.where(), a), "fast attacked returned wrong result");
+    THROW_IF( a != isAttacked(ocolor, fig.where()), "fast attacked returned wrong result");
 
     return !a;
   }
@@ -238,7 +238,7 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
 }
 
 /// is field 'pos' attacked by given color?
-bool Board::isAttacked(const Figure::Color c, int pos, bool fa) const
+bool Board::isAttacked(const Figure::Color c, int pos) const
 {
   for (int i = KingIndex; i >= 0; --i)
   {
@@ -251,13 +251,7 @@ bool Board::isAttacked(const Figure::Color c, int pos, bool fa) const
       continue;
 
     if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() || Figure::TypeKing == fig.getType() )
-    {
-      if ( !fa )
-      {
-        int gsjgksdjg = 1;
-      }
       return true;
-    }
 
     FPos dp = g_deltaPosCounter->getDeltaPos(fig.where(), pos);
 
@@ -273,26 +267,14 @@ bool Board::isAttacked(const Figure::Color c, int pos, bool fa) const
         continue;
 
       if ( field.color() == c && Figure::TypeQueen == field.type() )
-      {
-        if ( !fa )
-        {
-          int gsjgksdjg = 1;
-        }
         return true;
-      }
 
       if ( field.color() == c && (Figure::TypeBishop == field.type() || Figure::TypeRook == field.type()) )
       {
         const Figure & afig = getFigure(c, field.index());
         int dir = g_figureDir->dir(afig, pos);
         if ( dir >= 0 )
-        {
-          if ( !fa )
-          {
-            int gsjgksdjg = 1;
-          }
           return true;
-        }
 
         have_fig = true;
         break;
@@ -309,13 +291,7 @@ bool Board::isAttacked(const Figure::Color c, int pos, bool fa) const
         const Figure & pawn = getFigure(field.color(), field.index());
         int d = g_figureDir->dir(pawn, pos);
         if ( 0 == d || 1 == d )
-        {
-          if ( !fa )
-          {
-            int gsjgksdjg = 1;
-          }
           return true;
-        }
 
         have_fig = true;
         break;
@@ -323,17 +299,7 @@ bool Board::isAttacked(const Figure::Color c, int pos, bool fa) const
     }
 
     if ( !have_fig )
-    {
-      if ( !fa )
-      {
-        int gsjgksdjg = 1;
-      }
       return true;
-    }
-  }
-  if ( fa )
-  {
-    int gsjgksdjg = 1;
   }
 
   return false;

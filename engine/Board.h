@@ -219,7 +219,7 @@ private:
   int fastAttackedFrom(Figure::Color color, int apt) const;
 
   /// is field 'pos' attacked by given color?
-  bool isAttacked(const Figure::Color c, int pos, bool) const;
+  bool isAttacked(const Figure::Color c, int pos) const;
   bool fastAttacked(const Figure::Color c, int8 pos) const;
 
   // returns number of checking figures.

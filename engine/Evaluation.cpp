@@ -405,6 +405,8 @@ ScoreType Board::evaluateWinnerLoser() const
   //  weight -= evaluatePawns(Figure::ColorBlack, 1);
   //  weight += evaluatePawns(Figure::ColorWhite, 1);
   //}
+
+
   if ( fmgr_.pawns(Figure::ColorBlack) )
   {
     ScoreType pweight0 = 0;
