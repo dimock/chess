@@ -10,7 +10,8 @@ class MovesTable
   uint16 s_tableOther_[4][64][10];
 
   // masks only for captures
-  uint64 s_pawnsCaps_[2][64];
+  uint64 s_pawnsCaps_t_[2][64];
+  uint64 s_pawnsCaps_o_[2][64];
   uint64 s_otherCaps_[8][64];
 
   void resetAllTables(int);
@@ -50,11 +51,18 @@ public:
     return s_tableOther_[type][pos];
   }
 
-  // transposed
-  inline const uint64 & pawnCaps(int color, int pos)
+  // transposed captures
+  inline const uint64 & pawnCaps_t(int color, int pos)
   {
     THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");
-    return s_pawnsCaps_[color][pos];
+    return s_pawnsCaps_t_[color][pos];
+  }
+
+  // ordinary captures
+  inline const uint64 & pawnCaps_o(int color, int pos)
+  {
+    THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");
+    return s_pawnsCaps_o_[color][pos];
   }
 
   inline const uint64 & caps(int type, int pos)
