@@ -139,12 +139,12 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
   if ( Figure::TypeKing == fig.getType() )
   {
 
-    //QpfTimer qpt;
+    QpfTimer qpt;
 
     bool a = fastAttacked(ocolor, fig.where());
 
-    //ticks_ += qpt.dt();
-    //tcounter_++;
+    ticks_ += qpt.dt();
+    tcounter_++;
 
     THROW_IF( a != isAttacked(ocolor, fig.where()), "fast attacked returned wrong result");
 
@@ -310,59 +310,128 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
 {
   Figure::Color ocolor = Figure::otherColor(c);
 
-  // 1st - pawns. masks are transposed
-  const uint64 & p_caps = g_movesTable->pawnCaps_t(ocolor, pos);
-  const uint64 & pawn_msk = fmgr_.pawn_mask(c);
-  if ( p_caps & pawn_msk )
-    return true;
-
-  // 2nd - king
-  const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
-  const uint64 & king_msk = fmgr_.king_mask(c);
-  if ( k_caps & king_msk )
-    return true;
-
-  // 3rd - knights
-  const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
-  const uint64 & knight_msk = fmgr_.knight_mask(c);
-  if ( n_caps & knight_msk )
-    return true;
-
-  // at the last other figures
-  const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
-  uint64 attack_msk = fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c);
-  attack_msk &= q_caps;
-  if ( !attack_msk )
-    return false;
-
   const uint64 & black = fmgr_.mask(Figure::ColorBlack);
   const uint64 & white = fmgr_.mask(Figure::ColorWhite);
   uint64 figs_msk_inv = ~(black | white);
 
-  for ( ; attack_msk; )
+  // 6th - queens
   {
-    int n = least_bit_number(attack_msk);
+    const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
+    uint64 queen_msk = fmgr_.queen_mask(c) & q_caps;
+    for ( ; queen_msk; )
+    {
+      int n = least_bit_number(queen_msk);
 
-    THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 
-    const Field & field = getField(n);
+      const Field & field = getField(n);
 
-    THROW_IF( !field, "no figure but mask bit is 1" );
-    THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+      THROW_IF( !field || field.type() != Figure::TypeQueen, "no figure but mask bit is 1" );
+      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
 
-    const Figure & fig = getFigure(c, field.index());
+      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+      if ( (figs_msk_inv & btw_msk) == btw_msk )
+        return true;
+    }
+  }
 
-    THROW_IF( !fig, "no figure in occupied field" );
+  // 5th - rooks
+  {
+    const uint64 & r_caps = g_movesTable->caps(Figure::TypeRook, pos);
+    uint64 rook_msk = fmgr_.rook_mask(c) & r_caps;
+    for ( ; rook_msk; )
+    {
+      int n = least_bit_number(rook_msk);
 
-    // can current figure attack given field?
-    int dir = g_figureDir->dir(fig, pos);
-    if ( dir < 0 )
-      continue;
+      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 
-    const uint64 & btw_msk = g_betweenMasks->between(n, pos);
-    if ( (figs_msk_inv & btw_msk) == btw_msk )
+      const Field & field = getField(n);
+
+      THROW_IF( !field || field.type() != Figure::TypeRook, "no figure but mask bit is 1" );
+      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
+
+      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+      if ( (figs_msk_inv & btw_msk) == btw_msk )
+        return true;
+    }
+  }
+
+  // 4th - bishops
+  {
+    const uint64 & b_caps = g_movesTable->caps(Figure::TypeBishop, pos);
+    uint64 bishop_msk = fmgr_.bishop_mask(c) & b_caps;
+    for ( ; bishop_msk; )
+    {
+      int n = least_bit_number(bishop_msk);
+
+      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+
+      const Field & field = getField(n);
+
+      THROW_IF( !field || field.type() != Figure::TypeBishop, "no figure but mask bit is 1" );
+      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
+
+      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+      if ( (figs_msk_inv & btw_msk) == btw_msk )
+        return true;
+    }
+  }
+
+  {
+    // 1st - pawns. masks are transposed
+    const uint64 & p_caps = g_movesTable->pawnCaps_t(ocolor, pos);
+    const uint64 & pawn_msk = fmgr_.pawn_mask(c);
+    if ( p_caps & pawn_msk )
+      return true;
+
+    // 2nd - king
+    const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
+    const uint64 & king_msk = fmgr_.king_mask(c);
+    if ( k_caps & king_msk )
+      return true;
+
+    // 3rd - knights
+    const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
+    const uint64 & knight_msk = fmgr_.knight_mask(c);
+    if ( n_caps & knight_msk )
       return true;
   }
+
+
+  // at the last other figures
+  //const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
+  //uint64 attack_msk = fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c);
+  //attack_msk &= q_caps;
+  //if ( !attack_msk )
+  //  return false;
+
+  //for ( ; attack_msk; )
+  //{
+  //  int n = least_bit_number(attack_msk);
+
+  //  THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+
+  //  const Field & field = getField(n);
+
+  //  THROW_IF( !field, "no figure but mask bit is 1" );
+  //  THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+
+  //  const Figure & fig = getFigure(c, field.index());
+
+  //  THROW_IF( !fig, "no figure in occupied field" );
+
+  //  // can current figure attack given field?
+  //  int dir = g_figureDir->dir(fig, pos);
+  //  if ( dir < 0 )
+  //    continue;
+
+  //  const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+  //  if ( (figs_msk_inv & btw_msk) == btw_msk )
+  //    return true;
+  //}
 
   return false;
 }
