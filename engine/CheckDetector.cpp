@@ -310,13 +310,19 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
 {
   Figure::Color ocolor = Figure::otherColor(c);
 
-  const uint64 & black = fmgr_.mask(Figure::ColorBlack);
-  const uint64 & white = fmgr_.mask(Figure::ColorWhite);
-  uint64 figs_msk_inv = ~(black | white);
+  // all long-range figures
+  const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
+  uint64 attack_msk = fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c);
+  attack_msk &= q_caps;
 
-  // 6th - queens
+  // do we have at least 1 attacking figure
+  if ( attack_msk )
   {
-    const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
+    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+    uint64 figs_msk_inv = ~(black | white);
+
+    // queens
     uint64 queen_msk = fmgr_.queen_mask(c) & q_caps;
     for ( ; queen_msk; )
     {
@@ -334,10 +340,8 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
       if ( (figs_msk_inv & btw_msk) == btw_msk )
         return true;
     }
-  }
 
-  // 5th - rooks
-  {
+    // rooks
     const uint64 & r_caps = g_movesTable->caps(Figure::TypeRook, pos);
     uint64 rook_msk = fmgr_.rook_mask(c) & r_caps;
     for ( ; rook_msk; )
@@ -356,10 +360,8 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
       if ( (figs_msk_inv & btw_msk) == btw_msk )
         return true;
     }
-  }
 
-  // 4th - bishops
-  {
+    // bishops
     const uint64 & b_caps = g_movesTable->caps(Figure::TypeBishop, pos);
     uint64 bishop_msk = fmgr_.bishop_mask(c) & b_caps;
     for ( ; bishop_msk; )
@@ -380,25 +382,23 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
     }
   }
 
-  {
-    // 1st - pawns. masks are transposed
-    const uint64 & p_caps = g_movesTable->pawnCaps_t(ocolor, pos);
-    const uint64 & pawn_msk = fmgr_.pawn_mask(c);
-    if ( p_caps & pawn_msk )
-      return true;
+  // knights
+  const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
+  const uint64 & knight_msk = fmgr_.knight_mask(c);
+  if ( n_caps & knight_msk )
+    return true;
 
-    // 2nd - king
-    const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
-    const uint64 & king_msk = fmgr_.king_mask(c);
-    if ( k_caps & king_msk )
-      return true;
+  // pawns. masks are transposed
+  const uint64 & p_caps = g_movesTable->pawnCaps_t(ocolor, pos);
+  const uint64 & pawn_msk = fmgr_.pawn_mask(c);
+  if ( p_caps & pawn_msk )
+    return true;
 
-    // 3rd - knights
-    const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
-    const uint64 & knight_msk = fmgr_.knight_mask(c);
-    if ( n_caps & knight_msk )
-      return true;
-  }
+  // king
+  const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
+  const uint64 & king_msk = fmgr_.king_mask(c);
+  if ( k_caps & king_msk )
+    return true;
 
 
   // at the last other figures
