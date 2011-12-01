@@ -141,8 +141,10 @@ bool Board::doMove()
   }
 
   /// hashing castle
-  move.castle_index_[0] = castle_index_[color_][0];
-  move.castle_index_[1] = castle_index_[color_][1];
+  move.castle_index_[color_][0] = castle_index_[color_][0];
+  move.castle_index_[color_][1] = castle_index_[color_][1];
+  move.castle_index_[ocolor][0] = castle_index_[ocolor][0];
+  move.castle_index_[ocolor][1] = castle_index_[ocolor][1];
 
   if ( fig.getType() == Figure::TypeKing )
   {
@@ -180,6 +182,28 @@ bool Board::doMove()
   if ( move.rindex_ >= 0 )
   {
     Figure & rfig = getFigure(ocolor, move.rindex_);
+
+	// castle possibility
+	if ( rfig.getType() == Figure::TypeRook )
+	{
+		// short castle
+		if ( (rfig.where() == 63 && !ocolor ||rfig.where() == 7 && ocolor) && castle_index_[ocolor][0] )
+		{
+			THROW_IF( !rfig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
+
+			castle_index_[ocolor][0] = false;
+			fmgr_.hashCastling(ocolor, 0);
+		}
+		// long castle
+		else if ( (rfig.where() == 56 && !ocolor || rfig.where() == 0 && ocolor) && castle_index_[ocolor][1] )
+		{
+			THROW_IF( !rfig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
+
+			castle_index_[ocolor][1] = false;
+			fmgr_.hashCastling(ocolor, 1);
+		}
+	}
+
     move.eaten_type_ = rfig.getType();
     getField(rfig.where()).clear();
     fmgr_.decr(rfig);
@@ -282,10 +306,11 @@ void Board::undoMove()
   // restore prev. en-passant index
   en_passant_ = move.en_passant_;
 
+  Figure::Color ocolor = Figure::otherColor(color_);
+
   // restore eaten figure
   if ( move.rindex_ >= 0 )
   {
-    Figure::Color ocolor = Figure::otherColor(color_);
     Figure & rfig = getFigure(ocolor, move.rindex_);
 
     THROW_IF( move.eaten_type_ <= 0, "type of eaten figure is invalid" );
@@ -295,15 +320,25 @@ void Board::undoMove()
   }
 
   // restore castle possibility
-  if ( move.castle_index_[0] != castle_index_[color_][0] )
+  if ( move.castle_index_[color_][0] != castle_index_[color_][0] )
   {
     fmgr_.hashCastling(color_, 0);
-    castle_index_[color_][0] = move.castle_index_[0];
+    castle_index_[color_][0] = move.castle_index_[color_][0];
   }
-  if ( move.castle_index_[1] != castle_index_[color_][1] )
+  if ( move.castle_index_[color_][1] != castle_index_[color_][1] )
   {
     fmgr_.hashCastling(color_, 1);
-    castle_index_[color_][1] = move.castle_index_[1];
+    castle_index_[color_][1] = move.castle_index_[color_][1];
+  }
+  if ( move.castle_index_[ocolor][0] != castle_index_[ocolor][0] )
+  {
+	  fmgr_.hashCastling(ocolor, 0);
+	  castle_index_[ocolor][0] = move.castle_index_[ocolor][0];
+  }
+  if ( move.castle_index_[ocolor][1] != castle_index_[ocolor][1] )
+  {
+	  fmgr_.hashCastling(ocolor, 1);
+	  castle_index_[ocolor][1] = move.castle_index_[ocolor][1];
   }
 
   // restore king and rook after castling

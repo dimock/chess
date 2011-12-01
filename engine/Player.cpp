@@ -109,6 +109,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
   stop_ = false;
   totalNodes_ = 0;
+  firstIter_ = true;
   tprev_ = tstart_ = clock();
 
   Move before;
@@ -137,6 +138,8 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
       printPV(sres, out);
     }
 
+	firstIter_ = false;
+
     if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
       break;
   }
@@ -148,6 +151,9 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
 void Player::testTimer()
 {
+	if ( firstIter_ )
+		return;
+
 #ifndef NO_TIME_LIMIT
   int t = clock();
   stop_ = stop_ || ( (t - tstart_) > timeLimitMS_);
@@ -265,4 +271,31 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 
   return alpha;
+}
+
+//////////////////////////////////////////////////////////////////////////
+ScoreType Player::captures(ScoreType alpha, ScoreType betta)
+{
+	if ( stop_ )
+		return alpha;
+
+	CapsGenerator cg(board_);
+	for ( ; !stop_ && alpha < betta ; )
+	{
+		const Move & cap = cg.capture();
+		if ( !cap )
+			break;
+
+		if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+			testTimer();
+
+		if ( stop_ )
+			break;
+
+		THROW_IF( !board_.validMove(cap), "move validation failed" );
+
+		capture(alpha, betta, cap);
+	}
+
+	return alpha;
 }

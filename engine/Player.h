@@ -69,6 +69,7 @@ private:
   void printPV(SearchResult & sres, std::ostream * out);
 
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, const Move & before, Move & move, bool & found);
+  ScoreType captures(ScoreType alpha, ScoreType betta);
 
   void testTimer();
 
@@ -77,6 +78,7 @@ private:
   int timeLimitMS_;
   int depthMax_;
   int nodesCount_, totalNodes_;
+  bool firstIter_;
   clock_t tstart_, tprev_;
 
 
@@ -104,6 +106,11 @@ private:
       else if ( depth <= 1 )
       {
         s = -board_.evaluate();
+		if ( s > alpha )
+		{
+			ScoreType betta1 = s < betta ? s : betta;
+			s = -captures(-betta1, -alpha);
+		}
       }
       else
       {
@@ -133,4 +140,37 @@ private:
 #endif
   }
 
+  //////////////////////////////////////////////////////////////////////////
+  inline void capture(ScoreType & alpha, ScoreType betta, const Move & cap)
+  {
+	  totalNodes_++;
+	  nodesCount_++;
+	  if ( board_.makeMove(cap) )
+	  {
+		  ScoreType s = alpha;
+		  if ( board_.drawState() )
+			  s = 0;
+		  else
+		  {
+			  s = -board_.evaluate();
+			  if ( s > alpha )
+			  {
+				  ScoreType betta1 = s < betta ? s : betta;
+				  s = -captures(-betta1, -alpha);
+			  }
+		  }
+		  if ( !stop_ && s > alpha )
+			  alpha = s;
+	  }
+
+#ifndef NDEBUG
+	  board_.verifyMasks();
+#endif
+
+	  board_.unmakeMove();
+
+#ifndef NDEBUG
+	  board_.verifyMasks();
+#endif
+  }
 };
