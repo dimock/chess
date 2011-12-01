@@ -139,12 +139,12 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
   if ( Figure::TypeKing == fig.getType() )
   {
 
-    QpfTimer qpt;
+    //QpfTimer qpt;
 
     bool a = fastAttacked(ocolor, fig.where());
 
-    ticks_ += qpt.dt();
-    tcounter_++;
+    //ticks_ += qpt.dt();
+    //tcounter_++;
 
     THROW_IF( a != isAttacked(ocolor, fig.where()), "fast attacked returned wrong result");
 

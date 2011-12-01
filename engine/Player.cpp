@@ -175,8 +175,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     for ( ; !stop_ && alpha < betta ; )
     {
       const Move & cap = cg.capture();
-      if ( !cap || cap == before )
+      if ( !cap )
         break;
+
+	  if ( cap == before )
+		  continue;
 
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
@@ -195,8 +198,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       for ( ; !stop_ && alpha < betta ; )
       {
         const Move & quiet = qg.quiet();
-        if ( !quiet || quiet == before )
+        if ( !quiet )
           break;
+
+		if ( quiet == before )
+			continue;
 
         if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
           testTimer();
@@ -222,8 +228,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     for ( ; !stop_ && alpha < betta ; )
     {
       const Move & mv = mg.move();
-      if ( !mv || mv == before )
+      if ( !mv )
         break;
+
+	  if ( mv == before )
+		  continue;
 
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
