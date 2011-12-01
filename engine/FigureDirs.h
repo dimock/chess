@@ -21,7 +21,7 @@ public:
  // }
 
   // from 'figure' to 'p'
-  inline int dir(const Figure & fig, int p)
+  inline int dir(const Figure & fig, int p) const
 	{
     THROW_IF( p < 0 || p > 63, "invalid point to get direction" );
     unsigned u = (p << 6) | fig.where();

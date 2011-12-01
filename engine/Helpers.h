@@ -77,31 +77,31 @@ public:
 
   PawnMasks();
 
-  inline const uint64 & mask_guarded(int color, int pos)
+  inline const uint64 & mask_guarded(int color, int pos) const
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_guarded_[color][pos];
   }
 
-  inline const uint64 & mask_backward(int color, int pos)
+  inline const uint64 & mask_backward(int color, int pos) const
   {
 	  THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
 	  return pmasks_backward_[color][pos];
   }
 
-  inline const uint64 & mask_passed(int color, int pos)
+  inline const uint64 & mask_passed(int color, int pos) const
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_passed_[color][pos];
   }
 
-  inline const uint64 & mask_blocked(int color, int pos)
+  inline const uint64 & mask_blocked(int color, int pos) const
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_blocked_[color][pos];
   }
 
-  inline const uint64 & mask_isolated(int x)
+  inline const uint64 & mask_isolated(int x) const
   {
     THROW_IF( (unsigned)x > 7, "invalid pawn x or color" );
     return pmask_isolated_[x];
@@ -166,7 +166,7 @@ public:
   DeltaPosCounter();
 
   /// returns { 0, 0 }  if (to - from) isn't horizontal, vertical or diagonal
-  inline const FPos & getDeltaPos(int to, int from)
+  inline const FPos & getDeltaPos(int to, int from) const
   {
     THROW_IF( to < 0 || to > 63 || from < 0 || from > 63, "invalid points given" );
     return s_array_[(to<<6) | from];
@@ -187,14 +187,14 @@ public:
   BetweenMask(DeltaPosCounter *);
 
   // mask contains only bits BETWEEN from & to
-  inline const uint64 & between(int8 from, int8 to)
+  inline const uint64 & between(int8 from, int8 to) const
   {
     THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
     return s_between_[from][to];
   }
 
   // mask contains bits along from-to direction starting from and finishing at border
-  inline const uint64 & from(int8 from, int8 to)
+  inline const uint64 & from(int8 from, int8 to) const
   {
     THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
     return s_from_[from][to];
@@ -222,7 +222,7 @@ public:
   DistanceCounter();
 
   // returns distance between 2 points - 'a' & 'b'
-  inline int getDistance(int a, int b)
+  inline int getDistance(int a, int b) const
   {
     THROW_IF( a < 0 || a > 63 || b < 0 || b > 63, "invalid points given" );
     return s_array_[(a<<6) | b];

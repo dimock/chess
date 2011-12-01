@@ -7,12 +7,16 @@
 #include "FigureDirs.h"
 
 class MovesGenerator;
+class CapsGenerator;
+class QuietGenerator;
 
 /*! board representation
  */
 class Board
 {
   friend class MovesGenerator;
+  friend class CapsGenerator;
+  friend class QuietGenerator;
 
 public:
 
@@ -33,12 +37,12 @@ public:
 
   /// init global data
   void set_moves(MoveCmd * moves) { g_moves = moves; }
-  void set_MovesTable(MovesTable * movesTable) { g_movesTable = movesTable; }
-  void set_FigureDir(FigureDir * figureDir) { g_figureDir = figureDir; }
-  void set_PawnMasks(PawnMasks * pawnMasks) { g_pawnMasks = pawnMasks; }
-  void set_BetweenMask(BetweenMask * betweenMask) { g_betweenMasks = betweenMask; }
-  void set_DeltaPosCounter(DeltaPosCounter * deltaPosCounter) { g_deltaPosCounter = deltaPosCounter; }
-  void set_DistanceCounter(DistanceCounter * distanceCounter) { g_distanceCounter = distanceCounter; }
+  void set_MovesTable(const MovesTable * movesTable) { g_movesTable = movesTable; }
+  void set_FigureDir(const FigureDir * figureDir) { g_figureDir = figureDir; }
+  void set_PawnMasks(const PawnMasks * pawnMasks) { g_pawnMasks = pawnMasks; }
+  void set_BetweenMask(const BetweenMask * betweenMask) { g_betweenMasks = betweenMask; }
+  void set_DeltaPosCounter(const DeltaPosCounter * deltaPosCounter) { g_deltaPosCounter = deltaPosCounter; }
+  void set_DistanceCounter(const DistanceCounter * distanceCounter) { g_distanceCounter = distanceCounter; }
 
   /// initialize from FEN
   bool fromFEN(const char * fen);
@@ -63,6 +67,9 @@ public:
 
   /// verify if there is draw or mat
   void verifyState();
+
+  /// 2 means that only king's movements are valid
+  int getNumOfChecking() const { return checkingNum_; }
 
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
@@ -273,10 +280,10 @@ private:
   int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
 
   MoveCmd * g_moves;
-  MovesTable * g_movesTable;
-  FigureDir * g_figureDir;
-  PawnMasks * g_pawnMasks;
-  BetweenMask * g_betweenMasks;
-  DeltaPosCounter * g_deltaPosCounter;
-  DistanceCounter * g_distanceCounter;
+  const MovesTable * g_movesTable;
+  const FigureDir * g_figureDir;
+  const PawnMasks * g_pawnMasks;
+  const BetweenMask * g_betweenMasks;
+  const DeltaPosCounter * g_deltaPosCounter;
+  const DistanceCounter * g_distanceCounter;
 };

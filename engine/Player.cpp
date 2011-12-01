@@ -169,23 +169,72 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
   }
 
-  MovesGenerator mg(board_);
-
-  for ( ; !stop_ && alpha < betta ; )
+  if ( board_.getNumOfChecking() < 2 )
   {
-    const Move & mv = mg.move();
-    if ( !mv )
-      break;
+    CapsGenerator cg(board_);
+    for ( ; !stop_ && alpha < betta ; )
+    {
+      const Move & cap = cg.capture();
+      if ( !cap || cap == before )
+        break;
 
-    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-      testTimer();
+      if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+        testTimer();
 
-    if ( stop_ )
-      break;
-    
-    THROW_IF( !board_.validMove(mv), "move validation failed" );
+      if ( stop_ )
+        break;
 
-    movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
+      THROW_IF( !board_.validMove(cap), "move validation failed" );
+
+      movement(depth, ply, alpha, betta, before, b, cap, move, found, counter);
+    }
+
+    if ( alpha < betta )
+    {
+      QuietGenerator qg(board_);
+      for ( ; !stop_ && alpha < betta ; )
+      {
+        const Move & quiet = qg.quiet();
+        if ( !quiet || quiet == before )
+          break;
+
+        if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+          testTimer();
+
+        if ( stop_ )
+          break;
+
+        THROW_IF( !board_.validMove(quiet), "move validation failed" );
+
+        movement(depth, ply, alpha, betta, before, b, quiet, move, found, counter);
+      }
+
+#ifndef NDEBUG
+      MovesGenerator mg(board_);
+      mg.verify(cg.caps(), qg.quiets());
+#endif
+    }
+
+  }
+  else
+  {
+    MovesGenerator mg(board_);
+    for ( ; !stop_ && alpha < betta ; )
+    {
+      const Move & mv = mg.move();
+      if ( !mv || mv == before )
+        break;
+
+      if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+        testTimer();
+
+      if ( stop_ )
+        break;
+      
+      THROW_IF( !board_.validMove(mv), "move validation failed" );
+
+      movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
+    }
   }
 
   if ( stop_ )

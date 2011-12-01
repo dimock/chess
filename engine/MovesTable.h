@@ -13,6 +13,7 @@ class MovesTable
   uint64 s_pawnsCaps_t_[2][64];
   uint64 s_pawnsCaps_o_[2][64];
   uint64 s_otherCaps_[8][64];
+  uint64 s_pawnPromotions_t_[2];
 
   void resetAllTables(int);
 
@@ -27,45 +28,52 @@ public:
 
   MovesTable();
 
-  inline int8 * pawn(int color, int pos)
+  inline const int8 * pawn(int color, int pos) const
   {
     THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");
     return s_tablePawn_[color][pos];
   }
 
-  inline int8 * knight(int pos)
+  inline const int8 * knight(int pos) const
   {
     THROW_IF((unsigned)pos > 63, "try to get knight move for invalid position");
     return s_tableKnight_[pos];
   }
 
-  inline int8 * king(int pos)
+  inline const int8 * king(int pos) const
   {
     THROW_IF((unsigned)pos > 63, "try to get king move for invalid position");
     return s_tableKing_[pos];
   }
 
-  inline uint16 * move(int type, int pos)
+  inline const uint16 * move(int type, int pos) const
   {
     THROW_IF((unsigned)type > 2 || (unsigned)pos > 63, "try to get figure move for invalid position or type");
     return s_tableOther_[type][pos];
   }
 
   // transposed captures
-  inline const uint64 & pawnCaps_t(int color, int pos)
+  inline const uint64 & pawnCaps_t(int color, int pos) const
   {
     THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");
     return s_pawnsCaps_t_[color][pos];
   }
 
   // ordinary captures
-  inline const uint64 & pawnCaps_o(int color, int pos)
+  inline const uint64 & pawnCaps_o(int color, int pos) const
   {
     THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");
     return s_pawnsCaps_o_[color][pos];
   }
 
-  inline const uint64 & caps(int type, int pos)
+  // transposed promotion mask
+  inline const uint64 & promote_t(int color) const
+  {
+    THROW_IF( (unsigned)color > 1, "invalid color of promotion mask" );
+    return s_pawnPromotions_t_[color];
+  }
+
+  inline const uint64 & caps(int type, int pos) const
   {
     THROW_IF((unsigned)type > 6 || (unsigned)pos > 63, "try to get figure move for invalid position or type");
     return s_otherCaps_[type][pos];

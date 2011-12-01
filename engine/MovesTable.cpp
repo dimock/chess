@@ -39,6 +39,7 @@ void MovesTable::resetAllTables(int pos)
   {
     s_pawnsCaps_t_[color][pos] = 0;
     s_pawnsCaps_o_[color][pos] = 0;
+    s_pawnPromotions_t_[color] = 0;
   }
 
   for (int type = 0; type < 8; ++type)
@@ -78,6 +79,14 @@ void MovesTable::initPawns(int pos)
         s_pawnsCaps_o_[color][pos] |= 1ULL << pp;
         s_pawnsCaps_t_[color][pos] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
       }
+    }
+
+    // fill transposed promotion mask
+    int y = color ? 6 : 1;
+    for (int x = 0; x < 8; ++x)
+    {
+      int pp = x | (y << 3);
+      s_pawnPromotions_t_[color] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
     }
   }
 }
