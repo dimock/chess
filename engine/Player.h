@@ -106,11 +106,11 @@ private:
       else if ( depth <= 1 )
       {
         s = -board_.evaluate();
-		if ( s > alpha )
-		{
-			ScoreType betta1 = s < betta ? s : betta;
-			s = -captures(-betta1, -alpha);
-		}
+		//if ( s > alpha )
+		//{
+		//	ScoreType betta1 = s < betta ? s : betta;
+		//	s = -captures(-betta1, -alpha);
+		//}
       }
       else
       {

@@ -131,7 +131,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
       sres.score_ = score;
       sres.best_  = best;
       sres.depth_ = depth;
-      sres.nodesCount_ = totalNodes_;
+      sres.nodesCount_ = nodesCount_;
       sres.dt_ = dt;
       before = best;
 
@@ -175,82 +175,26 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
   }
 
-  if ( board_.getNumOfChecking() < 2 )
-  {
-    CapsGenerator cg(board_);
-    for ( ; !stop_ && alpha < betta ; )
-    {
-      const Move & cap = cg.capture();
-      if ( !cap )
-        break;
-
-	  if ( cap == before )
-		  continue;
-
-      if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-        testTimer();
-
-      if ( stop_ )
-        break;
-
-      THROW_IF( !board_.validMove(cap), "move validation failed" );
-
-      movement(depth, ply, alpha, betta, before, b, cap, move, found, counter);
-    }
-
-    if ( alpha < betta )
-    {
-      QuietGenerator qg(board_);
-      for ( ; !stop_ && alpha < betta ; )
-      {
-        const Move & quiet = qg.quiet();
-        if ( !quiet )
-          break;
-
-		if ( quiet == before )
-			continue;
-
-        if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-          testTimer();
-
-        if ( stop_ )
-          break;
-
-        THROW_IF( !board_.validMove(quiet), "move validation failed" );
-
-        movement(depth, ply, alpha, betta, before, b, quiet, move, found, counter);
-      }
-
-#ifndef NDEBUG
-      MovesGenerator mg(board_);
-      mg.verify(cg.caps(), qg.quiets());
-#endif
-    }
-
-  }
-  else
-  {
-    MovesGenerator mg(board_);
-    for ( ; !stop_ && alpha < betta ; )
-    {
-      const Move & mv = mg.move();
-      if ( !mv )
-        break;
+	MovesGenerator mg(board_);
+	for ( ; !stop_ && alpha < betta ; )
+	{
+	  const Move & mv = mg.move();
+	  if ( !mv )
+		break;
 
 	  if ( mv == before )
 		  continue;
 
-      if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-        testTimer();
+	  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+		testTimer();
 
-      if ( stop_ )
-        break;
-      
-      THROW_IF( !board_.validMove(mv), "move validation failed" );
+	  if ( stop_ )
+		break;
+	  
+	  THROW_IF( !board_.validMove(mv), "move validation failed" );
 
-      movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
-    }
-  }
+	  movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
+	}
 
   if ( stop_ )
     return alpha;

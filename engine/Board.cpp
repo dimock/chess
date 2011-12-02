@@ -29,8 +29,6 @@ void Board::clear()
   // clear global FEN
   fen_[0] = 0;
 
-  castle_index_[0][0] = castle_index_[0][1] = false;
-  castle_index_[1][0] = castle_index_[1][1] = false;
   castle_[0] = castle_[1] = 0;
   checking_[0] = checking_[1] = 0;
   can_win_[0] = can_win_[1] = true;
@@ -171,7 +169,6 @@ bool Board::fromFEN(const char * fen)
           fr = getField(63);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorBlack )
             return false;
-          castle_index_[0][0] = true;
           break;
 
         case 'K':
@@ -181,7 +178,6 @@ bool Board::fromFEN(const char * fen)
           fr = getField(7);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorWhite )
             return false;
-          castle_index_[1][0] = true;
           break;
 
         case 'q':
@@ -191,7 +187,6 @@ bool Board::fromFEN(const char * fen)
           fr = getField(56);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorBlack )
             return false;
-          castle_index_[0][1] = true;
           break;
 
         case 'Q':
@@ -201,7 +196,6 @@ bool Board::fromFEN(const char * fen)
           fr = getField(0);
           if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorWhite )
             return false;
-          castle_index_[1][1] = true;
           break;
 
         default:
@@ -332,19 +326,20 @@ bool Board::toFEN(char * fen) const
   // 3 - castling possibility
   {
     *s++ = ' ';
-    if ( !castle_index_[0][0] && !castle_index_[0][1] && !castle_index_[1][0] && !castle_index_[1][1] )
+	if ( !castling(Figure::ColorBlack, 0) && !castling(Figure::ColorBlack, 1) &&
+		 !castling(Figure::ColorWhite, 0) && !castling(Figure::ColorWhite, 1) )
     {
       *s++ = '-';
     }
     else
     {
-      if ( castle_index_[1][0] )
+      if ( castling(Figure::ColorWhite, 0))
         *s++ = 'K';
-      if ( castle_index_[1][1] )
+      if ( castling(Figure::ColorWhite, 1) )
         *s++ = 'Q';
-      if ( castle_index_[0][0] )
+      if ( castling(Figure::ColorBlack, 0) )
         *s++ = 'k';
-      if ( castle_index_[0][1] )
+      if ( castling(Figure::ColorBlack, 1) )
         *s++ = 'q';
     }
   }
@@ -460,38 +455,6 @@ bool Board::invalidate()
     {
       stages_[color] = 1;
     }
-  }
-
-  // update castle possibility
-  for (int color = 0; color < 2; ++color)
-  {
-    const Figure & king = getFigure((Figure::Color)color, KingIndex);
-    if ( !king )
-      return false;
-
-    if ( !king.isFirstStep() )
-    {
-      castle_index_[color][0] = castle_index_[color][1] = false;
-      continue;
-    }
-
-    const Field & kr_field = getField(color ? 7 : 63);
-    if ( kr_field )
-    {
-      const Figure & krook = getFigure((Figure::Color)color, kr_field.index());
-      castle_index_[color][0] = krook.getType() == Figure::TypeRook && krook.isFirstStep();
-    }
-    else
-      castle_index_[color][0] = false;
-
-    const Field & qr_field = getField(color ? 0 : 56);
-    if ( qr_field )
-    {
-      const Figure & qrook = getFigure((Figure::Color)color, qr_field.index());
-      castle_index_[color][1] = qrook.getType() == Figure::TypeRook && qrook.isFirstStep();
-    }
-    else
-      castle_index_[color][1] = false;
   }
 
   verifyState();

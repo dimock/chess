@@ -337,15 +337,6 @@ int CapsGenerator::generate()
       move.to_ = to;
       move.rindex_ = -1;
       move.new_type_ = Figure::TypeQueen;
-
-      captures_[m] = move;
-      captures_[m++].new_type_ = Figure::TypeRook;
-
-      captures_[m] = move;
-      captures_[m++].new_type_ = Figure::TypeBishop;
-
-      captures_[m] = move;
-      captures_[m++].new_type_ = Figure::TypeKnight;
     }
   }
 

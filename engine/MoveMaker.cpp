@@ -86,13 +86,22 @@ bool Board::doMove()
   Figure & fig = getFigure(color_, getField(move.from_).index());
   Figure::Color ocolor = Figure::otherColor(color_);
   move.en_passant_ = en_passant_;
-  move.old_state_ = state_;
   move.index_ = fig.getIndex();
 
   if ( drawState() || ChessMat == state_ )
     return false;
 
   state_ = Ok;
+
+  move.mask_[0] = fmgr_.mask(Figure::ColorBlack);
+  move.mask_[1] = fmgr_.mask(Figure::ColorWhite);
+
+  /// hashing castle possibility
+  if ( castling(color_, 0) && (fig.getType() == Figure::TypeKing || fig.getType() == Figure::TypeRook && (fig.where() == 63 && !color_ || fig.where() == 7 && color_)) )
+	  fmgr_.hashCastling(color_, 0);
+
+  if ( castling(color_, 1) && (fig.getType() == Figure::TypeKing || fig.getType() == Figure::TypeRook && (fig.where() == 56 && !color_ || fig.where() == 0 && color_)) )
+	  fmgr_.hashCastling(color_, 1);
 
   int d = move.to_ - move.from_;
   if ( fig.getType() == Figure::TypeKing && (2 == d || -2 == d) )// castle
@@ -115,16 +124,24 @@ bool Board::doMove()
 
     // then verify if there is suitable rook fo castling
     move.rook_from_ = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
+
+	THROW_IF( (move.rook_from_ != 0 && color_ && d < 0) || (move.rook_from_ != 7 && color_ && d > 0), "invalid castle rook position" );
+	THROW_IF( (move.rook_from_ != 56 && !color_ && d < 0) || (move.rook_from_ != 63 && !color_ && d > 0), "invalid castle rook position" );
+
     Field & rf_field = getField(move.rook_from_);
-    if ( !rf_field )
+    if ( rf_field.type() != Figure::TypeRook || rf_field.color() != color_ )
       return false;
+
+	// long castling is impossible
+	if ( !(move.rook_from_ & 3) && getField(move.rook_from_+1) )
+		return false;
 
     move.rook_index_ = rf_field.index();
     Figure & rook = getFigure(color_, move.rook_index_);
 
-    THROW_IF( isAttacked(ocolor, move.rook_to_) != fastAttacked(ocolor, move.rook_to_), "fast attacked returned wrong result");
+    THROW_IF( rook.getType() != Figure::TypeRook || isAttacked(ocolor, move.rook_to_) != fastAttacked(ocolor, move.rook_to_), "fast attacked returned wrong result");
 
-    if ( rook.getType() != Figure::TypeRook || !rook.isFirstStep() || fastAttacked(ocolor, move.rook_to_) )
+    if ( !rook.isFirstStep() || fastAttacked(ocolor, move.rook_to_) )
       return false;
 
     rf_field.clear();
@@ -136,45 +153,6 @@ bool Board::doMove()
 
     move.castle_ = castle_[color_] = 1 + (((unsigned)d & 0x80000000) >> 31);//d > 0 ? 1 : 2;
     state_ = Castle;
-
-    THROW_IF(!castle_index_[color_][0] && !castle_index_[color_][1], "try to castle while it is impossible");
-  }
-
-  /// hashing castle
-  move.castle_index_[color_][0] = castle_index_[color_][0];
-  move.castle_index_[color_][1] = castle_index_[color_][1];
-  move.castle_index_[ocolor][0] = castle_index_[ocolor][0];
-  move.castle_index_[ocolor][1] = castle_index_[ocolor][1];
-
-  if ( fig.getType() == Figure::TypeKing )
-  {
-    if ( castle_index_[color_][0] )
-    {
-      castle_index_[color_][0] = false;
-      fmgr_.hashCastling(color_, 0);
-    }
-
-    if ( castle_index_[color_][1] )
-    {
-      castle_index_[color_][1] = false;
-      fmgr_.hashCastling(color_, 1);
-    }
-  }
-  // short castling
-  else if ( fig.getType() == Figure::TypeRook && (fig.where() == 63 && !color_ || fig.where() == 7 && color_) && castle_index_[color_][0] )
-  {
-    THROW_IF( !fig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
-
-    castle_index_[color_][0] = false;
-    fmgr_.hashCastling(color_, 0);
-  }
-  // long castling
-  else if ( fig.getType() == Figure::TypeRook && (fig.where() == 56 && !color_ || fig.where() == 0 && color_) && castle_index_[color_][1] )
-  {
-    THROW_IF( !fig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
-
-    castle_index_[color_][1] = false;
-    fmgr_.hashCastling(color_, 1);
   }
 
   en_passant_ = -1;
@@ -187,21 +165,11 @@ bool Board::doMove()
 	if ( rfig.getType() == Figure::TypeRook )
 	{
 		// short castle
-		if ( (rfig.where() == 63 && !ocolor ||rfig.where() == 7 && ocolor) && castle_index_[ocolor][0] )
-		{
-			THROW_IF( !rfig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
-
-			castle_index_[ocolor][0] = false;
+		if ( castling(ocolor, 0) && (rfig.where() == 63 && !ocolor ||rfig.where() == 7 && ocolor) )
 			fmgr_.hashCastling(ocolor, 0);
-		}
 		// long castle
-		else if ( (rfig.where() == 56 && !ocolor || rfig.where() == 0 && ocolor) && castle_index_[ocolor][1] )
-		{
-			THROW_IF( !rfig.isFirstStep(), "castling's possibility doesn't correspond to the flag" );
-
-			castle_index_[ocolor][1] = false;
+		else if ( castling(ocolor, 1) && (rfig.where() == 56 && !ocolor || rfig.where() == 0 && ocolor) )
 			fmgr_.hashCastling(ocolor, 1);
-		}
 	}
 
     move.eaten_type_ = rfig.getType();
@@ -251,8 +219,10 @@ bool Board::doMove()
     fiftyMovesCount_++;
   }
 
-  // remember hash code for threefold repetition detection
+  // add hash color key
   fmgr_.hashColor();
+
+  // put new hash code to detect threefold repetition
   move.zcode_ = fmgr_.hashCode();
 
   if ( !color_ )
@@ -265,9 +235,6 @@ void Board::undoMove()
 {
   MoveCmd & move = getMove(halfmovesCounter_);
 
-  // always restore state, because we have changed it
-  state_ = (State)move.old_state_;
-
   if ( !move.need_undo_ )
     return;
 
@@ -275,7 +242,7 @@ void Board::undoMove()
     movesCounter_--;
 
   // restore hash color. we change it early for 3-fold repetition detection
-  fmgr_.hashColor();
+  //fmgr_.hashColor();
 
   Figure & fig = getFigure(color_, getField(move.to_).index());
 
@@ -284,14 +251,14 @@ void Board::undoMove()
   // restore old type
   if ( move.new_type_ > 0 )
   {
-    fmgr_.decr(fig);
+    fmgr_.u_decr(fig);
     fig.go(move.from_);
     fig.setType(Figure::TypePawn);
-    fmgr_.incr(fig);
+    fmgr_.u_incr(fig);
   }
   else
   {
-    fmgr_.move(fig, move.from_);
+    fmgr_.u_move(fig, move.from_);
   }
 
   // restore position and field
@@ -300,8 +267,8 @@ void Board::undoMove()
   getField(fig.where()).set(fig);
 
   // restore en-passant hash code
-  if ( en_passant_ >= 0 )
-    fmgr_.hashEnPassant(fig.where(), color_);
+  //if ( en_passant_ >= 0 )
+  //  fmgr_.hashEnPassant(fig.where(), color_);
 
   // restore prev. en-passant index
   en_passant_ = move.en_passant_;
@@ -316,29 +283,7 @@ void Board::undoMove()
     THROW_IF( move.eaten_type_ <= 0, "type of eaten figure is invalid" );
     rfig.setType((Figure::Type)move.eaten_type_);
     getField(rfig.where()).set(rfig);
-    fmgr_.incr(rfig);
-  }
-
-  // restore castle possibility
-  if ( move.castle_index_[color_][0] != castle_index_[color_][0] )
-  {
-    fmgr_.hashCastling(color_, 0);
-    castle_index_[color_][0] = move.castle_index_[color_][0];
-  }
-  if ( move.castle_index_[color_][1] != castle_index_[color_][1] )
-  {
-    fmgr_.hashCastling(color_, 1);
-    castle_index_[color_][1] = move.castle_index_[color_][1];
-  }
-  if ( move.castle_index_[ocolor][0] != castle_index_[ocolor][0] )
-  {
-	  fmgr_.hashCastling(ocolor, 0);
-	  castle_index_[ocolor][0] = move.castle_index_[ocolor][0];
-  }
-  if ( move.castle_index_[ocolor][1] != castle_index_[ocolor][1] )
-  {
-	  fmgr_.hashCastling(ocolor, 1);
-	  castle_index_[ocolor][1] = move.castle_index_[ocolor][1];
+    fmgr_.u_incr(rfig);
   }
 
   // restore king and rook after castling
@@ -350,7 +295,7 @@ void Board::undoMove()
     getField(move.rook_to_) = move.field_rook_to_;
 
     Figure & rook = getFigure(color_, move.rook_index_);
-    fmgr_.move(rook, move.rook_from_);
+    fmgr_.u_move(rook, move.rook_from_);
 
     rook.setFirstStep(true);
     Field & rfield = getField(rook.where());
@@ -358,6 +303,9 @@ void Board::undoMove()
 
     castle_[color_] = 0;
   }
+
+  // restore figures masks
+  fmgr_.restoreMasks(move.mask_);
 
   fiftyMovesCount_ = move.fifty_moves_;
 }
@@ -371,6 +319,10 @@ bool Board::makeMove(const Move & mv)
   MoveCmd & move = getMove(halfmovesCounter_-1);
   move.clearUndo();
   move = mv;
+
+  // store Zobrist key and state
+  move.old_state_ = state_;
+  move.zcode_old_ = fmgr_.hashCode();
 
   if ( !doMove() )
   {
@@ -450,6 +402,10 @@ void Board::unmakeMove()
   }
 
   undoMove();
+
+  // always restore hash code and state
+  state_ = (State)move.old_state_;
+  fmgr_.restoreHash(move.zcode_old_);
 }
 
 bool Board::verifyChessDraw()
@@ -474,8 +430,8 @@ bool Board::verifyChessDraw()
     return true;
   }
 
-  // we don't need to verify threefold repetition if there was capture or pawn's move
-  if ( 0 == fiftyMovesCount_ )
+  // we don't need to verify threefold repetition if capture or pawn's move was less than 4 steps ago
+  if ( fiftyMovesCount_ < 4 )
     return false;
 
   int reps = 1;

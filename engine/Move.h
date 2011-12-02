@@ -60,6 +60,10 @@ struct MoveCmd : public Move
 
   /// Zobrist key - used in fifty-move-rule detector
   uint64 zcode_;
+  uint64 zcode_old_;
+
+  /// figures masks
+  uint64 mask_[2];
 
   /// if this move is irreversible, we don't need to enumerate any move in fifty-move-rule detector
   bool  irreversible_;
@@ -125,8 +129,8 @@ struct MoveCmd : public Move
   /// fifty moves rule
   uint8 fifty_moves_;
 
-  // 1st - color, 2nd - index of castle's possibility for zobrist key. 0 - short, 1 - long
-  bool castle_index_[2][2];
+  //// 1st - color, 2nd - index of castle's possibility for zobrist key. 0 - short, 1 - long
+  //bool castle_index_[2][2];
 
   bool can_win_[2];
 
