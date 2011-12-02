@@ -38,12 +38,15 @@ private:
   Move moves_[Board::MovesMax];
 };
 
-/// generate captures and promotions only
+
+class Player;
+
+/// generate captures and promotions to queen only
 class CapsGenerator
 {
 public:
 
-  CapsGenerator(Board & );
+  CapsGenerator(Board & , Figure::Type minimalType, Player &, ScoreType & alpha, ScoreType betta);
 
   Move & capture()
   {
@@ -68,10 +71,12 @@ public:
 private:
 
   /// returns number of moves found
-  int generate();
+  int generate(ScoreType & alpha, ScoreType betta);
 
   int current_;
   int numOfMoves_;
+  Figure::Type minimalType_;
+  Player & player_;
 
   Board & board_;
   Move captures_[Board::MovesMax];

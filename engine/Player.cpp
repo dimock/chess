@@ -131,14 +131,14 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
       sres.score_ = score;
       sres.best_  = best;
       sres.depth_ = depth;
-      sres.nodesCount_ = totalNodes_;
+      sres.nodesCount_ = nodesCount_;
       sres.dt_ = dt;
       before = best;
 
       printPV(sres, out);
     }
 
-	firstIter_ = false;
+	  firstIter_ = false;
 
     if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
       break;
@@ -175,81 +175,31 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
   }
 
-  if ( board_.getNumOfChecking() < 2 )
+  //QpfTimer qpt;
+
+  MovesGenerator mg(board_);
+
+  //Board::ticks_ += qpt.ticks();
+  //Board::tcounter_++;
+
+  for ( ; !stop_ && alpha < betta ; )
   {
-    CapsGenerator cg(board_);
-    for ( ; !stop_ && alpha < betta ; )
-    {
-      const Move & cap = cg.capture();
-      if ( !cap )
-        break;
+    const Move & mv = mg.move();
+    if ( !mv )
+      break;
 
-	  if ( cap == before )
-		  continue;
+    if ( mv == before )
+	    continue;
 
-      if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-        testTimer();
+    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+      testTimer();
 
-      if ( stop_ )
-        break;
+    if ( stop_ )
+      break;
+    
+    THROW_IF( !board_.validMove(mv), "move validation failed" );
 
-      THROW_IF( !board_.validMove(cap), "move validation failed" );
-
-      movement(depth, ply, alpha, betta, before, b, cap, move, found, counter);
-    }
-
-    if ( alpha < betta )
-    {
-      QuietGenerator qg(board_);
-      for ( ; !stop_ && alpha < betta ; )
-      {
-        const Move & quiet = qg.quiet();
-        if ( !quiet )
-          break;
-
-		if ( quiet == before )
-			continue;
-
-        if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-          testTimer();
-
-        if ( stop_ )
-          break;
-
-        THROW_IF( !board_.validMove(quiet), "move validation failed" );
-
-        movement(depth, ply, alpha, betta, before, b, quiet, move, found, counter);
-      }
-
-#ifndef NDEBUG
-      MovesGenerator mg(board_);
-      mg.verify(cg.caps(), qg.quiets());
-#endif
-    }
-
-  }
-  else
-  {
-    MovesGenerator mg(board_);
-    for ( ; !stop_ && alpha < betta ; )
-    {
-      const Move & mv = mg.move();
-      if ( !mv )
-        break;
-
-	  if ( mv == before )
-		  continue;
-
-      if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-        testTimer();
-
-      if ( stop_ )
-        break;
-      
-      THROW_IF( !board_.validMove(mv), "move validation failed" );
-
-      movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
-    }
+    movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
   }
 
   if ( stop_ )
@@ -274,12 +224,22 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures(ScoreType alpha, ScoreType betta)
+ScoreType Player::captures(ScoreType alpha, ScoreType betta, int delta)
 {
 	if ( stop_ )
 		return alpha;
 
-	CapsGenerator cg(board_);
+  Figure::Type minimalType = Figure::TypePawn;
+  if ( delta > Figure::figureWeight_[Figure::TypeRook] )
+    minimalType = Figure::TypeQueen;
+  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
+    minimalType = Figure::TypeRook;
+  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
+    minimalType = Figure::TypeBishop;
+  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
+    minimalType = Figure::TypeKnight;
+
+  CapsGenerator cg(board_, minimalType, *this, alpha, betta);
 	for ( ; !stop_ && alpha < betta ; )
 	{
 		const Move & cap = cg.capture();

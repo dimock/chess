@@ -26,8 +26,12 @@ public:
 //  bool wminus_;
 };
 
+class CapsGenerator;
+
 class Player
 {
+  friend class CapsGenerator;
+
 public:
 
   // initialize global arrays, tables, masks, etc. write them to it's board_
@@ -69,7 +73,7 @@ private:
   void printPV(SearchResult & sres, std::ostream * out);
 
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, const Move & before, Move & move, bool & found);
-  ScoreType captures(ScoreType alpha, ScoreType betta);
+  ScoreType captures(ScoreType alpha, ScoreType betta, int delta);
 
   void testTimer();
 
@@ -95,8 +99,9 @@ private:
   //////////////////////////////////////////////////////////////////////////
   inline void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & before, Move & b, const Move & mv, Move & move, bool & found, int & counter)
   {
-	totalNodes_++;
-	nodesCount_++;
+	  totalNodes_++;
+	  nodesCount_++;
+
     if ( board_.makeMove(mv) )
     {
       counter++;
@@ -106,11 +111,12 @@ private:
       else if ( depth <= 1 )
       {
         s = -board_.evaluate();
-		if ( s > alpha )
-		{
-			ScoreType betta1 = s < betta ? s : betta;
-			s = -captures(-betta1, -alpha);
-		}
+        int delta = (int)s - (int)betta - (int)Figure::positionGain_;
+        if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
+		    {
+			    ScoreType betta1 = s < betta ? s : betta;
+			    s = -captures(-betta1, -alpha, delta);
+		    }
       }
       else
       {
@@ -145,6 +151,7 @@ private:
   {
 	  totalNodes_++;
 	  nodesCount_++;
+
 	  if ( board_.makeMove(cap) )
 	  {
 		  ScoreType s = alpha;
@@ -153,10 +160,11 @@ private:
 		  else
 		  {
 			  s = -board_.evaluate();
-			  if ( s > alpha )
+        int delta = s - betta - Figure::positionGain_;
+        if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
 			  {
 				  ScoreType betta1 = s < betta ? s : betta;
-				  s = -captures(-betta1, -alpha);
+				  s = -captures(-betta1, -alpha, delta);
 			  }
 		  }
 		  if ( !stop_ && s > alpha )

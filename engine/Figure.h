@@ -20,6 +20,7 @@ public:
   static ScoreType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
   static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_;
   static ScoreType pawnPassed_[2][8];
+  static const ScoreType positionGain_ = 60;
 
   enum Weights { WeightDraw = 0, WeightMat = 32000 };
   enum Type  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };

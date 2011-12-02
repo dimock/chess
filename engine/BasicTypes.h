@@ -50,7 +50,7 @@ public:
     }
   }
 
-  inline int64 dt()
+  inline int64 ticks()
   {
     int64 t;
     __asm

@@ -1,5 +1,6 @@
 #include "MovesGenerator.h"
 #include "MovesTable.h"
+#include "Player.h"
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -292,15 +293,15 @@ int MovesGenerator::generate()
 }
 
 //////////////////////////////////////////////////////////////////////////
-CapsGenerator::CapsGenerator(Board & board) :
-  board_(board), current_(-1), numOfMoves_(0)
+CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, Player & player, ScoreType & alpha, ScoreType betta) :
+  board_(board), current_(-1), numOfMoves_(0), minimalType_(minimalType), player_(player)
 {
-  numOfMoves_ = generate();
+  numOfMoves_ = generate(alpha, betta);
   current_ = numOfMoves_ > 0 ? 0 : -1;
   captures_[numOfMoves_].clear();
 }
 
-int CapsGenerator::generate()
+int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
 {
   int m = 0;
 
@@ -328,24 +329,19 @@ int CapsGenerator::generate()
 
       THROW_IF( (unsigned)to > 63, "pawn tries to go to invalid field" );
 
-      if ( board_.getField(to) )
+      if ( board_.getField(to) || Figure::TypeQueen == minimalType_ )
         continue;
 
-      Move & move = captures_[m++];
+      Move move;// = captures_[m++];
 
       move.from_ = from;
       move.to_ = to;
       move.rindex_ = -1;
       move.new_type_ = Figure::TypeQueen;
 
-      captures_[m] = move;
-      captures_[m++].new_type_ = Figure::TypeRook;
-
-      captures_[m] = move;
-      captures_[m++].new_type_ = Figure::TypeBishop;
-
-      captures_[m] = move;
-      captures_[m++].new_type_ = Figure::TypeKnight;
+      player_.capture(alpha, betta, move);
+      if ( alpha >= betta )
+        return m;
     }
   }
 
@@ -356,7 +352,7 @@ int CapsGenerator::generate()
   uint64 mask_all_inv = ~(white | black);
 
   // generate captures
-  for (int i = 0; i < Board::NumOfFigures; ++i)
+  for (int i = Board::KingIndex; i >= 0; --i)
   {
     const Figure & fig = board_.getFigure(board_.color_, i);
     if ( !fig )
@@ -365,41 +361,41 @@ int CapsGenerator::generate()
     if ( fig.getType() == Figure::TypePawn )
     {
       uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, fig.where()) & oppenent_mask;
-      if ( p_caps )
+      for ( ; p_caps; )
       {
-        for ( ; p_caps; )
+        int to = least_bit_number(p_caps);
+
+        bool promotion = to > 55 || to < 8; // 1st || last line
+
+        THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
+
+        const Field & field = board_.getField(to);
+        if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
+          continue;
+
+        if ( promotion || field.type() > Figure::TypePawn )
         {
-          int to = least_bit_number(p_caps);
+          Move move;
+          move.from_ = fig.where();
+          move.to_ = to;
+          move.rindex_ = field.index();
+          move.new_type_ = Figure::TypeQueen;
 
-          THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
-
-          const Field & field = board_.getField(to);
-          if ( !field || field.color() != ocolor )
-            continue;
-
+          player_.capture(alpha, betta, move);
+          if ( alpha >= betta )
+            return m;
+        }
+        else
+        {
           Move & move = captures_[m++];
           move.from_ = fig.where();
           move.to_ = to;
           move.rindex_ = field.index();
           move.new_type_ = 0;
-
-          if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
-          {
-            move.new_type_ = Figure::TypeQueen;
-
-            captures_[m] = move;
-            captures_[m++].new_type_ = Figure::TypeRook;
-
-            captures_[m] = move;
-            captures_[m++].new_type_ = Figure::TypeBishop;
-
-            captures_[m] = move;
-            captures_[m++].new_type_ = Figure::TypeKnight;
-          }
         }
       }
 
-      if ( board_.en_passant_ >= 0 )
+      if ( board_.en_passant_ >= 0 && minimalType_ <= Figure::TypePawn )
       {
         const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
         THROW_IF( !epawn, "there is no en passant pawn" );
@@ -432,11 +428,29 @@ int CapsGenerator::generate()
 
         THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
-        Move & move = captures_[m++];
-        move.from_ = fig.where();
-        move.to_ = to;
-        move.rindex_ = field.index();
-        move.new_type_ = 0;
+        if ( field.type() < minimalType_ )
+          continue;
+
+        if ( field.type() > Figure::TypeKnight )
+        {
+          Move move;
+          move.from_ = fig.where();
+          move.to_ = to;
+          move.rindex_ = field.index();
+          move.new_type_ = 0;
+
+          player_.capture(alpha, betta, move);
+          if ( alpha >= betta )
+            return m;
+        }
+        else
+        {
+          Move & move = captures_[m++];
+          move.from_ = fig.where();
+          move.to_ = to;
+          move.rindex_ = field.index();
+          move.new_type_ = 0;
+        }
       }
     }
     else // other figures
@@ -452,15 +466,33 @@ int CapsGenerator::generate()
 
         THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
+        if ( field.type() < minimalType_ )
+          continue;
+
         const uint64 & btw_msk = board_.g_betweenMasks->between(fig.where(), to);
         if ( (btw_msk & mask_all_inv) != btw_msk )
           continue;
 
-        Move & move = captures_[m++];
-        move.from_ = fig.where();
-        move.to_ = to;
-        move.rindex_ = field.index();
-        move.new_type_ = 0;
+        if ( field.type() > fig.getType() )
+        {
+          Move move;
+          move.from_ = fig.where();
+          move.to_ = to;
+          move.rindex_ = field.index();
+          move.new_type_ = 0;
+
+          player_.capture(alpha, betta, move);
+          if ( alpha >= betta )
+            return m;
+        }
+        else
+        {
+          Move & move = captures_[m++];
+          move.from_ = fig.where();
+          move.to_ = to;
+          move.rindex_ = field.index();
+          move.new_type_ = 0;
+        }
       }
     }
   }
