@@ -224,10 +224,26 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures(ScoreType alpha, ScoreType betta, int delta)
+ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int delta)
 {
 	if ( stop_ )
 		return alpha;
+
+  Move ki;
+  ki.clear();
+
+  if ( killer && board_.validMove(killer) )
+  {
+    MovesGenerator mg(board_);
+    if ( !mg.find(killer) )
+    {
+      board_.validMove(killer);
+    }
+    capture(killer, ki, alpha, betta, killer);
+  }
+
+  if ( alpha >= betta )
+    return alpha;
 
   Figure::Type minimalType = Figure::TypePawn;
   if ( delta > Figure::figureWeight_[Figure::TypeRook] )
@@ -239,8 +255,12 @@ ScoreType Player::captures(ScoreType alpha, ScoreType betta, int delta)
   else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
     minimalType = Figure::TypeKnight;
 
-  CapsGenerator cg(board_, minimalType, *this, alpha, betta);
-	for ( ; !stop_ && alpha < betta ; )
+  //QpfTimer qpt;
+  CapsGenerator cg(board_, minimalType, *this, killer, ki, alpha, betta);
+  //Board::ticks_ += qpt.ticks();
+  //Board::tcounter_ += cg.count();
+
+  for ( ; !stop_ && alpha < betta ; )
 	{
 		const Move & cap = cg.capture();
 		if ( !cap )
@@ -254,7 +274,7 @@ ScoreType Player::captures(ScoreType alpha, ScoreType betta, int delta)
 
 		THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-		capture(alpha, betta, cap);
+		capture(killer, ki, alpha, betta, cap);
 	}
 
 	return alpha;

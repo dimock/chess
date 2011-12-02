@@ -24,6 +24,8 @@ public:
     return numOfMoves_;
   }
 
+  bool find(const Move & m) const;
+
   bool verify(const Move (&caps)[Board::MovesMax], const Move (&quiets)[Board::MovesMax]) const;
 
 private:
@@ -46,7 +48,7 @@ class CapsGenerator
 {
 public:
 
-  CapsGenerator(Board & , Figure::Type minimalType, Player &, ScoreType & alpha, ScoreType betta);
+  CapsGenerator(Board & , Figure::Type minimalType, Player &, Move & killer, Move & ki, ScoreType & alpha, ScoreType betta);
 
   Move & capture()
   {
@@ -73,10 +75,14 @@ private:
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta);
 
+  bool capture(ScoreType & alpha, ScoreType betta, const Move & move);
+
   int current_;
   int numOfMoves_;
   Figure::Type minimalType_;
   Player & player_;
+  Move & killer_;
+  Move & ki_;
 
   Board & board_;
   Move captures_[Board::MovesMax];

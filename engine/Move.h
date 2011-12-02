@@ -23,12 +23,15 @@ struct Move
   /// index of eaten (removed) figure
   int8 rindex_;
 
+  ScoreType score_;
+
   void clear()
   {
     from_ = -1;
     to_ = -1;
     new_type_ = 0;
     rindex_ = -1;
+    score_ = -std::numeric_limits<ScoreType>::max();
   }
 
   operator bool () const

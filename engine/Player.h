@@ -73,7 +73,7 @@ private:
   void printPV(SearchResult & sres, std::ostream * out);
 
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, const Move & before, Move & move, bool & found);
-  ScoreType captures(ScoreType alpha, ScoreType betta, int delta);
+  ScoreType captures(Move & killer, ScoreType alpha, ScoreType betta, int delta);
 
   void testTimer();
 
@@ -114,8 +114,11 @@ private:
         int delta = (int)s - (int)betta - (int)Figure::positionGain_;
         if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
 		    {
+          Move killer;
+          killer.clear();
+
 			    ScoreType betta1 = s < betta ? s : betta;
-			    s = -captures(-betta1, -alpha, delta);
+			    s = -captures(killer, -betta1, -alpha, delta);
 		    }
       }
       else
@@ -147,7 +150,7 @@ private:
   }
 
   //////////////////////////////////////////////////////////////////////////
-  inline void capture(ScoreType & alpha, ScoreType betta, const Move & cap)
+  inline void capture(Move & killer, Move & ki, ScoreType & alpha, ScoreType betta, const Move & cap)
   {
 	  totalNodes_++;
 	  nodesCount_++;
@@ -164,11 +167,18 @@ private:
         if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
 			  {
 				  ScoreType betta1 = s < betta ? s : betta;
-				  s = -captures(-betta1, -alpha, delta);
+				  s = -captures(ki, -betta1, -alpha, delta);
 			  }
 		  }
 		  if ( !stop_ && s > alpha )
+      {
 			  alpha = s;
+        if ( s > killer.score_ )
+        {
+          killer = cap;
+          killer.score_ = s;
+        }
+      }
 	  }
 
 #ifndef NDEBUG

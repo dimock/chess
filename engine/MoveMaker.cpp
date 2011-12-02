@@ -8,9 +8,15 @@ bool Board::validMove(const Move & move) const
 
   THROW_IF( move.from_ < 0 || move.rindex_ > 14, "invalid move given" );
 
-  const Figure & fig = getFigure(color_, getField(move.from_).index());
+  const Field & ffrom = getField(move.from_);
+  if ( !ffrom || ffrom.color() != color_ )
+    return false;
+  
+  const Figure & fig = getFigure(color_, ffrom.index());
   if ( !fig )
     return false;
+
+  THROW_IF( fig.where() != move.from_, "figure isn't on its fiels" );
 
   int dir = g_figureDir->dir(fig, move.to_);
   if ( dir < 0 )
@@ -22,7 +28,7 @@ bool Board::validMove(const Move & move) const
 
   const Field & field = getField(move.to_);
   
-  if ( field && ( field.color() == color_ || field.index() != move.rindex_ ) )
+  if ( (field && field.color() == color_ || field.index() != move.rindex_) && en_passant_ < 0 && fig.getType() != Figure::TypePawn )
     return false;
 
   THROW_IF( field.type() > Figure::TypeQueen, "try to eat king" );

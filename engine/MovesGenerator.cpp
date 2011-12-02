@@ -5,11 +5,21 @@
 //////////////////////////////////////////////////////////////////////////
 
 MovesGenerator::MovesGenerator(Board & board) :
-  board_(board), current_(-1), numOfMoves_(0)
+  board_(board), current_(0), numOfMoves_(0)
 {
   numOfMoves_ = generate();
-  current_ = numOfMoves_ > 0 ? 0 : -1;
   moves_[numOfMoves_].clear();
+}
+
+bool MovesGenerator::find(const Move & m) const
+{
+  for (int i = 0; i < numOfMoves_; ++i)
+  {
+    const Move & move = moves_[i];
+    if ( m == move )
+      return true;
+  }
+  return false;
 }
 
 bool MovesGenerator::verify(const Move (&caps)[Board::MovesMax], const Move (&quiets)[Board::MovesMax]) const
@@ -293,11 +303,11 @@ int MovesGenerator::generate()
 }
 
 //////////////////////////////////////////////////////////////////////////
-CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, Player & player, ScoreType & alpha, ScoreType betta) :
-  board_(board), current_(-1), numOfMoves_(0), minimalType_(minimalType), player_(player)
+CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, Player & player, Move & killer, Move & ki, ScoreType & alpha, ScoreType betta) :
+  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player),
+  killer_(killer), ki_(ki)
 {
   numOfMoves_ = generate(alpha, betta);
-  current_ = numOfMoves_ > 0 ? 0 : -1;
   captures_[numOfMoves_].clear();
 }
 
@@ -339,8 +349,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
       move.rindex_ = -1;
       move.new_type_ = Figure::TypeQueen;
 
-      player_.capture(alpha, betta, move);
-      if ( alpha >= betta )
+      if ( capture(alpha, betta, move) )
         return m;
     }
   }
@@ -379,10 +388,12 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.from_ = fig.where();
           move.to_ = to;
           move.rindex_ = field.index();
-          move.new_type_ = Figure::TypeQueen;
+          move.new_type_ = 0;
 
-          player_.capture(alpha, betta, move);
-          if ( alpha >= betta )
+          if ( promotion )
+            move.new_type_ = Figure::TypeQueen;
+
+          if ( capture(alpha, betta, move) )
             return m;
         }
         else
@@ -439,8 +450,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.rindex_ = field.index();
           move.new_type_ = 0;
 
-          player_.capture(alpha, betta, move);
-          if ( alpha >= betta )
+          if ( capture(alpha, betta, move) )
             return m;
         }
         else
@@ -481,8 +491,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.rindex_ = field.index();
           move.new_type_ = 0;
 
-          player_.capture(alpha, betta, move);
-          if ( alpha >= betta )
+          if ( capture(alpha, betta, move) )
             return m;
         }
         else
@@ -500,12 +509,18 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
   return m;
 }
 
+bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & move)
+{
+  player_.capture(killer_, ki_, alpha, betta, move);
+  return alpha >= betta;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 QuietGenerator::QuietGenerator(Board & board) :
-  board_(board), current_(-1), numOfMoves_(0)
+  board_(board), current_(0), numOfMoves_(0)
 {
   numOfMoves_ = generate();
-  current_ = numOfMoves_ > 0 ? 0 : -1;
   quiets_[numOfMoves_].clear();
 }
 
