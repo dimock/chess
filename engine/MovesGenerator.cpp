@@ -370,17 +370,17 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
     if ( fig.getType() == Figure::TypePawn )
     {
       uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, fig.where()) & oppenent_mask;
-      for ( ; p_caps; )
-      {
-        int to = least_bit_number(p_caps);
+        for ( ; p_caps; )
+        {
+          int to = least_bit_number(p_caps);
 
         bool promotion = to > 55 || to < 8; // 1st || last line
 
-        THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
+          THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
 
-        const Field & field = board_.getField(to);
+          const Field & field = board_.getField(to);
         if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
-          continue;
+            continue;
 
         if ( promotion || field.type() > Figure::TypePawn )
         {
@@ -395,7 +395,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
 
           if ( capture(alpha, betta, move) )
             return m;
-        }
+          }
         else
         {
           Move & move = captures_[m++];
@@ -455,13 +455,13 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         }
         else
         {
-          Move & move = captures_[m++];
-          move.from_ = fig.where();
-          move.to_ = to;
-          move.rindex_ = field.index();
-          move.new_type_ = 0;
-        }
+        Move & move = captures_[m++];
+        move.from_ = fig.where();
+        move.to_ = to;
+        move.rindex_ = field.index();
+        move.new_type_ = 0;
       }
+    }
     }
     else // other figures
     {
@@ -496,14 +496,14 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         }
         else
         {
-          Move & move = captures_[m++];
-          move.from_ = fig.where();
-          move.to_ = to;
-          move.rindex_ = field.index();
-          move.new_type_ = 0;
-        }
+        Move & move = captures_[m++];
+        move.from_ = fig.where();
+        move.to_ = to;
+        move.rindex_ = field.index();
+        move.new_type_ = 0;
       }
     }
+  }
   }
 
   return m;

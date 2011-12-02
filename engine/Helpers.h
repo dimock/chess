@@ -44,9 +44,8 @@ inline int least_bit_number(uint64 & mask)
 
     mov edi, mask
     mov eax, dword ptr [edi]
-    bsf edx, eax
+    bsf ecx, eax
     jz  nxt
-    mov cl, dl
     mov ebx, 1
     shl ebx, cl
     xor eax, ebx
@@ -57,15 +56,14 @@ inline int least_bit_number(uint64 & mask)
     ; scan upper dword
 
 nxt:mov eax, dword ptr [edi+4]
-    bsf edx, eax
-    mov cl, dl
+    bsf ecx, eax
     mov ebx, 1
     shl ebx, cl
     xor eax, ebx
     mov dword ptr [edi+4], eax
-    add edx, 32
+    add ecx, 32
 
-end:mov dword ptr [n], edx
+end:mov dword ptr [n], ecx
   }
   return n;
 }

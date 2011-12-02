@@ -167,6 +167,13 @@ private:
     return g_moves[i];
   }
 
+  /// return short/long castle possibility
+  bool castling(Figure::Color color, int t /* 0 - short (K), 1 - long (Q) */) const
+  {
+	  THROW_IF( (unsigned)color > 1 || (unsigned)t > 1, "invalid color or castle type" );
+	  return getFigure(color, KingIndex).isFirstStep() && getFigure(color, RookIndex-t) && getFigure(color, RookIndex-t).isFirstStep();
+  }
+
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
 
@@ -242,7 +249,7 @@ private:
 
   /// index of castle's possibility
   /// indices: [0 - black, 1 - white] [0 - short (King), 1 - long (Queen)]
-  bool castle_index_[2][2];
+  //bool castle_index_[2][2];
 
   /// 0 - no castle, 1 - short, 2 - long
   uint8 castle_[2];

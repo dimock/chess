@@ -99,8 +99,8 @@ private:
   //////////////////////////////////////////////////////////////////////////
   inline void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & before, Move & b, const Move & mv, Move & move, bool & found, int & counter)
   {
-	  totalNodes_++;
-	  nodesCount_++;
+	totalNodes_++;
+	nodesCount_++;
 
     if ( board_.makeMove(mv) )
     {

@@ -1,4 +1,4 @@
-bits = 1134765260406784
+bits = 352192864402
 
 for i in xrange(0, 64):
     if (i & 7) == 0 and i > 0:

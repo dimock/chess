@@ -255,6 +255,40 @@ public:
     THROW_IF(mask_[fig.getColor()] & (1ULL << from), "invalid figures mask");
   }
 
+  // the same as original versions, except of skipped mask & zcode
+  void u_incr(const Figure & fig)
+  {
+	  fcounter_[fig.getColor()].incr(fig);
+	  //const uint64 & uc = code(fig, fig.where());
+	  //hashCode_ ^= uc;
+	  //mask_[fig.getColor()] |= 1ULL << fig.where();
+  }
+
+  void u_decr(const Figure & fig)
+  {
+	  fcounter_[fig.getColor()].decr(fig);
+	  //const uint64 & uc = code(fig, fig.where());
+	  //hashCode_ ^= uc;
+	  //mask_[fig.getColor()] ^= 1ULL << fig.where();
+  }
+
+  void u_move(Figure & fig, int to)
+  {
+	  //int from = fig.where();
+
+	  //const uint64 & uc0 = code(fig, from);
+	  //const uint64 & uc1 = code(fig, to);
+	  //hashCode_ ^= uc0;
+	  //hashCode_ ^= uc1;
+
+	  fcounter_[fig.getColor()].move(fig, to);
+
+	  //mask_[fig.getColor()] ^= 1ULL << from;
+	  //mask_[fig.getColor()] |= 1ULL << to;
+
+	  //THROW_IF(mask_[fig.getColor()] & (1ULL << from), "invalid figures mask");
+  }
+
   void hashEnPassant(uint8 pos, uint8 color)
   {
     const uint64 & enpassantCode = s_zobristCodes_[ (pos<<4) | (color<<3)/* | fig.getType() - use 0 instead*/ ];
@@ -271,6 +305,14 @@ public:
   {
     hashCode_ ^= s_zobristColor_;
   }
+
+  void restoreMasks(const uint64 (& mask)[2])
+  {
+	  mask_[0] = mask[0];
+	  mask_[1] = mask[1];
+  }
+
+  void restoreHash(const uint64 & hcode) { hashCode_ = hcode; }
 
   int count(Figure::Color color) const { return fcounter_[color].count(); }
   int count() const { return fcounter_[0].count() + fcounter_[1].count(); }

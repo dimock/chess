@@ -138,7 +138,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
       printPV(sres, out);
     }
 
-	  firstIter_ = false;
+	firstIter_ = false;
 
     if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
       break;
@@ -177,30 +177,30 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   //QpfTimer qpt;
 
-  MovesGenerator mg(board_);
+	MovesGenerator mg(board_);
 
   //Board::ticks_ += qpt.ticks();
   //Board::tcounter_++;
 
-  for ( ; !stop_ && alpha < betta ; )
-  {
-    const Move & mv = mg.move();
-    if ( !mv )
-      break;
+	for ( ; !stop_ && alpha < betta ; )
+	{
+	  const Move & mv = mg.move();
+	  if ( !mv )
+		break;
 
-    if ( mv == before )
-	    continue;
+	  if ( mv == before )
+		  continue;
 
-    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-      testTimer();
+	  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+		testTimer();
 
-    if ( stop_ )
-      break;
-    
-    THROW_IF( !board_.validMove(mv), "move validation failed" );
+	  if ( stop_ )
+		break;
+	  
+	  THROW_IF( !board_.validMove(mv), "move validation failed" );
 
-    movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
-  }
+	  movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
+	}
 
   if ( stop_ )
     return alpha;
@@ -260,7 +260,7 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
   //Board::ticks_ += qpt.ticks();
   //Board::tcounter_ += cg.count();
 
-  for ( ; !stop_ && alpha < betta ; )
+	for ( ; !stop_ && alpha < betta ; )
 	{
 		const Move & cap = cg.capture();
 		if ( !cap )

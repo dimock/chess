@@ -14,7 +14,16 @@ public:
   }
 
   inline operator bool () const { return type_ != 0; }
-  inline int index() const { return type_ ? index_ : -1; } // OPTIMIZE
+  
+  inline int index() const
+  {
+	  //int8 mask = (type_ - 1) >> 31; // no type: -1; has type: 0
+	  //int8 i = index_ | mask;
+	  //THROW_IF( (type_ && i != index_ || !type_ && i != -1), "invalid field index calcualated" );
+	  //return i;
+	  return type_ ? index_ : -1;
+  } // OPTIMIZE
+
   inline Figure::Type  type() const { return (Figure::Type)type_; }
   inline Figure::Color color() const { return (Figure::Color)color_; }
 

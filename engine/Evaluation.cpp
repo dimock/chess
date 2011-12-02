@@ -258,7 +258,7 @@ ScoreType Board::calculateEval() const
       const Figure & rook1 = getFigure((Figure::Color)color, RookIndex);
       const Figure & rook2 = getFigure((Figure::Color)color, RookIndex+1);
 
-      if ( !castle_index_[color][0] && !castle_index_[color][1] /*!king.isFirstStep() || (!rook1 && !rook2)*/ ) // castle impossible
+	  if ( !castling((Figure::Color)color, 0) && !castling((Figure::Color)color, 1)) // castle impossible
       {
         bool penalty = !((rook1 && (rook1.where()&7) > (king.where()&7)) || (rook2 && (rook2.where()&7) < (king.where()&7)));
         if ( penalty )
