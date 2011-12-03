@@ -43,6 +43,11 @@ struct Move
   {
     return *reinterpret_cast<const uint32*>(this) == *reinterpret_cast<const uint32*>(&other);
   }
+
+  bool operator != (const Move & other) const
+  {
+    return *reinterpret_cast<const uint32*>(this) != *reinterpret_cast<const uint32*>(&other);
+  }
 };
 
 /*! complete move structure with all necessary unmove information

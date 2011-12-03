@@ -3,18 +3,23 @@
 
 bool Board::validMove(const Move & move) const
 {
-  if ( move.to_ < 0 )
+  if ( !move )
     return false;
 
-  THROW_IF( move.from_ < 0 || move.rindex_ > 14, "invalid move given" );
+  THROW_IF( move.to_ > 63 || move.from_ < 0 || move.from_ > 63 || move.rindex_ > 14, "invalid move given" );
 
   const Field & ffrom = getField(move.from_);
   if ( !ffrom || ffrom.color() != color_ )
     return false;
-  
-  const Figure & fig = getFigure(color_, ffrom.index());
-  if ( !fig )
+
+  // only kings move is possible
+  if ( checkingNum_ > 1 && ffrom.type() != Figure::TypeKing )
     return false;
+
+  const Figure & fig = getFigure(color_, ffrom.index());
+  THROW_IF( !fig, "there is no figure on field from in validMove" );
+  //if ( !fig )
+  //  return false;
 
   THROW_IF( fig.where() != move.from_, "figure isn't on its fiels" );
 
@@ -22,22 +27,23 @@ bool Board::validMove(const Move & move) const
   if ( dir < 0 )
     return false;
 
-  // castle. don't check if there is piece in "to"-field
+  // castle
   if ( fig.getType() == Figure::TypeKing && (8 == dir || 9 == dir) )
-    return move.rindex_ < 0 && fig.isFirstStep() && 0 == checkingNum_ && (fig.where() == 4 && color_ || fig.where() == 60 && !color_);
+    return move.rindex_ < 0 && fig.isFirstStep() && !getField(move.to_) && 0 == checkingNum_ && (fig.where() == 4 && color_ || fig.where() == 60 && !color_);
 
   const Field & field = getField(move.to_);
-  
-  if ( (field && field.color() == color_ || field.index() != move.rindex_) && en_passant_ < 0 && fig.getType() != Figure::TypePawn )
+  if ( field && (field.type() == Figure::TypeKing || field.color() == color_) )
     return false;
-
-  THROW_IF( field.type() > Figure::TypeQueen, "try to eat king" );
-
-  if ( fig.getType() == Figure::TypeKing || fig.getType() == Figure::TypeKnight )
-    return true;
 
   switch ( fig.getType() )
   {
+  case Figure::TypeKnight:
+  case Figure::TypeKing:
+    {
+      return (!field && move.rindex_ < 0) || (field && field.index() == move.rindex_);
+    }
+    break;
+
   case Figure::TypePawn:
     {
       int8 y = move.to_ >> 3;
@@ -48,8 +54,8 @@ bool Board::validMove(const Move & move) const
 
       if ( field )
       {
-        THROW_IF( field.color() == color_ || field.index() != move.rindex_, "pawn does invalid capture" );
-        return 0 == dir || 1 == dir;
+        THROW_IF( field.color() == color_ , "pawn does invalid capture" );
+        return (0 == dir || 1 == dir) && (field.index() == move.rindex_);
       }
       else if ( en_passant_ >= 0 && move.rindex_ == en_passant_ && (0 == dir || 1 == dir) )
       {
@@ -72,11 +78,14 @@ bool Board::validMove(const Move & move) const
   case Figure::TypeRook:
   case Figure::TypeQueen:
     {
+      if ( (!field && move.rindex_ >= 0) || (field && field.index() != move.rindex_) )
+        return false;
+
       const uint64 & mask = g_betweenMasks->between(move.from_, move.to_);
       const uint64 & black = fmgr_.mask(Figure::ColorBlack);
       const uint64 & white = fmgr_.mask(Figure::ColorWhite);
 
-      bool ok = (mask & ~black & ~white) == mask;
+      bool ok = (mask & ~(black | white)) == mask;
       return ok;
     }
     break;
@@ -104,10 +113,10 @@ bool Board::doMove()
 
   /// hashing castle possibility
   if ( castling(color_, 0) && (fig.getType() == Figure::TypeKing || fig.getType() == Figure::TypeRook && (fig.where() == 63 && !color_ || fig.where() == 7 && color_)) )
-	  fmgr_.hashCastling(color_, 0);
+    fmgr_.hashCastling(color_, 0);
 
   if ( castling(color_, 1) && (fig.getType() == Figure::TypeKing || fig.getType() == Figure::TypeRook && (fig.where() == 56 && !color_ || fig.where() == 0 && color_)) )
-	  fmgr_.hashCastling(color_, 1);
+    fmgr_.hashCastling(color_, 1);
 
   int d = move.to_ - move.from_;
   if ( fig.getType() == Figure::TypeKing && (2 == d || -2 == d) )// castle
@@ -131,16 +140,16 @@ bool Board::doMove()
     // then verify if there is suitable rook fo castling
     move.rook_from_ = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
 
-	THROW_IF( (move.rook_from_ != 0 && color_ && d < 0) || (move.rook_from_ != 7 && color_ && d > 0), "invalid castle rook position" );
-	THROW_IF( (move.rook_from_ != 56 && !color_ && d < 0) || (move.rook_from_ != 63 && !color_ && d > 0), "invalid castle rook position" );
+    THROW_IF( (move.rook_from_ != 0 && color_ && d < 0) || (move.rook_from_ != 7 && color_ && d > 0), "invalid castle rook position" );
+    THROW_IF( (move.rook_from_ != 56 && !color_ && d < 0) || (move.rook_from_ != 63 && !color_ && d > 0), "invalid castle rook position" );
 
     Field & rf_field = getField(move.rook_from_);
     if ( rf_field.type() != Figure::TypeRook || rf_field.color() != color_ )
       return false;
 
-	// long castling is impossible
-	if ( !(move.rook_from_ & 3) && getField(move.rook_from_+1) )
-		return false;
+    // is long castling possible
+    if ( !(move.rook_from_ & 3) && getField(move.rook_from_+1) )
+      return false;
 
     move.rook_index_ = rf_field.index();
     Figure & rook = getFigure(color_, move.rook_index_);
@@ -167,16 +176,16 @@ bool Board::doMove()
   {
     Figure & rfig = getFigure(ocolor, move.rindex_);
 
-	// castle possibility
-	if ( rfig.getType() == Figure::TypeRook )
-	{
-		// short castle
-		if ( castling(ocolor, 0) && (rfig.where() == 63 && !ocolor ||rfig.where() == 7 && ocolor) )
-			fmgr_.hashCastling(ocolor, 0);
-		// long castle
-		else if ( castling(ocolor, 1) && (rfig.where() == 56 && !ocolor || rfig.where() == 0 && ocolor) )
-			fmgr_.hashCastling(ocolor, 1);
-	}
+    // castle possibility
+    if ( rfig.getType() == Figure::TypeRook )
+    {
+      // short castle
+      if ( castling(ocolor, 0) && (rfig.where() == 63 && !ocolor ||rfig.where() == 7 && ocolor) )
+        fmgr_.hashCastling(ocolor, 0);
+      // long castle
+      else if ( castling(ocolor, 1) && (rfig.where() == 56 && !ocolor || rfig.where() == 0 && ocolor) )
+        fmgr_.hashCastling(ocolor, 1);
+    }
 
     move.eaten_type_ = rfig.getType();
     getField(rfig.where()).clear();
@@ -362,12 +371,12 @@ bool Board::makeMove(const Move & mv)
   move.stage_ = stages_[color_];
 
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color_);
-  
+
   // we need to go to endgame if there is capture and most of material is lost
   stages_[color_] |= ( (move.rindex_ >= 0 && 0 == stages_[color_]) &&
     ( !((fmgr_.queens(ocolor) > 0 && fmgr_.rooks(ocolor)+fmgr_.knights(ocolor)+fmgr_.bishops(ocolor) > 0) ||
-        (fmgr_.rooks (ocolor) > 1 && fmgr_.bishops(ocolor)+fmgr_.knights(ocolor) > 1) ||
-        (fmgr_.rooks (ocolor) > 0 && ((fmgr_.bishops_w(ocolor) > 0 && fmgr_.bishops_b(ocolor) > 0) || (fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 2)))) ) ) & 1;
+    (fmgr_.rooks (ocolor) > 1 && fmgr_.bishops(ocolor)+fmgr_.knights(ocolor) > 1) ||
+    (fmgr_.rooks (ocolor) > 0 && ((fmgr_.bishops_w(ocolor) > 0 && fmgr_.bishops_b(ocolor) > 0) || (fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 2)))) ) ) & 1;
 
   move.old_checkingNum_ = checkingNum_;
   move.old_checking_[0] = checking_[0];

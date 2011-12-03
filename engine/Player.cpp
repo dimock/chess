@@ -195,9 +195,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 		testTimer();
 
 	  if ( stop_ )
-		break;
+		  break;
 	  
-	  THROW_IF( !board_.validMove(mv), "move validation failed" );
+	  //THROW_IF( !board_.validMove(mv), "move validation failed" );
 
 	  movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
 	}
@@ -234,11 +234,15 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
 
   if ( killer && board_.validMove(killer) )
   {
+#ifndef NDEBUG
     MovesGenerator mg(board_);
     if ( !mg.find(killer) )
     {
       board_.validMove(killer);
+      THROW_IF( true, "move has passed validation but not found generated in moves list" );
     }
+#endif
+
     capture(killer, ki, alpha, betta, killer);
   }
 
@@ -271,6 +275,9 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
 
 		if ( stop_ )
 			break;
+
+    if ( killer == cap )
+      continue;
 
 		THROW_IF( !board_.validMove(cap), "move validation failed" );
 

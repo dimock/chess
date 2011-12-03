@@ -349,7 +349,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
       move.rindex_ = -1;
       move.new_type_ = Figure::TypeQueen;
 
-      if ( capture(alpha, betta, move) )
+      if ( move != killer_ && capture(alpha, betta, move) )
         return m;
     }
   }
@@ -360,31 +360,37 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
   const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
   uint64 mask_all_inv = ~(white | black);
 
+
+  static int s_findex[2][Board::NumOfFigures] = { {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}, {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0} };
+  int v = board_.checkingNum_ > 1 ? 1 : 0;
+
   // generate captures
-  for (int i = Board::KingIndex; i >= 0; --i)
+  for (int i = 0; i < Board::NumOfFigures; ++i)
   {
-    const Figure & fig = board_.getFigure(board_.color_, i);
+    int n = s_findex[v][i];
+    const Figure & fig = board_.getFigure(board_.color_, n);
     if ( !fig )
       continue;
 
     if ( fig.getType() == Figure::TypePawn )
     {
       uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, fig.where()) & oppenent_mask;
-        for ( ; p_caps; )
-        {
-          int to = least_bit_number(p_caps);
+      for ( ; p_caps; )
+      {
+        int to = least_bit_number(p_caps);
 
         bool promotion = to > 55 || to < 8; // 1st || last line
 
-          THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
+        THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
 
-          const Field & field = board_.getField(to);
+        const Field & field = board_.getField(to);
         if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
-            continue;
+          continue;
 
         if ( promotion || field.type() > Figure::TypePawn )
         {
           Move move;
+
           move.from_ = fig.where();
           move.to_ = to;
           move.rindex_ = field.index();
@@ -393,9 +399,9 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           if ( promotion )
             move.new_type_ = Figure::TypeQueen;
 
-          if ( capture(alpha, betta, move) )
+          if ( move != killer_ && capture(alpha, betta, move) )
             return m;
-          }
+        }
         else
         {
           Move & move = captures_[m++];
@@ -450,18 +456,18 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.rindex_ = field.index();
           move.new_type_ = 0;
 
-          if ( capture(alpha, betta, move) )
+          if ( move != killer_ && capture(alpha, betta, move) )
             return m;
         }
         else
         {
-        Move & move = captures_[m++];
-        move.from_ = fig.where();
-        move.to_ = to;
-        move.rindex_ = field.index();
-        move.new_type_ = 0;
+          Move & move = captures_[m++];
+          move.from_ = fig.where();
+          move.to_ = to;
+          move.rindex_ = field.index();
+          move.new_type_ = 0;
+        }
       }
-    }
     }
     else // other figures
     {
@@ -491,19 +497,23 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.rindex_ = field.index();
           move.new_type_ = 0;
 
-          if ( capture(alpha, betta, move) )
+          if ( move != killer_ && capture(alpha, betta, move) )
             return m;
         }
         else
         {
-        Move & move = captures_[m++];
-        move.from_ = fig.where();
-        move.to_ = to;
-        move.rindex_ = field.index();
-        move.new_type_ = 0;
+          Move & move = captures_[m++];
+          move.from_ = fig.where();
+          move.to_ = to;
+          move.rindex_ = field.index();
+          move.new_type_ = 0;
+        }
       }
     }
-  }
+
+    // only king's movements are available
+    if ( board_.checkingNum_ > 1 )
+      break;
   }
 
   return m;
@@ -529,6 +539,7 @@ int QuietGenerator::generate()
   int m = 0;
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
+
   for (int n = Board::KingIndex; n >= 0; --n)
   {
     const Figure & fig = board_.getFigure(color, n);
@@ -650,6 +661,10 @@ int QuietGenerator::generate()
       }
       break;
     }
+
+    // only king's movements are available
+    if ( board_.checkingNum_ > 1 )
+      break;
   }
 
   return m;

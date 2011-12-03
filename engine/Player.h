@@ -99,8 +99,12 @@ private:
   //////////////////////////////////////////////////////////////////////////
   inline void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & before, Move & b, const Move & mv, Move & move, bool & found, int & counter)
   {
-	totalNodes_++;
-	nodesCount_++;
+	  totalNodes_++;
+	  nodesCount_++;
+
+#ifndef NDEBUG
+    Board board0 = board_;
+#endif
 
     if ( board_.makeMove(mv) )
     {
@@ -117,8 +121,10 @@ private:
           Move killer;
           killer.clear();
 
+          QpfTimer qpt;
 			    ScoreType betta1 = s < betta ? s : betta;
 			    s = -captures(killer, -betta1, -alpha, delta);
+          Board::ticks_ += qpt.ticks();
 		    }
       }
       else
@@ -144,6 +150,8 @@ private:
 
     board_.unmakeMove();
 
+    THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
+
 #ifndef NDEBUG
     board_.verifyMasks();
 #endif
@@ -154,6 +162,10 @@ private:
   {
 	  totalNodes_++;
 	  nodesCount_++;
+
+#ifndef NDEBUG
+    Board board0 = board_;
+#endif
 
 	  if ( board_.makeMove(cap) )
 	  {
@@ -186,6 +198,8 @@ private:
 #endif
 
 	  board_.unmakeMove();
+
+    THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
 
 #ifndef NDEBUG
 	  board_.verifyMasks();
