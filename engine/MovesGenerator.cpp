@@ -342,15 +342,21 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
       if ( board_.getField(to) || Figure::TypeQueen == minimalType_ )
         continue;
 
-      Move move;// = captures_[m++];
+#ifdef GO_IMMEDIATELY
+      Move move;
+#else
+      Move & move = captures_[m++];
+#endif
 
       move.from_ = from;
       move.to_ = to;
       move.rindex_ = -1;
       move.new_type_ = Figure::TypeQueen;
 
+#ifdef GO_IMMEDIATELY
       if ( move != killer_ && capture(alpha, betta, move) )
         return m;
+#endif
     }
   }
 
@@ -387,6 +393,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
           continue;
 
+#ifdef GO_IMMEDIATELY
         if ( promotion || field.type() > Figure::TypePawn )
         {
           Move move;
@@ -403,6 +410,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
             return m;
         }
         else
+#endif
         {
           Move & move = captures_[m++];
           move.from_ = fig.where();
@@ -448,6 +456,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         if ( field.type() < minimalType_ )
           continue;
 
+#ifdef GO_IMMEDIATELY
         if ( field.type() > Figure::TypeKnight )
         {
           Move move;
@@ -460,6 +469,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
             return m;
         }
         else
+#endif
         {
           Move & move = captures_[m++];
           move.from_ = fig.where();
@@ -489,6 +499,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         if ( (btw_msk & mask_all_inv) != btw_msk )
           continue;
 
+#ifdef GO_IMMEDIATELY
         if ( field.type() > fig.getType() )
         {
           Move move;
@@ -501,6 +512,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
             return m;
         }
         else
+#endif
         {
           Move & move = captures_[m++];
           move.from_ = fig.where();

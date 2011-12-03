@@ -121,10 +121,10 @@ private:
           Move killer;
           killer.clear();
 
-          QpfTimer qpt;
+          //QpfTimer qpt;
 			    ScoreType betta1 = s < betta ? s : betta;
 			    s = -captures(killer, -betta1, -alpha, delta);
-          Board::ticks_ += qpt.ticks();
+          //Board::ticks_ += qpt.ticks();
 		    }
       }
       else
@@ -199,7 +199,7 @@ private:
 
 	  board_.unmakeMove();
 
-    THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
+    THROW_IF( board0 != board_, "board unmake wasn't applied correctly" );
 
 #ifndef NDEBUG
 	  board_.verifyMasks();

@@ -232,6 +232,8 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
   Move ki;
   ki.clear();
 
+#ifdef GO_IMMEDIATELY
+
   if ( killer && board_.validMove(killer) )
   {
 #ifndef NDEBUG
@@ -247,7 +249,12 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
   }
 
   if ( alpha >= betta )
+  {
+    Board::ticks_++;
     return alpha;
+  }
+#endif
+
 
   Figure::Type minimalType = Figure::TypePawn;
   if ( delta > Figure::figureWeight_[Figure::TypeRook] )
@@ -276,8 +283,11 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
 		if ( stop_ )
 			break;
 
+#ifdef GO_IMMEDIATELY
     if ( killer == cap )
       continue;
+#endif
+
 
 		THROW_IF( !board_.validMove(cap), "move validation failed" );
 
