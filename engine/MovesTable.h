@@ -14,6 +14,7 @@ class MovesTable
   uint64 s_pawnsCaps_o_[2][64];
   uint64 s_otherCaps_[8][64];
   uint64 s_pawnPromotions_t_[2];
+  uint64 s_pawnPromotions_o_[2];
 
   void resetAllTables(int);
 
@@ -71,6 +72,12 @@ public:
   {
     THROW_IF( (unsigned)color > 1, "invalid color of promotion mask" );
     return s_pawnPromotions_t_[color];
+  }
+
+  inline const uint64 & promote_o(int color) const
+  {
+    THROW_IF( (unsigned)color > 1, "invalid color of promotion mask" );
+    return s_pawnPromotions_o_[color];
   }
 
   inline const uint64 & caps(int type, int pos) const

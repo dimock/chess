@@ -315,22 +315,21 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
 {
   int m = 0;
 
-  // generate pawn promotions
-  const uint64 & pawn_msk = board_.fmgr_.pawn_mask(board_.color_);
-  uint64 promo_msk = board_.g_movesTable->promote_t(board_.color_);
-  promo_msk &= pawn_msk;
-
+  // generate pawn promotions (only if < 2 checking figures)
+  const uint64 & pawn_msk = board_.fmgr_.pawn_mask_o(board_.color_);
   static int pw_delta[] = { -8, 8 };
 
-  if ( promo_msk )
+  if ( board_.checkingNum_ < 2 )
   {
+    uint64 promo_msk = board_.g_movesTable->promote_o(board_.color_);
+    promo_msk &= pawn_msk;
+
     for ( ; promo_msk; )
     {
-      int n = least_bit_number(promo_msk);
+      int from = least_bit_number(promo_msk);
 
-      THROW_IF( (unsigned)n > 63, "invalid promoted pawn's position" );
+      THROW_IF( (unsigned)from > 63, "invalid promoted pawn's position" );
 
-      int from = FiguresCounter::s_transposeIndex_[n];
       const Field & field = board_.getField(from);
 
       THROW_IF( !field || field.color() != board_.color_ || field.type() != Figure::TypePawn, "there is no pawn to promote" );
@@ -366,12 +365,44 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
   const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
   uint64 mask_all_inv = ~(white | black);
 
+  // firstly check do we have at least 1 attacking pawn
+  bool pawns_eat = false;
+
+  uint64 pawn_eat_msk = 0;
+  if ( board_.color_ )
+    pawn_eat_msk = ((pawn_msk << 9) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk << 7) & Figure::pawnCutoffMasks_[1]);
+  else
+    pawn_eat_msk = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
+
+  pawns_eat = (pawn_eat_msk & oppenent_mask) != 0;
+
+  if ( !pawns_eat && board_.en_passant_ >= 0 && minimalType_ <= Figure::TypePawn )
+  {
+    const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
+    THROW_IF( !epawn, "there is no en passant pawn" );
+
+    int to = epawn.where() + pw_delta[board_.color_];
+    THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
+
+    pawns_eat = (pawn_eat_msk & (1ULL << to)) != 0;
+  }
 
   static int s_findex[2][Board::NumOfFigures] = { {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}, {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0} };
   int v = board_.checkingNum_ > 1 ? 1 : 0;
 
+  int i0 = 0;
+  if ( !v && !pawns_eat )
+  {
+    for ( ;; ++i0)
+    {
+      const Figure & fig = board_.getFigure(board_.color_, i0);
+      if ( fig.getType() > Figure::TypePawn )
+        break;
+    }
+  }
+
   // generate captures
-  for (int i = 0; i < Board::NumOfFigures; ++i)
+  for (int i = i0; i < Board::NumOfFigures; ++i)
   {
     int n = s_findex[v][i];
     const Figure & fig = board_.getFigure(board_.color_, n);
@@ -383,6 +414,8 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
       uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, fig.where()) & oppenent_mask;
       for ( ; p_caps; )
       {
+        THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
+
         int to = least_bit_number(p_caps);
 
         bool promotion = to > 55 || to < 8; // 1st || last line
@@ -401,10 +434,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.from_ = fig.where();
           move.to_ = to;
           move.rindex_ = field.index();
-          move.new_type_ = 0;
-
-          if ( promotion )
-            move.new_type_ = Figure::TypeQueen;
+          move.new_type_ = promotion ? Figure::TypeQueen : 0;
 
           if ( move != killer_ && capture(alpha, betta, move) )
             return m;
@@ -416,7 +446,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.from_ = fig.where();
           move.to_ = to;
           move.rindex_ = field.index();
-          move.new_type_ = 0;
+          move.new_type_ = promotion ? Figure::TypeQueen : 0;
         }
       }
 
@@ -431,6 +461,8 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         int dir = board_.g_figureDir->dir(fig, to);
         if ( 0 == dir || 1 == dir )
         {
+          THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
+
           Move & move = captures_[m++];
           move.from_ = fig.where();
           move.to_ = to;

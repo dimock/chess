@@ -16,6 +16,25 @@ MovesTable::MovesTable()
     initRooks(i);
     initQueens(i);
   }
+
+  // pawn promotions
+  for (int color = 0; color < 2; ++color)
+  {
+    s_pawnPromotions_t_[color] = 0;
+    s_pawnPromotions_o_[color] = 0;
+
+    int y = color ? 6 : 1;
+    for (int x = 0; x < 8; ++x)
+    {
+      int pp = x | (y << 3);
+
+      // fill ordinary promotion mask
+      s_pawnPromotions_o_[color] |= 1ULL << pp;
+
+      // fill transposed promotion mask
+      s_pawnPromotions_t_[color] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
+    }
+  }
 }
 
 void MovesTable::resetAllTables(int pos)
@@ -39,7 +58,6 @@ void MovesTable::resetAllTables(int pos)
   {
     s_pawnsCaps_t_[color][pos] = 0;
     s_pawnsCaps_o_[color][pos] = 0;
-    s_pawnPromotions_t_[color] = 0;
   }
 
   for (int type = 0; type < 8; ++type)
@@ -79,14 +97,6 @@ void MovesTable::initPawns(int pos)
         s_pawnsCaps_o_[color][pos] |= 1ULL << pp;
         s_pawnsCaps_t_[color][pos] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
       }
-    }
-
-    // fill transposed promotion mask
-    int y = color ? 6 : 1;
-    for (int x = 0; x < 8; ++x)
-    {
-      int pp = x | (y << 3);
-      s_pawnPromotions_t_[color] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
     }
   }
 }

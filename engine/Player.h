@@ -115,6 +115,7 @@ private:
       else if ( depth <= 1 )
       {
         s = -board_.evaluate();
+#ifdef PERFORM_CAPTURES
         int delta = (int)s - (int)betta - (int)Figure::positionGain_;
         if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
 		    {
@@ -126,6 +127,7 @@ private:
 			    s = -captures(killer, -betta1, -alpha, delta);
           //Board::ticks_ += qpt.ticks();
 		    }
+#endif
       }
       else
       {

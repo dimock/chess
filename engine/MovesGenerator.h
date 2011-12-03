@@ -2,8 +2,6 @@
 
 #include "Board.h"
 
-#define GO_IMMEDIATELY
-
 
 /// generate all movies from this position. don't verify and sort them. only calculate sort weights
 class MovesGenerator

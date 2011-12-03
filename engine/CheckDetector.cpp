@@ -388,9 +388,9 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
   if ( n_caps & knight_msk )
     return true;
 
-  // pawns. masks are transposed
-  const uint64 & p_caps = g_movesTable->pawnCaps_t(ocolor, pos);
-  const uint64 & pawn_msk = fmgr_.pawn_mask(c);
+  // pawns
+  const uint64 & p_caps = g_movesTable->pawnCaps_o(ocolor, pos);
+  const uint64 & pawn_msk = fmgr_.pawn_mask_o(c);
   if ( p_caps & pawn_msk )
     return true;
 

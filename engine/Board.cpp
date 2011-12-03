@@ -799,7 +799,8 @@ void Board::verifyMasks() const
 {
   for (int c = 0; c < 2; ++c)
   {
-    uint64 pawn_mask = 0ULL;
+    uint64 pawn_mask_o = 0ULL;
+    uint64 pawn_mask_t = 0ULL;
     uint64 knight_mask = 0ULL;
     uint64 bishop_mask = 0ULL;
     uint64 rook_mask = 0ULL;
@@ -821,7 +822,8 @@ void Board::verifyMasks() const
         {
           int x = f.where() & 7;
           int y = f.where() >>3;
-          pawn_mask |= 1ULL << ((x << 3) | y);
+          pawn_mask_t |= 1ULL << ((x << 3) | y);
+          pawn_mask_o |= 1ULL << f.where();
         }
         break;
 
@@ -847,13 +849,14 @@ void Board::verifyMasks() const
       }
     }
 
-    THROW_IF( pawn_mask != fmgr_.pawn_mask(color), "pawn mask invalid" );
+    THROW_IF( pawn_mask_o != fmgr_.pawn_mask_o(color), "pawn mask invalid" );
+    THROW_IF( pawn_mask_t != fmgr_.pawn_mask_t(color), "pawn mask invalid" );
     THROW_IF( knight_mask != fmgr_.knight_mask(color), "knight mask invalid" );
     THROW_IF( bishop_mask != fmgr_.bishop_mask(color), "bishop mask invalid" );
     THROW_IF( rook_mask != fmgr_.rook_mask(color), "rook mask invalid" );
     THROW_IF( queen_mask != fmgr_.queen_mask(color), "queen mask invalid" );
     THROW_IF( king_mask != fmgr_.king_mask(color), "king mask invalid" );
-    //THROW_IF( all_mask != fmgr_.mask(color), "invalid all figures mask" );
+    THROW_IF( all_mask != fmgr_.mask(color), "invalid all figures mask" );
 
   }
 }

@@ -29,6 +29,18 @@ typedef unsigned __int64 uint64;
 
 typedef int16 ScoreType;
 
+#define GO_IMMEDIATELY
+#define PERFORM_CAPTURES
+#undef NO_TIME_LIMIT
+
+#ifndef NDEBUG
+  #define TIMING_FLAG 0xFFF
+#else
+  #define TIMING_FLAG 0xFFFF
+#endif
+
+
+
 enum { MaxDepth = 48 };
 
 

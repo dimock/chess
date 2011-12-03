@@ -173,9 +173,9 @@ ScoreType Figure::pawnPassed_[2][8] = {
 
 #define EVALUATE_PAWNS(wght, color)\
 {\
-  const uint64 & pmsk = fmgr_.pawn_mask(color);\
+  const uint64 & pmsk = fmgr_.pawn_mask_t(color);\
   Figure::Color ocolor = Figure::otherColor(color);\
-  const uint64 & opmsk = fmgr_.pawn_mask(ocolor);\
+  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);\
   EVALUATE_PAWN_COLUMN(wght, color, 0);\
   EVALUATE_PAWN_COLUMN(wght, color, 1);\
   EVALUATE_PAWN_COLUMN(wght, color, 2);\
@@ -243,7 +243,7 @@ ScoreType Board::calculateEval() const
       static uint8 shifts[2] = { 5, 1 };
       static ScoreType king_penalties[2][4] = { {10, 5, 0, 0}, {10, 0, 5, 0} };
 
-      const uint8 * pmsk = (const uint8*)&fmgr_.pawn_mask((Figure::Color)color);
+      const uint8 * pmsk = (const uint8*)&fmgr_.pawn_mask_t((Figure::Color)color);
 
       for (int i = 0; i < 3; ++i)
       {

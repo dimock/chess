@@ -2,14 +2,6 @@
 #include "Player.h"
 #include "MovesGenerator.h"
 
-#undef NO_TIME_LIMIT
-
-#ifndef NDEBUG
-  #define TIMING_FLAG 0xFFF
-#else
-  #define TIMING_FLAG 0xFFFF
-#endif
-
 //////////////////////////////////////////////////////////////////////////
 
 SearchResult::SearchResult() :
@@ -186,7 +178,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	{
 	  const Move & mv = mg.move();
 	  if ( !mv )
-		break;
+		  break;
 
 	  if ( mv == before )
 		  continue;
@@ -250,7 +242,6 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
 
   if ( alpha >= betta )
   {
-    Board::ticks_++;
     return alpha;
   }
 #endif
@@ -269,7 +260,7 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
   //QpfTimer qpt;
   CapsGenerator cg(board_, minimalType, *this, killer, ki, alpha, betta);
   //Board::ticks_ += qpt.ticks();
-  //Board::tcounter_ += cg.count();
+  //Board::tcounter_ ++;//= cg.count();
 
 	for ( ; !stop_ && alpha < betta ; )
 	{
