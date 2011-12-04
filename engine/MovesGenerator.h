@@ -30,8 +30,6 @@ public:
 
   bool find(const Move & m) const;
 
-  bool verify(const Move (&caps)[Board::MovesMax], const Move (&quiets)[Board::MovesMax]) const;
-
 private:
 
   /// returns number of moves found
@@ -93,16 +91,16 @@ private:
 };
 
 
-/// generate all but captures/promotions
-class QuietGenerator
+/// generate all moves, that escape from check
+class EscapeGenerator
 {
 public:
 
-  QuietGenerator(Board &);
+  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
 
-  Move & quiet()
+  Move & escape()
   {
-    return quiets_[current_++];
+    return escapes_[current_++];
   }
 
   operator bool () const
@@ -117,17 +115,23 @@ public:
 
   const Move (&quiets() const)[Board::MovesMax]
   {
-    return quiets_;
+    return escapes_;
   }
 
 private:
 
   /// returns number of moves found
-  int generate();
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter);
+  int generateKingonly(ScoreType & alpha, ScoreType betta, int & counter);
 
   int current_;
   int numOfMoves_;
 
+  Player & player_;
+  int ply_;
+  int depth_;
+
   Board & board_;
-  Move quiets_[Board::MovesMax];
+  Move escapes_[Board::MovesMax];
 };

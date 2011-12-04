@@ -28,6 +28,7 @@ public:
 
 class CapsGenerator;
 class MovesGenerator;
+class EscapeGenerator;
 
 struct PlyContext
 {
@@ -43,6 +44,7 @@ class Player
 {
   friend class CapsGenerator;
   friend class MovesGenerator;
+  friend class EscapeGenerator;
 
   enum { MaxPly = 128 };
 

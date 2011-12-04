@@ -20,6 +20,7 @@ MovesGenerator::MovesGenerator(Board & board) :
   moves_[numOfMoves_].clear();
 }
 
+//////////////////////////////////////////////////////////////////////////
 bool MovesGenerator::find(const Move & m) const
 {
   for (int i = 0; i < numOfMoves_; ++i)
@@ -29,83 +30,6 @@ bool MovesGenerator::find(const Move & m) const
       return true;
   }
   return false;
-}
-
-bool MovesGenerator::verify(const Move (&caps)[Board::MovesMax], const Move (&quiets)[Board::MovesMax]) const
-{
-  if ( board_.checkingNum_ > 1 )
-    return true;
-
-  for (int i = 0; i < numOfMoves_; ++i)
-  {
-    const Move & move = moves_[i];
-    bool found = false;
-    if ( move.rindex_ >= 0 || move.new_type_ > 0 )
-    {
-      for (int j = 0; caps[j]; ++j)
-      {
-        if ( caps[j] == move )
-        {
-          found = true;
-          break;
-        }
-      }
-      if ( !found )
-      {
-        throw std::runtime_error("capture wasn't found in captures generator");
-      }
-    }
-    if ( found )
-      continue;
-    for (int j = 0; quiets[j]; ++j)
-    {
-      if ( quiets[j] == move )
-      {
-        found = true;
-        break;
-      }
-    }
-    if ( !found )
-    {
-      throw std::runtime_error("move wasn't found in quiets generator");
-    }
-  }
-
-  for (int i = 0; caps[i]; ++i)
-  {
-    bool found = false;
-    for (int j = 0; j < numOfMoves_; ++j)
-    {
-      if ( caps[i] == moves_[j] )
-      {
-        found = true;
-        break;
-      }
-    }
-    if ( !found )
-    {
-      throw std::runtime_error("capture wasn't found in moves");
-    }
-  }
-
-  for (int i = 0; quiets[i]; ++i)
-  {
-    bool found = false;
-    for (int j = 0; j < numOfMoves_; ++j)
-    {
-      if ( quiets[i] == moves_[j] )
-      {
-        found = true;
-        break;
-      }
-    }
-    if ( !found )
-    {
-      throw std::runtime_error("quiet wasn't found in moves");
-    }
-  }
-
-  return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -695,145 +619,33 @@ bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & mov
 }
 
 //////////////////////////////////////////////////////////////////////////
-QuietGenerator::QuietGenerator(Board & board) :
-  board_(board), current_(0), numOfMoves_(0)
+EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
+  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
 {
-  numOfMoves_ = generate();
-  quiets_[numOfMoves_].clear();
+  numOfMoves_ = generate(alpha, betta, counter);
+  escapes_[numOfMoves_].clear();
 }
 
-int QuietGenerator::generate()
+int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
+{
+  if ( board_.checkingNum_ == 1 )
+    return generateUsual(alpha, betta, counter);
+  else
+    return generateKingonly(alpha, betta, counter);
+}
+
+int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & counter)
 {
   int m = 0;
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
+  return m;
+}
 
-  for (int n = Board::KingIndex; n >= 0; --n)
-  {
-    const Figure & fig = board_.getFigure(color, n);
-
-    switch ( fig.getType() )
-    {
-    case Figure::TypeKing:
-      {
-        const int8 * table = board_.g_movesTable->king(fig.where());
-
-        for (; *table >= 0; ++table)
-        {
-          const Field & field = board_.getField(*table);
-          if ( field )
-            continue;
-
-          Move & move = quiets_[m++];
-
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = -1;
-          move.new_type_ = 0;
-        }
-
-        // castling
-        if ( fig.isFirstStep() && board_.state_ != Board::UnderCheck )
-        {
-          {
-            Move & move = quiets_[m++];
-
-            move.from_ = fig.where();
-            move.to_ = fig.where() + 2;
-            move.new_type_ = 0;
-            move.rindex_ = -1;
-          }
-
-          {
-            Move & move = quiets_[m++];
-
-            move.from_ = fig.where();
-            move.to_ = fig.where() - 2;
-            move.new_type_ = 0;
-            move.rindex_ = -1;
-          }
-        }
-      }
-      break;
-
-    case Figure::TypeBishop:
-    case Figure::TypeRook:
-    case Figure::TypeQueen:
-      {
-        const uint16 * table = board_.g_movesTable->move(fig.getType()-Figure::TypeBishop, fig.where());
-
-        for (; *table; ++table)
-        {
-          const int8 * packed = reinterpret_cast<const int8*>(table);
-          int8 count = packed[0];
-          int8 delta = packed[1];
-
-          int8 p = fig.where();
-          for ( ; count; --count)
-          {
-            p += delta;
-
-            const Field & field = board_.getField(p);
-            if ( field )
-              break;
-
-            Move & move = quiets_[m++];
-
-            move.from_ = fig.where();
-            move.to_ = p;
-            move.rindex_ = -1;
-            move.new_type_ = 0;
-          }
-        }
-      }
-      break;
-
-    case Figure::TypeKnight:
-      {
-        const int8 * table = board_.g_movesTable->knight(fig.where());
-
-        for (; *table >= 0; ++table)
-        {
-          const Field & field = board_.getField(*table);
-          if ( field )
-            continue;
-
-          Move & move = quiets_[m++];
-
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = -1;
-          move.new_type_ = 0;
-        }
-      }
-      break;
-
-    case Figure::TypePawn:
-      {
-        // skip captures/promotions - add 2 to *table
-        uint64 p_msk = 1ULL << FiguresCounter::s_transposeIndex_[fig.where()];
-        if ( !(p_msk & board_.g_movesTable->promote_t(board_.color_)) )
-        {
-          const int8 * table = board_.g_movesTable->pawn(color, fig.where()) + 2;
-          for (; *table >= 0 && !board_.getField(*table); ++table)
-          {
-            THROW_IF( *table > 55 || *table < 8, "try to promote pawn while quiet move" );
-
-            Move & move = quiets_[m++];
-            move.from_ = fig.where();
-            move.to_ = *table;
-            move.rindex_ = -1;
-            move.new_type_ = 0;
-          }
-        }
-      }
-      break;
-    }
-
-    // only king's movements are available
-    if ( board_.checkingNum_ > 1 )
-      break;
-  }
-
+int EscapeGenerator::generateKingonly(ScoreType & alpha, ScoreType betta, int & counter)
+{
+  int m = 0;
+  Figure::Color & color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
   return m;
 }

@@ -57,15 +57,19 @@ bool Board::isChecking(MoveCmd & move) const
 
     if ( move.rindex_ >= 0 && move.rindex_ == move.en_passant_ && Figure::TypePawn == fig.getType() )
     {
-      const Figure & fake = getFigure(ocolor, move.rindex_);
-      int fakePos = fake.where();
-      static int fake_dp[2] = { 8, -8 };
-      fakePos += fake_dp[ocolor];
+      const Figure & epawn = getFigure(ocolor, move.rindex_);
 
-      if ( fakePos == move.to_ )
+      int epos = epawn.where();
+
+      THROW_IF( epos < 0, "no en-passant pawn but ep-index is valid" );
+
+      static int delta_p[2] = { 8, -8 };
+      epos += delta_p[ocolor];
+
+      if ( epos == move.to_ )
       {
-        int idx2 = fastAttackedFrom(ocolor, fake.where());
-        THROW_IF( idx2 != getAttackedFrom( ocolor, fake.where() ), "fastAttackedFrom() failed" );
+        int idx2 = fastAttackedFrom(ocolor, epawn.where());
+        THROW_IF( idx2 != getAttackedFrom(ocolor, epawn.where()), "fastAttackedFrom() failed" );
 
         if ( idx2 >= 0 && idx2 != idx0 && idx2 != idx1 )
           move.checking_[move.checkingNum_++] = idx2;
@@ -100,8 +104,34 @@ bool Board::wasValidUnderCheck(const MoveCmd & move) const
     {
       // maybe attacked from direction, my figure goes from
       int idx = fastAttackedFrom(color_, move.from_);
+      
       THROW_IF( idx != getAttackedFrom(color_, move.from_), "fastAttackedFrom() failed" );
-      return idx < 0;
+
+      if ( idx >= 0 )
+        return false;
+
+      // if en-passant capture, we have to check the direction from king to en-passant pawn
+      if ( move.rindex_ >= 0 && move.rindex_ == move.en_passant_ && Figure::TypePawn == fig.getType() )
+      {
+        const Figure & epawn = getFigure(ocolor, move.rindex_);
+
+        int epos = epawn.where();
+
+        THROW_IF( epos < 0, "no en-passant pawn but ep-index is valid" );
+
+        static int delta_p[2] = { 8, -8 };
+        epos += delta_p[ocolor];
+
+        if ( epos == move.to_ )
+        {
+          int idx_ep = fastAttackedFrom(color_, epawn.where());
+
+          THROW_IF( idx_ep != getAttackedFrom(color_, epawn.where()), "fastAttackedFrom() failed" );
+
+          return idx_ep < 0;
+        }
+      }
+      return true;
     }
 
     const Figure & afig = getFigure(ocolor, checking_[0]);
@@ -153,7 +183,32 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
 
   int idx = fastAttackedFrom(color_, move.from_);
   THROW_IF( idx != getAttackedFrom(color_, move.from_), "fastAttackedFrom() failed" );
-  return idx < 0;
+  if ( idx >= 0 )
+    return false;
+
+  // if en-passant capture, we have to check the direction from king to en-passant pawn
+  if ( move.rindex_ >= 0 && move.rindex_ == move.en_passant_ && Figure::TypePawn == fig.getType() )
+  {
+    const Figure & epawn = getFigure(ocolor, move.rindex_);
+
+    int epos = epawn.where();
+
+    THROW_IF( epos < 0, "no en-passant pawn but ep-index is valid" );
+
+    static int delta_p[2] = { 8, -8 };
+    epos += delta_p[ocolor];
+
+    if ( epos == move.to_ )
+    {
+      int idx_ep = fastAttackedFrom(color_, epawn.where());
+
+      THROW_IF( idx_ep != getAttackedFrom(color_, epawn.where()), "fastAttackedFrom() failed" );
+
+      return idx_ep < 0;
+    }
+  }
+
+  return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -458,6 +513,7 @@ int Board::findCheckingFigures(Figure::Color color, int pos)
         return ++checkingNum_;
 
       checking_[checkingNum_++] = i;
+      continue;
     }
 
     FPos dp = g_deltaPosCounter->getDeltaPos(fig.where(), pos);

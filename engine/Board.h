@@ -8,7 +8,7 @@
 
 class MovesGenerator;
 class CapsGenerator;
-class QuietGenerator;
+class EscapeGenerator;
 
 /*! board representation
  */
@@ -16,7 +16,7 @@ class Board
 {
   friend class MovesGenerator;
   friend class CapsGenerator;
-  friend class QuietGenerator;
+  friend class EscapeGenerator;
 
 public:
 
