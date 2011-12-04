@@ -28,9 +28,21 @@ public:
 
 class CapsGenerator;
 
+struct PlyContext
+{
+  Move killer_;
+
+  void clear()
+  {
+    killer_.clear();
+  }
+};
+
 class Player
 {
   friend class CapsGenerator;
+
+  enum { MaxPly = 128 };
 
 public:
 
@@ -70,10 +82,11 @@ public:
   }
 
 private:
+
   void printPV(SearchResult & sres, std::ostream * out);
 
-  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, const Move & before, Move & move, bool & found);
-  ScoreType captures(Move & killer, ScoreType alpha, ScoreType betta, int delta);
+  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta);
+  ScoreType captures(int ply, ScoreType alpha, ScoreType betta, int delta);
 
   void testTimer();
 
@@ -84,7 +97,10 @@ private:
   int nodesCount_, totalNodes_;
   bool firstIter_;
   clock_t tstart_, tprev_;
+  Move before_, best_;
+  bool beforeFound_;
 
+  PlyContext contexts_[MaxPly];
 
   // global data
   MoveCmd * g_moves;
@@ -97,7 +113,7 @@ private:
 
 
   //////////////////////////////////////////////////////////////////////////
-  inline void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & before, Move & b, const Move & mv, Move & move, bool & found, int & counter)
+  inline void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
   {
 	  totalNodes_++;
 	  nodesCount_++;
@@ -106,7 +122,7 @@ private:
     Board board0 = board_;
 #endif
 
-    if ( board_.makeMove(mv) )
+    if ( board_.makeMove(move) )
     {
       counter++;
       ScoreType s = alpha;
@@ -119,30 +135,33 @@ private:
         int delta = (int)s - (int)betta - (int)Figure::positionGain_;
         if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
 		    {
-          Move killer;
-          killer.clear();
-
           //QpfTimer qpt;
 			    ScoreType betta1 = s < betta ? s : betta;
-			    s = -captures(killer, -betta1, -alpha, delta);
+			    s = -captures(ply+1, -betta1, -alpha, delta);
           //Board::ticks_ += qpt.ticks();
 		    }
 #endif
       }
       else
-      {
-        Move m;
-        bool f = false;
-
-        s = -alphaBetta(depth-1, ply+1, -betta, -alpha, b, m, f);
-      }
+        s = -alphaBetta(depth-1, ply+1, -betta, -alpha);
 
       if ( !stop_ && s > alpha )
       {
+        Move & killer = contexts_[ply].killer_;
         alpha = s;
-        move = mv;
-        if ( before == move )
-          found = true;
+
+        if ( 0 == ply )
+        {
+          best_ = move;
+          if ( before_ == best_ )
+            beforeFound_ = true;
+        }
+
+        if ( s > killer.score_ )
+        {
+          killer = move;
+          killer.score_ = s;
+        }
       }
     }
 
@@ -160,7 +179,7 @@ private:
   }
 
   //////////////////////////////////////////////////////////////////////////
-  inline void capture(Move & killer, Move & ki, ScoreType & alpha, ScoreType betta, const Move & cap)
+  inline void capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap)
   {
 	  totalNodes_++;
 	  nodesCount_++;
@@ -181,11 +200,13 @@ private:
         if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
 			  {
 				  ScoreType betta1 = s < betta ? s : betta;
-				  s = -captures(ki, -betta1, -alpha, delta);
+				  s = -captures(ply+1, -betta1, -alpha, delta);
 			  }
 		  }
 		  if ( !stop_ && s > alpha )
       {
+        Move killer = contexts_[ply].killer_;
+
 			  alpha = s;
         if ( s > killer.score_ )
         {

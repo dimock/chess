@@ -31,7 +31,8 @@ typedef int16 ScoreType;
 
 #define GO_IMMEDIATELY
 #define PERFORM_CAPTURES
-#undef NO_TIME_LIMIT
+#define USE_KILLER
+#undef  NO_TIME_LIMIT
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF

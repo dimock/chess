@@ -49,7 +49,7 @@ class CapsGenerator
 {
 public:
 
-  CapsGenerator(Board & , Figure::Type minimalType, Player &, Move & killer, Move & ki, ScoreType & alpha, ScoreType betta);
+  CapsGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta);
 
   Move & capture()
   {
@@ -75,17 +75,15 @@ private:
 
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta);
-
   bool capture(ScoreType & alpha, ScoreType betta, const Move & move);
+
 
   int current_;
   int numOfMoves_;
   Figure::Type minimalType_;
   Player & player_;
-  Move & killer_;
-  Move & ki_;
-
   Board & board_;
+  int ply_;
   Move captures_[Board::MovesMax];
 };
 

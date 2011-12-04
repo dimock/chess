@@ -104,33 +104,37 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   firstIter_ = true;
   tprev_ = tstart_ = clock();
 
-  Move before;
-  before.clear();
+  before_.clear();
   for (int depth = 2; !stop_ && depth <= depthMax_; ++depth)
   {
-    Move best;
-    bool found = false;
+    best_.clear();
+    beforeFound_ = false;
     nodesCount_ = 0;
 
-    ScoreType score = alphaBetta(depth, 0, -std::numeric_limits<ScoreType>::max(), std::numeric_limits<ScoreType>::max(), before, best, found);
+    ScoreType alpha = -std::numeric_limits<ScoreType>::max();
+    ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    if ( !stop_ || (stop_ && found) )
+    contexts_[0].clear();
+
+    ScoreType score = alphaBetta(depth, 0, alpha, betta);
+
+    if ( !stop_ || (stop_ && beforeFound_) )
     {
       clock_t t  = clock();
       clock_t dt = (t - tprev_) / 10;
       tprev_ = t;
 
       sres.score_ = score;
-      sres.best_  = best;
+      sres.best_  = best_;
       sres.depth_ = depth;
       sres.nodesCount_ = nodesCount_;
       sres.dt_ = dt;
-      before = best;
+      before_ = best_;
 
       printPV(sres, out);
     }
 
-	firstIter_ = false;
+    firstIter_ = false;
 
     if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
       break;
@@ -138,7 +142,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
   sres.totalNodes_ = totalNodes_;
 
-  return sres.best_.to_ >= 0;
+  return sres.best_;
 }
 
 void Player::testTimer()
@@ -153,19 +157,43 @@ void Player::testTimer()
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, const Move & before, Move & move, bool & found)
+ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  if ( stop_ )
+  if ( stop_ || ply >= MaxPly )
     return alpha;
 
   int counter = 0;
-  Move b;
-  b.clear();
 
-  if ( before && board_.validMove(before) )
+  if ( ply < MaxPly-1 )
+    contexts_[ply+1].clear();
+
+  // will be changed to hash
+  if ( 0 == ply && before_ && board_.validMove(before_) )
+    movement(depth, ply, alpha, betta, before_, counter);
+
+  const Move & killer = contexts_[ply].killer_;
+
+#ifdef USE_KILLER
+  if ( killer && board_.validMove(killer) )
   {
-    movement(depth, ply, alpha, betta, before, b, before, move, found, counter);
+#ifndef NDEBUG
+    MovesGenerator mg(board_);
+    if ( !mg.find(killer) )
+    {
+      board_.validMove(killer);
+      THROW_IF( true, "move has passed validation but not found generated in moves list" );
+    }
+#endif
+
+    movement(depth, ply, alpha, betta, killer, counter);
   }
+
+  if ( alpha >= betta )
+  {
+    return alpha;
+  }
+#endif
+
 
   //QpfTimer qpt;
 
@@ -176,22 +204,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 	for ( ; !stop_ && alpha < betta ; )
 	{
-	  const Move & mv = mg.move();
-	  if ( !mv )
+	  const Move & move = mg.move();
+	  if ( !move || stop_ )
 		  break;
 
-	  if ( mv == before )
+	  if ( (0 == ply && move == before_) || move == killer )
 		  continue;
 
 	  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-		testTimer();
-
-	  if ( stop_ )
-		  break;
+		  testTimer();
 	  
-	  //THROW_IF( !board_.validMove(mv), "move validation failed" );
-
-	  movement(depth, ply, alpha, betta, before, b, mv, move, found, counter);
+	  movement(depth, ply, alpha, betta, move, counter);
 	}
 
   if ( stop_ )
@@ -208,7 +231,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   if ( 0 == ply && counter == 1 )
   {
-    found = true;
+    beforeFound_ = true;
     stop_ = true;
   }
 
@@ -216,16 +239,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int delta)
+ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 {
-	if ( stop_ )
+	if ( stop_ || ply >= MaxPly )
 		return alpha;
 
-  Move ki;
-  ki.clear();
+  if ( ply < MaxPly-1 )
+    contexts_[ply+1].clear();
 
-#ifdef GO_IMMEDIATELY
+  Move & killer = contexts_[ply].killer_;
 
+#ifdef USE_KILLER
   if ( killer && board_.validMove(killer) )
   {
 #ifndef NDEBUG
@@ -237,7 +261,7 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
     }
 #endif
 
-    capture(killer, ki, alpha, betta, killer);
+    capture(ply, alpha, betta, killer);
   }
 
   if ( alpha >= betta )
@@ -245,7 +269,6 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
     return alpha;
   }
 #endif
-
 
   Figure::Type minimalType = Figure::TypePawn;
   if ( delta > Figure::figureWeight_[Figure::TypeRook] )
@@ -258,31 +281,27 @@ ScoreType Player::captures(Move & killer, ScoreType alpha, ScoreType betta, int 
     minimalType = Figure::TypeKnight;
 
   //QpfTimer qpt;
-  CapsGenerator cg(board_, minimalType, *this, killer, ki, alpha, betta);
+  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta);
   //Board::ticks_ += qpt.ticks();
   //Board::tcounter_ ++;//= cg.count();
 
 	for ( ; !stop_ && alpha < betta ; )
 	{
 		const Move & cap = cg.capture();
-		if ( !cap )
+		if ( !cap || stop_ )
 			break;
 
 		if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
 			testTimer();
 
-		if ( stop_ )
-			break;
-
-#ifdef GO_IMMEDIATELY
+#ifdef USE_KILLER
     if ( killer == cap )
       continue;
 #endif
 
-
 		THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-		capture(killer, ki, alpha, betta, cap);
+		capture(ply, alpha, betta, cap);
 	}
 
 	return alpha;

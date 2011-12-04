@@ -303,9 +303,8 @@ int MovesGenerator::generate()
 }
 
 //////////////////////////////////////////////////////////////////////////
-CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, Player & player, Move & killer, Move & ki, ScoreType & alpha, ScoreType betta) :
-  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player),
-  killer_(killer), ki_(ki)
+CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta) :
+  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply)
 {
   numOfMoves_ = generate(alpha, betta);
   captures_[numOfMoves_].clear();
@@ -353,7 +352,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
       move.new_type_ = Figure::TypeQueen;
 
 #ifdef GO_IMMEDIATELY
-      if ( move != killer_ && capture(alpha, betta, move) )
+      if ( capture(alpha, betta, move) )
         return m;
 #endif
     }
@@ -436,7 +435,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.rindex_ = field.index();
           move.new_type_ = promotion ? Figure::TypeQueen : 0;
 
-          if ( move != killer_ && capture(alpha, betta, move) )
+          if ( capture(alpha, betta, move) )
             return m;
         }
         else
@@ -497,7 +496,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.rindex_ = field.index();
           move.new_type_ = 0;
 
-          if ( move != killer_ && capture(alpha, betta, move) )
+          if ( capture(alpha, betta, move) )
             return m;
         }
         else
@@ -540,7 +539,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
           move.rindex_ = field.index();
           move.new_type_ = 0;
 
-          if ( move != killer_ && capture(alpha, betta, move) )
+          if ( capture(alpha, betta, move) )
             return m;
         }
         else
@@ -565,10 +564,13 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
 
 bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & move)
 {
-  player_.capture(killer_, ki_, alpha, betta, move);
+  const Move & killer = player_.contexts_[ply_].killer_;
+  if ( move == killer )
+    return false;
+
+  player_.capture(ply_, alpha, betta, move);
   return alpha >= betta;
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 QuietGenerator::QuietGenerator(Board & board) :
