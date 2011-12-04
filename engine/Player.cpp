@@ -197,7 +197,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   //QpfTimer qpt;
 
-	MovesGenerator mg(board_);
+	MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
 
   //Board::ticks_ += qpt.ticks();
   //Board::tcounter_++;
@@ -282,6 +282,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
   //QpfTimer qpt;
   CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta);
+
   //Board::ticks_ += qpt.ticks();
   //Board::tcounter_ ++;//= cg.count();
 

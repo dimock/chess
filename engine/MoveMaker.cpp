@@ -47,7 +47,7 @@ bool Board::validMove(const Move & move) const
   case Figure::TypePawn:
     {
       int8 y = move.to_ >> 3;
-      if ( (y == 7 || y == 0) && !move.new_type_ )
+      if ( ((7 == y || 0 == y) && !move.new_type_) || (0 != y && 7 != y && move.new_type_) )
         return false;
 
       THROW_IF( move.new_type_ < 0 || move.new_type_ > Figure::TypeQueen, "invalid promotion piece" );

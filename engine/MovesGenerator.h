@@ -2,12 +2,15 @@
 
 #include "Board.h"
 
+class Player;
+
 
 /// generate all movies from this position. don't verify and sort them. only calculate sort weights
 class MovesGenerator
 {
 public:
 
+  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter);
   MovesGenerator(Board & );
 
   Move & move()
@@ -32,17 +35,19 @@ public:
 private:
 
   /// returns number of moves found
-  int generate();
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+
+  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
 
   int current_;
   int numOfMoves_;
-
+  Player * player_;
   Board & board_;
+  int depth_;
+  int ply_;
   Move moves_[Board::MovesMax];
 };
 
-
-class Player;
 
 /// generate captures and promotions to queen only
 class CapsGenerator

@@ -4,10 +4,19 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-MovesGenerator::MovesGenerator(Board & board) :
-  board_(board), current_(0), numOfMoves_(0)
+MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter) :
+  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
 {
-  numOfMoves_ = generate();
+  numOfMoves_ = generate(alpha, betta, counter);
+  moves_[numOfMoves_].clear();
+}
+
+MovesGenerator::MovesGenerator(Board & board) :
+  board_(board), current_(0), numOfMoves_(0), ply_(0), depth_(0), player_(0)
+{
+  ScoreType alpha = 0, betta = 0;
+  int counter = 0;
+  numOfMoves_ = generate(alpha, betta, counter);
   moves_[numOfMoves_].clear();
 }
 
@@ -99,13 +108,20 @@ bool MovesGenerator::verify(const Move (&caps)[Board::MovesMax], const Move (&qu
   return true;
 }
 
-int MovesGenerator::generate()
+//////////////////////////////////////////////////////////////////////////
+int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 {
   int m = 0;
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
-  for (int n = Board::KingIndex; n >= 0; --n)
+
+  static int s_findex[2][Board::NumOfFigures] = { {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}, {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0} };
+  int v = board_.checkingNum_ > 1 ? 1 : 0;
+
+  for (int j = 0; j < Board::NumOfFigures; ++j)
   {
+    int n = s_findex[v][j];
+
     const Figure & fig = board_.getFigure(color, n);
 
     switch ( fig.getType() )
@@ -183,12 +199,28 @@ int MovesGenerator::generate()
               rindex = field.index();
             }
 
-            Move & move = moves_[m++];
+#ifdef GO_IMMEDIATELY
+            if ( player_ && rindex >= 0 && field.type() > fig.getType() )
+            {
+              Move move;
 
-            move.from_ = fig.where();
-            move.to_ = p;
-            move.rindex_ = rindex;
-            move.new_type_ = 0;
+              move.from_ = fig.where();
+              move.to_ = p;
+              move.rindex_ = rindex;
+              move.new_type_ = 0;
+
+              if ( movement(alpha, betta, move, counter) )
+                return m;
+            }
+            else
+#endif
+            {
+              Move & move = moves_[m++];
+              move.from_ = fig.where();
+              move.to_ = p;
+              move.rindex_ = rindex;
+              move.new_type_ = 0;
+            }
           }
         }
       }
@@ -209,12 +241,29 @@ int MovesGenerator::generate()
             rindex = field.index();
           }
 
-          Move & move = moves_[m++];
+#ifdef GO_IMMEDIATELY
+          if ( player_ && rindex >= 0 && field.type() > fig.getType() )
+          {
+            Move move;
 
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = rindex;
-          move.new_type_ = 0;
+            move.from_ = fig.where();
+            move.to_ = *table;
+            move.rindex_ = rindex;
+            move.new_type_ = 0;
+
+            if ( movement(alpha, betta, move, counter) )
+              return m;
+          }
+          else
+#endif
+          {
+            Move & move = moves_[m++];
+
+            move.from_ = fig.where();
+            move.to_ = *table;
+            move.rindex_ = rindex;
+            move.new_type_ = 0;
+          }
         }
       }
       break;
@@ -247,15 +296,76 @@ int MovesGenerator::generate()
 
           const Figure & rfig = board_.getFigure(ocolor, rindex);
 
-          Move & move = moves_[m++];
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = rfig.getIndex();
-          move.new_type_ = 0;
+          bool promotion = *table > 55 || *table < 8;
 
-          if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
+#ifdef GO_IMMEDIATELY
+          if ( player_ && rfig.getType() > Figure::TypePawn )
           {
+            Move move;
+
+            move.from_ = fig.where();
+            move.to_ = *table;
+            move.rindex_ = rfig.getIndex();
+            move.new_type_ = 0;
+
+            if ( promotion )
+              move.new_type_ = Figure::TypeQueen;
+
+            if ( movement(alpha, betta, move, counter) )
+              return m;
+
+            if ( promotion )
+            {
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeRook;
+
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeBishop;
+
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeKnight;
+            }
+          }
+          else
+#endif
+          {
+            Move & move = moves_[m++];
+            move.from_ = fig.where();
+            move.to_ = *table;
+            move.rindex_ = rfig.getIndex();
+            move.new_type_ = 0;
+
+            if ( promotion )
+            {
+              move.new_type_ = Figure::TypeQueen;
+
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeRook;
+
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeBishop;
+
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeKnight;
+            }
+          }
+        }
+
+        for (; *table >= 0 && !board_.getField(*table); ++table)
+        {
+          bool promotion = *table > 55 || *table < 8;
+
+#ifdef GO_IMMEDIATELY
+          if ( player_ && promotion )
+          {
+            Move move;
+            move.from_ = fig.where();
+            move.to_ = *table;
+            move.rindex_ = -1;
             move.new_type_ = Figure::TypeQueen;
+
+            if ( movement(alpha, betta, move, counter) )
+              return m;
 
             moves_[m] = move;
             moves_[m++].new_type_ = Figure::TypeRook;
@@ -266,28 +376,28 @@ int MovesGenerator::generate()
             moves_[m] = move;
             moves_[m++].new_type_ = Figure::TypeKnight;
           }
-        }
-
-        for (; *table >= 0 && !board_.getField(*table); ++table)
-        {
-          Move & move = moves_[m++];
-          move.from_ = fig.where();
-          move.to_ = *table;
-          move.rindex_ = -1;
-          move.new_type_ = 0;
-
-          if ( move.to_ > 55 || move.to_ < 8 ) // 1st || last line
+          else
+#endif
           {
-            move.new_type_ = Figure::TypeQueen;
+            Move & move = moves_[m++];
+            move.from_ = fig.where();
+            move.to_ = *table;
+            move.rindex_ = -1;
+            move.new_type_ = 0;
 
-            moves_[m] = move;
-            moves_[m++].new_type_ = Figure::TypeRook;
+            if ( promotion )
+            {
+              move.new_type_ = Figure::TypeQueen;
 
-            moves_[m] = move;
-            moves_[m++].new_type_ = Figure::TypeBishop;
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeRook;
 
-            moves_[m] = move;
-            moves_[m++].new_type_ = Figure::TypeKnight;
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeBishop;
+
+              moves_[m] = move;
+              moves_[m++].new_type_ = Figure::TypeKnight;
+            }
           }
         }
       }
@@ -300,6 +410,18 @@ int MovesGenerator::generate()
   }
 
   return m;
+}
+
+bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
+{
+  THROW_IF( !player_, "no player to make movement" );
+
+  const Move & killer = player_->contexts_[ply_].killer_;
+  if ( move == killer )
+    return false;
+  
+  player_->movement(depth_, ply_, alpha, betta, move, counter);
+  return alpha >= betta;
 }
 
 //////////////////////////////////////////////////////////////////////////
