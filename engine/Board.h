@@ -190,7 +190,15 @@ private:
   inline bool wasMoveValid(const MoveCmd & move) const
   {
     if ( UnderCheck == move.old_state_ )
+    {
+      if ( move.checkVerified_ )
+      {
+        THROW_IF( !wasValidUnderCheck(move), "move was verified as valid, but actualy itsn't" );
+        return true;
+      }
+
       return wasValidUnderCheck(move);
+    }
     else
       return wasValidWithoutCheck(move);
   }
@@ -202,9 +210,14 @@ private:
   bool isChecking(MoveCmd &) const;
 
   /// validate current move. set invalid state_
+  // move is already done
   bool wasValidUnderCheck(const MoveCmd & ) const;
 
+  // move is already done
   bool wasValidWithoutCheck(const MoveCmd & ) const;
+
+  // move isn't done yet. we can call it only if 1 attacking figure
+  bool isMoveValidUnderCheck(const Move & move) const;
 
   /// is king of given color attacked by given figure
   /// returns index of figure if attacked or -1 otherwise
@@ -231,6 +244,12 @@ private:
   /// check only bishops, rook and queens
   int getAttackedFrom(Figure::Color color, int apt) const;
   int fastAttackedFrom(Figure::Color color, int apt) const;
+
+  /// special case - figure isn't moved yet
+  int fastAttackedFrom(Figure::Color color, int apt,
+    const uint64 & clear_msk /* figure goes from */,
+    const uint64 & set_msk /* figure goes to */,
+    const uint64 & exclude_msk /* removed figure - can't attack anymore */) const;
 
   /// is field 'pos' attacked by given color?
   bool isAttacked(const Figure::Color c, int pos) const;

@@ -11,17 +11,27 @@
 __declspec (align(1))
 struct Move
 {
+#ifndef NDEBUG
+  // make all values invalid
+  Move() : from_(-1), to_(-1), rindex_(100), new_type_(10), checkVerified_(1), flags_(-1)
+  {}
+#endif
+
   /// index of field go from
   int8 from_;
 
   /// index of field go to
   int8 to_;
 
+  /// index of eaten (removed) figure
+  int8 rindex_;
+
   /// new type while pawn promotion
   int8 new_type_;
 
-  /// index of eaten (removed) figure
-  int8 rindex_;
+  /// flags
+  uint16 checkVerified_ : 1,
+         flags_ : 7;
 
   ScoreType score_;
 
@@ -32,6 +42,18 @@ struct Move
     new_type_ = 0;
     rindex_ = -1;
     score_ = -std::numeric_limits<ScoreType>::max();
+    checkVerified_ = 0;
+    flags_ = 0;
+  }
+
+  void set(int8 from, int8 to, int8 rindex, int8 new_type, int8 checkVerified)
+  {
+    from_ = from;
+    to_ = to;
+    rindex_ = rindex;
+    new_type_ = new_type;
+    checkVerified_ = checkVerified;
+    flags_ = 0;
   }
 
   operator bool () const
@@ -39,11 +61,13 @@ struct Move
     return to_ >= 0;
   }
 
+  // compare only first 4 bytes
   bool operator == (const Move & other) const
   {
     return *reinterpret_cast<const uint32*>(this) == *reinterpret_cast<const uint32*>(&other);
   }
 
+  // compare only first 4 bytes
   bool operator != (const Move & other) const
   {
     return *reinterpret_cast<const uint32*>(this) != *reinterpret_cast<const uint32*>(&other);

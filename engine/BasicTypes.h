@@ -29,9 +29,9 @@ typedef unsigned __int64 uint64;
 
 typedef int16 ScoreType;
 
-#define GO_IMMEDIATELY
-#define PERFORM_CAPTURES
-#define USE_KILLER
+#undef GO_IMMEDIATELY
+#undef PERFORM_CAPTURES
+#undef USE_KILLER
 #undef  NO_TIME_LIMIT
 
 #ifndef NDEBUG

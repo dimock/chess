@@ -84,6 +84,7 @@ bool Board::isChecking(MoveCmd & move) const
 }
 
 //////////////////////////////////////////////////////////////////////////
+// move is already done
 bool Board::wasValidUnderCheck(const MoveCmd & move) const
 {
   const Figure & fig = getFigure(color_, move.index_);
@@ -162,6 +163,7 @@ bool Board::wasValidUnderCheck(const MoveCmd & move) const
 }
 
 //////////////////////////////////////////////////////////////////////////
+// move is already done
 bool Board::wasValidWithoutCheck(const MoveCmd & move) const
 {
   const Figure & fig = getFigure(color_, move.index_);
@@ -209,6 +211,94 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
   }
 
   return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// move isn't done yet. we can call it only if 1 attacking figure
+bool Board::isMoveValidUnderCheck(const Move & move) const
+{
+  const Field & ffrom = getField(move.from_);
+ 
+  THROW_IF( !ffrom || ffrom.color() != color_, "there is nothing that can escape from check on field figure goes from" );
+
+  const Figure & fig = getFigure(color_, ffrom.index());
+
+  THROW_IF( !fig, "there is no figure by escaping index" );
+
+  Figure::Color ocolor = Figure::otherColor(color_);
+  if ( Figure::TypeKing == fig.getType() )
+  {
+    THROW_IF(fastAttacked(ocolor, fig.where()) != isAttacked(ocolor, fig.where()), "fast attacked returned wrong result");
+
+    THROW_IF((move.from_&7)-(move.to_&7) > 1 || (move.from_&7)-(move.to_&7) < -1, "try to castle under check");
+
+    return !fastAttacked(ocolor, move.to_);
+  }
+
+  THROW_IF( checking_[0] < 0 || checking_[0] >= NumOfFigures, "invalid checking figure index" );
+
+  const Figure & king = getFigure(color_, KingIndex);
+
+  if ( move.rindex_ == checking_[0] )
+  {
+    const Figure & rfig = getFigure(ocolor, move.rindex_);
+    THROW_IF( !rfig, "try to remove nonexisting figure" );
+
+    // maybe attacked from direction, my figure goes from
+    uint64 clear_msk = ~(1ULL << move.from_);
+    uint64 set_msk = 1ULL << move.to_;
+    uint64 exclude_msk = ~(1ULL << rfig.where());
+
+    int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, exclude_msk);
+
+    if ( idx >= 0 )
+      return false;
+
+    // if en-passant capture, we have to check the direction from king to en-passant pawn
+    if ( move.rindex_ >= 0 && move.rindex_ == en_passant_ && Figure::TypePawn == fig.getType() )
+    {
+      const Figure & epawn = getFigure(ocolor, move.rindex_);
+
+      THROW_IF( !epawn, "no en-passant pawn but index is valid" );
+
+      int epos = epawn.where();
+
+      static int delta_p[2] = { 8, -8 };
+      epos += delta_p[ocolor];
+
+      if ( epos == move.to_ )
+      {
+        clear_msk &= ~(1ULL << epawn.where());
+        int idx_ep = fastAttackedFrom(color_, epawn.where());
+        return idx_ep < 0;
+      }
+    }
+    return true;
+  }
+
+  const Figure & afig = getFigure(ocolor, checking_[0]);
+  THROW_IF( Figure::TypeKing == afig.getType(), "king is attacking king" );
+  THROW_IF( !afig, "king is attacked by non existing figure" );
+
+  // Pawn and Knight could be only removed to escape from check
+  if ( Figure::TypeKnight == afig.getType() || Figure::TypePawn == afig.getType() )
+    return false;
+
+  FPos dp1 = g_deltaPosCounter->getDeltaPos(move.to_, afig.where());
+  FPos dp2 = g_deltaPosCounter->getDeltaPos(king.where(), move.to_);
+
+  // we can protect king by putting figure between it and attacking figure.
+  if ( FPos(0, 0) != dp1 && dp1 == dp2 )
+  {
+    // at the last we have to check if it's safe to move this figure
+    uint64 clear_msk = ~(1ULL << move.from_);
+    uint64 set_msk = 1ULL << move.to_;
+
+    int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, (uint64)(-1ULL));
+    return idx < 0;
+  }
+
+  return false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -272,6 +362,59 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
     const Field & field = getField(n);
     THROW_IF( !field || field.color() == color, "there should be some figure of opponent's color on this field" );
     
+    THROW_IF( field.type() != Figure::TypeBishop && field.type() != Figure::TypeRook && field.type() != Figure::TypeQueen, "figure should be bishop, rook or queen" );
+
+    const Figure & afig = getFigure(ocolor, field.index());
+    THROW_IF( !afig, "no figure, but bit in mask isn't zero" );
+
+    int dir = g_figureDir->dir(afig, king.where());
+    if ( dir < 0 )
+      continue;
+
+    const uint64 & btw_msk = g_betweenMasks->between(afig.where(), king.where());
+
+    if ( (figs_msk_inv & btw_msk) != btw_msk )
+      continue;
+
+    return afig.getIndex();
+  }
+
+  return -1;
+}
+
+int Board::fastAttackedFrom(Figure::Color color, int apt,
+                            const uint64 & clear_msk /* figure goes from */,
+                            const uint64 & set_msk /* figure goes to */,
+                            const uint64 & exclude_msk /* removed figure - can't attack anymore */) const
+{
+  const Figure & king = getFigure(color, KingIndex);
+  const uint64 & mask = g_betweenMasks->from(king.where(), apt);
+  if ( !mask )
+    return -1;
+
+  Figure::Color ocolor = Figure::otherColor(color);
+  const uint64 & bishops = fmgr_.bishop_mask(ocolor);
+  const uint64 & rooks = fmgr_.rook_mask(ocolor);
+  const uint64 & queens = fmgr_.queen_mask(ocolor);
+
+  uint64 all = (bishops | rooks | queens) & mask & exclude_msk;
+  if ( !all )
+    return -1;
+
+  const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+  const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+
+  uint64 figs_msk_inv = ~(((black | white) & clear_msk) | set_msk);
+
+  for ( ; all; )
+  {
+    int n = least_bit_number(all);
+
+    THROW_IF( (unsigned)n > 63, "least siginficant bit is invalid" );
+
+    const Field & field = getField(n);
+    THROW_IF( !field || field.color() == color, "there should be some figure of opponent's color on this field" );
+
     THROW_IF( field.type() != Figure::TypeBishop && field.type() != Figure::TypeRook && field.type() != Figure::TypeQueen, "figure should be bishop, rook or queen" );
 
     const Figure & afig = getFigure(ocolor, field.index());
@@ -376,6 +519,10 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
     const uint64 & black = fmgr_.mask(Figure::ColorBlack);
     const uint64 & white = fmgr_.mask(Figure::ColorWhite);
     uint64 figs_msk_inv = ~(black | white);
+
+    // exclude attacked king (of color 'c')
+    const uint64 & c_king_msk = fmgr_.king_mask(ocolor);
+    figs_msk_inv |= c_king_msk;
 
     // queens
     uint64 queen_msk = fmgr_.queen_mask(c) & q_caps;

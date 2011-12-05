@@ -113,17 +113,16 @@ public:
     return numOfMoves_;
   }
 
-  const Move (&quiets() const)[Board::MovesMax]
-  {
-    return escapes_;
-  }
+  bool find(const Move & m) const;
 
 private:
 
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
   int generateUsual(ScoreType & alpha, ScoreType betta, int & counter);
-  int generateKingonly(ScoreType & alpha, ScoreType betta, int & counter);
+  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter);
+  bool escape_movement(int m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+
 
   int current_;
   int numOfMoves_;
