@@ -43,6 +43,8 @@ int main(int argc, char * argv[])
 	ofstream ofs_log("log.txt");
 #endif
 
+  Thinking thk;
+
 #ifdef WRITE_LOG_FILE_
 #ifndef NDEBUG
   try
@@ -52,7 +54,6 @@ int main(int argc, char * argv[])
 
 	cout.setf(ios_base::unitbuf);
 	int vNum = 1;
-	Thinking thk;
 
 	xParser parser;
 
@@ -295,6 +296,12 @@ int main(int argc, char * argv[])
   catch ( const std::exception & e )
   {
     ofs_log << "exception: " << e.what() << endl;
+    thk.fen2file("fen.txt");
+  }
+  catch ( ... )
+  {
+    ofs_log << "some other exception" << endl;
+    thk.fen2file("fen.txt");
   }
 #endif
 #endif

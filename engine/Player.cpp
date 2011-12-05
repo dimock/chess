@@ -205,6 +205,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       }
     }
 
+    THROW_IF(eg.count() + counter != num, "number of escape moves isn't correct");
+
     for ( ;; )
     {
       const Move & move = eg.escape();
@@ -259,7 +261,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     }
 #endif
 
-    movement(depth, ply, alpha, betta, killer, counter);
+    int depthInc = 0;
+    if ( Board::UnderCheck == board_.getState() )
+      depthInc = 2;
+
+    movement(depth + depthInc, ply, alpha, betta, killer, counter);
   }
 
   if ( alpha >= betta )
@@ -271,25 +277,60 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   //QpfTimer qpt;
 
-	MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+  if ( Board::UnderCheck == board_.getState() )
+  {
+    EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
+    int depthInc = 1;
+    if ( counter == 0 && eg.count() == 1 )
+      depthInc = 2;
 
-  //Board::ticks_ += qpt.ticks();
-  //Board::tcounter_++;
+    for ( ; !stop_ && alpha < betta ; )
+    {
+      const Move & move = eg.escape();
+      if ( !move || stop_ )
+        break;
 
-	for ( ; !stop_ && alpha < betta ; )
-	{
-	  const Move & move = mg.move();
-	  if ( !move || stop_ )
-		  break;
+      if ( (0 == ply && move == before_)
+#ifdef USE_KILLER
+        || move == killer
+#endif
+        )
+        continue;
 
-	  if ( (0 == ply && move == before_) || move == killer )
-		  continue;
+      if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+        testTimer();
 
-	  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-		  testTimer();
-	  
-	  movement(depth, ply, alpha, betta, move, counter);
-	}
+      movement(depth+depthInc, ply, alpha, betta, move, counter);
+    }
+
+    THROW_IF( 2 == depthInc && counter != 1, "depth was increased to 2, but there is not exactly 1 move" );
+  }
+  else
+  {
+	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+
+    //Board::ticks_ += qpt.ticks();
+    //Board::tcounter_++;
+
+	  for ( ; !stop_ && alpha < betta ; )
+	  {
+	    const Move & move = mg.move();
+	    if ( !move || stop_ )
+		    break;
+
+	    if ( (0 == ply && move == before_)
+  #ifdef USE_KILLER
+        || move == killer
+  #endif
+        )
+		    continue;
+
+	    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+		    testTimer();
+  	  
+	    movement(depth, ply, alpha, betta, move, counter);
+	  }
+  }
 
   if ( stop_ )
     return alpha;

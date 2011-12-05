@@ -361,10 +361,12 @@ bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & m
 {
   THROW_IF( !player_, "no player to make movement" );
 
+#ifdef USE_KILLER
   const Move & killer = player_->contexts_[ply_].killer_;
   if ( move == killer )
     return false;
-  
+#endif
+
   player_->movement(depth_, ply_, alpha, betta, move, counter);
   return alpha >= betta;
 }
@@ -646,9 +648,11 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
 
 bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & move)
 {
+#ifdef USE_KILLER
   const Move & killer = player_.contexts_[ply_].killer_;
   if ( move == killer )
     return false;
+#endif
 
   player_.capture(ply_, alpha, betta, move);
   return alpha >= betta;
@@ -1072,9 +1076,11 @@ bool EscapeGenerator::escape_movement(int m, ScoreType & alpha, ScoreType betta,
     return false;
   }
 
+#ifdef USE_KILLER
   const Move & killer = player_.contexts_[ply_].killer_;
   if ( killer == move )
     return false;
+#endif
 
   int depthInc = 0;
   if ( 2 == board_.checkingNum_ )

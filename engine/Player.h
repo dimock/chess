@@ -46,7 +46,7 @@ class Player
   friend class MovesGenerator;
   friend class EscapeGenerator;
 
-  enum { MaxPly = 128 };
+  enum { MaxPly = 40 };
 
 public:
 
@@ -151,7 +151,6 @@ private:
 
       if ( !stop_ && s > alpha )
       {
-        Move & killer = contexts_[ply].killer_;
         alpha = s;
 
         if ( 0 == ply )
@@ -160,12 +159,14 @@ private:
           if ( before_ == best_ )
             beforeFound_ = true;
         }
-
+#ifdef USE_KILLER
+        Move & killer = contexts_[ply].killer_;
         if ( s > killer.score_ )
         {
           killer = move;
           killer.score_ = s;
         }
+#endif
       }
     }
 
@@ -209,14 +210,16 @@ private:
 		  }
 		  if ( !stop_ && s > alpha )
       {
-        Move killer = contexts_[ply].killer_;
+        alpha = s;
 
-			  alpha = s;
+#ifdef USE_KILLER
+        Move killer = contexts_[ply].killer_;
         if ( s > killer.score_ )
         {
           killer = cap;
           killer.score_ = s;
         }
+#endif
       }
 	  }
 

@@ -147,6 +147,17 @@ void Thinking::save()
   bool res = Board::save(board, ofs);
 }
 
+void Thinking::fen2file(const char * fname)
+{
+  if ( !fname )
+    return;
+
+  ofstream ofs(fname);
+  char fen[256];
+  player_.getBoard().toFEN(fen);
+  ofs << std::string(fen) << endl;
+}
+
 //////////////////////////////////////////////////////////////////////////
 bool Thinking::fromFEN(xCmd & cmd)
 {

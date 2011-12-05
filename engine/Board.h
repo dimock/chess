@@ -168,10 +168,11 @@ private:
   }
 
   /// return short/long castle possibility
-  bool castling(Figure::Color color, int t /* 0 - short (K), 1 - long (Q) */) const
+  bool castling(Figure::Color color, int8 t /* 0 - short (K), 1 - long (Q) */) const
   {
 	  THROW_IF( (unsigned)color > 1 || (unsigned)t > 1, "invalid color or castle type" );
-	  return getFigure(color, KingIndex).isFirstStep() && getFigure(color, RookIndex-t) && getFigure(color, RookIndex-t).isFirstStep();
+    int8 rpos = ((((int8)color-1) >> 7) & 56) | ((t-1) >> 7) & 7;
+    return getFigure(color, KingIndex).isFirstStep() && getField(rpos).type() == Figure::TypeRook && getField(rpos).color() == color && getFigure(color, getField(rpos).index()).isFirstStep();
   }
 
   /// calculates absolute position evaluation
