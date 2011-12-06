@@ -10,10 +10,10 @@ public:
 
 	enum {
 		xNone,
-    xOption,
-    xPing,
+		xOption,
+		xPing,
 		xBoard,
-    xMemory,
+		xMemory,
 		xNew,
 		xMove,
 		xProtover,
@@ -24,15 +24,15 @@ public:
 		xRemove,
 		xForce,
 		xEdit,
-    xTime,
-    xOtime,
-    xLevel,
+		xTime,
+		xOtime,
+		xLevel,
 		xLeaveEdit,
 		xChgColor,
 		xClearBoard,
 		xSetFigure,
 		xSaveBoard,
-    xSetboardFEN,
+		xSetboardFEN,
 		xQuit
 	};
 
