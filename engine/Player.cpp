@@ -167,7 +167,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( ply < MaxPly-1 )
     contexts_[ply+1].clear();
 
-#ifndef NDEBUG
+#if 0
   if ( board_.getState() == Board::UnderCheck )
   {
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
@@ -247,7 +247,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( 0 == ply && before_ && board_.validMove(before_) )
     movement(depth, ply, alpha, betta, before_, counter);
 
-  const Move & killer = contexts_[ply].killer_;
+  Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
   if ( killer && board_.validMove(killer) )
@@ -265,6 +265,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     if ( Board::UnderCheck == board_.getState() )
       depthInc = 2;
 
+	killer.checkVerified_ = 0;
     movement(depth + depthInc, ply, alpha, betta, killer, counter);
   }
 
@@ -376,6 +377,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
     }
 #endif
 
+	killer.checkVerified_ = 0;
     capture(ply, alpha, betta, killer);
   }
 

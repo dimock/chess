@@ -121,7 +121,7 @@ private:
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
   int generateUsual(ScoreType & alpha, ScoreType betta, int & counter);
   int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter);
-  bool escape_movement(int m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+  bool escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
 
 
   int current_;

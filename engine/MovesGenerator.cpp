@@ -1068,7 +1068,7 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool EscapeGenerator::escape_movement(int m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
+bool EscapeGenerator::escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
 {
   if ( !m && !counter && depth_ > 0 && board_.checkingNum_ < 2 )
   {
