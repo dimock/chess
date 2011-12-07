@@ -119,7 +119,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
     ScoreType score = alphaBetta(depth, 0, alpha, betta);
 
-    if ( !stop_ || (stop_ && beforeFound_) )
+    if ( !stop_ || (stop_ && beforeFound_) || (2 == depth && best_) )
     {
       clock_t t  = clock();
       clock_t dt = (t - tprev_) / 10;
@@ -148,8 +148,8 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
 void Player::testTimer()
 {
-	if ( firstIter_ )
-		return;
+	//if ( firstIter_ )
+	//	return;
 
 #ifndef NO_TIME_LIMIT
   int t = clock();
@@ -263,10 +263,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 
     int depthInc = 0;
-    if ( Board::UnderCheck == board_.getState() )
+    if ( Board::UnderCheck == board_.getState() && !firstIter_ )
       depthInc = 2;
 
-	killer.checkVerified_ = 0;
+	  killer.checkVerified_ = 0;
     movement(depth + depthInc, ply, alpha, betta, killer, counter);
   }
 
@@ -284,7 +284,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
     int depthInc = 1;
     if ( counter == 0 && eg.count() == 1 )
-      depthInc = ply > 0 ? 2 : 0;
+      depthInc = ply > 0 && !firstIter_ ? 2 : 0;
 
     for ( ; !stop_ && alpha < betta ; )
     {
