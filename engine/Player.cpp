@@ -379,13 +379,28 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       {
         //QpfTimer qpt;
         ScoreType betta1 = s < betta ? s : betta;
-        s = -captures(ply+1, -betta1, -alpha, delta);
+
+#ifdef USE_ZERO_WINDOW
+		ScoreType alpha1 = alpha;
+		if ( counter > 1 )
+			s = alpha1 = -captures(ply+1, -(alpha+1), -alpha, delta);
+		if ( counter < 2 || (alpha1 > alpha && alpha1 < betta) )
+#endif
+	        s = -captures(ply+1, -betta1, -alpha1, delta);
         //Board::ticks_ += qpt.ticks();
       }
 #endif
     }
     else
-      s = -alphaBetta(depth-1, ply+1, -betta, -alpha);
+	{
+#ifdef USE_ZERO_WINDOW
+		ScoreType alpha1 = alpha;
+		if ( counter > 1 )
+			s = alpha1 = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
+		if ( counter < 2  || (alpha1 > alpha && alpha1 < betta) )
+#endif
+			s = -alphaBetta(depth-1, ply+1, -betta, -alpha1);
+	}
 
     if ( !stop_ && s > alpha )
     {
@@ -433,6 +448,8 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   if ( ply < MaxPly-1 )
     contexts_[ply+1].clear();
 
+  int counter = 0;
+
   Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
@@ -448,7 +465,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 #endif
 
 	killer.checkVerified_ = 0;
-    capture(ply, alpha, betta, killer);
+    capture(ply, alpha, betta, killer, counter);
   }
 
   if ( alpha >= betta )
@@ -468,10 +485,35 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
     minimalType = Figure::TypeKnight;
 
   //QpfTimer qpt;
-  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta);
-
   //Board::ticks_ += qpt.ticks();
   //Board::tcounter_ ++;//= cg.count();
+
+  if ( board_.getState() == Board::UnderCheck )
+  {
+	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+
+	  for ( ; !stop_ && alpha < betta ; )
+	  {
+		  const Move & cap = eg.escape();
+		  if ( !cap || stop_ )
+			  break;
+
+		  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+			  testTimer();
+
+#ifdef USE_KILLER
+		  if ( killer == cap )
+			  continue;
+#endif
+
+		  THROW_IF( !board_.validMove(cap), "move validation failed" );
+
+		  capture(ply, alpha, betta, cap, counter);
+	  }
+  }
+  else
+  {
+	  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
 
 	for ( ; !stop_ && alpha < betta ; )
 	{
@@ -489,8 +531,79 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
 		THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-		capture(ply, alpha, betta, cap);
+		capture(ply, alpha, betta, cap, counter);
 	}
+  }
+
+  if ( 0 == counter && board_.getState() == Board::UnderCheck )
+  {
+	  board_.setNoMoves();
+	  ScoreType s = board_.evaluate();
+	  if ( Board::ChessMat == board_.getState() )
+		  s += ply;
+	  return s;
+  }
 
 	return alpha;
+}
+
+//////////////////////////////////////////////////////////////////////////
+void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter)
+{
+	totalNodes_++;
+	nodesCount_++;
+
+#ifndef NDEBUG
+	Board board0 = board_;
+#endif
+
+	if ( board_.makeMove(cap) )
+	{
+		counter++;
+		ScoreType s = alpha;
+		if ( board_.drawState() )
+			s = 0;
+		else
+		{
+			s = -board_.evaluate();
+			int delta = s - betta - Figure::positionGain_;
+			if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
+			{
+				ScoreType betta1 = s < betta ? s : betta;
+				ScoreType alpha1 = alpha;
+
+#ifdef USE_ZERO_WINDOW
+				if ( counter > 1 )
+					s = alpha1 = -captures(ply+1, -(alpha+1), -alpha, delta);
+				if ( counter < 2 || (alpha1 > alpha && alpha1 < betta) )
+#endif
+					s = -captures(ply+1, -betta1, -alpha1, delta);
+			}
+		}
+		if ( !stop_ && s > alpha )
+		{
+			alpha = s;
+
+#ifdef USE_KILLER
+			Move killer = contexts_[ply].killer_;
+			if ( s > killer.score_ )
+			{
+				killer = cap;
+				killer.score_ = s;
+			}
+#endif
+		}
+	}
+
+#ifndef NDEBUG
+	board_.verifyMasks();
+#endif
+
+	board_.unmakeMove();
+
+	THROW_IF( board0 != board_, "board unmake wasn't applied correctly" );
+
+#ifndef NDEBUG
+	board_.verifyMasks();
+#endif
 }

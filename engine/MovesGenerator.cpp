@@ -387,14 +387,14 @@ void CapsGenerator::calculateWeight(Move & move)
 }
 
 //////////////////////////////////////////////////////////////////////////
-CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta) :
+CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
   board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply)
 {
-  numOfMoves_ = generate(alpha, betta);
+  numOfMoves_ = generate(alpha, betta, counter);
   captures_[numOfMoves_].clear();
 }
 
-int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
+int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 {
   int m = 0;
 
@@ -434,7 +434,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
       move.set(from, to, -1, Figure::TypeQueen, 0);
 
 #ifdef GO_IMMEDIATELY
-      if ( capture(alpha, betta, move) )
+      if ( capture(alpha, betta, move, counter) )
         return m;
 #else
       calculateWeight(move);
@@ -509,13 +509,18 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
           continue;
 
+#ifdef AT_LEAST_EQ_CAPS
+		if ( field.type() < fig.getType() )
+			continue;
+#endif
+
 #ifdef GO_IMMEDIATELY
         if ( promotion || field.type() > Figure::TypePawn )
         {
           Move move;
           move.set(fig.where(), to, field.index(), promotion ? Figure::TypeQueen : 0, 0);
 
-          if ( capture(alpha, betta, move) )
+          if ( capture(alpha, betta, move, counter) )
             return m;
         }
         else
@@ -563,13 +568,19 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         if ( field.type() < minimalType_ )
           continue;
 
+#ifdef AT_LEAST_EQ_CAPS
+		if ( fig.getType() != Figure::TypeKing && field.type() < fig.getType() )
+			continue;
+#endif
+
+
 #ifdef GO_IMMEDIATELY
         if ( field.type() > Figure::TypeBishop )
         {
           Move move;
           move.set(fig.where(), to, field.index(), 0, 0);
 
-          if ( capture(alpha, betta, move) )
+          if ( capture(alpha, betta, move, counter) )
             return m;
         }
         else
@@ -601,13 +612,18 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
         if ( (btw_msk & mask_all_inv) != btw_msk )
           continue;
 
+#ifdef AT_LEAST_EQ_CAPS
+		if ( field.type() < fig.getType() )
+			continue;
+#endif
+
 #ifdef GO_IMMEDIATELY
         if ( field.type() > fig.getType() )
         {
           Move move;
           move.set(fig.where(), to, field.index(), 0, 0);
 
-          if ( capture(alpha, betta, move) )
+          if ( capture(alpha, betta, move, counter) )
             return m;
         }
         else
@@ -628,7 +644,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta)
   return m;
 }
 
-bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & move)
+bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
 {
 #ifdef USE_KILLER
   const Move & killer = player_.contexts_[ply_].killer_;
@@ -636,7 +652,7 @@ bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & mov
     return false;
 #endif
 
-  player_.capture(ply_, alpha, betta, move);
+  player_.capture(ply_, alpha, betta, move, counter);
   return alpha >= betta;
 }
 

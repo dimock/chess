@@ -118,57 +118,6 @@ private:
 
   //////////////////////////////////////////////////////////////////////////
   void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+  void capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter);
 
-  //////////////////////////////////////////////////////////////////////////
-  inline void capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap)
-  {
-	  totalNodes_++;
-	  nodesCount_++;
-
-#ifndef NDEBUG
-    Board board0 = board_;
-#endif
-
-	  if ( board_.makeMove(cap) )
-	  {
-		  ScoreType s = alpha;
-		  if ( board_.drawState() )
-			  s = 0;
-		  else
-		  {
-			  s = -board_.evaluate();
-        int delta = s - betta - Figure::positionGain_;
-        if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
-			  {
-				  ScoreType betta1 = s < betta ? s : betta;
-				  s = -captures(ply+1, -betta1, -alpha, delta);
-			  }
-		  }
-		  if ( !stop_ && s > alpha )
-      {
-        alpha = s;
-
-#ifdef USE_KILLER
-        Move killer = contexts_[ply].killer_;
-        if ( s > killer.score_ )
-        {
-          killer = cap;
-          killer.score_ = s;
-        }
-#endif
-      }
-	  }
-
-#ifndef NDEBUG
-	  board_.verifyMasks();
-#endif
-
-	  board_.unmakeMove();
-
-    THROW_IF( board0 != board_, "board unmake wasn't applied correctly" );
-
-#ifndef NDEBUG
-	  board_.verifyMasks();
-#endif
-  }
 };

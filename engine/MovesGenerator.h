@@ -81,7 +81,7 @@ class CapsGenerator
 {
 public:
 
-  CapsGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta);
+  CapsGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
 
   Move & capture()
   {
@@ -116,8 +116,8 @@ public:
 private:
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta);
-  bool capture(ScoreType & alpha, ScoreType betta, const Move & move);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+  bool capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
 
 
   inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
