@@ -284,7 +284,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
     int depthInc = 1;
     if ( counter == 0 && eg.count() == 1 )
-      depthInc = 2;
+      depthInc = ply > 0 ? 2 : 0;
 
     for ( ; !stop_ && alpha < betta ; )
     {
