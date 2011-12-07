@@ -1081,10 +1081,10 @@ bool EscapeGenerator::escape_movement(int & m, ScoreType & alpha, ScoreType bett
 #endif
 
   int depthInc = 0;
-  if ( 2 == board_.checkingNum_ )
-    depthInc = 2;
-  else if ( depth_ > 0 )
-    depthInc = 1;
+  if ( depth_ > 0 )
+  {
+    depthInc = ( 2 == board_.checkingNum_ ) ? 2 : 1;
+  }
 
   player_.movement(depth_ + depthInc, ply_, alpha, betta, move, counter);
   return alpha >= betta;
