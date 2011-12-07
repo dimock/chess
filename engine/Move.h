@@ -13,7 +13,7 @@ struct Move
 {
 #ifndef NDEBUG
   // make all values invalid
-  Move() : from_(-1), to_(-1), rindex_(100), new_type_(10), checkVerified_(1), flags_(-1)
+  Move() : from_(-1), to_(-1), rindex_(100), new_type_(10), checkVerified_(1), alreadyDone_(1), flags_(-1)
   {}
 #endif
 
@@ -31,7 +31,8 @@ struct Move
 
   /// flags
   uint16 checkVerified_ : 1,
-         flags_ : 7;
+         alreadyDone_ : 1,
+         flags_ ;
 
   ScoreType score_;
 
@@ -43,6 +44,7 @@ struct Move
     rindex_ = -1;
     score_ = -std::numeric_limits<ScoreType>::max();
     checkVerified_ = 0;
+    alreadyDone_ = 0;
     flags_ = 0;
   }
 
@@ -53,7 +55,9 @@ struct Move
     rindex_ = rindex;
     new_type_ = new_type;
     checkVerified_ = checkVerified;
+    alreadyDone_ = 0;
     flags_ = 0;
+    score_ = -std::numeric_limits<ScoreType>::max();
   }
 
   operator bool () const

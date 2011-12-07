@@ -115,6 +115,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
     contexts_[0].clear();
+    MovesGenerator::clear_history();
 
     ScoreType score = alphaBetta(depth, 0, alpha, betta);
 
@@ -353,6 +354,75 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   return alpha;
 }
+//////////////////////////////////////////////////////////////////////////
+void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
+{
+  totalNodes_++;
+  nodesCount_++;
+
+#ifndef NDEBUG
+  Board board0 = board_;
+#endif
+
+  if ( board_.makeMove(move) )
+  {
+    counter++;
+    ScoreType s = alpha;
+    if ( board_.drawState() )
+      s = 0;
+    else if ( depth <= 1 )
+    {
+      s = -board_.evaluate();
+#ifdef PERFORM_CAPTURES
+      int delta = (int)s - (int)betta - (int)Figure::positionGain_;
+      if ( s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen] )
+      {
+        //QpfTimer qpt;
+        ScoreType betta1 = s < betta ? s : betta;
+        s = -captures(ply+1, -betta1, -alpha, delta);
+        //Board::ticks_ += qpt.ticks();
+      }
+#endif
+    }
+    else
+      s = -alphaBetta(depth-1, ply+1, -betta, -alpha);
+
+    if ( !stop_ && s > alpha )
+    {
+      alpha = s;
+      if ( move.rindex_ < 0 )
+        MovesGenerator::history(move.from_, move.to_) += depth;
+
+      if ( 0 == ply )
+      {
+        best_ = move;
+        if ( before_ == best_ )
+          beforeFound_ = true;
+      }
+#ifdef USE_KILLER
+      Move & killer = contexts_[ply].killer_;
+      if ( s > killer.score_ )
+      {
+        killer = move;
+        killer.score_ = s;
+      }
+#endif
+    }
+  }
+
+#ifndef NDEBUG
+  board_.verifyMasks();
+#endif
+
+  board_.unmakeMove();
+
+  THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
+
+#ifndef NDEBUG
+  board_.verifyMasks();
+#endif
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)

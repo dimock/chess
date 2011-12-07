@@ -8,14 +8,34 @@ class Player;
 /// generate all movies from this position. don't verify and sort them. only calculate sort weights
 class MovesGenerator
 {
+  static ScoreType history_[64][64];
+
 public:
 
   MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter);
   MovesGenerator(Board & );
 
+  static inline ScoreType & history(int8 from, int8 to)
+  {
+    THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid history field index" );
+    return history_[from][to];
+  }
+
+  static void clear_history();
+
   Move & move()
   {
-    return moves_[current_++];
+    Move * move = moves_ + numOfMoves_;
+    Move * mv = moves_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->score_ < move->score_ )
+        continue;
+
+      move = mv;
+    }
+    move->alreadyDone_ = 1;
+    return *move;
   }
 
   operator bool () const
@@ -35,7 +55,16 @@ private:
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
+  inline void add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  {
+    Move & move = moves_[m++];
+    move.set(from, to, rindex, new_type, 0);
+    calculateWeight(move);
+  }
+
   bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+
+  void calculateWeight(Move & move);
 
   int current_;
   int numOfMoves_;
@@ -56,7 +85,17 @@ public:
 
   Move & capture()
   {
-    return captures_[current_++];
+    Move * move = captures_ + numOfMoves_;
+    Move * mv = captures_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->score_ < move->score_ )
+        continue;
+
+      move = mv;
+    }
+    move->alreadyDone_ = 1;
+    return *move;
   }
 
   operator bool () const
@@ -80,6 +119,15 @@ private:
   int generate(ScoreType & alpha, ScoreType betta);
   bool capture(ScoreType & alpha, ScoreType betta, const Move & move);
 
+
+  inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  {
+    Move & move = captures_[m++];
+    move.set(from, to, rindex, new_type, 0);
+    calculateWeight(move);
+  }
+
+  void calculateWeight(Move & move);
 
   int current_;
   int numOfMoves_;
