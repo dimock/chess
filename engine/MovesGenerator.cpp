@@ -754,7 +754,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
         {
           move.checkVerified_ = 1;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
           // make movement if there is already at least 1 move found or we are under horizon
           if ( escape_movement(m, alpha, betta, move, counter) )
             return m;
@@ -793,7 +793,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
         if ( promotion )
           move.new_type_ = Figure::TypeQueen;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
         // make movement if there is already at least 1 move found or we are under horizon
         if ( escape_movement(m, alpha, betta, move, counter) )
           return m;
@@ -841,7 +841,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
       {
         move.checkVerified_ = 1;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
         // make movement if there is already at least 1 move found or we are under horizon
         if ( escape_movement(m, alpha, betta, move, counter) )
           return m;
@@ -886,7 +886,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
       {
         move.checkVerified_ = 1;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
         // make movement if there is already at least 1 move found or we are under horizon
         if ( escape_movement(m, alpha, betta, move, counter) )
           return m;
@@ -928,7 +928,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
           {
             move.checkVerified_ = 1;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
             // make movement if there is already at least 1 move found or we are under horizon
             if ( escape_movement(m, alpha, betta, move, counter) )
               return m;
@@ -969,7 +969,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
           {
             move.checkVerified_ = 1;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
             // make movement if there is already at least 1 move found or we are under horizon
             if ( escape_movement(m, alpha, betta, move, counter) )
               return m;
@@ -1005,7 +1005,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
           {
             move.checkVerified_ = 1;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
             // make movement if there is already at least 1 move found or we are under horizon
             if ( escape_movement(m, alpha, betta, move, counter) )
               return m;
@@ -1052,7 +1052,7 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
     {
       move.checkVerified_ = 1;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CHECK
       // make movement if there is already at least 1 move found or we are under horizon
       if ( escape_movement(m, alpha, betta, move, counter) )
         return m;
@@ -1081,10 +1081,8 @@ bool EscapeGenerator::escape_movement(int & m, ScoreType & alpha, ScoreType bett
 #endif
 
   int depthInc = 0;
-  if ( depth_ > 0 )
-  {
-    depthInc = ( 2 == board_.checkingNum_ ) ? 2 : 1;
-  }
+  if ( depth_ > 0 && !player_.firstIter_ && 2 == board_.checkingNum_ )
+    depthInc = 1;
 
   player_.movement(depth_ + depthInc, ply_, alpha, betta, move, counter);
   return alpha >= betta;
