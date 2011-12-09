@@ -30,11 +30,11 @@ typedef unsigned __int64 uint64;
 typedef int16 ScoreType;
 
 #define USE_ZERO_WINDOW
-#undef AT_LEAST_EQ_CAPS
+#undef  AT_LEAST_EQ_CAPS
 #define GO_IMMEDIATELY
 #define PERFORM_CAPTURES
 #define USE_KILLER
-#undef NO_TIME_LIMIT
+#undef  NO_TIME_LIMIT
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF
@@ -44,7 +44,7 @@ typedef int16 ScoreType;
 
 
 
-enum { MaxDepth = 48 };
+enum { MaxPly = 40 };
 
 
 class QpfTimer

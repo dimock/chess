@@ -206,6 +206,7 @@ void ChessWidget::onGetFEN()
     moves_base_ = 0;
     pv_str_[0] = 0;
     update();
+    repaint();
   }
 }
 

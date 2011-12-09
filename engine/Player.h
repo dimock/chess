@@ -19,7 +19,7 @@ public:
 
   /// result
   Move best_;
-  Move pv_[MaxDepth];
+  Move pv_[MaxPly];
   int  depth_;
 
   ScoreType score_;
@@ -45,8 +45,6 @@ class Player
   friend class CapsGenerator;
   friend class MovesGenerator;
   friend class EscapeGenerator;
-
-  enum { MaxPly = 40 };
 
 public:
 

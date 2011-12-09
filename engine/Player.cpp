@@ -15,7 +15,7 @@ SearchResult::SearchResult() :
   dt_(0)
 {
   best_.clear();
-  for (int i = 0; i < MaxDepth; ++i)
+  for (int i = 0; i < MaxPly; ++i)
     pv_[i].clear();
 }
 
@@ -119,7 +119,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
     ScoreType score = alphaBetta(depth, 0, alpha, betta);
 
-    if ( !stop_ || (stop_ && beforeFound_) || (2 == depth && best_) )
+    if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth && best_)) )
     {
       clock_t t  = clock();
       clock_t dt = (t - tprev_) / 10;
@@ -137,7 +137,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
     firstIter_ = false;
 
-    if ( score >= Figure::WeightMat-MaxDepth || score <= MaxDepth-Figure::WeightMat )
+    if ( !best_ || score >= Figure::WeightMat-MaxPly || score <= MaxPly-Figure::WeightMat )
       break;
   }
 
@@ -161,6 +161,10 @@ void Player::testTimer()
 ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
   if ( stop_ || ply >= MaxPly )
+    return alpha;
+
+  // there is no reason to go in this direction
+  if ( alpha >= Figure::WeightMat-ply )
     return alpha;
 
   int counter = 0;
@@ -280,7 +284,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
 
     int depthInc = 0;
-    if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 )
+    if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 && (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) )
       depthInc = 1;
 
     for ( ; !stop_ && alpha < betta ; )
