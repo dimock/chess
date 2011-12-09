@@ -105,6 +105,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   tprev_ = tstart_ = clock();
 
   before_.clear();
+  contexts_[0].clear();
   for (int depth = 2; !stop_ && depth <= depthMax_; ++depth)
   {
     best_.clear();
@@ -114,7 +115,6 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    contexts_[0].clear();
     MovesGenerator::clear_history();
 
     ScoreType score = alphaBetta(depth, 0, alpha, betta);
@@ -130,6 +130,12 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
       sres.depth_ = depth;
       sres.nodesCount_ = nodesCount_;
       sres.dt_ = dt;
+
+      if ( before_ != best_ && before_ )
+        contexts_[0].killer_ = before_;
+      else
+        contexts_[0].clear();
+
       before_ = best_;
 
       printPV(sres, out);
@@ -255,7 +261,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
-  if ( killer && board_.validMove(killer) )
+  if ( killer && board_.validMove(killer) && !(0 == ply && killer == before_) )
   {
 #ifndef NDEBUG
     MovesGenerator mg(board_);
@@ -368,7 +374,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
   if ( board_.makeMove(move) )
   {
     bool haveCheck = board_.getState() == Board::UnderCheck;
-    if ( haveCheck && depth > 0 )
+    if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 && (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) )
       depth++;
 
     counter++;
