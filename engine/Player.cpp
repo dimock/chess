@@ -25,7 +25,8 @@ Player::Player() :
   tstart_(0),
   nodesCount_(0),
   totalNodes_(0),
-  depthMax_(2)
+  depthMax_(2),
+  depth_(0)
 {
   g_moves = new MoveCmd[Board::GameLength];
   g_deltaPosCounter = new DeltaPosCounter;
@@ -34,6 +35,8 @@ Player::Player() :
   g_movesTable = new MovesTable;
   g_figureDir = new FigureDir;
   g_pawnMasks_ = new PawnMasks;
+
+  pv_moves_ = new MoveCmd[Board::GameLength];
 
   board_.set_moves(g_moves);
   board_.set_MovesTable(g_movesTable);
@@ -53,6 +56,8 @@ Player::~Player()
   board_.set_DistanceCounter(0);
   board_.set_BetweenMask(0);
   board_.set_PawnMasks(0);
+
+  delete [] pv_moves_;
 
   delete [] g_moves;
   delete g_movesTable;
@@ -83,16 +88,30 @@ bool Player::toFEN(char * fen) const
   return board_.toFEN(fen);
 }
 
-void Player::printPV(SearchResult & sres, std::ostream * out)
+void Player::printPV(Board & pv_board, SearchResult & sres, std::ostream * out)
 {
   if ( !out )
     return;
 
-  char str[64];
-  if ( !printSAN(board_, sres.best_, str) )
-    str[0] = 0;
+  *out << sres.depth_ << " " << sres.score_ << " " << (int)sres.dt_ << " " << sres.nodesCount_;
+  for (int i = 0; i < sres.depth_ && sres.pv_[i]; ++i)
+  {
+    *out << " ";
 
-  *out << sres.depth_ << " " << sres.score_ << " " << (int)sres.dt_ << " " << sres.nodesCount_ << " " << str << std::endl;
+    if ( !pv_board.makeMove(sres.pv_[i]) )
+      break;
+
+    pv_board.unmakeMove();
+
+    char str[64];
+    if ( !printSAN(pv_board, sres.pv_[i], str) )
+      break;
+
+    pv_board.makeMove(sres.pv_[i]);
+
+    *out << str;
+  }
+  *out << std::endl;
 }
 
 bool Player::findMove(SearchResult & sres, std::ostream * out)
@@ -107,9 +126,15 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   MovesGenerator::clear_history();
 
   before_.clear();
-  contexts_[0].clear();
-  for (int depth = 2; !stop_ && depth <= depthMax_; ++depth)
+  contexts_[0].killer_.clear();
+
+  contexts_[0].clearPV(depthMax_);
+
+  for (depth_ = 2; !stop_ && depth_ <= depthMax_; ++depth_)
   {
+    Board pv_board(board_);
+    pv_board.set_moves(pv_moves_);
+
     best_.clear();
     beforeFound_ = false;
     nodesCount_ = 0;
@@ -117,9 +142,9 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    ScoreType score = alphaBetta(depth, 0, alpha, betta);
+    ScoreType score = alphaBetta(depth_, 0, alpha, betta);
 
-    if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth && best_)) )
+    if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
       clock_t t  = clock();
       clock_t dt = (t - tprev_) / 10;
@@ -127,18 +152,27 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
       sres.score_ = score;
       sres.best_  = best_;
-      sres.depth_ = depth;
+      sres.depth_ = depth_;
       sres.nodesCount_ = nodesCount_;
       sres.dt_ = dt;
 
       if ( before_ != best_ && before_ )
         contexts_[0].killer_ = before_;
       else
-        contexts_[0].clear();
+        contexts_[0].killer_.clear();
+
+      for (int i = 0; i < depth_; ++i)
+      {
+        sres.pv_[i] = contexts_[0].pv_[i];
+        if ( !sres.pv_[i] )
+          break;
+      }
+
+      THROW_IF( sres.pv_[0] != best_, "invalid PV found" );
 
       before_ = best_;
 
-      printPV(sres, out);
+      printPV(pv_board, sres, out);
     }
 
     firstIter_ = false;
@@ -175,93 +209,38 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   int counter = 0;
 
-  if ( ply < MaxPly-1 )
-    contexts_[ply+1].clear();
+  Move pv;
+  pv.clear();
 
-#if 0
-  if ( board_.getState() == Board::UnderCheck )
+  // we use PV only up to max-depth
+  if ( ply < depthMax_ )
   {
-    EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
-    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+    pv = contexts_[0].pv_[ply];
+    pv.checkVerified_ = 0;
 
-    Move legal[Board::MovesMax];
-    int num = 0;
-
-    for ( ;; )
-    {
-      const Move & move = mg.move();
-      if ( !move )
-        break;
-
-      bool valid = false;
-      Board board0(board_);
-
-      if ( board_.makeMove(move) )
-      {
-        legal[num++] = move;
-        valid = true;
-      }
-
-      board_.verifyMasks();
-      board_.unmakeMove();
-
-      THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
-
-      board_.verifyMasks();
-
-      if ( valid && !eg.find(move) )
-      {
-        EscapeGenerator eg1(board_, depth, ply, *this, alpha, betta, counter);
-        THROW_IF( true, "some legal escape from check wasn't generated" );
-      }
-    }
-
-    THROW_IF(eg.count() + counter != num, "number of escape moves isn't correct");
-
-    for ( ;; )
-    {
-      const Move & move = eg.escape();
-      if ( !move )
-        break;
-
-      Board board0(board_);
-
-      if ( !board_.makeMove(move) )
-      {
-        THROW_IF( true, "illegal move generated by escape generator" );
-      }
-
-      board_.verifyMasks();
-      board_.unmakeMove();
-
-      THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
-
-      board_.verifyMasks();
-
-      bool found = false;
-      for (int i = 0; !found && i < num; ++i)
-      {
-        if ( legal[i] == move )
-          found = true;
-      }
-
-      if ( !found )
-      {
-        THROW_IF( true, "move from escape generator isn't found in the legal moves list" );
-      }
-    }
+    THROW_IF( pv.rindex_ == 100, "invalid pv move" );
   }
+
+  // clear context for current ply
+  if ( ply < MaxPly )
+  {
+    contexts_[ply+1].killer_.clear();
+    contexts_[ply].pv_[ply].clear();
+  }
+
+#ifdef VERIFY_ESCAPE_GENERATOR
+  verifyEscapeGen(depth, ply, alpha, betta);
 #endif
 
 
-  // will be changed to hash
-  if ( 0 == ply && before_ && board_.validMove(before_) )
-    movement(depth, ply, alpha, betta, before_, counter);
+  // now use PV. it will be changed to hash soon
+  if ( board_.validMove(pv) )
+    movement(depth, ply, alpha, betta, pv, counter);
 
   Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
-  if ( killer && board_.validMove(killer) && !(0 == ply && killer == before_) )
+  if ( killer && killer != pv && board_.validMove(killer) )
   {
 #ifndef NDEBUG
     MovesGenerator mg(board_);
@@ -300,7 +279,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( !move || stop_ )
         break;
 
-      if ( (0 == ply && move == before_)
+      if ( move == pv
 #ifdef USE_KILLER
         || move == killer
 #endif
@@ -325,7 +304,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	    if ( !move || stop_ )
 		    break;
 
-	    if ( (0 == ply && move == before_)
+	    if ( move == pv
   #ifdef USE_KILLER
         || move == killer
   #endif
@@ -334,6 +313,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 	    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
 		    testTimer();
+
+      if ( stop_ )
+        break;
   	  
 	    movement(depth, ply, alpha, betta, move, counter);
 	  }
@@ -401,19 +383,24 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
     }
     else
-	{
+    {
 #ifdef USE_ZERO_WINDOW
-		ScoreType alpha1 = alpha;
-		if ( counter > 1 )
-			s = alpha1 = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
-		if ( counter < 2  || (alpha1 > alpha && alpha1 < betta) )
+      ScoreType alpha1 = alpha;
+      if ( counter > 1 )
+        s = alpha1 = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
+      if ( counter < 2  || (alpha1 > alpha && alpha1 < betta) )
 #endif
-			s = -alphaBetta(depth-1, ply+1, -betta, -alpha1);
-	}
+        s = -alphaBetta(depth-1, ply+1, -betta, -alpha1);
+    }
 
     if ( !stop_ && s > alpha )
     {
       alpha = s;
+
+      // don't overwrite PV if we haven't found best move
+      if ( s < betta )
+        assemblePV(move, ply);
+
       if ( move.rindex_ < 0 )
         MovesGenerator::history(move.from_, move.to_) += depth;
 
@@ -454,8 +441,8 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 	if ( stop_ || ply >= MaxPly )
 		return alpha;
 
-  if ( ply < MaxPly-1 )
-    contexts_[ply+1].clear();
+  if ( ply < MaxPly )
+    contexts_[ply+1].killer_.clear();
 
   int counter = 0;
 
@@ -499,9 +486,9 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
   if ( board_.getState() == Board::UnderCheck )
   {
-    QpfTimer qpt;
+    //QpfTimer qpt;
 	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
-    Board::ticks_ += qpt.ticks();
+    //Board::ticks_ += qpt.ticks();
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
@@ -511,6 +498,9 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
 		  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
 			  testTimer();
+
+      if ( stop_ )
+        break;
 
 #ifdef USE_KILLER
 		  if ( killer == cap )
@@ -618,4 +608,21 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 #ifndef NDEBUG
 	board_.verifyMasks();
 #endif
+}
+
+//////////////////////////////////////////////////////////////////////////
+void Player::assemblePV(const Move & move, int ply)
+{
+  if ( ply >= depth_ )
+    return;
+
+  contexts_[ply].pv_[ply] = move;
+  contexts_[ply].pv_[ply+1].clear();
+
+  for (int i = ply+1; i < depth_; ++i)
+  {
+    contexts_[ply].pv_[i] = contexts_[ply+1].pv_[i];
+    if ( !contexts_[ply].pv_[i] )
+      break;
+  }
 }

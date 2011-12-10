@@ -37,7 +37,7 @@ ChessWidget::ChessWidget(QWidget * parent) :
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
   depthMax_ = settings.value(tr("max_depth"), 16).toInt();
 
-  setFixedSize(450, 500);
+  setFixedSize(450, 525);
   pv_str_[0] = 0;
   setAttribute(Qt::WA_DeleteOnClose);
   cpos_.setUpLeft(upleft_);
@@ -342,9 +342,10 @@ void ChessWidget::drawInfo()
 
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
   int ticksN = Board::ticks_/1000;
-  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d, ticks all = %d", cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, ticksAll_/1000);
+  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d\n{ %s }",
+    cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, pv_str_);
 
-  painter.drawText(QRect(00, 450, 450, 50), Qt::AlignCenter, infoText);
+  painter.drawText(QRect(00, 450, 450, 75), Qt::AlignCenter, infoText);
 }
 
 void ChessWidget::mouseDoubleClickEvent(QMouseEvent * e)
@@ -399,8 +400,10 @@ void ChessWidget::findMove()
   Board::ticks_ = 0;
   Board::tcounter_ = 0;
 
+  Board pv_board = cpos_.getBoard();
+
   depth_ = cpos_.findMove(sres_);
-  if ( 0 == depth_ )
+  if ( 0 == depth_ || !sres_.best_ )
     return;
 
   dt_ = tm.elapsed();
@@ -420,14 +423,26 @@ void ChessWidget::findMove()
   pv_str_[0] = 0;
 
   ticksAll_ = qpt.ticks();
-  //for (int i = 0; i < sres.depth_; ++i)
-  //{
-  //  char str[32];
-  //  if ( !formatMove(cres.steps_[i], str) )
-  //    break;
-  //  strcat(pv_str_, str);
-  //  strcat(pv_str_, " ");
-  //}
+  
+  MoveCmd pv_moves[MaxPly+1];
+  pv_board.set_moves(pv_moves);
+
+  for (int i = 0; i < sres_.depth_ && sres_.pv_[i]; ++i)
+  {
+    if ( !pv_board.makeMove(sres_.pv_[i]) )
+      break;
+
+    pv_board.unmakeMove();
+
+    char str[32];
+    if ( !printSAN(pv_board, sres_.pv_[i], str) )
+      break;
+
+    pv_board.makeMove(sres_.pv_[i]);
+
+    strcat_s(pv_str_, str);
+    strcat_s(pv_str_, " ");
+  }
 }
 
 void ChessWidget::mouseMoveEvent(QMouseEvent * e)

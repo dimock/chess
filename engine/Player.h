@@ -19,7 +19,7 @@ public:
 
   /// result
   Move best_;
-  Move pv_[MaxPly];
+  Move pv_[MaxPly+1];
   int  depth_;
 
   ScoreType score_;
@@ -33,10 +33,12 @@ class EscapeGenerator;
 struct PlyContext
 {
   Move killer_;
+  Move pv_[MaxPly+1];
 
-  void clear()
+  void clearPV(int depth)
   {
-    killer_.clear();
+    for (int i = 0; i < depth; ++i)
+      pv_[i].clear();
   }
 };
 
@@ -85,7 +87,7 @@ public:
 
 private:
 
-  void printPV(SearchResult & sres, std::ostream * out);
+  void printPV(Board & pv_board, SearchResult & sres, std::ostream * out);
 
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta);
   ScoreType captures(int ply, ScoreType alpha, ScoreType betta, int delta);
@@ -96,13 +98,15 @@ private:
   Board board_;
   int timeLimitMS_;
   int depthMax_;
+  int depth_;
   int nodesCount_, totalNodes_;
   bool firstIter_;
   clock_t tstart_, tprev_;
   Move before_, best_;
   bool beforeFound_;
 
-  PlyContext contexts_[MaxPly];
+  PlyContext contexts_[MaxPly+1];
+  MoveCmd * pv_moves_;
 
   // global data
   MoveCmd * g_moves;
@@ -117,5 +121,10 @@ private:
   //////////////////////////////////////////////////////////////////////////
   void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
   void capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter);
+  void assemblePV(const Move & move, int ply);
+
+#ifdef VERIFY_ESCAPE_GENERATOR
+  void verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType betta);
+#endif
 
 };

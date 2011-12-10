@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <sstream>
 
 std::auto_ptr<QImage> ChessPosition::fimages_[12];
 
