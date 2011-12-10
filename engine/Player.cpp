@@ -104,6 +104,8 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   firstIter_ = true;
   tprev_ = tstart_ = clock();
 
+  MovesGenerator::clear_history();
+
   before_.clear();
   contexts_[0].clear();
   for (int depth = 2; !stop_ && depth <= depthMax_; ++depth)
@@ -114,8 +116,6 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
-
-    MovesGenerator::clear_history();
 
     ScoreType score = alphaBetta(depth, 0, alpha, betta);
 
@@ -268,7 +268,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     if ( !mg.find(killer) )
     {
       board_.validMove(killer);
-      THROW_IF( true, "move has passed validation but not found generated in moves list" );
+      THROW_IF( true, "move has passed validation but not found in generated moves list" );
     }
 #endif
 
@@ -283,11 +283,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 
 
-  //QpfTimer qpt;
-
   if ( Board::UnderCheck == board_.getState() )
   {
+    //QpfTimer qpt;
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
+    //Board::ticks_ += qpt.ticks();
+    //Board::tcounter_++;
 
     int depthInc = 0;
     if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 && (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) )
@@ -317,9 +318,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   else
   {
 	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
-
-    //Board::ticks_ += qpt.ticks();
-    //Board::tcounter_++;
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
@@ -475,7 +473,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
     }
 #endif
 
-	killer.checkVerified_ = 0;
+	  killer.checkVerified_ = 0;
     capture(ply, alpha, betta, killer, counter);
   }
 
@@ -501,7 +499,9 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
   if ( board_.getState() == Board::UnderCheck )
   {
+    QpfTimer qpt;
 	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+    Board::ticks_ += qpt.ticks();
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {

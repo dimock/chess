@@ -31,7 +31,7 @@ ChessWidget::ChessWidget(QWidget * parent) :
   QMainWindow(parent), upleft_(30, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
   moves_base_(0), dt_(0),
   thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), computerAnswers_(true), timelimit_(1000),
-  depthMax_(2), enableBook_(true)
+  depthMax_(2), enableBook_(true), ticksAll_(0)
 {
   QSettings settings(tr("Dimock"), tr("qchess"));
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
@@ -341,8 +341,8 @@ void ChessWidget::drawInfo()
   QString infoText;
 
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
-  int ticksN = Board::ticks_;
-  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d", cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN);
+  int ticksN = Board::ticks_/1000;
+  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d, ticks all = %d", cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, ticksAll_/1000);
 
   painter.drawText(QRect(00, 450, 450, 50), Qt::AlignCenter, infoText);
 }
@@ -394,6 +394,8 @@ void ChessWidget::findMove()
   QTime tm;
   tm.start();
 
+  QpfTimer qpt;
+
   Board::ticks_ = 0;
   Board::tcounter_ = 0;
 
@@ -416,6 +418,8 @@ void ChessWidget::findMove()
     Board::ticks_ /= Board::tcounter_;
 
   pv_str_[0] = 0;
+
+  ticksAll_ = qpt.ticks();
   //for (int i = 0; i < sres.depth_; ++i)
   //{
   //  char str[32];

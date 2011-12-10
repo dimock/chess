@@ -85,6 +85,7 @@ private:
   bool computerAnswers_;
   int  depthMax_;
   bool enableBook_;
+  int64 ticksAll_;
 
   QAction * onNewAction_;
   QAction * onLoadAction_;
