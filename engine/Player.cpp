@@ -358,18 +358,18 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       depth++;
 
     counter++;
-    ScoreType s = alpha;
+    ScoreType score = alpha;
     if ( board_.drawState() )
-      s = 0;
+      score = 0;
     else if ( depth <= 1 )
     {
-      s = -board_.evaluate();
+      score = -board_.evaluate();
 #ifdef PERFORM_CAPTURES
-      int delta = (int)s - (int)betta - (int)Figure::positionGain_;
-      if ( haveCheck || (s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
+      int delta = (int)score - (int)betta - (int)Figure::positionGain_;
+      if ( haveCheck || (score > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
       {
-        ScoreType betta1 = s < betta && !haveCheck ? s : betta;
-        s = -captures(ply+1, -betta1, -alpha, delta);
+        ScoreType betta1 = score < betta && !haveCheck ? score : betta;
+        score = -captures(ply+1, -betta1, -alpha, delta);
       }
 #endif
     }
@@ -377,15 +377,15 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
     {
 #ifdef USE_ZERO_WINDOW
       if ( counter > 1 )
-        s = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
-      if ( counter < 2  || (s > alpha && s < betta) )
+        score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
+      if ( counter < 2  || (score > alpha && score < betta) )
 #endif
-        s = -alphaBetta(depth-1, ply+1, -betta, -s);
+        score = -alphaBetta(depth-1, ply+1, -betta, -score);
     }
 
-    if ( !stop_ && s > alpha )
+    if ( !stop_ && score > alpha )
     {
-      alpha = s;
+      alpha = score;
 
       assemblePV(move, ply);
 
@@ -400,10 +400,10 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       }
 #ifdef USE_KILLER
       Move & killer = contexts_[ply].killer_;
-      if ( s > killer.score_ )
+      if ( score > killer.score_ )
       {
         killer = move;
-        killer.score_ = s;
+        killer.score_ = score;
       }
 #endif
     }
