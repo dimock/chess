@@ -18,8 +18,8 @@ bool Board::validMove(const Move & move) const
 
   const Figure & fig = getFigure(color_, ffrom.index());
   THROW_IF( !fig, "there is no figure on field from in validMove" );
-  //if ( !fig )
-  //  return false;
+  if ( fig.getType() != Figure::TypePawn && move.new_type_ > 0 )
+    return false;
 
   THROW_IF( fig.where() != move.from_, "figure isn't on its fiels" );
 
@@ -65,7 +65,7 @@ bool Board::validMove(const Move & move) const
         int e_to = epawn.where() + (dy << 3);
         return move.to_ == e_to;
       }
-      else
+      else if ( move.rindex_ < 0 )
       {
         int8 to3 = move.from_ + ((move.to_-move.from_) >> 1);
         THROW_IF( (uint8)to3 > 63 || 3 == dir && to3 != move.from_ + (move.to_ > move.from_ ? 8 : -8), "pawn goes to invalid field" );

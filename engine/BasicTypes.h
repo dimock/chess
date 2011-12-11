@@ -34,7 +34,7 @@ typedef int16 ScoreType;
 #define GO_IMMEDIATELY
 #define PERFORM_CAPTURES
 #define USE_KILLER
-#define  NO_TIME_LIMIT
+#undef  NO_TIME_LIMIT
 #undef  VERIFY_ESCAPE_GENERATOR
 
 #ifndef NDEBUG

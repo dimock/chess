@@ -368,38 +368,26 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       int delta = (int)s - (int)betta - (int)Figure::positionGain_;
       if ( haveCheck || (s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
       {
-        //QpfTimer qpt;
         ScoreType betta1 = s < betta && !haveCheck ? s : betta;
-
-#ifdef USE_ZERO_WINDOW
-		ScoreType alpha1 = alpha;
-		if ( counter > 1 )
-			s = alpha1 = -captures(ply+1, -(alpha+1), -alpha, delta);
-		if ( counter < 2 || (alpha1 > alpha && alpha1 < betta) )
-#endif
-	        s = -captures(ply+1, -betta1, -alpha1, delta);
-        //Board::ticks_ += qpt.ticks();
+        s = -captures(ply+1, -betta1, -alpha, delta);
       }
 #endif
     }
     else
     {
 #ifdef USE_ZERO_WINDOW
-      ScoreType alpha1 = alpha;
       if ( counter > 1 )
-        s = alpha1 = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
-      if ( counter < 2  || (alpha1 > alpha && alpha1 < betta) )
+        s = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
+      if ( counter < 2  || (s > alpha && s < betta) )
 #endif
-        s = -alphaBetta(depth-1, ply+1, -betta, -alpha1);
+        s = -alphaBetta(depth-1, ply+1, -betta, -s);
     }
 
     if ( !stop_ && s > alpha )
     {
       alpha = s;
 
-      // don't overwrite PV if we haven't found best move
-      if ( s < betta )
-        assemblePV(move, ply);
+      assemblePV(move, ply);
 
       if ( move.rindex_ < 0 )
         MovesGenerator::history(move.from_, move.to_) += depth;
@@ -572,14 +560,7 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 			if ( haveCheck || (s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
 			{
 				ScoreType betta1 = s < betta && !haveCheck ? s : betta;
-				ScoreType alpha1 = alpha;
-
-#ifdef USE_ZERO_WINDOW
-				if ( counter > 1 )
-					s = alpha1 = -captures(ply+1, -(alpha+1), -alpha, delta);
-				if ( counter < 2 || (alpha1 > alpha && alpha1 < betta) )
-#endif
-					s = -captures(ply+1, -betta1, -alpha1, delta);
+				s = -captures(ply+1, -betta1, -alpha, delta);
 			}
 		}
 		if ( !stop_ && s > alpha )
@@ -608,21 +589,4 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 #ifndef NDEBUG
 	board_.verifyMasks();
 #endif
-}
-
-//////////////////////////////////////////////////////////////////////////
-void Player::assemblePV(const Move & move, int ply)
-{
-  if ( ply >= depth_ )
-    return;
-
-  contexts_[ply].pv_[ply] = move;
-  contexts_[ply].pv_[ply+1].clear();
-
-  for (int i = ply+1; i < depth_; ++i)
-  {
-    contexts_[ply].pv_[i] = contexts_[ply+1].pv_[i];
-    if ( !contexts_[ply].pv_[i] )
-      break;
-  }
 }

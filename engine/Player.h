@@ -121,7 +121,22 @@ private:
   //////////////////////////////////////////////////////////////////////////
   void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
   void capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter);
-  void assemblePV(const Move & move, int ply);
+  
+  void assemblePV(const Move & move, int ply)
+  {
+    if ( ply >= depth_ )
+      return;
+
+    contexts_[ply].pv_[ply] = move;
+    contexts_[ply].pv_[ply+1].clear();
+
+    for (int i = ply+1; i < depth_; ++i)
+    {
+      contexts_[ply].pv_[i] = contexts_[ply+1].pv_[i];
+      if ( !contexts_[ply].pv_[i] )
+        break;
+    }
+  }
 
 #ifdef VERIFY_ESCAPE_GENERATOR
   void verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType betta);
