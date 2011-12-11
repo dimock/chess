@@ -98,7 +98,7 @@ void Player::printPV(Board & pv_board, SearchResult & sres, std::ostream * out)
   {
     *out << " ";
 
-    if ( !pv_board.makeMove(sres.pv_[i]) )
+    if ( !pv_board.validMove(sres.pv_[i]) || !pv_board.makeMove(sres.pv_[i]) )
       break;
 
     pv_board.unmakeMove();

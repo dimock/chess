@@ -424,12 +424,11 @@ void ChessWidget::findMove()
 
   ticksAll_ = qpt.ticks();
   
-  MoveCmd pv_moves[MaxPly+1];
-  pv_board.set_moves(pv_moves);
+  pv_board.set_moves(pv_moves_);
 
   for (int i = 0; i < sres_.depth_ && sres_.pv_[i]; ++i)
   {
-    if ( !pv_board.makeMove(sres_.pv_[i]) )
+    if ( !pv_board.validMove(sres_.pv_[i]) || !pv_board.makeMove(sres_.pv_[i]) )
       break;
 
     pv_board.unmakeMove();
