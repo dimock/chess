@@ -270,8 +270,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     //Board::tcounter_++;
 
     int depthInc = 0;
-    if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 && (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) )
+    if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 &&
+        (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) && (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly) )
+    {
       depthInc = 1;
+    }
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -354,8 +357,11 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
   if ( board_.makeMove(move) )
   {
     bool haveCheck = board_.getState() == Board::UnderCheck;
-    if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 && (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) )
+    if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
+         (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) && (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly) )
+    {
       depth++;
+    }
 
     counter++;
     ScoreType score = alpha;
