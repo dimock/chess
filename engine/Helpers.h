@@ -81,10 +81,10 @@ public:
     return pmasks_guarded_[color][pos];
   }
 
-  inline const uint64 & mask_backward(int color, int pos) const
+  inline const uint64 & mask_backward(int pos) const
   {
-	  THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
-	  return pmasks_backward_[color][pos];
+	  THROW_IF( (unsigned)pos > 63, "invalid pawn pos" );
+	  return pmasks_backward_[pos];
   }
 
   inline const uint64 & mask_passed(int color, int pos) const
@@ -112,7 +112,7 @@ private:
   uint64 pmasks_guarded_[2][64];
   uint64 pmasks_passed_[2][64];
   uint64 pmasks_blocked_[2][64];
-  uint64 pmasks_backward_[2][64];
+  uint64 pmasks_backward_[64];
   uint64 pmask_isolated_[8];
 };
 

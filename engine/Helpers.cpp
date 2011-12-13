@@ -90,7 +90,6 @@ PawnMasks::PawnMasks()
       }
 
       uint8 * ppmask = (uint8*)&pmasks_passed_[color][i];
-      uint8 * bpmask = (uint8*)&pmasks_backward_[color][i];
       uint8 * blkmask = (uint8*)&pmasks_blocked_[color][i];
 
       ppmask[x] = pm;
@@ -98,14 +97,38 @@ PawnMasks::PawnMasks()
       if ( x > 0 )
       {
         ppmask[x-1] = pm;
-        bpmask[x-1] = bm;
       }
       if ( x < 7 )
       {
         ppmask[x+1] = pm;
-        bpmask[x+1] = bm;
       }
     }
+  }
+
+  for (int i = 0; i < 64; ++i)
+  {
+	  int x = i & 7;
+	  int y = i >> 3;
+
+	  uint8 * bkmask = (uint8*)&pmasks_backward_[i];
+
+	  if ( x > 0 )
+	  {
+		  bkmask[x-1] |= 1 << y;
+		  if ( y > 0 )
+			  bkmask[x-1] |= 1 << (y-1);
+		  if ( y < 7 )
+			  bkmask[x-1] |= 1 << (y+1);
+	  }
+
+	  if ( x < 7 )
+	  {
+		  bkmask[x+1] |= 1 << y;
+		  if ( y > 0 )
+			  bkmask[x+1] |= 1 << (y-1);
+		  if ( y < 7 )
+			  bkmask[x+1] |= 1 << (y+1);
+	  }
   }
 
   for (int x = 0; x < 8; ++x)
@@ -125,8 +148,8 @@ void PawnMasks::clearAll(int pos)
     pmasks_guarded_[color][pos] = 0;
     pmasks_passed_[color][pos] = 0;
     pmasks_blocked_[color][pos] = 0;
-    pmasks_backward_[color][pos] = 0;
   }
+  pmasks_backward_[pos] = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////

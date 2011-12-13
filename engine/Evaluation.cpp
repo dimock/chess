@@ -133,6 +133,7 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 ScoreType Figure::pawnGuarded_  =  8;
 ScoreType Figure::pawnDoubled_  = -8;
 ScoreType Figure::pawnIsolated_ = -8;
+ScoreType Figure::pawnBackward_ = -6;
 
 ScoreType Figure::pawnPassed_[2][8] = {
   { 0, 40, 25, 20, 15, 10, 5, 0 },
@@ -156,13 +157,13 @@ ScoreType Figure::pawnPassed_[2][8] = {
     if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )\
     {\
       int y = pawn.where() >> 3;\
-      wght += Figure::pawnPassed_[color][y]/* << stage*/;\
+      wght += Figure::pawnPassed_[color][y];\
       const uint64 & guardmsk = g_pawnMasks->mask_guarded(color, pawn.where());\
       if ( pmsk & guardmsk )\
         wght += Figure::pawnGuarded_;\
     }\
     const uint64 & isomask = g_pawnMasks->mask_isolated(pawn.where() & 7);\
-    if ( !(pmsk & isomask) && fmgr_.pawns(color) > 1 )\
+    if ( !(pmsk & isomask) )\
       wght += Figure::pawnIsolated_;\
   }\
   uint8 column = ((uint8*)&pmsk)[(icol)];\
@@ -273,87 +274,127 @@ ScoreType Board::calculateEval() const
   weight -= kingEval[0];
   weight += kingEval[1];
 
-  if ( fmgr_.pawns(Figure::ColorBlack) )
-  {
-    ScoreType pweight0 = 0;
-    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
-    weight -= pweight0;
-  }
-
-  if ( fmgr_.pawns(Figure::ColorWhite) )
-  {
-    ScoreType pweight1 = 0;
-    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
-    weight += pweight1;
-  }
-
-  //if ( fmgr_.pawns() > 0 )
+  //if ( fmgr_.pawns(Figure::ColorBlack) )
   //{
-  //  weight -= evaluatePawns(Figure::ColorBlack, stages_[0]);
-  //  weight += evaluatePawns(Figure::ColorWhite, stages_[1]);
+  //  ScoreType pweight0 = 0;
+  //  EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
+  //  weight -= pweight0;
   //}
 
-  //if ( UnderCheck == state_ )
+  //if ( fmgr_.pawns(Figure::ColorWhite) )
   //{
-  //  static ScoreType s_checkWeight[2] = { 2, -2 };
-  //  weight += s_checkWeight[color_];
+  //  ScoreType pweight1 = 0;
+  //  EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
+  //  weight += pweight1;
   //}
+
+  if ( fmgr_.pawns() > 0 )
+  {
+    weight -= evaluatePawns(Figure::ColorBlack);
+    weight += evaluatePawns(Figure::ColorWhite);
+  }
+
+  // evaluate rooks
+  {
+	  weight -= evaluateRooks(Figure::ColorBlack);
+	  weight += evaluateRooks(Figure::ColorWhite);
+  }
+
+  if ( UnderCheck == state_ )
+  {
+    static ScoreType s_checkWeight[2] = { 2, -2 };
+    weight += s_checkWeight[color_];
+  }
 
   return weight;
 }
 
+ScoreType Board::evaluateRooks(Figure::Color color) const
+{
+	uint64 rook_mask = fmgr_.rook_mask(color);
+	if ( !rook_mask )
+		return 0;
 
+	Figure::Color ocolor = Figure::otherColor(color);
+	uint64 pmsk  = fmgr_.pawn_mask_t(color) | fmgr_.pawn_mask_t(ocolor);
 
-//ScoreType Board::evaluatePawns(Figure::Color color, int stage) const
-//{
-//  const uint64 & pmsk = fmgr_.pawn_mask(color);
-//
-//  if ( !pmsk )
-//    return 0;
-//
-//  ScoreType weight = 0;
-//  Figure::Color ocolor = Figure::otherColor(color);
-//  const uint64 & opmsk = fmgr_.pawn_mask(ocolor);
-//
-//  EVALUATE_PAWN_COLUMN(0);
-//  EVALUATE_PAWN_COLUMN(1);
-//  EVALUATE_PAWN_COLUMN(2);
-//  EVALUATE_PAWN_COLUMN(3);
-//  EVALUATE_PAWN_COLUMN(4);
-//  EVALUATE_PAWN_COLUMN(5);
-//  EVALUATE_PAWN_COLUMN(6);
-//  EVALUATE_PAWN_COLUMN(7);
-//
-//  //for (int i = 0; i < 8; ++i)
-//  //{
-//  //  const Figure & pawn = getFigure(color, i);
-//  //  if ( pawn.getType() == Figure::TypePawn )
-//  //  {
-//  //    const uint64 & passmsk = PawnMasks::mask_passed(color, pawn.where());
-//  //    const uint64 & blckmsk = PawnMasks::mask_blocked(color, pawn.where());
-//  //    if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
-//  //    {
-//  //      int y = pawn.where() >> 3;
-//  //      weight += Figure::pawnPassed_[color][y]/* << stage*/;
-//
-//		//    const uint64 & guardmsk = PawnMasks::mask_guarded(color, pawn.where());
-//		//    if ( pmsk & guardmsk )
-//		//      weight += Figure::pawnGuarded_;
-//  //    }
-//
-//  //    const uint64 & isomask = PawnMasks::mask_isolated(pawn.where() & 7);
-//  //    if ( !(pmsk & isomask) && fmgr_.pawns(color) > 1 )
-//  //      weight += Figure::pawnIsolated_;
-//  //  }
-//
-//  //  uint8 column = ((uint8*)&pmsk)[i];
-//  //  int dblNum = numBitsInByte(column);
-//  //  ScoreType dblMask = ~((dblNum-1) >> 31);
-//  //  weight -= ((dblNum-1) << 3) & dblMask;//* Figure::pawnDoubled_;
-//  //}
-//
-//  return weight;
-//}
+	ScoreType score = 0;
+
+	for ( ; rook_mask; )
+	{
+		int n = least_bit_number(rook_mask);
+
+		THROW_IF( (unsigned)n > 63, "invalid rook index" );
+
+		THROW_IF( getField(n).color() != color || getField(n).type() != Figure::TypeRook, "there should be rook on given field" );
+
+		int x = n & 7;
+
+		uint8 column = ((uint8*)&pmsk)[x];
+		if ( !column )
+			score += 8;
+	}
+
+	return score;
+}
+
+ScoreType Board::evaluatePawns(Figure::Color color) const
+{
+  const uint64 & pmsk = fmgr_.pawn_mask_t(color);
+
+  if ( !pmsk )
+    return 0;
+
+  ScoreType weight = 0;
+  Figure::Color ocolor = Figure::otherColor(color);
+  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
+
+  //EVALUATE_PAWN_COLUMN(0);
+  //EVALUATE_PAWN_COLUMN(1);
+  //EVALUATE_PAWN_COLUMN(2);
+  //EVALUATE_PAWN_COLUMN(3);
+  //EVALUATE_PAWN_COLUMN(4);
+  //EVALUATE_PAWN_COLUMN(5);
+  //EVALUATE_PAWN_COLUMN(6);
+  //EVALUATE_PAWN_COLUMN(7);
+
+  for (int i = 0; i < 8; ++i)
+  {
+    const Figure & pawn = getFigure(color, i);
+    if ( pawn.getType() == Figure::TypePawn )
+    {
+      const uint64 & passmsk = g_pawnMasks->mask_passed(color, pawn.where());
+      const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, pawn.where());
+      if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
+      {
+        int y = pawn.where() >> 3;
+        weight += Figure::pawnPassed_[color][y];
+
+	    const uint64 & guardmsk = g_pawnMasks->mask_guarded(color, pawn.where());
+	    if ( pmsk & guardmsk )
+	      weight += Figure::pawnGuarded_;
+      }
+
+	  const uint64 & isomask = g_pawnMasks->mask_isolated(pawn.where() & 7);
+	  const uint64 & bkwmask = g_pawnMasks->mask_backward(pawn.where());
+
+	  // maybe isolated pawn
+      if ( !(pmsk & isomask) )
+        weight += Figure::pawnIsolated_;
+
+	  // if no, it maybe backward
+	  else if ( !(pmsk & bkwmask) )
+		  weight += Figure::pawnBackward_;
+    }
+
+    uint8 column = ((uint8*)&pmsk)[i];
+    int dblNum = BitsCounter::numBitsInByte(column);
+    ScoreType dblMask = ~((dblNum-1) >> 31);
+    weight -= ((dblNum-1) << 3) & dblMask;
+  }
+
+  return weight;
+}
 
 ScoreType Board::evaluateWinnerLoser() const
 {

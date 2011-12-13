@@ -178,7 +178,8 @@ private:
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
 
-  //ScoreType evaluatePawns(Figure::Color color, int stage) const;
+  ScoreType evaluatePawns(Figure::Color color) const;
+  ScoreType evaluateRooks(Figure::Color color) const;
   ScoreType evaluateWinnerLoser() const;
 
   /// do move. fill undo info, don't validate
