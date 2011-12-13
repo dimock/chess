@@ -163,13 +163,16 @@ ScoreType Figure::pawnPassed_[2][8] = {
         wght += Figure::pawnGuarded_;\
     }\
     const uint64 & isomask = g_pawnMasks->mask_isolated(pawn.where() & 7);\
+    const uint64 & bkwmask = g_pawnMasks->mask_backward(pawn.where());\
     if ( !(pmsk & isomask) )\
       wght += Figure::pawnIsolated_;\
+    else if ( !(pmsk & bkwmask) )\
+      wght += Figure::pawnBackward_;\
   }\
   uint8 column = ((uint8*)&pmsk)[(icol)];\
   int dblNum = BitsCounter::numBitsInByte(column);\
   ScoreType dblMask = ~((dblNum-1) >> 31);\
-  wght -= ((dblNum-1) << 3) & dblMask;/* *Figure::pawnDoubled_;*/\
+  wght -= ((dblNum-1) << 3) & dblMask;\
 }
 
 #define EVALUATE_PAWNS(wght, color)\
@@ -274,25 +277,25 @@ ScoreType Board::calculateEval() const
   weight -= kingEval[0];
   weight += kingEval[1];
 
-  //if ( fmgr_.pawns(Figure::ColorBlack) )
-  //{
-  //  ScoreType pweight0 = 0;
-  //  EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
-  //  weight -= pweight0;
-  //}
-
-  //if ( fmgr_.pawns(Figure::ColorWhite) )
-  //{
-  //  ScoreType pweight1 = 0;
-  //  EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
-  //  weight += pweight1;
-  //}
-
-  if ( fmgr_.pawns() > 0 )
+  if ( fmgr_.pawns(Figure::ColorBlack) )
   {
-    weight -= evaluatePawns(Figure::ColorBlack);
-    weight += evaluatePawns(Figure::ColorWhite);
+    ScoreType pweight0 = 0;
+    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
+    weight -= pweight0;
   }
+
+  if ( fmgr_.pawns(Figure::ColorWhite) )
+  {
+    ScoreType pweight1 = 0;
+    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
+    weight += pweight1;
+  }
+
+  //if ( fmgr_.pawns() > 0 )
+  //{
+  //  weight -= evaluatePawns(Figure::ColorBlack);
+  //  weight += evaluatePawns(Figure::ColorWhite);
+  //}
 
   // evaluate rooks
   {
