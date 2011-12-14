@@ -133,18 +133,18 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 ScoreType Figure::pawnGuarded_  =  8;
 ScoreType Figure::pawnDoubled_  = -8;
 ScoreType Figure::pawnIsolated_ =-10;
-ScoreType Figure::pawnBackward_ = -8;
-ScoreType Figure::openRook_     = 10;
-
-//ScoreType Figure::pawnPassed_[2][8] = {
-//  { 0, 40, 25, 20, 15, 10, 5, 0 },
-//  { 0, 5, 10, 15, 20, 25, 40, 0 }
-//};
+ScoreType Figure::pawnBackward_ = -6;
+ScoreType Figure::openRook_     =  8;
 
 ScoreType Figure::pawnPassed_[2][8] = {
-	{ 0, 50, 30, 25, 15, 10, 5, 0 },
-	{ 0, 5, 10, 15, 25, 30, 50, 0 }
+  { 0, 40, 25, 20, 15, 10, 5, 0 },
+  { 0, 5, 10, 15, 20, 25, 40, 0 }
 };
+
+//ScoreType Figure::pawnPassed_[2][8] = {
+//	{ 0, 50, 30, 25, 15, 10, 5, 0 },
+//	{ 0, 5, 10, 15, 25, 30, 50, 0 }
+//};
 
 //////////////////////////////////////////////////////////////////////////
 #define EVALUATE_OPEN_ROOKS(clr, score)\
@@ -435,7 +435,16 @@ ScoreType Board::evaluateWinnerLoser() const
   Figure::Color win_color = can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
   Figure::Color lose_color = Figure::otherColor(win_color);
 
-  ScoreType weight = fmgr_.weight(win_color);
+  ScoreType weight = -fmgr_.weight(lose_color);
+  if ( !fmgr_.pawns(win_color) )
+	  weight += fmgr_.weight(win_color);
+  else
+  {
+	  weight += (fmgr_.pawns(win_color)+fmgr_.queens(win_color))*Figure::figureWeight_[Figure::TypeQueen] +
+		  fmgr_.knights(win_color)*Figure::figureWeight_[Figure::TypeKnight] +
+		  fmgr_.bishops(win_color)*Figure::figureWeight_[Figure::TypeBishop] +
+		  fmgr_.rooks(win_color)*Figure::figureWeight_[Figure::TypeRook];
+  }
 
   const Figure & king_w = getFigure(win_color, KingIndex);
   const Figure & king_l = getFigure(lose_color, KingIndex);
@@ -464,13 +473,13 @@ ScoreType Board::evaluateWinnerLoser() const
 
   weight += kingEval;
 
-  if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 )
-  {
-    int num_figs = fmgr_.knights(lose_color) + fmgr_.bishops(lose_color);
-    weight -= (num_figs<<3);
-  }
-  else
-    weight -= fmgr_.weight(lose_color);
+  //if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 )
+  //{
+  //  int num_figs = fmgr_.knights(lose_color) + fmgr_.bishops(lose_color);
+  //  weight -= (num_figs<<3);
+  //}
+  //else
+  //  weight -= fmgr_.weight(lose_color);
 
   if ( win_color == Figure::ColorBlack )
     weight = -weight;
