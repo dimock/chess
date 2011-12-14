@@ -294,7 +294,7 @@ bool Board::isMoveValidUnderCheck(const Move & move) const
     uint64 clear_msk = ~(1ULL << move.from_);
     uint64 set_msk = 1ULL << move.to_;
 
-    int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, (uint64)(-1ULL));
+    int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, ((uint64)(-1LL)));
     return idx < 0;
   }
 
