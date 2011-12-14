@@ -49,7 +49,7 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
     // rook
     {
        0,   0,   0,   0,   0,   0,   0,   0,
-       2,   4,   4,   4,   4,   4,   4,   2,
+       3,   5,   5,   5,   5,   5,   5,   3,
       -2,   0,   0,   0,   0,   0,   0,  -2,
       -2,   0,   0,   0,   0,   0,   0,  -2,
       -2,   0,   0,   0,   0,   0,   0,  -2,
@@ -132,21 +132,39 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
 ScoreType Figure::pawnGuarded_  =  8;
 ScoreType Figure::pawnDoubled_  = -8;
-ScoreType Figure::pawnIsolated_ = -8;
-ScoreType Figure::pawnBackward_ = -6;
+ScoreType Figure::pawnIsolated_ =-10;
+ScoreType Figure::pawnBackward_ = -8;
+ScoreType Figure::openRook_     = 10;
 
-ScoreType Figure::pawnPassed_[2][8] = {
-  { 0, 40, 25, 20, 15, 10, 5, 0 },
-  { 0, 5, 10, 15, 20, 25, 40, 0 }
-};
 //ScoreType Figure::pawnPassed_[2][8] = {
-//	{ 0, 50, 30, 25, 20, 15, 10, 0 },
-//	{ 0, 10, 15, 20, 25, 30, 50, 0 }
+//  { 0, 40, 25, 20, 15, 10, 5, 0 },
+//  { 0, 5, 10, 15, 20, 25, 40, 0 }
 //};
 
+ScoreType Figure::pawnPassed_[2][8] = {
+	{ 0, 50, 30, 25, 15, 10, 5, 0 },
+	{ 0, 5, 10, 15, 25, 30, 50, 0 }
+};
+
 //////////////////////////////////////////////////////////////////////////
+#define EVALUATE_OPEN_ROOKS(clr, score)\
+{\
+  uint64 rook_mask = fmgr_.rook_mask(clr);\
+  Figure::Color oclr = Figure::otherColor(clr);\
+  uint64 pmsk  = fmgr_.pawn_mask_t(clr) | fmgr_.pawn_mask_t(oclr);\
+  for ( ; rook_mask; )\
+  {\
+    int n = least_bit_number(rook_mask);\
+    THROW_IF( (unsigned)n > 63, "invalid rook index" );\
+    THROW_IF( getField(n).color() != clr || getField(n).type() != Figure::TypeRook, "there should be rook on given field" );\
+    int x = n & 7;\
+    uint8 column = ((uint8*)&pmsk)[x];\
+    if ( !column )\
+      score += Figure::openRook_;\
+  }\
+}
 
-
+//////////////////////////////////////////////////////////////////////////
 #define EVALUATE_PAWN_COLUMN(wght, color, icol)\
 {\
   const Figure & pawn = getFigure(color, (icol));\
@@ -297,17 +315,30 @@ ScoreType Board::calculateEval() const
   //  weight += evaluatePawns(Figure::ColorWhite);
   //}
 
-  // evaluate rooks
+  //{
+	 // weight -= evaluateRooks(Figure::ColorBlack);
+	 // weight += evaluateRooks(Figure::ColorWhite);
+  //}
+
+  if ( fmgr_.rooks(Figure::ColorBlack) )
   {
-	  weight -= evaluateRooks(Figure::ColorBlack);
-	  weight += evaluateRooks(Figure::ColorWhite);
+    ScoreType score0 = 0;
+    EVALUATE_OPEN_ROOKS(Figure::ColorBlack, score0);
+    weight -= score0;
   }
 
-  if ( UnderCheck == state_ )
+  if ( fmgr_.rooks(Figure::ColorWhite) )
   {
-    static ScoreType s_checkWeight[2] = { 2, -2 };
-    weight += s_checkWeight[color_];
+    ScoreType score1 = 0;
+    EVALUATE_OPEN_ROOKS(Figure::ColorWhite, score1);
+    weight += score1;
   }
+
+  //if ( UnderCheck == state_ )
+  //{
+  //  static ScoreType s_checkWeight[2] = { 2, -2 };
+  //  weight += s_checkWeight[color_];
+  //}
 
   return weight;
 }
@@ -335,7 +366,7 @@ ScoreType Board::evaluateRooks(Figure::Color color) const
 
 		uint8 column = ((uint8*)&pmsk)[x];
 		if ( !column )
-			score += 8;
+      score += Figure::openRook_;
 	}
 
 	return score;
