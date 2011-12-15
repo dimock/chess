@@ -182,3 +182,21 @@ private:
   Board & board_;
   Move escapes_[Board::MovesMax];
 };
+
+// generate only checks without captures and promotions
+class ChecksGenerator
+{
+public:
+
+  ChecksGenerator(Board &, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
+
+private:
+
+  // returns true if there was betta pruning
+  bool do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, int & counter);
+
+  Player & player_;
+  int ply_;
+
+  Board & board_;
+};

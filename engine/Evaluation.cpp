@@ -440,10 +440,11 @@ ScoreType Board::evaluateWinnerLoser() const
 	  weight += fmgr_.weight(win_color);
   else
   {
-	  weight += (fmgr_.pawns(win_color)+fmgr_.queens(win_color))*Figure::figureWeight_[Figure::TypeQueen] +
+	  weight += fmgr_.queens(win_color)*Figure::figureWeight_[Figure::TypeQueen] +
 		  fmgr_.knights(win_color)*Figure::figureWeight_[Figure::TypeKnight] +
 		  fmgr_.bishops(win_color)*Figure::figureWeight_[Figure::TypeBishop] +
-		  fmgr_.rooks(win_color)*Figure::figureWeight_[Figure::TypeRook];
+		  fmgr_.rooks(win_color)*Figure::figureWeight_[Figure::TypeRook] +
+      fmgr_.pawns(win_color)*Figure::figureWeight_[Figure::TypeRook];
   }
 
   const Figure & king_w = getFigure(win_color, KingIndex);

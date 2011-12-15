@@ -341,7 +341,7 @@ void ChessWidget::drawInfo()
   QString infoText;
 
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
-  int ticksN = Board::ticks_/1000;
+  int ticksN = Board::ticks_;// /1000;
   infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d\n{ %s }",
     cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, pv_str_);
 

@@ -9,6 +9,7 @@
 class MovesGenerator;
 class CapsGenerator;
 class EscapeGenerator;
+class ChecksGenerator;
 
 /*! board representation
  */
@@ -17,6 +18,7 @@ class Board
   friend class MovesGenerator;
   friend class CapsGenerator;
   friend class EscapeGenerator;
+  friend class ChecksGenerator;
 
 public:
 

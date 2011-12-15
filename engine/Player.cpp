@@ -505,6 +505,15 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
 		  capture(ply, alpha, betta, cap, counter);
 	  }
+
+    if ( !counter )
+    {
+      board_.setNoMoves();
+      ScoreType s = board_.evaluate();
+      if ( Board::ChessMat == board_.getState() )
+        s += ply;
+      return s;
+    }
   }
   else
   {
@@ -528,15 +537,11 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
       capture(ply, alpha, betta, cap, counter);
     }
-  }
 
-  if ( 0 == counter && board_.getState() == Board::UnderCheck )
-  {
-	  board_.setNoMoves();
-	  ScoreType s = board_.evaluate();
-	  if ( Board::ChessMat == board_.getState() )
-		  s += ply;
-	  return s;
+    //if ( !stop_ && alpha < betta )
+    //{
+    //  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
+    //}
   }
 
 	return alpha;
@@ -554,7 +559,9 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 
 	if ( board_.makeMove(cap) )
 	{
-		counter++;
+    bool haveCheck = board_.getState() == Board::UnderCheck;
+
+    counter++;
 		ScoreType s = alpha;
 		if ( board_.drawState() )
 			s = 0;
@@ -562,7 +569,7 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 		{
 			s = -board_.evaluate();
 			int delta = s - betta - Figure::positionGain_;
-      bool haveCheck = board_.getState() == Board::UnderCheck;
+      bool b = s <= alpha;
 			if ( haveCheck || (s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
 			{
 				ScoreType betta1 = s < betta && !haveCheck ? s : betta;

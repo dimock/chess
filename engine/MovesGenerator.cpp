@@ -96,24 +96,12 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           }
 
           add_move(m, fig.where(), *table, rindex, 0);
-          //Move & move = moves_[m++];
-          //move.set(fig.where(), *table, rindex, 0, 0);
         }
 
         if ( fig.isFirstStep() && board_.state_ != Board::UnderCheck )
         {
           add_move(m, fig.where(), fig.where()+2, -1, 0);
           add_move(m, fig.where(), fig.where()-2, -1, 0);
-
-          //{
-          //  Move & move = moves_[m++];
-          //  move.set(fig.where(), fig.where()+2, -1, 0, 0);
-          //}
-
-          //{
-          //  Move & move = moves_[m++];
-          //  move.set(fig.where(), fig.where()-2, -1, 0, 0);
-          //}
         }
       }
       break;
@@ -159,10 +147,6 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
             {
               add_move(m, fig.where(), p, rindex, 0);
             }
-            //{
-            //  Move & move = moves_[m++];
-            //  move.set(fig.where(), p, rindex, 0, 0);
-            //}
           }
         }
       }
@@ -197,10 +181,6 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           {
             add_move(m, fig.where(), *table, rindex, 0);
           }
-          //{
-          //  Move & move = moves_[m++];
-          //  move.set(fig.where(), *table, rindex, 0, 0);
-          //}
         }
       }
       break;
@@ -398,11 +378,21 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 {
   int m = 0;
 
+  Figure::Color ocolor = Figure::otherColor(board_.color_);
+  uint64 oppenent_mask = board_.fmgr_.mask(ocolor) & ~board_.fmgr_.king_mask(ocolor);
+  const uint64 & black = board_.fmgr_.mask(Figure::ColorBlack);
+  const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
+  uint64 mask_all_inv = ~(white | black);
+  const uint64 & rooks_msk = board_.fmgr_.rook_mask(board_.color_);
+  const uint64 & queens_msk = board_.fmgr_.queen_mask(board_.color_);
+
   // generate pawn promotions (only if < 2 checking figures)
   const uint64 & pawn_msk = board_.fmgr_.pawn_mask_o(board_.color_);
   static int pw_delta[] = { -8, 8 };
 
-  if ( board_.checkingNum_ < 2 )
+  const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
+
+  //if ( board_.checkingNum_ < 2 )
   {
     uint64 promo_msk = board_.g_movesTable->promote_o(board_.color_);
     promo_msk &= pawn_msk;
@@ -421,8 +411,22 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       THROW_IF( (unsigned)to > 63, "pawn tries to go to invalid field" );
 
-      if ( board_.getField(to) || Figure::TypeQueen == minimalType_ )
+      if ( board_.getField(to) )
         continue;
+
+      // it could be check
+      if ( Figure::TypeQueen == minimalType_ )
+      {
+        //1 - pawn between attacker & king
+        const uint64 & from_msk = board_.g_betweenMasks->from(oking.where(), from);
+        if ( !(from_msk & rooks_msk) && !(from_msk & queens_msk) )
+          continue;
+
+        //2 - new queen checks
+        const uint64 & btw_msk = board_.g_betweenMasks->between(to, oking.where());
+        if ( (oking.where() >> 3) != (to >> 3) || (btw_msk && mask_all_inv) != btw_msk )
+          continue;
+      }
 
 #ifdef GO_IMMEDIATELY
       Move move;
@@ -442,13 +446,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     }
   }
 
-  Figure::Color ocolor = Figure::otherColor(board_.color_);
-  uint64 oppenent_mask = board_.fmgr_.mask(ocolor) & ~board_.fmgr_.king_mask(ocolor);
-  const uint64 & black = board_.fmgr_.mask(Figure::ColorBlack);
-  const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
-  uint64 mask_all_inv = ~(white | black);
-
-  // firstly check do we have at least 1 attacking pawn
+  // firstly check if have at least 1 attacking pawn
   bool pawns_eat = false;
 
   uint64 pawn_eat_msk = 0;
@@ -484,6 +482,10 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     }
   }
 
+  // if pawn doesn't eat enough material, it could check. so get pawns capture mask
+  const uint64 & pw_check_msk = board_.g_movesTable->pawnCaps_o(ocolor, oking.where());
+  uint64 brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
+
   // generate captures
   for (int i = i0; i < Board::NumOfFigures; ++i)
   {
@@ -491,6 +493,30 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     const Figure & fig = board_.getFigure(board_.color_, n);
     if ( !fig )
       continue;
+
+    bool checking = false;
+
+    // may be figure opens line between attacker and king
+    uint64 chk_msk = board_.g_betweenMasks->from(oking.where(), fig.where()) & brq_mask;
+    uint64 mask_all_inv_ex = mask_all_inv & ~(1ULL << fig.where());
+    for ( ; chk_msk; )
+    {
+      int n = least_bit_number(chk_msk);
+
+      const Field & field = board_.getField(n);
+      THROW_IF( !field || field.color() != board_.color_, "invalid checking figure found" );
+
+      const Figure & cfig = board_.getFigure(board_.color_, field.index());
+      if ( board_.g_figureDir->dir(cfig, oking.where()) < 0 )
+        continue;
+
+      const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oking.where());
+      if ( (btw_msk & mask_all_inv_ex) == btw_msk )
+      {
+        checking = true;
+        break;
+      }
+    }
 
     if ( fig.getType() == Figure::TypePawn )
     {
@@ -505,17 +531,19 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
         THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
 
+        checking = checking || ((pw_check_msk & (1ULL << to)) != 0);
+
         const Field & field = board_.getField(to);
-        if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
+        if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion && !checking) )
           continue;
 
 #ifdef AT_LEAST_EQ_CAPS
-		if ( field.type() < fig.getType() )
-			continue;
+		    if ( field.type() < fig.getType() )
+			    continue;
 #endif
 
 #ifdef GO_IMMEDIATELY
-        if ( promotion || field.type() > Figure::TypePawn )
+        if ( promotion || field.type() > Figure::TypePawn || checking )
         {
           Move move;
           move.set(fig.where(), to, field.index(), promotion ? Figure::TypeQueen : 0, 0);
@@ -527,8 +555,6 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 #endif
         {
           add_capture(m, fig.where(), to, field.index(), promotion ? Figure::TypeQueen : 0);
-          //Move & move = captures_[m++];
-          //move.set(fig.where(), to, field.index(), promotion ? Figure::TypeQueen : 0, 0);
         }
       }
 
@@ -546,13 +572,13 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
 
           add_capture(m, fig.where(), to, board_.en_passant_, 0);
-          //Move & move = captures_[m++];
-          //move.set(fig.where(), to, board_.en_passant_, 0, 0);
         }
       }
     }
     else if ( fig.getType() == Figure::TypeKnight || fig.getType() == Figure::TypeKing )
     {
+      const uint64 & kn_check_msk = board_.g_movesTable->caps(Figure::TypeKnight, oking.where());
+
       // don't need to verify capture possibility by mask
       uint64 f_caps = board_.g_movesTable->caps(fig.getType(), fig.where()) & oppenent_mask;
       for ( ; f_caps; )
@@ -565,17 +591,19 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
         THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
-        if ( field.type() < minimalType_ )
+        checking = checking || (fig.getType() == Figure::TypeKnight && (kn_check_msk & (1ULL << to)));
+
+        if ( field.type() < minimalType_ && !checking )
           continue;
 
 #ifdef AT_LEAST_EQ_CAPS
-		if ( fig.getType() != Figure::TypeKing && field.type() < fig.getType() )
-			continue;
+		    if ( fig.getType() != Figure::TypeKing && field.type() < fig.getType() )
+			    continue;
 #endif
 
 
 #ifdef GO_IMMEDIATELY
-        if ( field.type() > Figure::TypeBishop )
+        if ( field.type() > Figure::TypeBishop || checking )
         {
           Move move;
           move.set(fig.where(), to, field.index(), 0, 0);
@@ -587,8 +615,6 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 #endif
         {
           add_capture(m, fig.where(), to, field.index(), 0);
-          //Move & move = captures_[m++];
-          //move.set(fig.where(), to, field.index(), 0, 0);
         }
       }
     }
@@ -605,20 +631,25 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
         THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
-        if ( field.type() < minimalType_ )
-          continue;
-
+        // can't go here
         const uint64 & btw_msk = board_.g_betweenMasks->between(fig.where(), to);
         if ( (btw_msk & mask_all_inv) != btw_msk )
           continue;
 
+        // not enough material and not check
+        int dir = board_.g_figureDir->dir(fig, oking.where());
+        const uint64 & btw_msk_king = board_.g_betweenMasks->between(fig.where(), oking.where());
+        checking = checking || (dir >= 0 && (btw_msk_king & mask_all_inv) == btw_msk_king);
+        if ( field.type() < minimalType_ && !checking )
+          continue;
+
 #ifdef AT_LEAST_EQ_CAPS
-		if ( field.type() < fig.getType() )
-			continue;
+		    if ( field.type() < fig.getType() )
+			    continue;
 #endif
 
 #ifdef GO_IMMEDIATELY
-        if ( field.type() > fig.getType() )
+        if ( checking || field.type() > fig.getType() )
         {
           Move move;
           move.set(fig.where(), to, field.index(), 0, 0);
@@ -630,8 +661,6 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 #endif
         {
           add_capture(m, fig.where(), to, field.index(), 0);
-          //Move & move = captures_[m++];
-          //move.set(fig.where(), to, field.index(), 0, 0);
         }
       }
     }
