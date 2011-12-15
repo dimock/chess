@@ -435,17 +435,18 @@ ScoreType Board::evaluateWinnerLoser() const
   Figure::Color win_color = can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
   Figure::Color lose_color = Figure::otherColor(win_color);
 
-  ScoreType weight = -fmgr_.weight(lose_color);
-  if ( !fmgr_.pawns(win_color) )
-	  weight += fmgr_.weight(win_color);
-  else
-  {
-	  weight += fmgr_.queens(win_color)*Figure::figureWeight_[Figure::TypeQueen] +
-		  fmgr_.knights(win_color)*Figure::figureWeight_[Figure::TypeKnight] +
-		  fmgr_.bishops(win_color)*Figure::figureWeight_[Figure::TypeBishop] +
-		  fmgr_.rooks(win_color)*Figure::figureWeight_[Figure::TypeRook] +
-      fmgr_.pawns(win_color)*Figure::figureWeight_[Figure::TypeRook];
-  }
+  ScoreType weight = fmgr_.weight(win_color);
+  //ScoreType weight = -fmgr_.weight(lose_color);
+  //if ( !fmgr_.pawns(win_color) )
+	 // weight += fmgr_.weight(win_color);
+  //else
+  //{
+	 // weight += fmgr_.queens(win_color)*Figure::figureWeight_[Figure::TypeQueen] +
+		//  fmgr_.knights(win_color)*Figure::figureWeight_[Figure::TypeKnight] +
+		//  fmgr_.bishops(win_color)*Figure::figureWeight_[Figure::TypeBishop] +
+		//  fmgr_.rooks(win_color)*Figure::figureWeight_[Figure::TypeRook] +
+  //    fmgr_.pawns(win_color)*Figure::figureWeight_[Figure::TypeRook];
+  //}
 
   const Figure & king_w = getFigure(win_color, KingIndex);
   const Figure & king_l = getFigure(lose_color, KingIndex);
@@ -474,13 +475,15 @@ ScoreType Board::evaluateWinnerLoser() const
 
   weight += kingEval;
 
-  //if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 )
-  //{
-  //  int num_figs = fmgr_.knights(lose_color) + fmgr_.bishops(lose_color);
-  //  weight -= (num_figs<<3);
-  //}
-  //else
-  //  weight -= fmgr_.weight(lose_color);
+  if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 )
+  {
+    int num_figs = fmgr_.knights(lose_color) + fmgr_.bishops(lose_color);
+    weight -= (num_figs<<3);
+  }
+  else
+    weight -= fmgr_.weight(lose_color);
+
+  weight += fmgr_.pawns() << 6;
 
   if ( win_color == Figure::ColorBlack )
     weight = -weight;
