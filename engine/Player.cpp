@@ -305,11 +305,13 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 		  ScoreType score = board_.evaluate();
 		  int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
 
-		  if ( delta >= 2*Figure::figureWeight_[Figure::TypePawn] && depth == 3 ||
-			   delta >= Figure::figureWeight_[Figure::TypePawn] && depth == 2 )
-		  {
-			  return captures_checks(ply, alpha, betta, delta);
-		  }
+		  if ( delta >= Figure::figureWeight_[Figure::TypePawn] )
+      {
+     //  Board::ticks_++;
+        return captures_checks(ply, alpha, betta, delta);
+      }
+      //else
+      //  Board::ticks_++;
 	  }
 #endif
 
