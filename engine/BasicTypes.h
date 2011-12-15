@@ -32,10 +32,12 @@ typedef int16 ScoreType;
 #define USE_ZERO_WINDOW
 #undef  AT_LEAST_EQ_CAPS
 #define GO_IMMEDIATELY
+#undef  DO_CHECK_IMMEDIATELY
 #define PERFORM_CAPTURES
 #define USE_KILLER
 #undef  NO_TIME_LIMIT
 #undef  VERIFY_ESCAPE_GENERATOR
+#define USE_FUTILITY_PRUNING
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF

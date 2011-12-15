@@ -3,11 +3,13 @@
 #include "Board.h"
 
 class Player;
-
+class ChecksGenerator;
 
 /// generate all movies from this position. don't verify and sort them. only calculate sort weights
 class MovesGenerator
 {
+  friend class ChecksGenerator;
+
   static ScoreType history_[64][64];
 
 public:
@@ -190,13 +192,40 @@ public:
 
   ChecksGenerator(Board &, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
 
+  Move & check()
+  {
+	  Move * move = checks_ + numOfMoves_;
+	  Move * mv = checks_;
+	  for ( ; *mv; ++mv)
+	  {
+		  if ( mv->alreadyDone_ || mv->score_ < move->score_ )
+			  continue;
+
+		  move = mv;
+	  }
+	  move->alreadyDone_ = 1;
+	  return *move;
+  }
+
 private:
+
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
   // returns true if there was betta pruning
   bool do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, int & counter);
 
+  void add_check(int & m, int8 from, int8 to)
+  {
+	  Move & move = checks_[m++];
+	  move.set(from, to, -1, 0, 0);
+	  move.score_ = MovesGenerator::history_[move.from_][move.to_];
+  }
+
   Player & player_;
   int ply_;
 
+  int numOfMoves_;
+
   Board & board_;
+  Move checks_[Board::MovesMax];
 };

@@ -299,6 +299,20 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
+#ifdef USE_FUTILITY_PRUNING
+	  if ( depth < 4  && depth > 1 && ply > 0 )
+	  {
+		  ScoreType score = board_.evaluate();
+		  int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+
+		  if ( delta >= 2*Figure::figureWeight_[Figure::TypePawn] && depth == 3 ||
+			   delta >= Figure::figureWeight_[Figure::TypePawn] && depth == 2 )
+		  {
+			  return captures_checks(ply, alpha, betta, delta);
+		  }
+	  }
+#endif
+
 	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
 
 	  for ( ; !stop_ && alpha < betta ; )
@@ -517,7 +531,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   }
   else
   {
-	  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+	CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -537,14 +551,9 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
       capture(ply, alpha, betta, cap, counter);
     }
-
-    //if ( !stop_ && alpha < betta )
-    //{
-    //  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
-    //}
   }
 
-	return alpha;
+  return alpha;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -602,4 +611,147 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 #ifndef NDEBUG
 	board_.verifyMasks();
 #endif
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int delta)
+{
+	if ( stop_ || ply >= MaxPly )
+		return alpha;
+
+	if ( ply < MaxPly )
+		contexts_[ply+1].killer_.clear();
+
+	int counter = 0;
+
+	Move & killer = contexts_[ply].killer_;
+
+#ifdef USE_KILLER
+	if ( killer && board_.validMove(killer) )
+	{
+#ifndef NDEBUG
+		MovesGenerator mg(board_);
+		if ( !mg.find(killer) )
+		{
+			board_.validMove(killer);
+			THROW_IF( true, "move has passed validation but not found generated in moves list" );
+		}
+#endif
+
+		killer.checkVerified_ = 0;
+		capture(ply, alpha, betta, killer, counter);
+	}
+
+	if ( alpha >= betta )
+	{
+		return alpha;
+	}
+#endif
+
+	Figure::Type minimalType = Figure::TypePawn;
+	if ( delta > Figure::figureWeight_[Figure::TypeRook] )
+		minimalType = Figure::TypeQueen;
+	else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
+		minimalType = Figure::TypeRook;
+	else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
+		minimalType = Figure::TypeBishop;
+	else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
+		minimalType = Figure::TypeKnight;
+
+	//QpfTimer qpt;
+	//Board::ticks_ += qpt.ticks();
+	//Board::tcounter_ ++;//= cg.count();
+
+	if ( board_.getState() == Board::UnderCheck )
+	{
+		//QpfTimer qpt;
+		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+		//Board::ticks_ += qpt.ticks();
+
+		for ( ; !stop_ && alpha < betta ; )
+		{
+			const Move & cap = eg.escape();
+			if ( !cap || stop_ )
+				break;
+
+			if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+				testTimer();
+
+			if ( stop_ )
+				break;
+
+#ifdef USE_KILLER
+			if ( killer == cap )
+				continue;
+#endif
+
+			THROW_IF( !board_.validMove(cap), "move validation failed" );
+
+			capture(ply, alpha, betta, cap, counter);
+		}
+
+		if ( !counter )
+		{
+			board_.setNoMoves();
+			ScoreType s = board_.evaluate();
+			if ( Board::ChessMat == board_.getState() )
+				s += ply;
+			return s;
+		}
+	}
+	else
+	{
+		CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+
+		for ( ; !stop_ && alpha < betta ; )
+		{
+			const Move & cap = cg.capture();
+			if ( !cap || stop_ )
+				break;
+
+			if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+				testTimer();
+
+#ifdef USE_KILLER
+			if ( killer == cap )
+				continue;
+#endif
+
+			THROW_IF( !board_.validMove(cap), "move validation failed" );
+
+			capture(ply, alpha, betta, cap, counter);
+		}
+
+		if ( !stop_ && alpha < betta )
+		{
+		  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
+
+		  for ( ; !stop_ && alpha < betta ; )
+		  {
+			  const Move & check = chkg.check();
+			  if ( !check || stop_ )
+				  break;
+
+			  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+				  testTimer();
+
+#ifdef USE_KILLER
+			  if ( killer == check )
+				  continue;
+#endif
+
+			  THROW_IF( !board_.validMove(check), "move validation failed" );
+			 // bool v = false;
+			 // if ( !board_.validMove(check) )
+			 // {
+				//v = board_.validMove(check);
+			 // }
+
+			  capture(ply, alpha, betta, check, counter);
+		  }
+		}
+	}
+
+	return alpha;
 }

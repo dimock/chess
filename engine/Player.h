@@ -93,6 +93,7 @@ private:
 
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta);
   ScoreType captures(int ply, ScoreType alpha, ScoreType betta, int delta);
+  ScoreType captures_checks(int ply, ScoreType alpha, ScoreType betta, int delta);
 
   void testTimer();
 

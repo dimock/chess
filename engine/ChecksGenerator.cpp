@@ -4,8 +4,16 @@
 
 //////////////////////////////////////////////////////////////////////////
 ChecksGenerator::ChecksGenerator(Board & board, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), player_(player), ply_(ply)
+  board_(board), player_(player), ply_(ply), numOfMoves_(0)
 {
+  numOfMoves_ = generate(alpha, betta, counter);
+  checks_[numOfMoves_].clear();
+}
+
+int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
+{
+  int m = 0;
+
   Figure::Color color = board_.getColor();
   Figure::Color ocolor = Figure::otherColor(color);
 
@@ -62,8 +70,12 @@ ChecksGenerator::ChecksGenerator(Board & board, int ply, Player & player, ScoreT
             if ( field )
               continue;
 
+#ifdef DO_CHECK_IMMEDIATELY
             if ( do_check(alpha, betta, fig.where(), *table, counter) )
-              return;
+              return m;
+#else
+			add_check(m, fig.where(), *table);
+#endif
           }
         }
       }
@@ -92,8 +104,12 @@ ChecksGenerator::ChecksGenerator(Board & board, int ply, Player & player, ScoreT
               if ( field )
                 break;
 
+#ifdef DO_CHECK_IMMEDIATELY
               if ( do_check(alpha, betta, fig.where(), p, counter) )
-                return;
+                return m;
+#else
+			  add_check(m, fig.where(), p);
+#endif
             }
           }
         }
@@ -108,9 +124,22 @@ ChecksGenerator::ChecksGenerator(Board & board, int ply, Player & player, ScoreT
             if ( field )
               continue;
 
-            const uint64 & btw_msk = board_.g_betweenMasks->between(to, oking.where());
-            if ( (btw_msk & mask_all_inv_ex) == btw_msk && do_check(alpha, betta, fig.where(), to, counter) )
-              return;
+			// ccan we check from this position?
+            const uint64 & btw_msk_k = board_.g_betweenMasks->between(to, oking.where());
+            if ( (btw_msk_k & mask_all_inv_ex) != btw_msk_k )
+              continue;
+
+			// can we go to this position?
+			const uint64 & btw_msk_f = board_.g_betweenMasks->between(to, fig.where());
+			if ( (btw_msk_f & mask_all_inv_ex) != btw_msk_f )
+				continue;
+
+#ifdef DO_CHECK_IMMEDIATELY
+			if ( do_check(alpha, betta, fig.where(), to, counter) )
+			  return m;
+#else
+			add_check(m, fig.where(), to);
+#endif
           }
         }
       }
@@ -128,8 +157,12 @@ ChecksGenerator::ChecksGenerator(Board & board, int ply, Player & player, ScoreT
             if ( field )
               continue;
 
+#ifdef DO_CHECK_IMMEDIATELY
             if ( do_check(alpha, betta, fig.where(), *table, counter) )
-              return;
+              return m;
+#else
+			add_check(m, fig.where(), *table);
+#endif
           }
         }
         else
@@ -143,8 +176,12 @@ ChecksGenerator::ChecksGenerator(Board & board, int ply, Player & player, ScoreT
             if ( field )
               continue;
 
+#ifdef DO_CHECK_IMMEDIATELY
             if ( do_check(alpha, betta, fig.where(), to, counter) )
-              return;
+              return m;
+#else
+			add_check(m, fig.where(), to);
+#endif
           }
         }
       }
@@ -156,13 +193,23 @@ ChecksGenerator::ChecksGenerator(Board & board, int ply, Player & player, ScoreT
         for (; *table >= 0 && !board_.getField(*table); ++table)
         {
           checking = checking || ((1ULL << *table) & pw_check_mask);
-          if ( checking && do_check(alpha, betta, fig.where(), *table, counter) )
-            return;
+
+		  if ( !checking )
+			  continue;
+
+#ifdef DO_CHECK_IMMEDIATELY
+		  if ( do_check(alpha, betta, fig.where(), *table, counter) )
+			return m;
+#else
+		  add_check(m, fig.where(), *table);
+#endif
         }
       }
       break;
     }
   }
+
+  return m;
 }
 
 bool ChecksGenerator::do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, int & counter)
