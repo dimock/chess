@@ -702,7 +702,9 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 	}
 	else
 	{
+    //QpfTimer qpt;
 		CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+    //Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )
 		{
@@ -725,7 +727,10 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 
 		if ( !stop_ && alpha < betta )
 		{
+      //QpfTimer qpt;
 		  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
+      //Board::ticks_ += qpt.ticks();
+      //Board::tcounter_++;
 
 		  for ( ; !stop_ && alpha < betta ; )
 		  {
