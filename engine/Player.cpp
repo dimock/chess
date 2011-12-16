@@ -305,7 +305,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 		  ScoreType score = board_.evaluate();
 		  int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
 
-      if ( delta >= Figure::figureWeight_[Figure::TypePawn]  )
+      if ( delta >= Figure::figureWeight_[Figure::TypePawn] && 1 == depth ||
+           delta >= Figure::figureWeight_[Figure::TypeKnight] && 2 == depth )
       {
      //  Board::ticks_++;
         return captures_checks(ply, alpha, betta, delta);
@@ -673,8 +674,8 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 
 		for ( ; !stop_ && alpha < betta ; )
 		{
-			const Move & cap = eg.escape();
-			if ( !cap || stop_ )
+			const Move & move = eg.escape();
+			if ( !move || stop_ )
 				break;
 
 			if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
@@ -684,13 +685,13 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 				break;
 
 #ifdef USE_KILLER
-			if ( killer == cap )
+			if ( killer == move )
 				continue;
 #endif
 
 			THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-			capture(ply, alpha, betta, cap, counter);
+			movement(1, ply, alpha, betta, move, counter);
 		}
 
 		if ( !counter )
