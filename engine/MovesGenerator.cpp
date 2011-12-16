@@ -1110,8 +1110,12 @@ bool EscapeGenerator::escape_movement(int & m, ScoreType & alpha, ScoreType bett
 #endif
 
   int depthInc = 0;
-  if ( depth_ > 0 && !player_.firstIter_ && 2 == board_.checkingNum_ && (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) )
+  if ( depth_ > 0 && !player_.firstIter_ && 2 == board_.checkingNum_ &&
+      (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) &&
+      (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly) )
+  {
     depthInc = 1;
+  }
 
   player_.movement(depth_ + depthInc, ply_, alpha, betta, move, counter);
   return alpha >= betta;

@@ -300,12 +300,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   else
   {
 #ifdef USE_FUTILITY_PRUNING
-	  if ( depth < 4  && depth > 1 && ply > 0 )
+	  if ( (depth == 2 || depth == 1) && (ply > 0) )
 	  {
 		  ScoreType score = board_.evaluate();
 		  int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
 
-		  if ( delta >= Figure::figureWeight_[Figure::TypePawn] )
+      if ( delta >= Figure::figureWeight_[Figure::TypePawn]  )
       {
      //  Board::ticks_++;
         return captures_checks(ply, alpha, betta, delta);
