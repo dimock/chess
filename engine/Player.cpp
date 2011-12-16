@@ -725,7 +725,7 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 
 			THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-			capture(ply, alpha, betta, cap, counter);
+			movement(1, ply, alpha, betta, cap, counter);
 		}
 
 		if ( !stop_ && alpha < betta )
@@ -756,7 +756,7 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 				//v = board_.validMove(check);
 			 // }
 
-			  capture(ply, alpha, betta, check, counter);
+			  movement(1, ply, alpha, betta, check, counter);
 		  }
 		}
 	}
