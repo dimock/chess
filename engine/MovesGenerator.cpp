@@ -418,17 +418,20 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       {
         // 1 - pawn between attacker (BRQ) and king
         const uint64 & from_msk = board_.g_betweenMasks->from(oking.where(), from);
-        if ( !(from_msk & brq_mask) && (oking.where()>>3) == (to>>3) )
+        if ( !(from_msk & brq_mask) )
         {
           // 2 - new queen checks
+          Figure queen = board_.getFigure(board_.color_, field.index());
+          queen.go(to);
+          queen.setType(Figure::TypeQueen);
+          int dir = board_.g_figureDir->dir(queen, oking.where());
+          if ( dir < 0 )
+            continue;
+
           const uint64 & btw_msk = board_.g_betweenMasks->between(to, oking.where());
           uint64 mask_all_inv_ex = mask_all_inv | (1ULL << from);
           if ( (btw_msk && mask_all_inv_ex) != btw_msk )
             continue;
-          else
-          {
-            int qqq = 1;
-          }
         }
       }
 
