@@ -30,7 +30,7 @@ typedef unsigned __int64 uint64;
 typedef int16 ScoreType;
 
 #define USE_ZERO_WINDOW
-#undef GO_IMMEDIATELY
+#define GO_IMMEDIATELY
 #undef  DO_CHECK_IMMEDIATELY
 #define PERFORM_CAPTURES
 #define USE_KILLER
