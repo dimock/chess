@@ -77,13 +77,75 @@ private:
   Move moves_[Board::MovesMax];
 };
 
-
-/// generate captures and promotions to queen only
+/// generate captures and promotions to queen only, don't detect checks
 class CapsGenerator
 {
 public:
 
   CapsGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
+
+  Move & capture()
+  {
+    Move * move = captures_ + numOfMoves_;
+    Move * mv = captures_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->score_ < move->score_ )
+        continue;
+
+      move = mv;
+    }
+    move->alreadyDone_ = 1;
+    return *move;
+  }
+
+  operator bool () const
+  {
+    return numOfMoves_ > 0;
+  }
+
+  int count() const
+  {
+    return numOfMoves_;
+  }
+
+  const Move (&caps() const)[Board::MovesMax]
+  {
+    return captures_;
+  }
+
+private:
+
+  /// returns number of moves found
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+  bool capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+
+  inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  {
+    Move & move = captures_[m++];
+    move.set(from, to, rindex, new_type, 0);
+    calculateWeight(move);
+  }
+
+  void calculateWeight(Move & move);
+
+  int current_;
+  int numOfMoves_;
+  Figure::Type minimalType_;
+  Player & player_;
+  Board & board_;
+  int ply_;
+  Move captures_[Board::MovesMax];
+};
+
+
+
+/// generate captures and promotions to queen only, or captures/promotions with checks
+class CapsChecksGenerator
+{
+public:
+
+  CapsChecksGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
 
   Move & capture()
   {

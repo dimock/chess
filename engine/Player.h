@@ -30,6 +30,7 @@ class CapsGenerator;
 class MovesGenerator;
 class EscapeGenerator;
 class ChecksGenerator;
+class CapsChecksGenerator;
 
 struct PlyContext
 {
@@ -49,6 +50,7 @@ class Player
   friend class MovesGenerator;
   friend class EscapeGenerator;
   friend class ChecksGenerator;
+  friend class CapsChecksGenerator;
 
 public:
 

@@ -285,6 +285,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CapsGenerator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\CheckDetector.cpp"
 				>
 			</File>
