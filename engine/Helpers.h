@@ -187,14 +187,14 @@ public:
   // mask contains only bits BETWEEN from & to
   inline const uint64 & between(int8 from, int8 to) const
   {
-    THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
+    THROW_IF( (uint8)from > 63 || (uint8)to > 63, "invalid positions given" );
     return s_between_[from][to];
   }
 
   // mask contains bits along from-to direction starting from and finishing at border
   inline const uint64 & from(int8 from, int8 to) const
   {
-    THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid positions given" );
+    THROW_IF( (uint8)from > 63 || (uint8)to > 63, "invalid positions given" );
     return s_from_[from][to];
   }
 };

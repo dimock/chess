@@ -145,4 +145,8 @@ private:
   void verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType betta);
 #endif
 
+#ifdef VERIFY_CHECKS_GENERATOR
+  void verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta);
+#endif
+
 };

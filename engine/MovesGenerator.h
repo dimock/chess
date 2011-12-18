@@ -117,6 +117,33 @@ public:
 
 private:
 
+  inline bool maybeCheck(const Figure & fig, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
+  {
+    bool checking = false;
+    uint64 from_msk_inv = ~(1ULL << fig.where());
+    uint64 chk_msk = board_.g_betweenMasks->from(oking.where(), fig.where()) & (brq_mask & from_msk_inv);
+    uint64 mask_all_inv_ex = ~(mask_all & from_msk_inv);
+    for ( ; !checking && chk_msk; )
+    {
+      int n = least_bit_number(chk_msk);
+
+      const Field & field = board_.getField(n);
+      THROW_IF( !field || field.color() != board_.color_, "invalid checking figure found" );
+
+      const Figure & cfig = board_.getFigure(board_.color_, field.index());
+      if ( board_.g_figureDir->dir(cfig, oking.where()) < 0 )
+        continue;
+
+      const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oking.where());
+      if ( (btw_msk & mask_all_inv_ex) != btw_msk )
+        continue;
+
+      checking = true;
+    }
+    return checking;
+  }
+
+
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
   bool capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
@@ -209,6 +236,32 @@ public:
 
 private:
 
+  inline bool maybeCheck(const Figure & fig, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
+  {
+    bool checking = false;
+    uint64 from_msk_inv = ~(1ULL << fig.where());
+    uint64 chk_msk = board_.g_betweenMasks->from(oking.where(), fig.where()) & (brq_mask & from_msk_inv);
+    uint64 mask_all_inv_ex = ~(mask_all & from_msk_inv);
+    for ( ; !checking && chk_msk; )
+    {
+      int n = least_bit_number(chk_msk);
+
+      const Field & field = board_.getField(n);
+      THROW_IF( !field || field.color() != board_.color_, "invalid checking figure found" );
+
+      const Figure & cfig = board_.getFigure(board_.color_, field.index());
+      if ( board_.g_figureDir->dir(cfig, oking.where()) < 0 )
+        continue;
+
+      const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oking.where());
+      if ( (btw_msk & mask_all_inv_ex) != btw_msk )
+        continue;
+
+      checking = true;
+    }
+    return checking;
+  }
+
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
   // returns true if there was betta pruning
@@ -219,6 +272,13 @@ private:
 	  Move & move = checks_[m++];
 	  move.set(from, to, -1, 0, 0);
 	  move.score_ = MovesGenerator::history_[move.from_][move.to_];
+  }
+
+  void add_check_knight(int & m, int8 from, int8 to)
+  {
+    Move & move = checks_[m++];
+    move.set(from, to, -1, Figure::TypeKnight, 0);
+    move.score_ = MovesGenerator::history_[move.from_][move.to_];
   }
 
   Player & player_;

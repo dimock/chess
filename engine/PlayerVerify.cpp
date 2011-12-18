@@ -81,3 +81,113 @@ void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 }
 #endif
+
+//////////////////////////////////////////////////////////////////////////
+#ifdef VERIFY_CHECKS_GENERATOR
+void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta)
+{
+  int counter;
+  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+  CapsGenerator cg(board_, Figure::TypePawn, ply, *this, alpha, betta, counter);
+  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
+
+  Move legal[Board::MovesMax], checks[Board::MovesMax];
+  int n = 0, m = 0;
+
+  for ( ;; )
+  {
+    const Move & move = mg.move();
+    if ( !move )
+      break;
+
+    Board board0(board_);
+
+    if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
+      legal[n++] = move;
+
+    board_.verifyMasks();
+    board_.unmakeMove();
+    THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
+    board_.verifyMasks();
+  }
+
+  for ( ;; )
+  {
+    const Move & move = cg.capture();
+    if ( !move )
+      break;
+
+    Board board0(board_);
+
+    if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
+      checks[m++] = move;
+
+    board_.verifyMasks();
+    board_.unmakeMove();
+    THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
+    board_.verifyMasks();
+  }
+
+  for ( ;; )
+  {
+    const Move & move = chkg.check();
+    if ( !move )
+      break;
+
+    Board board0(board_);
+
+    if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
+      checks[m++] = move;
+
+    board_.verifyMasks();
+    board_.unmakeMove();
+    THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
+    board_.verifyMasks();
+  }
+
+  for (int i = 0; i < n; ++i)
+  {
+    const Move & move = legal[i];
+    if ( move.new_type_ == Figure::TypeRook || move.new_type_ == Figure::TypeBishop )
+      continue;
+
+    bool found = false;
+    for (int j = 0; j < m; ++j)
+    {
+      const Move & cmove = checks[j];
+      if ( cmove == move )
+      {
+        found = true;
+        break;
+      }
+    }
+
+    if ( !found )
+    {
+      char fen[256];
+      board_.toFEN(fen);
+      ChecksGenerator chkg2(board_, ply, *this, alpha, betta, counter);
+    }
+
+    THROW_IF( !found, "some check wasn't generated" );
+  }
+
+  for (int i = 0; i < m; ++i)
+  {
+    const Move & cmove = checks[i];
+
+    bool found = false;
+    for (int j = 0; j < n; ++j)
+    {
+      const Move & move = legal[j];
+      if ( move == cmove )
+      {
+        found = true;
+        break;
+      }
+    }
+
+    THROW_IF( !found, "some invalid check was generated" );
+  }
+}
+#endif

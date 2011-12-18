@@ -232,6 +232,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   verifyEscapeGen(depth, ply, alpha, betta);
 #endif
 
+#ifdef VERIFY_CHECKS_GENERATOR
+  verifyChecksGenerator(depth, ply, alpha, betta);
+#endif
+
 
   // now use PV. it will be changed to hash soon
   if ( board_.validMove(pv) )
@@ -295,28 +299,45 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       movement(depth+depthInc, ply, alpha, betta, move, counter);
     }
 
-    THROW_IF( 2 == depthInc && counter != 1, "depth was increased to 2, but there is not exactly 1 move" );
+    THROW_IF( 2 == depthInc && counter != 1, "depth was increased by 2, but there is not exactly 1 move" );
   }
   else
   {
+#ifdef VERIFY_FUTILITY_PRUNING
+    ScoreType scoreFP = -std::numeric_limits<ScoreType>::max();
+    int delta = 0;
+
+    bool fp_used = false;
+#endif
 #ifdef USE_FUTILITY_PRUNING
 	  if ( (depth == 2 || depth == 1) && (ply > 0) )
 	  {
 		  ScoreType score = board_.evaluate();
-		  int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+
+#ifndef VERIFY_FUTILITY_PRUNING
+      int
+#endif
+		  delta = (int)alpha - (int)score - (int)Figure::positionGain_;
 
       if ( delta >= Figure::figureWeight_[Figure::TypePawn] && 1 == depth ||
            delta >= Figure::figureWeight_[Figure::TypeKnight] && 2 == depth )
       {
      //  Board::ticks_++;
-        return captures_checks(ply, alpha, betta, delta);
+#ifdef VERIFY_FUTILITY_PRUNING
+        fp_used = true;
+#else
+        ScoreType
+#endif
+        scoreFP = captures_checks(ply, alpha, betta, delta);
       }
       //else
       //  Board::ticks_++;
 	  }
 #endif
 
+#ifdef VERIFY_FUTILITY_PRUNING
 	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+    ScoreType alpha0 = alpha;
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
@@ -339,6 +360,15 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   	  
 	    movement(depth, ply, alpha, betta, move, counter);
 	  }
+
+    //THROW_IF( !stop_ && fp_used && alpha > alpha0 && scoreFP <= alpha0, "futility prunning haven't given raising of alpha" );
+    if ( !stop_ && fp_used && alpha > alpha0 && scoreFP <= alpha0 )
+    {
+      char fen[256];
+      board_.toFEN(fen);
+      captures_checks(ply, alpha0, betta, delta);
+    }
+#endif
   }
 
   if ( stop_ )
@@ -534,7 +564,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   }
   else
   {
-	CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+	  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -689,7 +719,7 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 				continue;
 #endif
 
-			THROW_IF( !board_.validMove(cap), "move validation failed" );
+			THROW_IF( !board_.validMove(move), "move validation failed" );
 
 			movement(1, ply, alpha, betta, move, counter);
 		}
@@ -749,12 +779,12 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 				  continue;
 #endif
 
-			  THROW_IF( !board_.validMove(check), "move validation failed" );
-			 // bool v = false;
-			 // if ( !board_.validMove(check) )
-			 // {
-				//v = board_.validMove(check);
-			 // }
+			  //THROW_IF( !board_.validMove(check), "move validation failed" );
+			  bool v = false;
+			  if ( !board_.validMove(check) )
+			  {
+  				v = board_.validMove(check);
+			  }
 
 			  movement(1, ply, alpha, betta, check, counter);
 		  }
