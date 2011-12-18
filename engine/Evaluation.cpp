@@ -133,18 +133,18 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 ScoreType Figure::pawnGuarded_  =  8;
 ScoreType Figure::pawnDoubled_  = -8;
 ScoreType Figure::pawnIsolated_ =-10;
-ScoreType Figure::pawnBackward_ = -6;
-ScoreType Figure::openRook_     =  8;
-
-ScoreType Figure::pawnPassed_[2][8] = {
-  { 0, 40, 25, 20, 15, 10, 5, 0 },
-  { 0, 5, 10, 15, 20, 25, 40, 0 }
-};
+ScoreType Figure::pawnBackward_ = -8;
+ScoreType Figure::openRook_     = 10;
 
 //ScoreType Figure::pawnPassed_[2][8] = {
-//	{ 0, 50, 30, 25, 15, 10, 5, 0 },
-//	{ 0, 5, 10, 15, 25, 30, 50, 0 }
+//  { 0, 40, 25, 20, 15, 10, 5, 0 },
+//  { 0, 5, 10, 15, 20, 25, 40, 0 }
 //};
+
+ScoreType Figure::pawnPassed_[2][8] = {
+	{ 0, 50, 30, 25, 15, 10, 5, 0 },
+	{ 0, 5, 10, 15, 25, 30, 50, 0 }
+};
 
 //////////////////////////////////////////////////////////////////////////
 #define EVALUATE_OPEN_ROOKS(clr, score)\
