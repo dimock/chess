@@ -303,42 +303,21 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
-#ifdef VERIFY_FUTILITY_PRUNING
-    ScoreType scoreFP = -std::numeric_limits<ScoreType>::max();
-    int delta = 0;
-
-    bool fp_used = false;
-#endif
 #ifdef USE_FUTILITY_PRUNING
 	  if ( (depth == 2 || depth == 1) && (ply > 0) )
 	  {
 		  ScoreType score = board_.evaluate();
-
-#ifndef VERIFY_FUTILITY_PRUNING
-      int
-#endif
-		  delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+      int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
 
       if ( delta >= Figure::figureWeight_[Figure::TypePawn] && 1 == depth ||
            delta >= Figure::figureWeight_[Figure::TypeKnight] && 2 == depth )
       {
-     //  Board::ticks_++;
-#ifdef VERIFY_FUTILITY_PRUNING
-        fp_used = true;
-#else
-        ScoreType
-#endif
-        scoreFP = captures_checks(ply, alpha, betta, delta);
+        return captures_checks(ply, alpha, betta, delta);
       }
-      //else
-      //  Board::ticks_++;
 	  }
 #endif
 
-#ifdef VERIFY_FUTILITY_PRUNING
 	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
-    ScoreType alpha0 = alpha;
-
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
 	    const Move & move = mg.move();
@@ -360,15 +339,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   	  
 	    movement(depth, ply, alpha, betta, move, counter);
 	  }
-
-    //THROW_IF( !stop_ && fp_used && alpha > alpha0 && scoreFP <= alpha0, "futility prunning haven't given raising of alpha" );
-    if ( !stop_ && fp_used && alpha > alpha0 && scoreFP <= alpha0 )
-    {
-      char fen[256];
-      board_.toFEN(fen);
-      captures_checks(ply, alpha0, betta, delta);
-    }
-#endif
   }
 
   if ( stop_ )
