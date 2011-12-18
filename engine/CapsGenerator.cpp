@@ -222,12 +222,12 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         const Field & field = board_.getField(to);
         THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
+        if ( field.type() < minimalType_ )
+          continue;
+
         // can't go here
         const uint64 & btw_msk = board_.g_betweenMasks->between(fig.where(), to);
         if ( (btw_msk & mask_all_inv) != btw_msk )
-          continue;
-
-        if ( field.type() < minimalType_ )
           continue;
 
 #ifdef GO_IMMEDIATELY
