@@ -749,12 +749,12 @@ ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int
 				  continue;
 #endif
 
-			  //THROW_IF( !board_.validMove(check), "move validation failed" );
-			  bool v = false;
-			  if ( !board_.validMove(check) )
-			  {
-  				v = board_.validMove(check);
-			  }
+			  THROW_IF( !board_.validMove(check), "move validation failed" );
+			  //bool v = false;
+			  //if ( !board_.validMove(check) )
+			  //{
+  			//	v = board_.validMove(check);
+			  //}
 
 			  movement(1, ply, alpha, betta, check, counter);
 		  }
