@@ -86,9 +86,9 @@ void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef VERIFY_CHECKS_GENERATOR
 void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  int counter;
+  int counter = 0;
   MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
-  CapsGenerator cg(board_, Figure::TypePawn, ply, *this, alpha, betta, counter);
+  CapsChecksGenerator cg(board_, Figure::TypePawn, ply, *this, alpha, betta, counter);
   ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
 
   Move legal[Board::MovesMax], checks[Board::MovesMax];
@@ -103,7 +103,26 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
     Board board0(board_);
 
     if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
-      legal[n++] = move;
+    {
+      if ( move.new_type_ > 0 )
+      {
+        if ( move.new_type_ == Figure::TypeQueen )
+          legal[n++] = move;
+        else if ( move.new_type_ == Figure::TypeKnight && board_.getNumOfChecking() == 1 )
+        {
+          const Field & ffield = board_.getField(move.to_);
+          THROW_IF( ffield.color() == board_.color_ || ffield.type() != Figure::TypeKnight, "invalid color or type of promoted knight" );
+          const Figure & knight = board_.getFigure(Figure::otherColor(board_.color_), ffield.index());
+          THROW_IF( knight.getType() != Figure::TypeKnight || knight.getColor() != Figure::otherColor(board_.color_), "invalid promotion to knight in check generator" );
+          const Figure & oking = board_.getFigure(board_.color_, Board::KingIndex);
+          int dir = board_.g_figureDir->dir(knight, oking.where());
+          if ( dir >= 0 )
+            legal[n++] = move;
+        }
+      }
+      else
+        legal[n++] = move;
+    }
 
     board_.verifyMasks();
     board_.unmakeMove();
@@ -188,6 +207,128 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
     }
 
     THROW_IF( !found, "some invalid check was generated" );
+  }
+}
+#endif
+//////////////////////////////////////////////////////////////////////////
+#ifdef VERIFY_CAPS_GENERATOR
+void Player::verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int delta)
+{
+
+  Figure::Type minimalType = Figure::TypePawn;
+  if ( delta > Figure::figureWeight_[Figure::TypeRook] )
+    minimalType = Figure::TypeQueen;
+  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
+    minimalType = Figure::TypeRook;
+  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
+    minimalType = Figure::TypeBishop;
+  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
+    minimalType = Figure::TypeKnight;
+
+  int counter = 0;
+  int depth = 0;
+  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+
+  Move legal[Board::MovesMax], caps[Board::MovesMax];
+  int n = 0, m = 0;
+
+  for ( ;; )
+  {
+    const Move & move = mg.move();
+    if ( !move )
+      break;
+
+    Board board0(board_);
+
+    bool valid = false;
+    if ( board_.makeMove(move) )
+      valid = true;
+
+    board_.verifyMasks();
+    board_.unmakeMove();
+    THROW_IF( board0 != board_, "board unmake wasn't applied correctly" );
+    board_.verifyMasks();
+
+    if ( valid && (!move.new_type_ || Figure::TypeQueen == move.new_type_) )
+    {
+      if ( move.rindex_ >= 0 )
+      {
+        const Figure & rfig = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_);
+        THROW_IF( !rfig, "no figure to capture" );
+        if ( rfig.getType() >= minimalType || move.new_type_ == Figure::TypeQueen )
+          legal[n++] = move;
+      }
+      else if ( move.new_type_ == Figure::TypeQueen && minimalType < Figure::TypeQueen )
+        legal[n++] = move;
+    }
+  }
+
+  for ( ;; )
+  {
+    const Move & cap = cg.capture();
+    if ( !cap )
+      break;
+
+    Board board0(board_);
+
+    if ( board_.makeMove(cap) )
+      caps[m++] = cap;
+
+    board_.verifyMasks();
+    board_.unmakeMove();
+    THROW_IF( board0 != board_, "board unmake wasn't applied correctly" );
+    board_.verifyMasks();
+
+  }
+
+  for (int i = 0; i < n; ++i)
+  {
+    const Move & move = legal[i];
+
+    bool found = false;
+    for (int j = 0; j < m; ++j)
+    {
+      const Move & cap = caps[j];
+      if ( cap == move )
+      {
+        found = true;
+        break;
+      }
+    }
+
+    if ( !found )
+    {
+      char fen[256];
+      board_.toFEN(fen);
+      CapsGenerator cg2(board_, minimalType, ply, *this, alpha, betta, counter);
+    }
+
+    THROW_IF( !found, "some capture wasn't generated" );
+  }
+
+  for (int i = 0; i < m; ++i)
+  {
+    const Move & cap = caps[i];
+
+    bool found = false;
+    for (int j = 0; j < n; ++j)
+    {
+      const Move & move = legal[j];
+      if ( move == cap )
+      {
+        found = true;
+        break;
+      }
+    }
+
+    if ( !found )
+    {
+      char fen[256];
+      board_.toFEN(fen);
+      CapsGenerator cg2(board_, minimalType, ply, *this, alpha, betta, counter);
+    }
+    THROW_IF( !found, "some invalid capture was generated" );
   }
 }
 #endif

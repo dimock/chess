@@ -327,21 +327,21 @@ private:
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
   // returns true if there was betta pruning
-  bool do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, int & counter);
+  bool do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, Figure::Type new_type, int & counter);
 
-  void add_check(int & m, int8 from, int8 to)
+  void add_check(int & m, int8 from, int8 to, Figure::Type new_type)
   {
 	  Move & move = checks_[m++];
-	  move.set(from, to, -1, 0, 0);
+	  move.set(from, to, -1, new_type, 0);
 	  move.score_ = MovesGenerator::history_[move.from_][move.to_];
   }
 
-  void add_check_knight(int & m, int8 from, int8 to)
-  {
-    Move & move = checks_[m++];
-    move.set(from, to, -1, Figure::TypeKnight, 0);
-    move.score_ = MovesGenerator::history_[move.from_][move.to_];
-  }
+  //void add_check_knight(int & m, int8 from, int8 to)
+  //{
+  //  Move & move = checks_[m++];
+  //  move.set(from, to, -1, Figure::TypeKnight, 0);
+  //  move.score_ = MovesGenerator::history_[move.from_][move.to_];
+  //}
 
   Player & player_;
   int ply_;

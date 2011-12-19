@@ -95,7 +95,7 @@ private:
 
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta);
   ScoreType captures(int ply, ScoreType alpha, ScoreType betta, int delta);
-  ScoreType captures_checks(int ply, ScoreType alpha, ScoreType betta, int delta);
+  ScoreType captures_checks(int depth, int ply, ScoreType alpha, ScoreType betta, int delta);
 
   void testTimer();
 
@@ -149,6 +149,10 @@ private:
 
 #ifdef VERIFY_CHECKS_GENERATOR
   void verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta);
+#endif
+
+#ifdef VERIFY_CAPS_GENERATOR
+  void verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int delta);
 #endif
 
 };

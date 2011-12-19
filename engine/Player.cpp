@@ -455,8 +455,11 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   if ( ply < MaxPly )
     contexts_[ply+1].killer_.clear();
 
-  int counter = 0;
+#ifdef VERIFY_CAPS_GENERATOR
+  verifyCapsGenerator(ply, alpha, betta, delta);
+#endif
 
+  int counter = 0;
   Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
@@ -618,7 +621,7 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures_checks(int ply, ScoreType alpha, ScoreType betta, int delta)
+ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType betta, int delta)
 {
 	if ( stop_ || ply >= MaxPly )
 		return alpha;

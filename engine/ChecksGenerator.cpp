@@ -50,10 +50,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               continue;
 
 #ifdef DO_CHECK_IMMEDIATELY
-            if ( do_check(alpha, betta, fig.where(), *table, counter) )
+            if ( do_check(alpha, betta, fig.where(), *table, Figure::TypeNone, counter) )
               return m;
 #else
-            add_check(m, fig.where(), *table);
+            add_check(m, fig.where(), *table, Figure::TypeNone);
 #endif
           }
         }
@@ -67,7 +67,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           rook.go(rook.where()-2);
           uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
           if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & ~mask_all) == rk_mask )
-            add_check(m, fig.where(), fig.where()+2);
+            add_check(m, fig.where(), fig.where()+2, Figure::TypeNone);
         }
 
         if ( board_.castling(board_.color_, 1) && !board_.getField(fig.where()-2) ) // long
@@ -78,7 +78,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           rook.go(rook.where()+3);
           uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
           if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & ~mask_all) == rk_mask )
-            add_check(m, fig.where(), fig.where()-2);
+            add_check(m, fig.where(), fig.where()-2, Figure::TypeNone);
         }
       }
       break;
@@ -107,10 +107,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
                 break;
 
 #ifdef DO_CHECK_IMMEDIATELY
-              if ( do_check(alpha, betta, fig.where(), p, counter) )
+              if ( do_check(alpha, betta, fig.where(), p, Figure::TypeNone, counter) )
                 return m;
 #else
-              add_check(m, fig.where(), p);
+              add_check(m, fig.where(), p, Figure::TypeNone);
 #endif
             }
           }
@@ -138,10 +138,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               continue;
 
 #ifdef DO_CHECK_IMMEDIATELY
-            if ( do_check(alpha, betta, fig.where(), to, counter) )
+            if ( do_check(alpha, betta, fig.where(), to, Figure::TypeNone, counter) )
               return m;
 #else
-            add_check(m, fig.where(), to);
+            add_check(m, fig.where(), to, Figure::TypeNone);
 #endif
           }
         }
@@ -161,10 +161,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               continue;
 
 #ifdef DO_CHECK_IMMEDIATELY
-            if ( do_check(alpha, betta, fig.where(), *table, counter) )
+            if ( do_check(alpha, betta, fig.where(), *table, Figure::TypeNone, counter) )
               return m;
 #else
-			      add_check(m, fig.where(), *table);
+			      add_check(m, fig.where(), *table, Figure::TypeNone);
 #endif
           }
         }
@@ -180,10 +180,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               continue;
 
 #ifdef DO_CHECK_IMMEDIATELY
-            if ( do_check(alpha, betta, fig.where(), to, counter) )
+            if ( do_check(alpha, betta, fig.where(), to, Figure::TypeNone, counter) )
               return m;
 #else
-			      add_check(m, fig.where(), to);
+            add_check(m, fig.where(), to, Figure::TypeNone);
 #endif
           }
         }
@@ -197,26 +197,27 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         {
           uint64 pw_msk_to = 1ULL << *table;
           checking = checking || (pw_msk_to & pw_check_mask);
+          bool promotion = *table < 8 || *table > 55;
 
           if ( !checking )
           {
             // if it's not check, it could be promotion to knight
-            if ( !((*table < 8 || *table > 55) && (knight_check_mask & pw_msk_to)) )
+            if ( !(promotion && (knight_check_mask & pw_msk_to)) )
               continue;
 
 #ifdef DO_CHECK_IMMEDIATELY
-            if ( do_check(alpha, betta, fig.where(), *table, counter) )
+            if ( do_check(alpha, betta, fig.where(), *table, Figure::TypeKnight, counter) )
               return m;
 #else
-            add_check_knight(m, fig.where(), *table);
+            add_check(m, fig.where(), *table, Figure::TypeKnight);
 #endif
           }
 
 #ifdef DO_CHECK_IMMEDIATELY
-          if ( do_check(alpha, betta, fig.where(), *table, counter) )
+          if ( do_check(alpha, betta, fig.where(), *table, promotion ? Figure::TypeQueen : Figure::TypeNone, counter) )
             return m;
 #else
-          add_check(m, fig.where(), *table);
+          add_check(m, fig.where(), *table, promotion ? Figure::TypeQueen : Figure::TypeNone);
 #endif
         }
       }
@@ -227,10 +228,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   return m;
 }
 
-bool ChecksGenerator::do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, int & counter)
+bool ChecksGenerator::do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, Figure::Type new_type, int & counter)
 {
   Move move;
-  move.set(from, to, -1, 0, 0);
+  move.set(from, to, -1, new_type, 0);
 
 #ifdef USE_KILLER
   const Move & killer = player_.contexts_[ply_].killer_;
@@ -260,7 +261,7 @@ void CapsChecksGenerator::calculateWeight(Move & move)
 
 //////////////////////////////////////////////////////////////////////////
 CapsChecksGenerator::CapsChecksGenerator(Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply)
+  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply)
 {
   numOfMoves_ = generate(alpha, betta, counter);
   captures_[numOfMoves_].clear();

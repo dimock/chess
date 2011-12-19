@@ -12,6 +12,10 @@ class EscapeGenerator;
 class ChecksGenerator;
 class CapsChecksGenerator;
 
+#ifdef VERIFY_CHECKS_GENERATOR
+class Player;
+#endif
+
 /*! board representation
  */
 class Board
@@ -21,6 +25,10 @@ class Board
   friend class EscapeGenerator;
   friend class ChecksGenerator;
   friend class CapsChecksGenerator;
+
+#ifdef VERIFY_CHECKS_GENERATOR
+  friend class Player;
+#endif
 
 public:
 
