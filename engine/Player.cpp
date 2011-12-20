@@ -304,17 +304,19 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   else
   {
 #ifdef USE_FUTILITY_PRUNING
-	  if ( (depth == 2 || depth == 1) && (ply > 0) )
-	  {
-		  ScoreType score = board_.evaluate();
-      int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+	  if ( alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly )
+    {
+      if ( depth == 1 && ply > 1 )
+	    {
+		    ScoreType score = board_.evaluate();
+        int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
 
-      if ( delta >= Figure::figureWeight_[Figure::TypePawn] && 1 == depth ||
-           delta >= Figure::figureWeight_[Figure::TypeKnight] && 2 == depth )
-      {
-        return captures_checks(ply, alpha, betta, delta);
-      }
-	  }
+        if ( delta > Figure::positionGain_ )
+        {
+          return captures_checks(depth, ply, alpha, betta, delta);
+        }
+	    }
+    }
 #endif
 
 	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
@@ -438,7 +440,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
   board_.unmakeMove();
 
-  THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
+  THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
 
 #ifndef NDEBUG
   board_.verifyMasks();
