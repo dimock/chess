@@ -307,15 +307,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	  if ( alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly )
     {
       if ( depth == 1 && ply > 1 )
-	    {
-		    ScoreType score = board_.evaluate();
-        int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-
-        if ( delta > Figure::positionGain_ )
-        {
-          return captures_checks(depth, ply, alpha, betta, delta);
-        }
-	    }
+	  {
+		  ScoreType score = board_.evaluate();
+		  int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+		  if ( delta > Figure::positionGain_ )
+		  {
+			  return captures_checks(depth, ply, alpha, betta, delta);
+		  }
+	  }
     }
 #endif
 
@@ -388,14 +387,14 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       score = 0;
     else if ( depth <= 1 )
     {
-      score = -board_.evaluate();
+		score = -board_.evaluate();
 #ifdef PERFORM_CAPTURES
-      int delta = (int)score - (int)betta - (int)Figure::positionGain_;
-      if ( haveCheck || (score > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
-      {
-        ScoreType betta1 = score < betta && !haveCheck ? score : betta;
-        score = -captures(ply+1, -betta1, -alpha, delta);
-      }
+		int delta = (int)score - (int)betta - (int)Figure::positionGain_;
+		if ( haveCheck || (score > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
+		{
+			ScoreType betta1 = score < betta && !haveCheck ? score : betta;
+			score = -captures(ply+1, -betta1, -alpha, delta);
+		}
 #endif
     }
     else
@@ -477,7 +476,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 #endif
 
 	  killer.checkVerified_ = 0;
-    capture(ply, alpha, betta, killer, counter);
+      capture(ply, alpha, betta, killer, counter);
   }
 
   if ( alpha >= betta )
@@ -586,7 +585,7 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 		{
 			s = -board_.evaluate();
 			int delta = s - betta - Figure::positionGain_;
-      bool b = s <= alpha;
+			bool b = s <= alpha;
 			if ( haveCheck || (s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
 			{
 				ScoreType betta1 = s < betta && !haveCheck ? s : betta;
@@ -648,7 +647,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 #endif
 
 		killer.checkVerified_ = 0;
-		capture(ply, alpha, betta, killer, counter);
+		movement(depth, ply, alpha, betta, killer, counter);
 	}
 
 	if ( alpha >= betta )
@@ -711,12 +710,12 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 	else
 	{
     //QpfTimer qpt;
-		CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+		CapsChecksGenerator ccg(board_, minimalType, depth, ply, *this, alpha, betta, counter);
     //Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )
 		{
-			const Move & cap = cg.capture();
+			const Move & cap = ccg.capture();
 			if ( !cap || stop_ )
 				break;
 

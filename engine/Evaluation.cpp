@@ -224,6 +224,26 @@ ScoreType Board::evaluate() const
   return weight;
 }
 
+ScoreType Board::expressEval() const
+{
+	if ( ChessMat == state_ )
+		return -Figure::WeightMat;
+	else if ( drawState() )
+		return Figure::WeightDraw;
+
+	if ( can_win_[0] != can_win_[1] )
+		return evaluateWinnerLoser();
+
+	ScoreType weight = fmgr_.weight();
+	weight -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
+	weight += fmgr_.eval(Figure::ColorWhite, stages_[1]);
+
+	if ( Figure::ColorBlack  == color_ )
+		weight = -weight;
+
+	return weight;
+}
+
 ScoreType Board::calculateEval() const
 {
 

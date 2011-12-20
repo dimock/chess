@@ -86,6 +86,9 @@ public:
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
 
+  /// fast evaluation. gives approximate result
+  ScoreType expressEval() const;
+
   /// add new figure. firstly find empty slot (index). try to put pawn to slots 0-7, knight to slots 8-9 etc...
   bool addFigure(const Figure &);
 

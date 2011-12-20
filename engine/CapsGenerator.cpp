@@ -120,6 +120,22 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     }
   }
 
+  //int findices[Board::NumOfFigures] = {};
+  //int num = 0;
+  //for (int i = 0; i < Board::NumOfFigures; ++i)
+  //{
+	 // int n = s_findex[v][i];
+	 // const Figure & fig = board_.getFigure(board_.color_, n);
+	 // if ( !fig || (fig.getType() == Figure::TypePawn && !pawns_eat) )
+		//  continue;
+
+	 // findices[num++] = n;
+
+	 // // only king's movements are available
+	 // if ( board_.checkingNum_ > 1 )
+		//  break;
+  //}
+
   // generate captures
   for (int i = i0; i < Board::NumOfFigures; ++i)
   {
@@ -128,7 +144,13 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     if ( !fig )
       continue;
 
-    if ( fig.getType() == Figure::TypePawn )
+ // for (int i = 0; i < num; ++i)
+ // {
+ //   int n = findices[i];
+	//const Figure & fig = board_.getFigure(board_.color_, n);
+	//THROW_IF(!fig, "figure is absent, but index is present");
+
+	if ( fig.getType() == Figure::TypePawn )
     {
       uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, fig.where()) & oppenent_mask;
 
@@ -247,9 +269,9 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       }
     }
 
-    // only king's movements are available
-    if ( board_.checkingNum_ > 1 )
-      break;
+	// only king's movements are available
+	if ( board_.checkingNum_ > 1 )
+		break;
   }
 
   return m;

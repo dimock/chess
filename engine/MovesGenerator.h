@@ -145,7 +145,7 @@ class CapsChecksGenerator
 {
 public:
 
-  CapsChecksGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
+  CapsChecksGenerator(Board & , Figure::Type minimalType, int depth, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
 
   Move & capture()
   {
@@ -208,7 +208,7 @@ private:
 
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
-  bool capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
 
 
   inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
@@ -225,7 +225,7 @@ private:
   Figure::Type minimalType_;
   Player & player_;
   Board & board_;
-  int ply_;
+  int ply_, depth_;
   Move captures_[Board::MovesMax];
 };
 

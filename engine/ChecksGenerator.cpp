@@ -260,8 +260,8 @@ void CapsChecksGenerator::calculateWeight(Move & move)
 }
 
 //////////////////////////////////////////////////////////////////////////
-CapsChecksGenerator::CapsChecksGenerator(Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply)
+CapsChecksGenerator::CapsChecksGenerator(Board & board, Figure::Type minimalType, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
+  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), depth_(depth), player_(player), ply_(ply)
 {
   numOfMoves_ = generate(alpha, betta, counter);
   captures_[numOfMoves_].clear();
@@ -328,7 +328,7 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
         }
       }
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CC
       Move move;
 #else
       Move & move = captures_[m++];
@@ -337,8 +337,8 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
 
       move.set(from, to, -1, Figure::TypeQueen, 0);
 
-#ifdef GO_IMMEDIATELY
-      if ( capture(alpha, betta, move, counter) )
+#ifdef GO_IMMEDIATELY_CC
+      if ( movement(alpha, betta, move, counter) )
         return m;
 #else
       calculateWeight(move);
@@ -438,13 +438,13 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
         if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion && !checking) )
           continue;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CC
         if ( promotion || field.type() > Figure::TypePawn || checking )
         {
           Move move;
           move.set(fig.where(), to, field.index(), promotion ? Figure::TypeQueen : 0, 0);
 
-          if ( capture(alpha, betta, move, counter) )
+          if ( movement(alpha, betta, move, counter) )
             return m;
         }
         else
@@ -505,13 +505,13 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
         if ( field.type() < minimalType_ && !checking )
           continue;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CC
         if ( field.type() > Figure::TypeBishop || checking )
         {
           Move move;
           move.set(fig.where(), to, field.index(), 0, 0);
 
-          if ( capture(alpha, betta, move, counter) )
+          if ( movement(alpha, betta, move, counter) )
             return m;
         }
         else
@@ -551,13 +551,13 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
         if ( field.type() < minimalType_ && !checking )
           continue;
 
-#ifdef GO_IMMEDIATELY
+#ifdef GO_IMMEDIATELY_CC
         if ( checking || field.type() > fig.getType() )
         {
           Move move;
           move.set(fig.where(), to, field.index(), 0, 0);
 
-          if ( capture(alpha, betta, move, counter) )
+          if ( movement(alpha, betta, move, counter) )
             return m;
         }
         else
@@ -576,7 +576,7 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
   return m;
 }
 
-bool CapsChecksGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
+bool CapsChecksGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
 {
 #ifdef USE_KILLER
   const Move & killer = player_.contexts_[ply_].killer_;
@@ -584,6 +584,6 @@ bool CapsChecksGenerator::capture(ScoreType & alpha, ScoreType betta, const Move
     return false;
 #endif
 
-  player_.capture(ply_, alpha, betta, move, counter);
+  player_.movement(depth_, ply_, alpha, betta, move, counter);
   return alpha >= betta;
 }
