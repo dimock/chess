@@ -139,6 +139,21 @@ PawnMasks::PawnMasks()
     if ( x < 7 )
       ppmask[x+1] = 0xff;
   }
+
+  // destination color
+  for (int color = 0; color < 2; ++color)
+  {
+    for (int i = 0; i < 64; ++i)
+    {
+      int x = i & 7;
+      int8 dst_color = 0;
+      if ( color ) // white
+        dst_color = (x+1) & 1;
+      else
+        dst_color = x & 1;
+      pawn_dst_color_[color][i] = dst_color;
+    }
+  }
 }
 
 void PawnMasks::clearAll(int pos)

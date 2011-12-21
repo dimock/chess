@@ -18,7 +18,7 @@ public:
 public:
 
   static ScoreType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-  static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_;
+  static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, assistantBishop_, onlineRooks_;
   static ScoreType pawnPassed_[2][8];
   static const ScoreType positionGain_ = 60;
   static const uint64 pawnCutoffMasks_[2];
@@ -194,6 +194,7 @@ public:
   int count() const { return count_; }
   int pawns() const { return tcount_[Figure::TypePawn][0]; }
   int knights() const { return tcount_[Figure::TypeKnight][0]; }
+  int bishops_c(Figure::Color field_c) const { return tcount_[Figure::TypeBishop][field_c]; }
   int bishops_w() const { return tcount_[Figure::TypeBishop][1]; }
   int bishops_b() const { return tcount_[Figure::TypeBishop][0]; }
   int bishops() const { return bishops_w() + bishops_b(); }
@@ -339,6 +340,7 @@ public:
   int bishops_w(Figure::Color color) const { return fcounter_[color].bishops_w(); }
   int bishops_b(Figure::Color color) const { return fcounter_[color].bishops_b(); }
   int bishops(Figure::Color color) const { return fcounter_[color].bishops(); }
+  int bishops_c(Figure::Color color, Figure::Color field_c) const { return fcounter_[color].bishops_c(field_c); }
   int knights(Figure::Color color) const { return fcounter_[color].knights(); }
   int rooks(Figure::Color color) const { return fcounter_[color].rooks(); }
   int queens(Figure::Color color) const { return fcounter_[color].queens(); }

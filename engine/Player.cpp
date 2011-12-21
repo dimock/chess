@@ -215,7 +215,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   // we use PV only up to max-depth
   if ( ply < depthMax_ )
   {
-    pv = contexts_[0].pv_[ply];
+    //pv = contexts_[0].pv_[ply];
     pv.checkVerified_ = 0;
 
     THROW_IF( pv.rindex_ == 100, "invalid pv move" );
@@ -411,7 +411,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
     {
       alpha = score;
 
-      assemblePV(move, ply);
+      //assemblePV(move, ply);
 
       if ( move.rindex_ < 0 )
         MovesGenerator::history(move.from_, move.to_) += depth;

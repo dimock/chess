@@ -105,6 +105,13 @@ public:
     return pmask_isolated_[x];
   }
 
+
+  inline int8 pawn_dst_color(int color, int pos) const
+  {
+    THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
+    return pawn_dst_color_[color][pos];
+  }
+
 private:
 
   void clearAll(int);
@@ -114,6 +121,7 @@ private:
   uint64 pmasks_blocked_[2][64];
   uint64 pmasks_backward_[64];
   uint64 pmask_isolated_[8];
+  int8   pawn_dst_color_[2][64];
 };
 
 class BitsCounter
