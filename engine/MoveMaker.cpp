@@ -166,7 +166,7 @@ bool Board::doMove()
     move.field_rook_to_ = field_rook_to;
     field_rook_to.set(rook);
 
-    move.castle_ = castle_[color_] = 1 + (((unsigned)d & 0x80000000) >> 31);//d > 0 ? 1 : 2;
+    move.castle_ = 1;
     state_ = Castle;
   }
 
@@ -315,8 +315,6 @@ void Board::undoMove()
     rook.setFirstStep(true);
     Field & rfield = getField(rook.where());
     rfield.set(rook);
-
-    castle_[color_] = 0;
   }
 
   // restore figures masks

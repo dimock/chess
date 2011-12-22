@@ -287,9 +287,6 @@ private:
   /// indices: [0 - black, 1 - white] [0 - short (King), 1 - long (Queen)]
   //bool castle_index_[2][2];
 
-  /// 0 - no castle, 1 - short, 2 - long
-  uint8 castle_[2];
-
   /// indices of checking figures
   int8 checking_[2];
 

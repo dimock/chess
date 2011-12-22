@@ -29,8 +29,6 @@ void Board::clear()
   // clear global FEN
   fen_[0] = 0;
 
-  castle_[0] = castle_[1] = 0;
-  checking_[0] = checking_[1] = 0;
   can_win_[0] = can_win_[1] = true;
   checkingNum_ = 0;
   en_passant_ = -1;
