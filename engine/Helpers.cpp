@@ -271,7 +271,7 @@ bool parseSAN(Board & board, const char * str, Move & move)
     if ( n < 2 )
       return false;
 
-    if ( isdigit(s[0]) && iscolumn(s[1]) ) // from row number
+    if ( isdigit(s[0]) && (iscolumn(s[1]) || 'x' == s[1]) ) // from row number
     {
       yfrom = s[0] - '1';
       s++;
@@ -281,7 +281,7 @@ bool parseSAN(Board & board, const char * str, Move & move)
       xfrom = s[0] - 'a';
       s++;
     }
-    else if ( n > 2 && iscolumn(s[0]) && isdigit(s[1]) && iscolumn(s[2]) ) // exact from point
+    else if ( n > 2 && iscolumn(s[0]) && isdigit(s[1]) && (iscolumn(s[2]) || 'x' == s[2]) ) // exact from point
     {
       xfrom = s[0] - 'a';
       yfrom = s[1] - '1';
