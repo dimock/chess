@@ -9,6 +9,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef _M_X64
+#include <intrin.h>
+#pragma intrinsic(__rdtsc)
+#endif
+
 #undef DONT_USE_EXTS_
 #undef USE_EXTRA_QUIS_
 
@@ -55,7 +60,7 @@ typedef int16 ScoreType;
 
 enum { MaxPly = 40 };
 
-
+#ifndef _M_X64
 class QpfTimer
 {
   int64 t0_;
@@ -93,7 +98,26 @@ public:
     return t;
   }
 };
+#else
+class QpfTimer
+{
+	int64 t0_;
 
+public:
+
+	QpfTimer()
+	{
+		t0_ = __rdtsc();
+	}
+
+	inline int64 ticks()
+	{
+		int64 t;
+		t = __rdtsc() - t0_;
+		return t;
+	}
+};
+#endif
 #pragma pack (push, 1)
 
 

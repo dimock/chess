@@ -34,6 +34,7 @@ private:
   static const char * s_table_[N][M];
 };
 
+#ifndef _M_X64
 // return least significant bit index, clear it
 inline int least_bit_number(uint64 & mask)
 {
@@ -67,7 +68,17 @@ end:mov dword ptr [n], ecx
   }
   return n;
 }
-
+#else
+#pragma intrinsic(_BitScanForward64)
+inline int least_bit_number(uint64 & mask)
+{
+	unsigned long n;
+	uint8 b = _BitScanForward64(&n, mask);
+	THROW_IF( !b, "no bit found in nonzero number" );
+	mask ^= 1ULL << n;
+	return n;
+}
+#endif
 
 class PawnMasks
 {
