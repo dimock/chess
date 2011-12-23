@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="qchess"
-	ProjectGUID="{D539E96B-6A8D-3A87-9693-BE8C07B270B3}"
-	RootNamespace="qchess"
+	ProjectGUID="{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}"
 	Keyword="Qt4VSv1.0"
 	>
 	<Platforms>
@@ -19,16 +18,15 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug-Qt|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="Debug|Win32"
+			OutputDirectory="."
+			IntermediateDirectory="debug\"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -47,20 +45,19 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
 				Optimization="4"
-				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;;&quot;$(QTDIR)\include\QtGui&quot;;&quot;$(QTDIR)\include&quot;;.;..\engine;&quot;$(QTDIR)\include\ActiveQt&quot;;&quot;$(ConfigurationName)&quot;;&quot;$(QTDIR)\mkspecs\win32-msvc2005&quot;"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
+				AdditionalIncludeDirectories="&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot;,&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot;,&quot;..\..\..\..\Sandbox64\qt\include&quot;,&quot;.&quot;,&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot;,&quot;debug&quot;,&quot;.&quot;,..\..\..\..\Sandbox64\qt\mkspecs\default"
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
 				RuntimeLibrary="3"
 				BufferSecurityCheck="false"
 				TreatWChar_tAsBuiltInType="false"
-				ForceConformanceInForLoopScope="true"
 				RuntimeTypeInfo="true"
-				AssemblerListingLocation="$(ConfigurationName)"
-				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
+				AssemblerListingLocation="debug\"
+				ObjectFile="debug\"
+				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -70,7 +67,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,_DEBUG"
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT,_DEBUG"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -78,13 +75,107 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot; &quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
-				AdditionalDependencies="$(QTDIR)\lib\qtmaind.lib ../engine/Debug-Qt/engine.lib $(QTDIR)\lib\QtGuid4.lib $(QTDIR)\lib\QtCored4.lib"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
+				AdditionalDependencies="d:\Sandbox64\qt\lib\qtmaind.lib d:\Sandbox64\qt\lib\QtGuid4.lib d:\Sandbox64\qt\lib\QtCored4.lib"
+				OutputFile="debug\qchess.exe"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(QTDIR)\lib"
+				AdditionalLibraryDirectories="d:\Sandbox64\qt\lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				LinkTimeCodeGeneration="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="."
+			IntermediateDirectory="release\"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				WarningLevel="0"
+				DefaultCharType="0"
+				EnableErrorChecks="1"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
+				Optimization="2"
+				AdditionalIncludeDirectories="&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot;,&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot;,&quot;..\..\..\..\Sandbox64\qt\include&quot;,&quot;.&quot;,&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot;,&quot;release&quot;,&quot;.&quot;,..\..\..\..\Sandbox64\qt\mkspecs\default"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT,NDEBUG"
+				GeneratePreprocessedFile="0"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				AssemblerListingLocation="release\"
+				ObjectFile="release\"
+				ProgramDataBaseFileName=".\"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				IgnoreImportLibrary="true"
+				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
+				AdditionalDependencies="d:\Sandbox64\qt\lib\qtmain.lib d:\Sandbox64\qt\lib\QtGui4.lib d:\Sandbox64\qt\lib\QtCore4.lib"
+				OutputFile="release\qchess.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="d:\Sandbox64\qt\lib"
+				GenerateDebugInformation="false"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				LinkTimeCodeGeneration="0"
 			/>
@@ -115,7 +206,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Qt|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
@@ -123,8 +214,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="create Qt meta object"
-				CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -143,29 +232,29 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;;&quot;$(QTDIR)\include\QtGui&quot;;&quot;$(QTDIR)\include&quot;;.;..\engine;&quot;$(QTDIR)\include\ActiveQt&quot;;&quot;$(ConfigurationName)&quot;;&quot;$(QTDIR)\mkspecs\win32-msvc2005&quot;"
-				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,NDEBUG"
+				AdditionalIncludeDirectories="&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot;,&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot;,&quot;..\..\..\..\Sandbox64\qt\include&quot;,&quot;.&quot;,&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot;,&quot;release&quot;,&quot;.&quot;,..\..\..\..\Sandbox64\qt\mkspecs\default"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT,NDEBUG"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
 				TreatWChar_tAsBuiltInType="false"
 				RuntimeTypeInfo="true"
-				AssemblerListingLocation="$(ConfigurationName)"
-				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
+				AssemblerListingLocation="release\"
+				ObjectFile="release\"
+				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -173,14 +262,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot; &quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
-				AdditionalDependencies="$(QTDIR)\lib\qtmain.lib ../engine/Release-Qt/engine.lib $(QTDIR)\lib\QtGui4.lib $(QTDIR)\lib\QtCore4.lib"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
+				AdditionalDependencies="d:\Sandbox64\qt\lib\qtmain.lib d:\Sandbox64\qt\lib\QtGui4.lib d:\Sandbox64\qt\lib\QtCore4.lib"
+				OutputFile="release\qchess.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(QTDIR)\lib"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				AdditionalLibraryDirectories="d:\Sandbox64\qt\lib"
+				GenerateDebugInformation="false"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				LinkTimeCodeGeneration="0"
 			/>
@@ -210,8 +299,8 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug-Qt|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
@@ -219,7 +308,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -239,20 +327,19 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
 				Optimization="4"
-				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;;&quot;$(QTDIR)\include\QtGui&quot;;&quot;$(QTDIR)\include&quot;;.;..\engine;&quot;$(QTDIR)\include\ActiveQt&quot;;&quot;$(ConfigurationName)&quot;;&quot;$(QTDIR)\mkspecs\win32-msvc2005&quot;"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
+				AdditionalIncludeDirectories="&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot;,&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot;,&quot;..\..\..\..\Sandbox64\qt\include&quot;,&quot;.&quot;,&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot;,&quot;debug&quot;,&quot;.&quot;,..\..\..\..\Sandbox64\qt\mkspecs\default"
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
 				RuntimeLibrary="3"
 				BufferSecurityCheck="false"
 				TreatWChar_tAsBuiltInType="false"
-				ForceConformanceInForLoopScope="true"
 				RuntimeTypeInfo="true"
-				AssemblerListingLocation="$(ConfigurationName)"
-				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
+				AssemblerListingLocation="debug\"
+				ObjectFile="debug\"
+				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -262,7 +349,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,_DEBUG"
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT,_DEBUG"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -270,13 +357,109 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot; &quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
-				AdditionalDependencies="$(QTDIR)\lib\qtmaind.lib ../engine/Debug-Qt/engine.lib $(QTDIR)\lib\QtGuid4.lib $(QTDIR)\lib\QtCored4.lib"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
+				AdditionalDependencies="d:\Sandbox64\qt\lib\qtmaind.lib d:\Sandbox64\qt\lib\QtGuid4.lib d:\Sandbox64\qt\lib\QtCored4.lib"
+				OutputFile="debug\qchess.exe"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(QTDIR)\lib"
+				AdditionalLibraryDirectories="d:\Sandbox64\qt\lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				LinkTimeCodeGeneration="0"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				WarningLevel="0"
+				DefaultCharType="0"
+				TargetEnvironment="3"
+				EnableErrorChecks="1"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
+				Optimization="2"
+				AdditionalIncludeDirectories="&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot;,&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot;,&quot;..\..\..\..\Sandbox64\qt\include&quot;,&quot;.&quot;,&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot;,&quot;release&quot;,&quot;.&quot;,..\..\..\..\Sandbox64\qt\mkspecs\default"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT,NDEBUG"
+				GeneratePreprocessedFile="0"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				AssemblerListingLocation="release\"
+				ObjectFile="release\"
+				ProgramDataBaseFileName=".\"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				IgnoreImportLibrary="true"
+				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
+				AdditionalDependencies="d:\Sandbox64\qt\lib\qtmain.lib d:\Sandbox64\qt\lib\QtGui4.lib d:\Sandbox64\qt\lib\QtCore4.lib"
+				OutputFile="release\qchess.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="d:\Sandbox64\qt\lib"
+				GenerateDebugInformation="false"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				LinkTimeCodeGeneration="0"
 				TargetMachine="17"
@@ -308,7 +491,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release-Qt|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
@@ -316,8 +499,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="create Qt meta object"
-				CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -337,29 +518,29 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;;&quot;$(QTDIR)\include\QtGui&quot;;&quot;$(QTDIR)\include&quot;;.;..\engine;&quot;$(QTDIR)\include\ActiveQt&quot;;&quot;$(ConfigurationName)&quot;;&quot;$(QTDIR)\mkspecs\win32-msvc2005&quot;"
-				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,NDEBUG"
+				AdditionalIncludeDirectories="..\..\..\..\Sandbox64\qt\include\QtCore;..\..\..\..\Sandbox64\qt\include\QtGui;..\..\..\..\Sandbox64\qt\include;.;..\..\..\..\Sandbox64\qt\include\ActiveQt;release;..\..\..\..\Sandbox64\qt\mkspecs\default;..\engine"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT,NDEBUG"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
 				TreatWChar_tAsBuiltInType="false"
 				RuntimeTypeInfo="true"
-				AssemblerListingLocation="$(ConfigurationName)"
-				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
+				AssemblerListingLocation="release\"
+				ObjectFile="release\"
+				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
+				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_HAVE_MMX,QT_HAVE_3DNOW,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2,QT_THREAD_SUPPORT"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -367,14 +548,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot; &quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
-				AdditionalDependencies="$(QTDIR)\lib\qtmain.lib ../engine/Release-Qt/engine.lib $(QTDIR)\lib\QtGui4.lib $(QTDIR)\lib\QtCore4.lib"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
+				AdditionalDependencies="d:\Sandbox64\qt\lib\qtmain.lib d:\Sandbox64\qt\lib\QtGui4.lib d:\Sandbox64\qt\lib\QtCore4.lib ..\engine\$(PlatformName)\$(ConfigurationName)\engine.lib"
+				OutputFile="release\qchess.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(QTDIR)\lib"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				AdditionalLibraryDirectories="d:\Sandbox64\qt\lib"
+				GenerateDebugInformation="false"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				LinkTimeCodeGeneration="0"
 				TargetMachine="17"
@@ -422,10 +603,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\moc_setparamsdlg.cpp"
-				>
-			</File>
-			<File
 				RelativePath="qchess_main.cpp"
 				>
 			</File>
@@ -434,7 +611,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\setparamsdlg.cpp"
+				RelativePath="setparamsdlg.cpp"
 				>
 			</File>
 		</Filter>
@@ -451,14 +628,25 @@
 				RelativePath="ChessWidget.h"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC ChessWidget.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o Debug-Qt\moc_ChessWidget.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="ChessWidget.h;$(QTDIR)\bin\moc.exe"
-						Outputs="Debug-Qt\moc_ChessWidget.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o debug\moc_ChessWidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="ChessWidget.h;D:\Sandbox64\qt\bin\moc.exe"
+						Outputs="debug\moc_ChessWidget.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC ChessWidget.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o release\moc_ChessWidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="ChessWidget.h;D:\Sandbox64\qt\bin\moc.exe"
+						Outputs="release\moc_ChessWidget.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -467,20 +655,31 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC ChessWidget.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o Release-Qt\moc_ChessWidget.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="ChessWidget.h;$(QTDIR)\bin\moc.exe"
-						Outputs="Release-Qt\moc_ChessWidget.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o release\moc_ChessWidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="ChessWidget.h;D:\Sandbox64\qt\bin\moc.exe"
+						Outputs="release\moc_ChessWidget.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC ChessWidget.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o Debug-Qt\moc_ChessWidget.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="ChessWidget.h;$(QTDIR)\bin\moc.exe"
-						Outputs="Debug-Qt\moc_ChessWidget.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o debug\moc_ChessWidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="ChessWidget.h;D:\Sandbox64\qt\bin\moc.exe"
+						Outputs="debug\moc_ChessWidget.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC ChessWidget.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o release\moc_ChessWidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="ChessWidget.h;D:\Sandbox64\qt\bin\moc.exe"
+						Outputs="release\moc_ChessWidget.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -489,9 +688,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC ChessWidget.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o Release-Qt\moc_ChessWidget.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="ChessWidget.h;$(QTDIR)\bin\moc.exe"
-						Outputs="Release-Qt\moc_ChessWidget.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 ChessWidget.h -o release\moc_ChessWidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="ChessWidget.h;D:\Sandbox64\qt\bin\moc.exe"
+						Outputs="release\moc_ChessWidget.cpp"
 					/>
 				</FileConfiguration>
 			</File>
@@ -499,14 +698,25 @@
 				RelativePath="selfiguredlg.h"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC selfiguredlg.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o Debug-Qt\moc_selfiguredlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;selfiguredlg.h"
-						Outputs="Debug-Qt\moc_selfiguredlg.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o debug\moc_selfiguredlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;selfiguredlg.h"
+						Outputs="debug\moc_selfiguredlg.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC selfiguredlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o release\moc_selfiguredlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;selfiguredlg.h"
+						Outputs="release\moc_selfiguredlg.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -515,20 +725,31 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC selfiguredlg.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o Release-Qt\moc_selfiguredlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;selfiguredlg.h"
-						Outputs="Release-Qt\moc_selfiguredlg.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o release\moc_selfiguredlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;selfiguredlg.h"
+						Outputs="release\moc_selfiguredlg.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC selfiguredlg.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o Debug-Qt\moc_selfiguredlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;selfiguredlg.h"
-						Outputs="Debug-Qt\moc_selfiguredlg.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o debug\moc_selfiguredlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;selfiguredlg.h"
+						Outputs="debug\moc_selfiguredlg.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC selfiguredlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o release\moc_selfiguredlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;selfiguredlg.h"
+						Outputs="release\moc_selfiguredlg.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -537,24 +758,35 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC selfiguredlg.h"
-						CommandLine="$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;..\engine&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2005 -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o Release-Qt\moc_selfiguredlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;selfiguredlg.h"
-						Outputs="Release-Qt\moc_selfiguredlg.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 selfiguredlg.h -o release\moc_selfiguredlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;selfiguredlg.h"
+						Outputs="release\moc_selfiguredlg.cpp"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\setparamsdlg.h"
+				RelativePath="setparamsdlg.h"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="create Qt meta object"
-						CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies=""
-						Outputs="moc_setparamsdlg.cpp"
+						Description="MOC setparamsdlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 setparamsdlg.h -o debug\moc_setparamsdlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;setparamsdlg.h"
+						Outputs="debug\moc_setparamsdlg.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC setparamsdlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 setparamsdlg.h -o release\moc_setparamsdlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;setparamsdlg.h"
+						Outputs="release\moc_setparamsdlg.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -562,21 +794,32 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="create Qt meta object"
-						CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies=""
-						Outputs="moc_setparamsdlg.cpp"
+						Description="MOC setparamsdlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 setparamsdlg.h -o release\moc_setparamsdlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;setparamsdlg.h"
+						Outputs="release\moc_setparamsdlg.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="create Qt meta object"
-						CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies=""
-						Outputs="moc_setparamsdlg.cpp"
+						Description="MOC setparamsdlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 setparamsdlg.h -o debug\moc_setparamsdlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;setparamsdlg.h"
+						Outputs="debug\moc_setparamsdlg.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC setparamsdlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 setparamsdlg.h -o release\moc_setparamsdlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;setparamsdlg.h"
+						Outputs="release\moc_setparamsdlg.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -584,10 +827,10 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="create Qt meta object"
-						CommandLine="moc setparamsdlg.h -omoc_setparamsdlg.cpp&#x0D;&#x0A;"
-						AdditionalDependencies=""
-						Outputs="moc_setparamsdlg.cpp"
+						Description="MOC setparamsdlg.h"
+						CommandLine="D:\Sandbox64\qt\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_HAVE_MMX -DQT_HAVE_3DNOW -DQT_HAVE_SSE -DQT_HAVE_MMXEXT -DQT_HAVE_SSE2 -DQT_THREAD_SUPPORT -I&quot;..\..\..\..\Sandbox64\qt\include\QtCore&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\QtGui&quot; -I&quot;..\..\..\..\Sandbox64\qt\include&quot; -I&quot;.&quot; -I&quot;..\..\..\..\Sandbox64\qt\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I..\..\..\..\Sandbox64\qt\mkspecs\default -D_MSC_VER=1400 -DWIN32 setparamsdlg.h -o release\moc_setparamsdlg.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\moc.exe;setparamsdlg.h"
+						Outputs="release\moc_setparamsdlg.cpp"
 					/>
 				</FileConfiguration>
 			</File>
@@ -598,10 +841,10 @@
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}"
 			>
 			<File
-				RelativePath="Release-Qt\moc_ChessWidget.cpp"
+				RelativePath="release\moc_ChessWidget.cpp"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -609,7 +852,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Debug|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -618,10 +861,26 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Debug-Qt\moc_ChessWidget.cpp"
+				RelativePath="debug\moc_ChessWidget.cpp"
 				>
 				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -638,10 +897,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Release-Qt\moc_selfiguredlg.cpp"
+				RelativePath="release\moc_selfiguredlg.cpp"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -649,7 +908,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Debug|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -658,10 +917,26 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Debug-Qt\moc_selfiguredlg.cpp"
+				RelativePath="debug\moc_selfiguredlg.cpp"
 				>
 				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -678,10 +953,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Release-Qt\qrc_qchess.cpp"
+				RelativePath="debug\moc_setparamsdlg.cpp"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -689,7 +964,23 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Release-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Qt|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -698,10 +989,66 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Debug-Qt\qrc_qchess.cpp"
+				RelativePath="release\moc_setparamsdlg.cpp"
 				>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="release\qrc_qchess.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="debug\qrc_qchess.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -732,13 +1079,24 @@
 				RelativePath="dialogs\selfiguredlg.ui"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC dialogs\selfiguredlg.ui"
-						CommandLine="$(QTDIR)\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\uic.exe;dialogs\selfiguredlg.ui"
+						CommandLine="D:\Sandbox64\qt\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\uic.exe;dialogs\selfiguredlg.ui"
+						Outputs="ui_selfiguredlg.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC dialogs\selfiguredlg.ui"
+						CommandLine="D:\Sandbox64\qt\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\uic.exe;dialogs\selfiguredlg.ui"
 						Outputs="ui_selfiguredlg.h"
 					/>
 				</FileConfiguration>
@@ -748,19 +1106,30 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC dialogs\selfiguredlg.ui"
-						CommandLine="$(QTDIR)\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\uic.exe;dialogs\selfiguredlg.ui"
+						CommandLine="D:\Sandbox64\qt\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\uic.exe;dialogs\selfiguredlg.ui"
 						Outputs="ui_selfiguredlg.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC dialogs\selfiguredlg.ui"
-						CommandLine="$(QTDIR)\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\uic.exe;dialogs\selfiguredlg.ui"
+						CommandLine="D:\Sandbox64\qt\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\uic.exe;dialogs\selfiguredlg.ui"
+						Outputs="ui_selfiguredlg.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC dialogs\selfiguredlg.ui"
+						CommandLine="D:\Sandbox64\qt\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\uic.exe;dialogs\selfiguredlg.ui"
 						Outputs="ui_selfiguredlg.h"
 					/>
 				</FileConfiguration>
@@ -770,8 +1139,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC dialogs\selfiguredlg.ui"
-						CommandLine="$(QTDIR)\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\uic.exe;dialogs\selfiguredlg.ui"
+						CommandLine="D:\Sandbox64\qt\bin\uic.exe dialogs\selfiguredlg.ui -o ui_selfiguredlg.h&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\uic.exe;dialogs\selfiguredlg.ui"
 						Outputs="ui_selfiguredlg.h"
 					/>
 				</FileConfiguration>
@@ -819,14 +1188,25 @@
 				RelativePath="qchess.qrc"
 				>
 				<FileConfiguration
-					Name="Debug-Qt|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="RCC qchess.qrc"
-						CommandLine="$(QTDIR)\bin\rcc.exe -name qchess qchess.qrc -o Debug-Qt\qrc_qchess.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
-						Outputs="Debug-Qt\qrc_qchess.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\rcc.exe -name qchess qchess.qrc -o debug\qrc_qchess.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
+						Outputs="debug\qrc_qchess.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="RCC qchess.qrc"
+						CommandLine="D:\Sandbox64\qt\bin\rcc.exe -name qchess qchess.qrc -o release\qrc_qchess.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
+						Outputs="release\qrc_qchess.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -835,20 +1215,31 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="RCC qchess.qrc"
-						CommandLine="$(QTDIR)\bin\rcc.exe -name qchess qchess.qrc -o Release-Qt\qrc_qchess.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
-						Outputs="Release-Qt\qrc_qchess.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\rcc.exe -name qchess qchess.qrc -o release\qrc_qchess.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
+						Outputs="release\qrc_qchess.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug-Qt|x64"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="RCC qchess.qrc"
-						CommandLine="$(QTDIR)\bin\rcc.exe -name qchess qchess.qrc -o Debug-Qt\qrc_qchess.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
-						Outputs="Debug-Qt\qrc_qchess.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\rcc.exe -name qchess qchess.qrc -o debug\qrc_qchess.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
+						Outputs="debug\qrc_qchess.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="RCC qchess.qrc"
+						CommandLine="D:\Sandbox64\qt\bin\rcc.exe -name qchess qchess.qrc -o release\qrc_qchess.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
+						Outputs="release\qrc_qchess.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -857,9 +1248,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="RCC qchess.qrc"
-						CommandLine="$(QTDIR)\bin\rcc.exe -name qchess qchess.qrc -o Release-Qt\qrc_qchess.cpp&#x0D;&#x0A;"
-						AdditionalDependencies="$(QTDIR)\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
-						Outputs="Release-Qt\qrc_qchess.cpp"
+						CommandLine="D:\Sandbox64\qt\bin\rcc.exe -name qchess qchess.qrc -o release\qrc_qchess.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="D:\Sandbox64\qt\bin\rcc.exe;images\bishop_b.png;images\bishop_w.png;images\king_b.png;images\king_w.png;images\knight_b.png;images\knight_w.png;images\pawn_b.png;images\pawn_w.png;images\queen_b.png;images\queen_w.png;images\rook_b.png;images\rook_w.png;qchess.qrc"
+						Outputs="release\qrc_qchess.cpp"
 					/>
 				</FileConfiguration>
 			</File>

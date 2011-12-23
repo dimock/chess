@@ -35,3 +35,4 @@ chess-helpers/zobrist.cpp
 *.pgn
 tequilla/log.txt
 chess-helpers/bug.fen
+qchess/vc80.idb

@@ -3,12 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine", "engine\engine.vcproj", "{A9A60BF7-AF11-41FA-9B1F-042087379D1B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qchess", "qchess\qchess.vcproj", "{D539E96B-6A8D-3A87-9693-BE8C07B270B3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tequilla", "tequilla\tequilla.vcproj", "{0632E56D-48B6-4578-8223-F1DDDA079106}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A9A60BF7-AF11-41FA-9B1F-042087379D1B} = {A9A60BF7-AF11-41FA-9B1F-042087379D1B}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tequilla", "tequilla\tequilla.vcproj", "{0632E56D-48B6-4578-8223-F1DDDA079106}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qchess", "qchess\qchess.vcproj", "{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A9A60BF7-AF11-41FA-9B1F-042087379D1B} = {A9A60BF7-AF11-41FA-9B1F-042087379D1B}
 	EndProjectSection
@@ -41,22 +41,6 @@ Global
 		{A9A60BF7-AF11-41FA-9B1F-042087379D1B}.Release-Qt|Win32.Build.0 = Release-Qt|Win32
 		{A9A60BF7-AF11-41FA-9B1F-042087379D1B}.Release-Qt|x64.ActiveCfg = Release-Qt|x64
 		{A9A60BF7-AF11-41FA-9B1F-042087379D1B}.Release-Qt|x64.Build.0 = Release-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug|Win32.ActiveCfg = Debug-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug|Win32.Build.0 = Debug-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug|x64.ActiveCfg = Debug-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug|x64.Build.0 = Debug-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug-Qt|Win32.ActiveCfg = Debug-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug-Qt|Win32.Build.0 = Debug-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug-Qt|x64.ActiveCfg = Debug-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Debug-Qt|x64.Build.0 = Debug-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release|Win32.ActiveCfg = Release-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release|Win32.Build.0 = Release-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release|x64.ActiveCfg = Release-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release|x64.Build.0 = Release-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|Win32.ActiveCfg = Release-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|Win32.Build.0 = Release-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|x64.ActiveCfg = Release-Qt|x64
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|x64.Build.0 = Release-Qt|x64
 		{0632E56D-48B6-4578-8223-F1DDDA079106}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0632E56D-48B6-4578-8223-F1DDDA079106}.Debug|Win32.Build.0 = Debug|Win32
 		{0632E56D-48B6-4578-8223-F1DDDA079106}.Debug|x64.ActiveCfg = Debug|x64
@@ -73,6 +57,19 @@ Global
 		{0632E56D-48B6-4578-8223-F1DDDA079106}.Release-Qt|Win32.Build.0 = Release|Win32
 		{0632E56D-48B6-4578-8223-F1DDDA079106}.Release-Qt|x64.ActiveCfg = Release|x64
 		{0632E56D-48B6-4578-8223-F1DDDA079106}.Release-Qt|x64.Build.0 = Release|x64
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Debug|Win32.Build.0 = Debug|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Debug|x64.ActiveCfg = Debug|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Debug-Qt|Win32.ActiveCfg = Debug|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Debug-Qt|Win32.Build.0 = Debug|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Debug-Qt|x64.ActiveCfg = Debug|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Release|Win32.ActiveCfg = Release|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Release|Win32.Build.0 = Release|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Release|x64.ActiveCfg = Release|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Release-Qt|Win32.ActiveCfg = Release|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Release-Qt|Win32.Build.0 = Release|Win32
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Release-Qt|x64.ActiveCfg = Release-Qt|x64
+		{C0F00A5A-435A-3D6A-9CE3-DADD246FBEE3}.Release-Qt|x64.Build.0 = Release-Qt|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
