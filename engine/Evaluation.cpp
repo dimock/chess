@@ -245,10 +245,12 @@ ScoreType Board::evaluate() const
     return -Figure::WeightMat;
   else if ( drawState() )
     return Figure::WeightDraw;
-  else if ( can_win_[0] != can_win_[1] )
-    return evaluateWinnerLoser();
-
-  ScoreType score = calculateEval();
+  
+  ScoreType score = -std::numeric_limits<ScoreType>::max();
+  if ( can_win_[0] != can_win_[1] )
+    score = evaluateWinnerLoser();
+  else
+    score = calculateEval();
 
   if ( Figure::ColorBlack  == color_ )
     score = -score;
