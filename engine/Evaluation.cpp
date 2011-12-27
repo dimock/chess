@@ -132,9 +132,9 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
 ScoreType Figure::pawnGuarded_  =  8;
 ScoreType Figure::pawnDoubled_  = -8;
-ScoreType Figure::pawnIsolated_ =-10;
+ScoreType Figure::pawnIsolated_ = -8;
 ScoreType Figure::pawnBackward_ = -8;
-ScoreType Figure::openRook_     = 10;
+ScoreType Figure::openRook_     =  8;
 ScoreType Figure::assistantBishop_ = 5;
 ScoreType Figure::onlineRooks_ = 8;
 
@@ -144,8 +144,8 @@ ScoreType Figure::onlineRooks_ = 8;
 //};
 
 ScoreType Figure::pawnPassed_[2][8] = {
-	{ 0, 50, 30, 25, 15, 10, 5, 0 },
-	{ 0, 5, 10, 15, 25, 30, 50, 0 }
+	{ 0, 60, 40, 25, 15, 10, 5, 0 },
+	{ 0, 5, 10, 15, 25, 40, 60, 0 }
 };
 
 #define FAST_ROOK_PAWN_EVAL
@@ -169,7 +169,7 @@ ScoreType Figure::pawnPassed_[2][8] = {
     int16 col_msk = (column-1) >> 15;\
     score += Figure::openRook_ & col_msk;\
   }\
-  if ( num > 1 )\
+  /*if ( num > 1 )\
   {\
     THROW_IF( rfields[0] < 0 || rfields[1] < 0, "invalid rook fields" );\
     const Field & field = getField(rfields[0]);\
@@ -184,7 +184,7 @@ ScoreType Figure::pawnPassed_[2][8] = {
       if ( (btw_msk & all_msk_inv) == btw_msk )\
         score += Figure::onlineRooks_;\
     }\
-  }\
+  }*/\
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -314,7 +314,7 @@ ScoreType Board::calculateEval() const
     static uint8 opmask_king[2] = { 48, 6 };
     static uint8 shifts[2] = { 5, 1 };
     static uint8 oshifts[2] = { 4, 2 };
-    static ScoreType king_penalties[2][4] = { {10, 5, 0, 0}, {10, 0, 5, 0} };
+    static ScoreType king_penalties[2][4] = { {10, 3, 0, 0}, {10, 0, 3, 0} };
     static ScoreType king_o_penalties[2][4] = { {0, 3, 8, 8}, {0, 8, 3, 8} };
 
     const uint8 * pmsk = (const uint8*)&fmgr_.pawn_mask_t((Figure::Color)color);
