@@ -3,6 +3,23 @@
 #include "MovesGenerator.h"
 
 //////////////////////////////////////////////////////////////////////////
+inline Figure::Type delta2type(int delta)
+{
+  Figure::Type minimalType = Figure::TypePawn;
+  if ( delta > Figure::figureWeight_[Figure::TypeQueen] )
+    minimalType = Figure::TypeKing;
+  else if ( delta > Figure::figureWeight_[Figure::TypeRook] )
+    minimalType = Figure::TypeQueen;
+  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
+    minimalType = Figure::TypeRook;
+  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
+    minimalType = Figure::TypeBishop;
+  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
+    minimalType = Figure::TypeKnight;
+  return minimalType;
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 SearchResult::SearchResult() :
   nodesCount_(0),
@@ -485,15 +502,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   }
 #endif
 
-  Figure::Type minimalType = Figure::TypePawn;
-  if ( delta > Figure::figureWeight_[Figure::TypeRook] )
-    minimalType = Figure::TypeQueen;
-  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
-    minimalType = Figure::TypeRook;
-  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
-    minimalType = Figure::TypeBishop;
-  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
-    minimalType = Figure::TypeKnight;
+  Figure::Type minimalType = delta2type(delta);
 
   //QpfTimer qpt;
   //Board::ticks_ += qpt.ticks();
@@ -656,15 +665,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 	}
 #endif
 
-	Figure::Type minimalType = Figure::TypePawn;
-	if ( delta > Figure::figureWeight_[Figure::TypeRook] )
-		minimalType = Figure::TypeQueen;
-	else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
-		minimalType = Figure::TypeRook;
-	else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
-		minimalType = Figure::TypeBishop;
-	else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
-		minimalType = Figure::TypeKnight;
+	Figure::Type minimalType = delta2type(delta);
 
 	//QpfTimer qpt;
 	//Board::ticks_ += qpt.ticks();

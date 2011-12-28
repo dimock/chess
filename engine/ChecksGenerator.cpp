@@ -306,8 +306,8 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
       if ( board_.getField(to) )
         continue;
 
-      // it could be check
-      if ( Figure::TypeQueen == minimalType_ )
+      // promotion doesn't give enough material, but it could be check
+      if ( minimalType_ > Figure::TypeQueen )
       {
         // 1 - pawn between attacker (BRQ) and king
         const uint64 & from_msk = board_.g_betweenMasks->from(oking.where(), from);

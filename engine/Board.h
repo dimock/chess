@@ -195,6 +195,7 @@ private:
 
   ScoreType evaluatePawns(Figure::Color color) const;
   ScoreType evaluateRooks(Figure::Color color) const;
+  ScoreType evalPawnsEndgame(Figure::Color color) const;
   ScoreType evaluateWinnerLoser() const;
 
   /// do move. fill undo info, don't validate

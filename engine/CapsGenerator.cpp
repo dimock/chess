@@ -44,7 +44,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
   const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
 
-  if ( minimalType_ < Figure::TypeQueen )
+  if ( minimalType_ <= Figure::TypeQueen )
   {
     uint64 promo_msk = board_.g_movesTable->promote_o(board_.color_);
     promo_msk &= pawn_msk;
