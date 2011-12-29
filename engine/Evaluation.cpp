@@ -531,22 +531,31 @@ ScoreType Board::evaluateWinnerLoser() const
   const Figure & king_l = getFigure(lose_color, KingIndex);
 
   ScoreType kingEval = 0;
-  if ( fmgr_.pawns(win_color) > 0 )//&& fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeRook] )
-  {
-    int yw = king_w.where() >> 3;
-    int yl = king_l.where() >> 3;
+  bool kingsDist = true;
 
-    if ( win_color ) // white
+  if ( fmgr_.pawns(win_color) > 0 )
+  {
+    if ( fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeRook] )
     {
-      kingEval = (yw + (7-yl)) << 3;
+      int yw = king_w.where() >> 3;
+      int yl = king_l.where() >> 3;
+
+      if ( win_color ) // white
+      {
+        kingEval = (yw + (7-yl)) << 3;
+      }
+      else // black
+      {
+        kingEval = ((7-yw) + yl) << 3;
+      }
+
+      kingsDist = false;
     }
-    else // black
-    {
-      kingEval = ((7-yw) + yl) << 3;
-    }
+
     kingEval -= evalPawnsEndgame(lose_color);
   }
-  else
+  
+  if ( kingsDist )
   {
     int dist  = g_distanceCounter->getDistance(king_w.where(), king_l.where());
     kingEval -= dist << 3;

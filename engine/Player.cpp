@@ -342,6 +342,16 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	    if ( !move || stop_ )
 		    break;
 
+      if ( depth_ == 4 && ply == 0 && move.from_ == 8 && move.to_ == 24 )
+      {
+        int ttt = 0;
+      }
+
+      if ( depth_ == 4 && ply == 2 && move.from_ == 24 && move.to_ == 32 )
+      {
+        int ttt = 0;
+      }
+
 	    if ( move == pv
   #ifdef USE_KILLER
         || move == killer

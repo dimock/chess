@@ -223,7 +223,7 @@ bool Board::doMove()
 
   move.fifty_moves_ = fiftyMovesCount_;
 
-  if ( Figure::TypePawn == fig.getType() || move.rindex_ >= 0 )
+  if ( Figure::TypePawn == fig.getType() || move.rindex_ >= 0 || move.new_type_ > 0 )
   {
     move.irreversible_ = true;
     fiftyMovesCount_ = 0;
