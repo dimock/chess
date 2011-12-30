@@ -6,6 +6,8 @@
 inline Figure::Type delta2type(int delta)
 {
   Figure::Type minimalType = Figure::TypePawn;
+
+#ifdef USE_DELTA_PRUNING_
   if ( delta > Figure::figureWeight_[Figure::TypeQueen] )
     minimalType = Figure::TypeKing;
   else if ( delta > Figure::figureWeight_[Figure::TypeRook] )
@@ -16,6 +18,8 @@ inline Figure::Type delta2type(int delta)
     minimalType = Figure::TypeBishop;
   else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
     minimalType = Figure::TypeKnight;
+#endif
+
   return minimalType;
 }
 
@@ -292,7 +296,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     int depthInc = 0;
     if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 &&
-        (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) && (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly) )
+         alpha < Figure::WeightMat-MaxPly
+        /*(alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) && (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly)*/ )
     {
       depthInc = 1;
     }
@@ -403,7 +408,9 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
   {
     bool haveCheck = board_.getState() == Board::UnderCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
-         (alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) && (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly) )
+          alpha < Figure::WeightMat-MaxPly
+         /*(alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) &&
+         (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly)*/ )
     {
       depth++;
     }

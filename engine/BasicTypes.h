@@ -40,6 +40,7 @@ typedef int16 ScoreType;
 #define GO_IMMEDIATELY
 #define USE_KILLER
 #define USE_FUTILITY_PRUNING
+#define USE_DELTA_PRUNING_
 #define GO_IMMEDIATELY_CC
 
 #undef  NO_TIME_LIMIT
