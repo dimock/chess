@@ -68,7 +68,8 @@ Global
 		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release|x64.ActiveCfg = Release|Win32
 		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|Win32.ActiveCfg = Release-Qt|Win32
 		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|Win32.Build.0 = Release-Qt|Win32
-		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|x64.ActiveCfg = Release|Win32
+		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|x64.ActiveCfg = Release-Qt|x64
+		{D539E96B-6A8D-3A87-9693-BE8C07B270B3}.Release-Qt|x64.Build.0 = Release-Qt|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
