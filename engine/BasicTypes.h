@@ -34,7 +34,7 @@ typedef unsigned __int64 uint64;
 
 typedef int16 ScoreType;
 
-#define PERFORM_CAPTURES
+#define PERFORM_CAPTURES_AND_CHECKS
 
 #define USE_ZERO_WINDOW
 #define GO_IMMEDIATELY

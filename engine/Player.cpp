@@ -408,9 +408,8 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
   {
     bool haveCheck = board_.getState() == Board::UnderCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
-          alpha < Figure::WeightMat-MaxPly
-         /*(alpha < -Figure::WeightMat || alpha > -Figure::WeightMat+MaxPly) &&
-         (alpha > Figure::WeightMat || alpha < Figure::WeightMat-MaxPly)*/ )
+          alpha < Figure::WeightMat-MaxPly &&
+          depth > 0 )
     {
       depth++;
     }
@@ -421,14 +420,21 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       score = 0;
     else if ( depth <= 1 )
     {
-		score = -board_.evaluate();
-#ifdef PERFORM_CAPTURES
-		int delta = (int)score - (int)betta - (int)Figure::positionGain_;
-		if ( haveCheck || (score > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
-		{
-			ScoreType betta1 = score < betta && !haveCheck ? score : betta;
-			score = -captures(ply+1, -betta1, -alpha, delta);
-		}
+      score = -board_.evaluate();
+      int delta = (int)score - (int)betta - (int)Figure::positionGain_;
+      if ( haveCheck || (score > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
+      {
+        ScoreType betta1 = score < betta && !haveCheck ? score : betta;
+#ifdef PERFORM_CAPTURES_AND_CHECKS
+        if ( depth < 1 )
+#endif
+
+          score = -captures(ply+1, -betta1, -alpha, delta);
+
+#ifdef PERFORM_CAPTURES_AND_CHECKS
+        else
+          score = -captures_checks(0, ply+1, -betta1, -alpha, delta);
+      }
 #endif
     }
     else
@@ -713,7 +719,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 			THROW_IF( !board_.validMove(move), "move validation failed" );
 
-			movement(1, ply, alpha, betta, move, counter);
+			movement(depth, ply, alpha, betta, move, counter);
 		}
 
 		if ( !counter )
@@ -747,7 +753,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 			THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-			movement(1, ply, alpha, betta, cap, counter);
+			movement(depth, ply, alpha, betta, cap, counter);
 		}
 
 		if ( !stop_ && alpha < betta )
@@ -778,7 +784,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
   			//	v = board_.validMove(check);
 			  //}
 
-			  movement(1, ply, alpha, betta, check, counter);
+			  movement(depth, ply, alpha, betta, check, counter);
 		  }
 		}
 	}
