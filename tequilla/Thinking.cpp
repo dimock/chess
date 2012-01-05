@@ -70,6 +70,7 @@ void Thinking::undo()
 
 void Thinking::setMemory(int mb)
 {
+  player_.setMemory(mb);
 }
 
 bool Thinking::init()

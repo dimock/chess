@@ -5,6 +5,17 @@
 
 #pragma pack (push, 1)
 
+__declspec (align(1))
+struct PackedMove
+{
+  PackedMove() : from_(0), to_(0), new_type_(0)
+  {}
+
+  uint16 from_ : 6,
+         to_ : 6,
+         new_type_ : 4;
+};
+
 /*! basic move structure.
     contains minimal necessary information it could be stored in hash etc.
  */
@@ -164,6 +175,9 @@ struct MoveCmd : public Move
 
   /// fifty moves rule
   uint8 fifty_moves_;
+
+  /// repetitions counter
+  uint8 reps_counter_;
 
   //// 1st - color, 2nd - index of castle's possibility for zobrist key. 0 - short, 1 - long
   //bool castle_index_[2][2];

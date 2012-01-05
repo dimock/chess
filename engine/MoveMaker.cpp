@@ -94,6 +94,29 @@ bool Board::validMove(const Move & move) const
   return false;
 }
 
+Move Board::unpack(const PackedMove & pm) const
+{
+  Move move;
+
+  move.clear();
+
+  const Field & fto = getField(pm.to_);
+  if ( fto && (fto.color() == color_ || fto.type() == Figure::TypeKing) )
+    return move;
+
+  move.from_ = pm.from_;
+  move.to_ = pm.to_;
+  move.new_type_ = pm.new_type_;
+
+  if ( fto )
+    move.rindex_ = fto.index();
+
+  if ( !validMove(move) )
+    move.clear();
+
+  return move;
+}
+
 bool Board::doMove()
 {
   MoveCmd & move = getMove(halfmovesCounter_-1);
@@ -222,11 +245,13 @@ bool Board::doMove()
   move.need_undo_ = true;
 
   move.fifty_moves_ = fiftyMovesCount_;
+  move.reps_counter_ = repsCounter_;
 
   if ( Figure::TypePawn == fig.getType() || move.rindex_ >= 0 || move.new_type_ > 0 )
   {
     move.irreversible_ = true;
     fiftyMovesCount_ = 0;
+    repsCounter_ = 0;
   }
   else
   {
@@ -321,6 +346,7 @@ void Board::undoMove()
   fmgr_.restoreMasks(move.mask_);
 
   fiftyMovesCount_ = move.fifty_moves_;
+  repsCounter_ = move.reps_counter_;
 }
 
 bool Board::makeMove(const Move & mv)
@@ -456,12 +482,19 @@ bool Board::verifyChessDraw()
     if ( reps >= 3 )
     {
       state_ = DrawReps;
+
+      if ( reps > repsCounter_ )
+        repsCounter_ = reps;
+
       return true;
     }
 
     if ( getMove(i).irreversible_ )
       break;
   }
+
+  if ( reps > repsCounter_ )
+    repsCounter_ = reps;
 
   return false;
 }

@@ -119,7 +119,7 @@ int main(int argc, char * argv[])
 				cout << "feature done=0" << endl;
 				cout << "feature setboard=1" << endl;
 				cout << "feature myname=\"Tequilla 1.0\" memory=1" << endl;
-				cout << "feature option=\"enablebook -check 1\"" << endl;
+				//cout << "feature option=\"enablebook -check 1\"" << endl;
 				cout << "feature done=1" << endl;
 			}
 			break;

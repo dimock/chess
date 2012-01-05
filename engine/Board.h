@@ -67,6 +67,19 @@ public:
 
   /*! movements
    */
+
+  /// unpack from hash
+  Move unpack(const PackedMove & ) const;
+
+  PackedMove pack(const Move & move) const
+  {
+    PackedMove pm;
+    pm.from_ = move.from_;
+    pm.to_ = move.to_;
+    pm.new_type_ = move.new_type_;
+    return pm;
+  }
+
   /// verify 
   bool validMove(const Move &) const;
 
@@ -138,6 +151,9 @@ public:
   /// returns number of half-moves from beginning of game. starts from 0
   int halfmovesCount() const { return halfmovesCounter_; }
 
+  /// returns max number of repetitions found. it will be set to 0 after pawns move or capture
+  uint8 repsCount() const { return repsCounter_; }
+
   const MoveCmd & getMove(int i) const
   {
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
@@ -169,6 +185,11 @@ public:
   }
 
   void verifyMasks() const;
+
+  const uint64 & hashCode() const
+  {
+    return fmgr_.hashCode();
+  }
 
   /// methods
 private:
@@ -319,6 +340,7 @@ private:
   Field fields_[NumOfFields];
 
   int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
+  uint8 repsCounter_;
 
   MoveCmd * g_moves;
   const MovesTable * g_movesTable;

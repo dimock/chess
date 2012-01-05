@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Board.h"
+#include "HashTable.h"
 #include <time.h>
 
 class SearchResult
@@ -57,6 +58,8 @@ public:
   // initialize global arrays, tables, masks, etc. write them to it's board_
   Player();
   ~Player();
+
+  void setMemory(int mb);
 
   bool fromFEN(const char * fen);
   bool toFEN(char * fen) const;
@@ -122,6 +125,16 @@ private:
   DeltaPosCounter * g_deltaPosCounter;
   DistanceCounter * g_distanceCounter;
 
+#ifdef USE_HASH_TABLE_GENERAL
+  GeneralHashTable ghash_;
+#endif
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  CapturesHashTable chash_;
+#endif
+
+  bool use_pv_;
+
 
   //////////////////////////////////////////////////////////////////////////
   void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
@@ -142,6 +155,24 @@ private:
         break;
     }
   }
+
+#ifdef USE_HASH_TABLE_GENERAL
+  void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode)
+  {
+    Figure::Color color = Figure::otherColor(board_.getColor());
+    PackedMove pm = board_.pack(move);
+    ghash_.push(hcode, score, depth, ply, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
+  }
+#endif // USE_HASH_TABLE_GENERAL
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  void updateCaptureHash(const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode)
+  {
+    Figure::Color color = Figure::otherColor(board_.getColor());
+    PackedMove pm = board_.pack(move);
+    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, pm);
+  }
+#endif // USE_HASH_TABLE_CAPTURE
 
 #ifdef VERIFY_ESCAPE_GENERATOR
   void verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType betta);

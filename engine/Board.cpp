@@ -37,6 +37,7 @@ void Board::clear()
   fiftyMovesCount_ = 0;
   movesCounter_ = 1;
   halfmovesCounter_ = 0;
+  repsCounter_ = 0;
   stages_[0] = stages_[1] = 0;
 
   for (int i = 0; i < NumOfFields; ++i)

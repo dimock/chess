@@ -47,7 +47,16 @@ Player::Player() :
   nodesCount_(0),
   totalNodes_(0),
   depthMax_(2),
-  depth_(0)
+  depth_(0),
+#ifdef USE_HASH_TABLE_CAPTURE
+  chash_(16),
+#endif
+#ifdef USE_HASH_TABLE_GENERAL
+  ghash_(16),
+  use_pv_(false)
+#else
+  use_pv_(true)
+#endif
 {
   g_moves = new MoveCmd[Board::GameLength];
   g_deltaPosCounter = new DeltaPosCounter;
@@ -88,6 +97,30 @@ Player::~Player()
   delete g_distanceCounter;
   delete g_pawnMasks_;
 }
+
+void Player::setMemory(int mb)
+{
+  int gsize = 0;
+
+  if ( mb > 4 ) // we need at least 4mb of memory
+  {
+    mb -= 4;
+    gsize = 16;
+    for ( ; mb > 1; mb >>= 1, gsize++);
+    gsize--;
+  }
+
+#ifdef USE_HASH_TABLE_GENERAL
+  ghash_.resize(gsize);
+#endif
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  chash_.resize(gsize);
+#endif
+
+  use_pv_ = gsize > 0;
+}
+
 
 bool Player::fromFEN(const char * fen)
 {
@@ -229,18 +262,115 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
 
   int counter = 0;
+  
+  // if we haven't found best move, we write alpha-hash
+  ScoreType savedAlpha = alpha;
 
   Move pv;
   pv.clear();
 
-  // we use PV only up to max-depth
-  if ( ply < depthMax_ )
+  if ( use_pv_ )
   {
-    pv = contexts_[0].pv_[ply];
-    pv.checkVerified_ = 0;
+    // we use PV only up to max-depth
+    if ( ply < depthMax_ )
+    {
+      pv = contexts_[0].pv_[ply];
+      pv.checkVerified_ = 0;
 
-    THROW_IF( pv.rindex_ == 100, "invalid pv move" );
+      THROW_IF( pv.rindex_ == 100, "invalid pv move" );
+    }
   }
+#ifdef USE_HASH_TABLE_GENERAL
+  else // use hash table
+  {
+    GeneralHItem & hitem = ghash_[board_.hashCode()];
+    if ( hitem.hcode_ == board_.hashCode() )
+    {
+      //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
+
+      ScoreType hscore = hitem.score_;
+      if ( hscore >= Figure::WeightMat-MaxPly )
+      {
+        hscore += hitem.ply_;
+        hscore -= ply;
+      }
+      else if ( hscore <= MaxPly-Figure::WeightMat )
+      {
+        hscore -= hitem.ply_;
+        hscore += ply;
+      }
+
+      if ( GeneralHashTable::Alpha != hitem.flag_ )
+      {
+        pv = board_.unpack(hitem.move_);
+      }
+
+      if ( hitem.depth_ >= depth )
+      {
+        if ( GeneralHashTable::Alpha == hitem.flag_ && hscore <= alpha )
+          return alpha;
+
+#ifdef RETURN_IF_BETTA
+        if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::Betta == hitem.flag_) && pv && hscore >= betta )
+        {
+          totalNodes_++;
+          nodesCount_++;
+
+#ifndef NDEBUG
+          Board board0 = board_;
+#endif
+
+          bool retBetta = false;
+
+          if ( board_.makeMove(pv) )
+          {
+            if ( board_.drawState() )
+            {
+              if ( 0 >= betta )
+                retBetta = true;
+            }
+            else if ( board_.repsCount() < 2 )
+            {
+              assemblePV(pv, ply);
+              retBetta = true;
+            }
+          }
+
+#ifndef NDEBUG
+          board_.verifyMasks();
+#endif
+
+          board_.unmakeMove();
+
+          THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
+
+#ifndef NDEBUG
+          board_.verifyMasks();
+#endif
+
+          if ( retBetta )
+          {
+            return betta;
+          }
+        }
+#endif // RETURN_IF_BETTA
+      }
+    }
+#ifdef USE_HASH_TABLE_CAPTURE
+    else
+    {
+      CaptureHItem & hitem = chash_[board_.hashCode()];
+      if ( hitem.hcode_ == board_.hashCode() )
+      {
+        //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
+
+        if ( CapturesHashTable::Alpha != hitem.flag_ )
+          pv = board_.unpack(hitem.move_);
+      }
+    }
+#endif // USE_HASH_TABLE_CAPTURE
+  }
+#endif // USE_HASH_TABLE_GENERAL
 
   // clear context for current ply
   if ( ply < MaxPly )
@@ -261,6 +391,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   // now use PV. it will be changed to hash soon
   if ( board_.validMove(pv) )
     movement(depth, ply, alpha, betta, pv, counter);
+
+  if ( alpha >= betta )
+  {
+    return alpha;
+  }
 
   Move & killer = contexts_[ply].killer_;
 
@@ -392,6 +527,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     stop_ = true;
   }
 
+  // we haven't found best move
+#ifdef USE_HASH_TABLE_GENERAL
+  if ( alpha == savedAlpha )
+  {
+    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.getColor(), GeneralHashTable::Alpha, PackedMove());
+  }
+#endif
+
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -403,6 +546,8 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #ifndef NDEBUG
   Board board0 = board_;
 #endif
+
+  uint64 hcode = board_.hashCode();
 
   if ( board_.makeMove(move) )
   {
@@ -453,6 +598,15 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
       assemblePV(move, ply);
 
+#ifdef USE_HASH_TABLE_GENERAL
+      if ( depth >= 1 )
+        updateGeneralHash(move, depth, ply, score, betta, hcode);
+#ifdef USE_HASH_TABLE_CAPTURE
+      else
+        updateCaptureHash(move, score, betta, hcode);
+#endif
+#endif
+
       if ( move.rindex_ < 0 )
         MovesGenerator::history(move.from_, move.to_) += depth;
 
@@ -501,10 +655,84 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 #endif
 
   int counter = 0;
+  ScoreType saveAlpha = alpha;
+
+  Move hmove;
+  hmove.clear();
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  CaptureHItem & hitem = chash_[board_.hashCode()];
+  if ( hitem.hcode_ == board_.hashCode() )
+  {
+    //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
+
+    if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
+      return alpha;
+
+    if ( CapturesHashTable::Alpha != hitem.flag_ )
+      hmove = board_.unpack(hitem.move_);
+
+#ifdef RETURN_IF_BETTA
+    if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::Betta == hitem.flag_) && hmove && hitem.score_ >= betta )
+    {
+      totalNodes_++;
+      nodesCount_++;
+
+#ifndef NDEBUG
+      Board board0 = board_;
+#endif
+
+      bool retBetta = false;
+
+      if ( board_.makeMove(hmove) )
+      {
+        if ( board_.drawState() )
+        {
+          if ( 0 >= betta )
+            retBetta = true;
+        }
+        else
+        {
+          retBetta = true;
+        }
+      }
+
+#ifndef NDEBUG
+      board_.verifyMasks();
+#endif
+
+      board_.unmakeMove();
+
+      THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
+
+#ifndef NDEBUG
+      board_.verifyMasks();
+#endif
+
+      if ( retBetta )
+      {
+        return betta;
+      }
+    }
+#endif // RETURN_IF_BETTA
+
+    if ( hmove )
+    {
+      hmove.checkVerified_ = 0;
+      capture(ply, alpha, betta, hmove, counter);
+    }
+
+    if ( alpha >= betta )
+    {
+      return alpha;
+    }
+  }
+#endif //USE_HASH_TABLE_CAPTURE
+
   Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
-  if ( killer && board_.validMove(killer) )
+  if ( killer && killer != hmove && board_.validMove(killer) )
   {
 #ifndef NDEBUG
     MovesGenerator mg(board_);
@@ -516,7 +744,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 #endif
 
 	  killer.checkVerified_ = 0;
-      capture(ply, alpha, betta, killer, counter);
+    capture(ply, alpha, betta, killer, counter);
   }
 
   if ( alpha >= betta )
@@ -550,7 +778,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
         break;
 
 #ifdef USE_KILLER
-		  if ( killer == cap )
+		  if ( killer == cap || hmove == cap )
 			  continue;
 #endif
 
@@ -582,7 +810,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
         testTimer();
 
 #ifdef USE_KILLER
-      if ( killer == cap )
+      if ( killer == cap || hmove == cap )
         continue;
 #endif
 
@@ -591,6 +819,13 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
       capture(ply, alpha, betta, cap, counter);
     }
   }
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  if ( alpha == saveAlpha )
+  {
+    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove());
+  }
+#endif
 
   return alpha;
 }
@@ -604,6 +839,8 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 #ifndef NDEBUG
 	Board board0 = board_;
 #endif
+
+  uint64 hcode = board_.hashCode();
 
 	if ( board_.makeMove(cap) )
 	{
@@ -627,6 +864,10 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 		if ( !stop_ && s > alpha )
 		{
 			alpha = s;
+
+#ifdef USE_HASH_TABLE_CAPTURE
+      updateCaptureHash(cap, s, betta, hcode);
+#endif
 
 #ifdef USE_KILLER
 			Move killer = contexts_[ply].killer_;
@@ -664,10 +905,84 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 	int counter = 0;
 
+  ScoreType saveAlpha = alpha;
+
+  Move hmove;
+  hmove.clear();
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  CaptureHItem & hitem = chash_[board_.hashCode()];
+  if ( hitem.hcode_ == board_.hashCode() )
+  {
+    //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
+
+    if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
+      return alpha;
+
+    if ( CapturesHashTable::Alpha != hitem.flag_ )
+      hmove = board_.unpack(hitem.move_);
+
+#ifdef RETURN_IF_BETTA
+    if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::Betta == hitem.flag_) && hmove && hitem.score_ >= betta )
+    {
+      totalNodes_++;
+      nodesCount_++;
+
+#ifndef NDEBUG
+      Board board0 = board_;
+#endif
+
+      bool retBetta = false;
+
+      if ( board_.makeMove(hmove) )
+      {
+        if ( board_.drawState() )
+        {
+          if ( 0 >= betta )
+            retBetta = true;
+        }
+        else
+        {
+          retBetta = true;
+        }
+      }
+
+#ifndef NDEBUG
+      board_.verifyMasks();
+#endif
+
+      board_.unmakeMove();
+
+      THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
+
+#ifndef NDEBUG
+      board_.verifyMasks();
+#endif
+
+      if ( retBetta )
+      {
+        return betta;
+      }
+    }
+#endif // RETURN_IF_BETTA
+
+    if ( hmove )
+    {
+      hmove.checkVerified_ = 0;
+      capture(ply, alpha, betta, hmove, counter);
+    }
+
+    if ( alpha >= betta )
+    {
+      return alpha;
+    }
+  }
+#endif //USE_HASH_TABLE_CAPTURE
+
 	Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
-	if ( killer && board_.validMove(killer) )
+	if ( killer && killer != hmove && board_.validMove(killer) )
 	{
 #ifndef NDEBUG
 		MovesGenerator mg(board_);
@@ -713,7 +1028,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 				break;
 
 #ifdef USE_KILLER
-			if ( killer == move )
+			if ( killer == move || hmove == move )
 				continue;
 #endif
 
@@ -747,7 +1062,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 				testTimer();
 
 #ifdef USE_KILLER
-			if ( killer == cap )
+			if ( killer == cap || hmove == cap )
 				continue;
 #endif
 
@@ -773,7 +1088,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 				  testTimer();
 
 #ifdef USE_KILLER
-			  if ( killer == check )
+			  if ( killer == check || hmove == check )
 				  continue;
 #endif
 
@@ -788,6 +1103,13 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 		  }
 		}
 	}
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  if ( alpha == saveAlpha )
+  {
+    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove());
+  }
+#endif
 
 	return alpha;
 }
