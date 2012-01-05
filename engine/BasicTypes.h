@@ -47,6 +47,7 @@ typedef int16 ScoreType;
 #define USE_HASH_TABLE_CAPTURE
 #define USE_GENERAL_HASH_IN_CAPS
 #define RETURN_IF_BETTA
+#define USE_NULL_MOVE
 
 #undef  NO_TIME_LIMIT
 

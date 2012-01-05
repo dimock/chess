@@ -498,3 +498,32 @@ bool Board::verifyChessDraw()
 
   return false;
 }
+
+//////////////////////////////////////////////////////////////////////////
+// NULL MOVE
+
+void Board::makeNullMove(MoveCmd & move)
+{
+  move.zcode_old_ = hashCode();
+
+  if ( en_passant_ >= 0 )
+  {
+    const Figure & fig = getFigure(Figure::otherColor(color_), en_passant_);
+    THROW_IF( !fig, "no en-passant pawn" );
+    fmgr_.hashEnPassant(fig.where(), color_);
+    move.en_passant_ = en_passant_;
+    en_passant_ = -1;
+  }
+  else
+    move.en_passant_ = -1;
+
+  color_ = Figure::otherColor(color_);
+  fmgr_.hashColor();
+}
+
+void Board::unmakeNullMove(MoveCmd & move)
+{
+  color_ = Figure::otherColor(color_);
+  en_passant_ = move.en_passant_;
+  fmgr_.restoreHash(move.zcode_old_);
+}

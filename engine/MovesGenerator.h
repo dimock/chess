@@ -14,7 +14,7 @@ class MovesGenerator
 
 public:
 
-  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter);
+  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
   MovesGenerator(Board & );
 
   static inline ScoreType & history(int8 from, int8 to)
@@ -55,7 +55,7 @@ public:
 private:
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
 
   inline void add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
@@ -64,7 +64,7 @@ private:
     calculateWeight(move);
   }
 
-  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
 
   void calculateWeight(Move & move);
 
@@ -145,7 +145,7 @@ class CapsChecksGenerator
 {
 public:
 
-  CapsChecksGenerator(Board & , Figure::Type minimalType, int depth, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
+  CapsChecksGenerator(Board & , Figure::Type minimalType, int depth, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
 
   Move & capture()
   {
@@ -207,8 +207,8 @@ private:
 
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
-  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
+  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
 
 
   inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
@@ -235,7 +235,7 @@ class EscapeGenerator
 {
 public:
 
-  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
+  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
 
   Move & escape()
   {
@@ -257,10 +257,10 @@ public:
 private:
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
-  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter);
-  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter);
-  bool escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
+  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
+  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
+  bool escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
 
 
   int current_;

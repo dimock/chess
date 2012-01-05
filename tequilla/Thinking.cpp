@@ -287,7 +287,7 @@ void Thinking::updateTiming()
 
   if ( movesLeft_ <= 0 && xtimeMS_ > 0 )
   {
-    player_.setTimeLimit(xtimeMS_/40);
+    player_.setTimeLimit(xtimeMS_/30);
     return;
   }
 

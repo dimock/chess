@@ -196,7 +196,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    ScoreType score = alphaBetta(depth_, 0, alpha, betta);
+    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false);
 
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
@@ -252,7 +252,36 @@ void Player::testTimer()
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta)
+ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
+{
+  if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() || (ply < 1) || (depth < 2) || (depth_ < 3) || betta >= Figure::WeightMat-MaxPly )
+    return alpha;
+
+#ifndef NDEBUG
+  Board board0(board_);
+#endif
+
+  MoveCmd move;
+  board_.makeNullMove(move);
+
+  int depth1 = depth-4;
+  depth >>= 1;
+  if ( depth1 < depth && depth1 > 0 )
+    depth = depth1;
+  if ( depth < 1 )
+    depth = 1;
+
+  ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */);
+
+  board_.unmakeNullMove(move);
+
+  THROW_IF( board0 != board_, "nullMove wasn't correctly unmake" );
+
+  return nullScore;
+}
+
+//////////////////////////////////////////////////////////////////////////
+ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move)
 {
   if ( stop_ || ply >= MaxPly )
     return alpha;
@@ -268,7 +297,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
     if ( delta > Figure::positionGain_ )
     {
-      return captures_checks(depth, ply, alpha, betta, delta);
+      return captures_checks(depth, ply, alpha, betta, delta, null_move);
     }
   }
 #endif
@@ -400,10 +429,28 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   verifyChecksGenerator(depth, ply, alpha, betta);
 #endif
 
+  // first of all try null-move
+#ifdef USE_NULL_MOVE
+  if ( !null_move )
+  {
+    ScoreType nullScore = nullMove(depth, ply, alpha, betta);
+    if ( nullScore >= betta )
+    {
+      int depth1 = depth-4;
+      depth >>= 1;
+      if ( depth1 < depth && depth1 > 0 )
+        depth = depth1;
+      if ( depth < 1 )
+        depth = 1;
+      null_move = true;
+      Board::ticks_++;
+    }
+  }
+#endif
 
   // now use PV. it will be changed to hash soon
   if ( board_.validMove(pv) )
-    movement(depth, ply, alpha, betta, pv, counter);
+    movement(depth, ply, alpha, betta, pv, counter, null_move);
 
   if ( alpha >= betta )
   {
@@ -421,7 +468,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     if ( hmove_ex )
     {
-      movement(depth, ply, alpha, betta, hmove_ex, counter);
+      movement(depth, ply, alpha, betta, hmove_ex, counter, null_move);
 
       if ( alpha >= betta )
         return alpha;
@@ -448,7 +495,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 
 	  killer.checkVerified_ = 0;
-    movement(depth, ply, alpha, betta, killer, counter);
+    movement(depth, ply, alpha, betta, killer, counter, null_move);
   }
 
   if ( alpha >= betta )
@@ -461,7 +508,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( Board::UnderCheck == board_.getState() )
   {
     //QpfTimer qpt;
-    EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
+    EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter, null_move);
     //Board::ticks_ += qpt.ticks();
     //Board::tcounter_++;
 
@@ -492,14 +539,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      movement(depth+depthInc, ply, alpha, betta, move, counter);
+      movement(depth+depthInc, ply, alpha, betta, move, counter, null_move);
     }
 
     THROW_IF( 2 == depthInc && counter != 1, "depth was increased by 2, but there is not exactly 1 move" );
   }
   else
   {
-	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, null_move);
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
 	    const Move & move = mg.move();
@@ -522,7 +569,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
   	  
-	    movement(depth, ply, alpha, betta, move, counter);
+	    movement(depth, ply, alpha, betta, move, counter, null_move);
 	  }
   }
 
@@ -555,7 +602,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
-void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
+void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move)
 {
   totalNodes_++;
   nodesCount_++;
@@ -595,18 +642,18 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef PERFORM_CAPTURES_AND_CHECKS
         else
-          score = -captures_checks(0, ply+1, -betta1, -alpha, delta);
-      }
+          score = -captures_checks(0, ply+1, -betta1, -alpha, delta, null_move);
 #endif
+      }
     }
     else
     {
 #ifdef USE_ZERO_WINDOW
       if ( counter > 1 )
-        score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha);
+        score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move);
       if ( counter < 2  || (score > alpha && score < betta) )
 #endif
-        score = -alphaBetta(depth-1, ply+1, -betta, -score);
+        score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move);
     }
 
     if ( !stop_ && score > alpha )
@@ -795,7 +842,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   if ( board_.getState() == Board::UnderCheck )
   {
     //QpfTimer qpt;
-	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, false);
     //Board::ticks_ += qpt.ticks();
 
 	  for ( ; !stop_ && alpha < betta ; )
@@ -928,7 +975,7 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType betta, int delta)
+ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool null_move)
 {
 	if ( stop_ || ply >= MaxPly )
 		return alpha;
@@ -1042,7 +1089,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 #endif
 
 		killer.checkVerified_ = 0;
-		movement(depth, ply, alpha, betta, killer, counter);
+		movement(depth, ply, alpha, betta, killer, counter, null_move);
 	}
 
 	if ( alpha >= betta )
@@ -1060,7 +1107,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 	if ( board_.getState() == Board::UnderCheck )
 	{
 		//QpfTimer qpt;
-		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, null_move);
 		//Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )
@@ -1082,7 +1129,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 			THROW_IF( !board_.validMove(move), "move validation failed" );
 
-			movement(depth, ply, alpha, betta, move, counter);
+			movement(depth, ply, alpha, betta, move, counter, null_move);
 		}
 
 		if ( !counter )
@@ -1097,7 +1144,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 	else
 	{
     //QpfTimer qpt;
-		CapsChecksGenerator ccg(board_, minimalType, depth, ply, *this, alpha, betta, counter);
+		CapsChecksGenerator ccg(board_, minimalType, depth, ply, *this, alpha, betta, counter, null_move);
     //Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )
@@ -1116,7 +1163,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 			THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-			movement(depth, ply, alpha, betta, cap, counter);
+			movement(depth, ply, alpha, betta, cap, counter, null_move);
 		}
 
 		if ( !stop_ && alpha < betta )
@@ -1147,7 +1194,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
   			//	v = board_.validMove(check);
 			  //}
 
-			  movement(depth, ply, alpha, betta, check, counter);
+			  movement(depth, ply, alpha, betta, check, counter, null_move);
 		  }
 		}
 	}

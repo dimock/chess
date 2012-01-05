@@ -343,7 +343,7 @@ void ChessWidget::drawInfo()
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
   int ticksN = Board::ticks_;
   int total = ticksAll_ / 1000;
-  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, ticks = %d, total = %d\n{ %s }",
+  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, null-moves = %d, total = %d\n{ %s }",
     cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, total, pv_str_);
 
   painter.drawText(QRect(00, 450, 450, 75), Qt::AlignCenter, infoText);
@@ -418,8 +418,8 @@ void ChessWidget::findMove()
   }
   depth_avg_ += depth_;
   movesCount_ = cpos_.movesCount();
-  if ( Board::tcounter_ )
-    Board::ticks_ /= Board::tcounter_;
+  //if ( Board::tcounter_ )
+  //  Board::ticks_ /= Board::tcounter_;
 
   pv_str_[0] = 0;
 

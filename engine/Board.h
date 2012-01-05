@@ -83,6 +83,21 @@ public:
   /// verify 
   bool validMove(const Move &) const;
 
+  /// null-move
+  void makeNullMove(MoveCmd & move);
+  void unmakeNullMove(MoveCmd & move);
+
+  inline bool allowNullMove() const
+  {
+    Figure::Color ocolor = Figure::otherColor(color_);
+
+    bool ok = fmgr_.weight(color_) >= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] ||
+              fmgr_.weight(ocolor) >= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight];
+
+    return ok;
+  }
+
+
   /// really make move. perform validation
   bool makeMove(const Move & );
 
