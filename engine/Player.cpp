@@ -118,7 +118,7 @@ void Player::setMemory(int mb)
   chash_.resize(gsize);
 #endif
 
-  use_pv_ = gsize > 0;
+  use_pv_ = gsize == 0;
 }
 
 
