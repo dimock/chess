@@ -14,6 +14,21 @@ struct PackedMove
   uint16 from_ : 6,
          to_ : 6,
          new_type_ : 4;
+
+  operator bool () const
+  {
+    return from_ && to_;
+  }
+
+  bool operator == (const PackedMove & other) const
+  {
+    return *reinterpret_cast<const uint16*>(this) == *reinterpret_cast<const uint16*>(&other);
+  }
+
+  bool operator != (const PackedMove & other) const
+  {
+    return *reinterpret_cast<const uint16*>(this) != *reinterpret_cast<const uint16*>(&other);
+  }
 };
 
 /*! basic move structure.
