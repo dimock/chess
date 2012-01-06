@@ -291,26 +291,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && !null_move && (depth == 1 || depth == 2 || depth == 3) && ply > 2 )
+  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth == 1 && ply > 1 )
   {
-    int score = (int)board_.evaluate();
-    //int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-
-    //if ( delta >= Figure::positionGain_ + (depth-1)*Figure::figureWeight_[Figure::TypeBishop] )
-    //{
-    //  Board::ticks_++;
-    //  return captures_checks(1, ply, alpha, betta, delta, null_move);
-    //}
-    
-    static const int margin_[] = { Figure::figureWeight_[Figure::TypePawn]+Figure::positionGain_,
-      Figure::figureWeight_[Figure::TypeBishop]/*+Figure::figureWeight_[Figure::TypePawn]*/,
-      Figure::figureWeight_[Figure::TypeRook]/*+Figure::figureWeight_[Figure::TypeBishop]*/ };
-
-    if ( score > (int)betta+margin_[depth-1] )
-    {
-      Board::ticks_++;
-      return betta;
-    }
+    ScoreType score = board_.evaluate();
+    int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+    if ( delta > 0 )
+      return captures_checks(depth, ply, alpha, betta, delta, null_move);
   }
 #endif
 
@@ -665,14 +651,16 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if ( counter > 3 && depth > 3 && !null_move && !haveCheck && !reduction )
+        if ( counter > 3 && depth > 3 && !null_move && !haveCheck /*&& !reduction*/ )
         {
-          R = depth > 4 ? 3 : 2;
+          R = /*depth > 4 ? 3 : */2;
           reduction = true;
         }
 #endif
 
         score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, reduction);
+        if ( score > alpha && R > 1 ) // was LMR
+          score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, reduction);
       }
       if ( counter < 2  || (score > alpha && score < betta) )
 #endif
