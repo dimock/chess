@@ -6,10 +6,10 @@
 
 ScoreType MovesGenerator::history_[64][64];
 
-MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction) :
+MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
 {
-  numOfMoves_ = generate(alpha, betta, counter, null_move, reduction);
+  numOfMoves_ = generate(alpha, betta, counter, null_move, extension);
   moves_[numOfMoves_].clear();
 }
 
@@ -63,7 +63,7 @@ void MovesGenerator::calculateWeight(Move & move)
   }
 }
 //////////////////////////////////////////////////////////////////////////
-int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction)
+int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension)
 {
   int m = 0;
   Figure::Color & color = board_.color_;
@@ -139,7 +139,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
               Move move;
               move.set(fig.where(), p, rindex, 0, 0);
 
-              if ( movement(alpha, betta, move, counter, null_move, reduction) )
+              if ( movement(alpha, betta, move, counter, null_move, extension) )
                 return m;
             }
             else
@@ -173,7 +173,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
             Move move;
             move.set(fig.where(), *table, rindex, 0, 0);
 
-            if ( movement(alpha, betta, move, counter, null_move, reduction) )
+            if ( movement(alpha, betta, move, counter, null_move, extension) )
               return m;
           }
           else
@@ -224,7 +224,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
             if ( promotion )
               move.new_type_ = Figure::TypeQueen;
 
-            if ( movement(alpha, betta, move, counter, null_move, reduction) )
+            if ( movement(alpha, betta, move, counter, null_move, extension) )
               return m;
 
             if ( promotion )
@@ -281,7 +281,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
             Move move;
             move.set(fig.where(), *table, -1, Figure::TypeQueen, 0);
 
-            if ( movement(alpha, betta, move, counter, null_move, reduction) )
+            if ( movement(alpha, betta, move, counter, null_move, extension) )
               return m;
 
             move.alreadyDone_ = 0;
@@ -337,7 +337,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
   return m;
 }
 
-bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction)
+bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension)
 {
   THROW_IF( !player_, "no player to make movement" );
 
@@ -347,28 +347,28 @@ bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & m
     return false;
 #endif
 
-  player_->movement(depth_, ply_, alpha, betta, move, counter, null_move, reduction);
+  player_->movement(depth_, ply_, alpha, betta, move, counter, null_move, extension);
   return alpha >= betta;
 }
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction) :
+EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
 {
-  numOfMoves_ = generate(alpha, betta, counter, null_move, reduction);
+  numOfMoves_ = generate(alpha, betta, counter, null_move, extension);
   escapes_[numOfMoves_].clear();
 }
 
-int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction)
+int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension)
 {
   if ( board_.checkingNum_ == 1 )
-    return generateUsual(alpha, betta, counter, null_move, reduction);
+    return generateUsual(alpha, betta, counter, null_move, extension);
   else
-    return generateKingonly(0, alpha, betta, counter, null_move, reduction);
+    return generateKingonly(0, alpha, betta, counter, null_move, extension);
 }
 
-int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction)
+int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension)
 {
   int m = 0;
   Figure::Color & color = board_.color_;
@@ -452,7 +452,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
 #ifdef GO_IMMEDIATELY_CHECK
           // make movement if there is already at least 1 move found or we are under horizon
-          if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+          if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
             return m;
 #else
           escapes_[m++] = move;
@@ -491,7 +491,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
 #ifdef GO_IMMEDIATELY_CHECK
         // make movement if there is already at least 1 move found or we are under horizon
-        if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+        if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
           return m;
 #else
         escapes_[m++] = move;
@@ -539,7 +539,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
 #ifdef GO_IMMEDIATELY_CHECK
         // make movement if there is already at least 1 move found or we are under horizon
-        if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+        if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
           return m;
 #else
         escapes_[m++] = move;
@@ -584,7 +584,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
 #ifdef GO_IMMEDIATELY_CHECK
         // make movement if there is already at least 1 move found or we are under horizon
-        if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+        if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
           return m;
 #else
         escapes_[m++] = move;
@@ -626,7 +626,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
 #ifdef GO_IMMEDIATELY_CHECK
             // make movement if there is already at least 1 move found or we are under horizon
-            if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+            if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
               return m;
 #else
             escapes_[m++] = move;
@@ -667,7 +667,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
 #ifdef GO_IMMEDIATELY_CHECK
             // make movement if there is already at least 1 move found or we are under horizon
-            if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+            if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
               return m;
 #else
             escapes_[m++] = move;
@@ -703,7 +703,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
 #ifdef GO_IMMEDIATELY_CHECK
             // make movement if there is already at least 1 move found or we are under horizon
-            if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+            if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
               return m;
 #else
             escapes_[m++] = move;
@@ -716,12 +716,12 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
   // at the last generate all king's movements
 
-  m = generateKingonly(m, alpha, betta, counter, null_move, reduction);
+  m = generateKingonly(m, alpha, betta, counter, null_move, extension);
 
   return m;
 }
 
-int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction)
+int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension)
 {
   Figure::Color & color = board_.color_;
 
@@ -750,7 +750,7 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
 
 #ifdef GO_IMMEDIATELY_CHECK
       // make movement if there is already at least 1 move found or we are under horizon
-      if ( escape_movement(m, alpha, betta, move, counter, null_move, reduction) )
+      if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
         return m;
 #else
       escapes_[m++] = move;
@@ -762,7 +762,7 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool EscapeGenerator::escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction)
+bool EscapeGenerator::escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension)
 {
   if ( !m && !counter && depth_ > 0 && board_.checkingNum_ < 2 )
   {
@@ -784,7 +784,7 @@ bool EscapeGenerator::escape_movement(int & m, ScoreType & alpha, ScoreType bett
     depthInc = 1;
   }
 
-  player_.movement(depth_ + depthInc, ply_, alpha, betta, move, counter, null_move, reduction);
+  player_.movement(depth_ + depthInc, ply_, alpha, betta, move, counter, null_move, extension);
   return alpha >= betta;
 }
 
