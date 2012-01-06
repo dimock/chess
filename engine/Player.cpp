@@ -291,20 +291,24 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth <= 3 && ply > 1 )
+  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && !null_move && (depth == 1 || depth == 2 || depth == 3) && ply > 2 )
   {
-    ScoreType score = board_.evaluate();
+    int score = (int)board_.evaluate();
     //int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-    //if ( (1 == depth && delta >= Figure::positionGain_) ||
-    //     (2 == depth && delta >= Figure::figureWeight_[Figure::TypeRook]) ||
-    //     (3 == depth && delta >= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeBishop]) )
+
+    //if ( delta >= Figure::positionGain_ + (depth-1)*Figure::figureWeight_[Figure::TypeBishop] )
     //{
-    //  return captures_checks(depth, ply, alpha, betta, delta, null_move);
+    //  Board::ticks_++;
+    //  return captures_checks(1, ply, alpha, betta, delta, null_move);
     //}
-    if ( 1 == depth && score > (int)betta+Figure::figureWeight_[Figure::TypePawn] ||
-         2 == depth && score > (int)betta+Figure::figureWeight_[Figure::TypeRook] ||
-         3 == depth && score > (int)betta+Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeBishop] )
+    
+    static const int margin_[] = { Figure::figureWeight_[Figure::TypePawn]+Figure::positionGain_,
+      Figure::figureWeight_[Figure::TypeBishop]/*+Figure::figureWeight_[Figure::TypePawn]*/,
+      Figure::figureWeight_[Figure::TypeRook]/*+Figure::figureWeight_[Figure::TypeBishop]*/ };
+
+    if ( score > (int)betta+margin_[depth-1] )
     {
+      Board::ticks_++;
       return betta;
     }
   }
@@ -451,7 +455,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( depth < 1 )
         depth = 1;
       null_move = true;
-      Board::ticks_++;
     }
   }
 #endif
