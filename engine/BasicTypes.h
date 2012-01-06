@@ -35,7 +35,6 @@ typedef unsigned __int64 uint64;
 typedef int16 ScoreType;
 
 #define PERFORM_CAPTURES_AND_CHECKS
-
 #define USE_ZERO_WINDOW
 #define GO_IMMEDIATELY
 #define USE_KILLER
@@ -48,6 +47,7 @@ typedef int16 ScoreType;
 #define USE_GENERAL_HASH_IN_CAPS
 #define RETURN_IF_BETTA
 #define USE_NULL_MOVE
+#define USE_LMR
 
 #undef  NO_TIME_LIMIT
 

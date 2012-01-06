@@ -584,6 +584,6 @@ bool CapsChecksGenerator::movement(ScoreType & alpha, ScoreType betta, const Mov
     return false;
 #endif
 
-  player_.movement(depth_, ply_, alpha, betta, move, counter, null_move);
+  player_.movement(depth_, ply_, alpha, betta, move, counter, null_move, false);
   return alpha >= betta;
 }

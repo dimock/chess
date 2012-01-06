@@ -14,7 +14,7 @@ class MovesGenerator
 
 public:
 
-  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
+  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
   MovesGenerator(Board & );
 
   static inline ScoreType & history(int8 from, int8 to)
@@ -55,7 +55,7 @@ public:
 private:
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
 
   inline void add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
@@ -64,7 +64,7 @@ private:
     calculateWeight(move);
   }
 
-  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
+  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction);
 
   void calculateWeight(Move & move);
 
@@ -235,7 +235,7 @@ class EscapeGenerator
 {
 public:
 
-  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
+  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
 
   Move & escape()
   {
@@ -257,10 +257,10 @@ public:
 private:
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
-  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
-  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
-  bool escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
+  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
+  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
+  bool escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction);
 
 
   int current_;

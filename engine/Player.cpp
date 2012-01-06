@@ -196,7 +196,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false);
+    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, false);
 
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
@@ -271,7 +271,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
   if ( depth < 1 )
     depth = 1;
 
-  ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */);
+  ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */, false /* reduction */);
 
   board_.unmakeNullMove(move);
 
@@ -281,7 +281,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move)
+ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, bool reduction)
 {
   if ( stop_ || ply >= MaxPly )
     return alpha;
@@ -461,7 +461,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // now use PV. it will be changed to hash soon
   if ( board_.validMove(pv) )
-    movement(depth, ply, alpha, betta, pv, counter, null_move);
+    movement(depth, ply, alpha, betta, pv, counter, null_move, reduction);
 
   if ( alpha >= betta )
   {
@@ -479,7 +479,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     if ( hmove_ex )
     {
-      movement(depth, ply, alpha, betta, hmove_ex, counter, null_move);
+      movement(depth, ply, alpha, betta, hmove_ex, counter, null_move, reduction);
 
       if ( alpha >= betta )
         return alpha;
@@ -506,7 +506,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 
 	  killer.checkVerified_ = 0;
-    movement(depth, ply, alpha, betta, killer, counter, null_move);
+    movement(depth, ply, alpha, betta, killer, counter, null_move, reduction);
   }
 
   if ( alpha >= betta )
@@ -519,7 +519,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( Board::UnderCheck == board_.getState() )
   {
     //QpfTimer qpt;
-    EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter, null_move);
+    EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter, null_move, reduction);
     //Board::ticks_ += qpt.ticks();
     //Board::tcounter_++;
 
@@ -550,14 +550,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      movement(depth+depthInc, ply, alpha, betta, move, counter, null_move);
+      movement(depth+depthInc, ply, alpha, betta, move, counter, null_move, reduction);
     }
 
     THROW_IF( 2 == depthInc && counter != 1, "depth was increased by 2, but there is not exactly 1 move" );
   }
   else
   {
-	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, null_move);
+	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, null_move, reduction);
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
 	    const Move & move = mg.move();
@@ -580,7 +580,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
   	  
-	    movement(depth, ply, alpha, betta, move, counter, null_move);
+	    movement(depth, ply, alpha, betta, move, counter, null_move, reduction);
 	  }
   }
 
@@ -613,7 +613,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
-void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move)
+void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction)
 {
   totalNodes_++;
   nodesCount_++;
@@ -661,10 +661,22 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
     {
 #ifdef USE_ZERO_WINDOW
       if ( counter > 1 )
-        score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move);
+      {
+        int R = 1;
+
+#ifdef USE_LMR
+        if ( counter > 3 && depth > 3 && !null_move && !haveCheck && !reduction )
+        {
+          R = depth > 4 ? 3 : 2;
+          reduction = true;
+        }
+#endif
+
+        score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, reduction);
+      }
       if ( counter < 2  || (score > alpha && score < betta) )
 #endif
-        score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move);
+        score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move, reduction);
     }
 
     if ( !stop_ && score > alpha )
@@ -853,7 +865,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   if ( board_.getState() == Board::UnderCheck )
   {
     //QpfTimer qpt;
-	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, false);
+	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, false, false);
     //Board::ticks_ += qpt.ticks();
 
 	  for ( ; !stop_ && alpha < betta ; )
@@ -1100,7 +1112,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 #endif
 
 		killer.checkVerified_ = 0;
-		movement(depth, ply, alpha, betta, killer, counter, null_move);
+		movement(depth, ply, alpha, betta, killer, counter, null_move, false);
 	}
 
 	if ( alpha >= betta )
@@ -1118,7 +1130,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 	if ( board_.getState() == Board::UnderCheck )
 	{
 		//QpfTimer qpt;
-		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, null_move);
+		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, null_move, false);
 		//Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )
@@ -1140,7 +1152,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 			THROW_IF( !board_.validMove(move), "move validation failed" );
 
-			movement(depth, ply, alpha, betta, move, counter, null_move);
+			movement(depth, ply, alpha, betta, move, counter, null_move, false);
 		}
 
 		if ( !counter )
@@ -1174,7 +1186,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 			THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-			movement(depth, ply, alpha, betta, cap, counter, null_move);
+			movement(depth, ply, alpha, betta, cap, counter, null_move, false);
 		}
 
 		if ( !stop_ && alpha < betta )
@@ -1205,7 +1217,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
   			//	v = board_.validMove(check);
 			  //}
 
-			  movement(depth, ply, alpha, betta, check, counter, null_move);
+			  movement(depth, ply, alpha, betta, check, counter, null_move, false);
 		  }
 		}
 	}
