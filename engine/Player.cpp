@@ -291,13 +291,21 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth == 1 && ply > 1 )
+  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth <= 3 && ply > 1 )
   {
     ScoreType score = board_.evaluate();
-    int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-    if ( delta > Figure::positionGain_ )
+    //int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+    //if ( (1 == depth && delta >= Figure::positionGain_) ||
+    //     (2 == depth && delta >= Figure::figureWeight_[Figure::TypeRook]) ||
+    //     (3 == depth && delta >= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeBishop]) )
+    //{
+    //  return captures_checks(depth, ply, alpha, betta, delta, null_move);
+    //}
+    if ( 1 == depth && score > (int)betta+Figure::figureWeight_[Figure::TypePawn] ||
+         2 == depth && score > (int)betta+Figure::figureWeight_[Figure::TypeRook] ||
+         3 == depth && score > (int)betta+Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeBishop] )
     {
-      return captures_checks(depth, ply, alpha, betta, delta, null_move);
+      return betta;
     }
   }
 #endif
