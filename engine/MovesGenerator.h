@@ -5,19 +5,34 @@
 class Player;
 class ChecksGenerator;
 
+struct History
+{
+  History() : score_(0), good_count_(0), bad_count_(0) {}
+
+  void clear()
+  {
+    score_ = 0;
+    good_count_ = 0;
+    bad_count_ = 0;
+  }
+
+  ScoreType score_;
+  int good_count_, bad_count_;
+};
+
 /// generate all movies from this position. don't verify and sort them. only calculate sort weights
 class MovesGenerator
 {
   friend class ChecksGenerator;
 
-  static ScoreType history_[64][64];
+  static History history_[64][64];
 
 public:
 
   MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
   MovesGenerator(Board & );
 
-  static inline ScoreType & history(int8 from, int8 to)
+  static inline History & history(int8 from, int8 to)
   {
     THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid history field index" );
     return history_[from][to];
@@ -333,7 +348,7 @@ private:
   {
 	  Move & move = checks_[m++];
 	  move.set(from, to, -1, new_type, 0);
-	  move.score_ = MovesGenerator::history_[move.from_][move.to_];
+	  move.score_ = MovesGenerator::history_[move.from_][move.to_].score_;
   }
 
   //void add_check_knight(int & m, int8 from, int8 to)

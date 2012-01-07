@@ -4,7 +4,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-ScoreType MovesGenerator::history_[64][64];
+History MovesGenerator::history_[64][64];
 
 MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
@@ -26,7 +26,7 @@ void MovesGenerator::clear_history()
 {
   for (int i = 0; i < 64; ++i)
     for (int j = 0; j < 64; ++j)
-      history_[i][j] = 0;
+      history_[i][j].clear();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ void MovesGenerator::calculateWeight(Move & move)
   }
   else
   {
-    move.score_ = history_[move.from_][move.to_];
+    move.score_ = history_[move.from_][move.to_].score_;
   }
 }
 //////////////////////////////////////////////////////////////////////////

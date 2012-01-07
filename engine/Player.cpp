@@ -608,12 +608,13 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
   if ( board_.makeMove(move) )
   {
+    bool ext = false;
     bool haveCheck = board_.getState() == Board::UnderCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
           alpha < Figure::WeightMat-MaxPly &&
           depth > 0 )
     {
-      extension = true;
+      ext = extension = true;
       depth++;
     }
 
@@ -648,51 +649,65 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if ( counter > 4 && depth > 3 && !null_move && !extension )
+        const History & hist = MovesGenerator::history(move.from_, move.to_);
+        if ( counter > 4 && depth > 3 && !null_move && !ext && move.rindex_ < 0 && !move.new_type_ && hist.bad_count_ >= hist.good_count_ )
           R = 2;
 #endif
 
         score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, extension);
+
+#ifdef USE_LMR
         if ( score > alpha && R > 1 ) // was LMR
           score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, extension);
+#endif
       }
       if ( counter < 2  || (score > alpha && score < betta) )
 #endif
         score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move, extension);
     }
 
-    if ( !stop_ && score > alpha )
+    if ( !stop_ )
     {
-      alpha = score;
+      if ( score > alpha )
+      {
+        alpha = score;
 
-      assemblePV(move, ply);
+        assemblePV(move, ply);
 
 #ifdef USE_HASH_TABLE_GENERAL
-      if ( depth >= 1 )
-        updateGeneralHash(move, depth, ply, score, betta, hcode);
+        if ( depth >= 1 )
+          updateGeneralHash(move, depth, ply, score, betta, hcode);
 #ifdef USE_HASH_TABLE_CAPTURE
-      else
-        updateCaptureHash(move, score, betta, hcode);
+        else
+          updateCaptureHash(move, score, betta, hcode);
 #endif
 #endif
 
-      if ( move.rindex_ < 0 )
-        MovesGenerator::history(move.from_, move.to_) += depth;
+        if ( move.rindex_ < 0 )
+        {
+          MovesGenerator::history(move.from_, move.to_).score_ += depth;
+          MovesGenerator::history(move.from_, move.to_).good_count_++;
+        }
 
-      if ( 0 == ply )
-      {
-        best_ = move;
-        if ( before_ == best_ )
-          beforeFound_ = true;
-      }
+        if ( 0 == ply )
+        {
+          best_ = move;
+          if ( before_ == best_ )
+            beforeFound_ = true;
+        }
 #ifdef USE_KILLER
-      Move & killer = contexts_[ply].killer_;
-      if ( score > killer.score_ )
-      {
-        killer = move;
-        killer.score_ = score;
-      }
+        Move & killer = contexts_[ply].killer_;
+        if ( score > killer.score_ )
+        {
+          killer = move;
+          killer.score_ = score;
+        }
 #endif
+      }
+      else if ( move.rindex_ < 0 )
+      {
+        MovesGenerator::history(move.from_, move.to_).bad_count_++;
+      }
     }
   }
 
