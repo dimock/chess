@@ -233,12 +233,6 @@ bool ChecksGenerator::do_check(ScoreType & alpha, ScoreType betta, int8 from, in
   Move move;
   move.set(from, to, -1, new_type, 0);
 
-#ifdef USE_KILLER
-  const Move & killer = player_.contexts_[ply_].killer_;
-  if ( move == killer )
-    return false;
-#endif
-
   player_.capture(ply_, alpha, betta, move, counter);
   return alpha >= betta;
 }
@@ -578,12 +572,6 @@ int CapsChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & coun
 
 bool CapsChecksGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move)
 {
-#ifdef USE_KILLER
-  const Move & killer = player_.contexts_[ply_].killer_;
-  if ( move == killer )
-    return false;
-#endif
-
   player_.movement(depth_, ply_, alpha, betta, move, counter, null_move, false);
   return alpha >= betta;
 }

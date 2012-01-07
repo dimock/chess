@@ -9,6 +9,12 @@ History MovesGenerator::history_[64][64];
 MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
 {
+  // killer already done
+  if ( player_ && player_->contexts_[ply_].killer_ )
+    killer_ = player_->contexts_[ply_].killer_;
+  else
+    killer_.clear();
+
   numOfMoves_ = generate(alpha, betta, counter, null_move, extension);
   moves_[numOfMoves_].clear();
 }
@@ -16,6 +22,7 @@ MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * playe
 MovesGenerator::MovesGenerator(Board & board) :
   board_(board), current_(0), numOfMoves_(0), ply_(0), depth_(0), player_(0)
 {
+  killer_.clear();
   ScoreType alpha = 0, betta = 0;
   int counter = 0;
   numOfMoves_ = generate(alpha, betta, counter, false, false);
@@ -57,6 +64,12 @@ void MovesGenerator::calculateWeight(Move & move)
   {
     move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 10000;
   }
+#ifdef USE_KILLER
+  else if ( move == killer_ )
+  {
+    move.score_ = 2000;
+  }
+#endif
   else
   {
     move.score_ = history_[move.from_][move.to_].score_;
@@ -341,21 +354,16 @@ bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & m
 {
   THROW_IF( !player_, "no player to make movement" );
 
-#ifdef USE_KILLER
-  const Move & killer = player_->contexts_[ply_].killer_;
-  if ( move == killer )
-    return false;
-#endif
-
   player_->movement(depth_, ply_, alpha, betta, move, counter, null_move, extension);
   return alpha >= betta;
 }
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-EscapeGenerator::EscapeGenerator(const Move & pv, const Move & killer, Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), pv_(pv), killer_(killer)
+EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
+  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), pv_(pv)
 {
+  numOfMoves_ = push_pv();
   numOfMoves_ = generate(alpha, betta, counter);
   escapes_[numOfMoves_].clear();
 }
@@ -364,10 +372,26 @@ EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & pla
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
 {
   pv_.clear();
-  killer_.clear();
 
   numOfMoves_ = generate(alpha, betta, counter);
   escapes_[numOfMoves_].clear();
+}
+
+int EscapeGenerator::push_pv()
+{
+  int m = 0;
+  if ( pv_ && board_.validMove(pv_) && board_.isMoveValidUnderCheck(pv_) )
+  {
+    Move & move = escapes_[m];
+    move = pv_;
+    move.checkVerified_ = 1;
+    move.alreadyDone_ = 0;
+    ++m;
+  }
+  else
+    pv_.clear();
+
+  return m;
 }
 
 int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
@@ -375,12 +399,12 @@ int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   if ( board_.checkingNum_ == 1 )
     return generateUsual(alpha, betta, counter);
   else
-    return generateKingonly(0, alpha, betta, counter);
+    return generateKingonly(numOfMoves_, alpha, betta, counter);
 }
 
 int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & counter)
 {
-  int m = 0;
+  int m = numOfMoves_;
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
 

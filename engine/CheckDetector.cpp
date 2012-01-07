@@ -43,12 +43,7 @@ bool Board::isChecking(MoveCmd & move) const
 
   if ( !move.castle_ )
   {
-    //QpfTimer qpt;
-
     int idx1 = fastAttackedFrom( ocolor, move.from_ );
-
-    //ticks_ += qpt.dt();
-    //tcounter_++;
 
     THROW_IF( idx1 != getAttackedFrom( ocolor, move.from_ ), "fastAttackedFrom() failed" );
 
@@ -171,12 +166,7 @@ bool Board::wasValidWithoutCheck(const MoveCmd & move) const
   if ( Figure::TypeKing == fig.getType() )
   {
 
-    //QpfTimer qpt;
-
     bool a = fastAttacked(ocolor, fig.where());
-
-    //ticks_ += qpt.dt();
-    //tcounter_++;
 
     THROW_IF( a != isAttacked(ocolor, fig.where()), "fast attacked returned wrong result");
 

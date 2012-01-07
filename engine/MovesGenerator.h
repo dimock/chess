@@ -71,15 +71,14 @@ private:
 
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
+  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction);
 
-  inline void add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  void MovesGenerator::add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
     Move & move = moves_[m++];
     move.set(from, to, rindex, new_type, 0);
     calculateWeight(move);
   }
-
-  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction);
 
   void calculateWeight(Move & move);
 
@@ -87,6 +86,7 @@ private:
   int numOfMoves_;
   Player * player_;
   Board & board_;
+  Move killer_;
   int depth_;
   int ply_;
   Move moves_[Board::MovesMax];
@@ -250,22 +250,12 @@ class EscapeGenerator
 {
 public:
 
-  EscapeGenerator(const Move & pv, const Move & killer, Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
+  EscapeGenerator(const Move & pv, Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
   EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
 
   Move & escape()
   {
-    Move * move = escapes_ + numOfMoves_;
-    Move * mv = escapes_;
-    for ( ; *mv; ++mv)
-    {
-      if ( mv->alreadyDone_ || mv->score_ < move->score_ )
-        continue;
-
-      move = mv;
-    }
-    move->alreadyDone_ = 1;
-    return *move;
+    return escapes_[current_++];
   }
 
   operator bool () const
@@ -283,6 +273,7 @@ public:
 private:
 
   /// returns number of moves found
+  int push_pv();
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
   int generateUsual(ScoreType & alpha, ScoreType betta, int & counter);
   int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter);
@@ -292,16 +283,14 @@ private:
     Move & move = escapes_[m];
     move.set(from, to, rindex, new_type, 0);
 
+    if ( move == pv_ )
+      return true;
+
     if ( !board_.isMoveValidUnderCheck(move) )
       return false;
 
     move.checkVerified_ = 1;
     ++m;
-
-    if ( move == pv_ )
-      move.score_ = 2;
-    else if ( move == killer_ )
-      move.score_ = 1;
 
     return true;
   }
@@ -315,7 +304,6 @@ private:
   int depth_;
 
   Move pv_;
-  Move killer_;
 
   Board & board_;
   Move escapes_[Board::MovesMax];

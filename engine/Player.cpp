@@ -453,34 +453,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
   }
 
-  Move & killer = contexts_[ply].killer_;
-
-#ifdef USE_KILLER
-  if ( board_.getState() != Board::UnderCheck && killer && killer != pv && board_.validMove(killer) )
-  {
-#ifndef NDEBUG
-    MovesGenerator mg(board_);
-    if ( !mg.find(killer) )
-    {
-      board_.validMove(killer);
-      THROW_IF( true, "move has passed validation but not found in generated moves list" );
-    }
-#endif
-
-	  killer.checkVerified_ = 0;
-    movement(depth, ply, alpha, betta, killer, counter, null_move, extension);
-  }
-
-  if ( alpha >= betta )
-  {
-    return alpha;
-  }
-#endif
-
-
   if ( Board::UnderCheck == board_.getState() )
   {
-    EscapeGenerator eg(pv, killer, board_, depth, ply, *this, alpha, betta, counter);
+    EscapeGenerator eg(pv, board_, depth, ply, *this, alpha, betta, counter);
 
     int depthInc = 0;
     if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 && alpha < Figure::WeightMat-MaxPly )
@@ -509,11 +484,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	    if ( !move || stop_ )
 		    break;
 
-	    if ( move == pv
-  #ifdef USE_KILLER
-        || move == killer
-  #endif
-        )
+	    if ( move == pv )
 		    continue;
 
 	    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
@@ -565,7 +536,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
 
   uint64 hcode = board_.hashCode();
-  //bool pawnMove = board_.isPawnMove(move);
+  bool pawnMove = board_.isPawnMove(move);
 
   if ( board_.makeMove(move) )
   {
@@ -612,13 +583,22 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if ( counter > 4 && depth > 3 && !null_move && !ext && move.rindex_ < 0 && !move.new_type_ /*!pawnMove*/ && hist.bad_count_ >= hist.good_count_ )
+        if ( /*ply > 0 && alpha > -Figure::WeightMat-MaxPly && alpha < Figure::WeightMat-MaxPly && betta < Figure::WeightMat-MaxPly &&*/
+             counter > 4 && depth > 3 && !null_move && !ext && move.rindex_ < 0 && /*!move.new_type_ */!pawnMove && /*hist.score_ < 10 && */hist.bad_count_ >= hist.good_count_ )
           R = 2;
 #endif
 
         score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, extension);
 
 #ifdef USE_LMR
+
+        //if ( score <= alpha && R > 1 ) // verify LMR
+        //{
+        //  ScoreType score1 = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, extension);
+        //  if ( score1 > alpha )
+        //    Board::ticks_++;
+        //}
+
         if ( score > alpha && R > 1 ) // was LMR
           score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, extension);
 #endif
@@ -654,9 +634,10 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
           if ( before_ == best_ )
             beforeFound_ = true;
         }
+
 #ifdef USE_KILLER
         Move & killer = contexts_[ply].killer_;
-        if ( score > killer.score_ )
+        if ( move.rindex_ < 0 && score > killer.score_ )
         {
           killer = move;
           killer.score_ = score;
@@ -710,8 +691,6 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   CaptureHItem & hitem = chash_[board_.hashCode()];
   if ( hitem.hcode_ == board_.hashCode() )
   {
-    //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
-
     if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
       return alpha;
 
@@ -771,13 +750,14 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
         return alpha;
     }
   }
+
 #ifdef USE_GENERAL_HASH_IN_CAPS
-  else
+  if ( !hmove )
   {
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.hcode_ == board_.hashCode() && hitem.move_ )
     {
-      Move hmove = board_.unpack(hitem.move_);
+      hmove = board_.unpack(hitem.move_);
       if ( hmove && hmove.rindex_ >= 0 )
       {
         hmove.checkVerified_ = 0;
@@ -786,46 +766,19 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
         if ( alpha >= betta )
           return alpha;
       }
+      else
+        hmove.clear();
     }
   }
 #endif
+
 #endif //USE_HASH_TABLE_CAPTURE
-
-  Move & killer = contexts_[ply].killer_;
-
-#ifdef USE_KILLER
-  if ( killer && killer != hmove && board_.validMove(killer) )
-  {
-#ifndef NDEBUG
-    MovesGenerator mg(board_);
-    if ( !mg.find(killer) )
-    {
-      board_.validMove(killer);
-      THROW_IF( true, "move has passed validation but not found generated in moves list" );
-    }
-#endif
-
-	  killer.checkVerified_ = 0;
-    capture(ply, alpha, betta, killer, counter);
-  }
-
-  if ( alpha >= betta )
-  {
-    return alpha;
-  }
-#endif
 
   Figure::Type minimalType = delta2type(delta);
 
-  //QpfTimer qpt;
-  //Board::ticks_ += qpt.ticks();
-  //Board::tcounter_ ++;//= cg.count();
-
   if ( board_.getState() == Board::UnderCheck )
   {
-    //QpfTimer qpt;
 	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
-    //Board::ticks_ += qpt.ticks();
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
@@ -839,10 +792,8 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
       if ( stop_ )
         break;
 
-#ifdef USE_KILLER
-		  if ( killer == cap || hmove == cap )
+		  if ( hmove == cap )
 			  continue;
-#endif
 
 		  THROW_IF( !board_.validMove(cap), "move validation failed" );
 
@@ -871,10 +822,8 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-#ifdef USE_KILLER
-      if ( killer == cap || hmove == cap )
+      if ( hmove == cap )
         continue;
-#endif
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
@@ -929,15 +878,6 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 
 #ifdef USE_HASH_TABLE_CAPTURE
       updateCaptureHash(cap, s, betta, hcode);
-#endif
-
-#ifdef USE_KILLER
-			Move killer = contexts_[ply].killer_;
-			if ( s > killer.score_ )
-			{
-				killer = cap;
-				killer.score_ = s;
-			}
 #endif
 		}
 	}
@@ -1036,14 +976,15 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
         return alpha;
     }
   }
+
 #ifdef USE_GENERAL_HASH_IN_CAPS
-  else
+  if ( !hmove )
   {
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.hcode_ == board_.hashCode() && hitem.move_ )
     {
-      Move hmove = board_.unpack(hitem.move_);
-      if ( hmove /*&& hmove.rindex_ >= 0*/ )
+      hmove = board_.unpack(hitem.move_);
+      if ( hmove && hmove.rindex_ >= 0 )
       {
         hmove.checkVerified_ = 0;
         capture(ply, alpha, betta, hmove, counter);
@@ -1051,46 +992,19 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
         if ( alpha >= betta )
           return alpha;
       }
+      else
+        hmove.clear();
     }
   }
 #endif
+
 #endif //USE_HASH_TABLE_CAPTURE
-
-	Move & killer = contexts_[ply].killer_;
-
-#ifdef USE_KILLER
-	if ( killer && killer != hmove && board_.validMove(killer) )
-	{
-#ifndef NDEBUG
-		MovesGenerator mg(board_);
-		if ( !mg.find(killer) )
-		{
-			board_.validMove(killer);
-			THROW_IF( true, "move has passed validation but not found generated in moves list" );
-		}
-#endif
-
-		killer.checkVerified_ = 0;
-		movement(depth, ply, alpha, betta, killer, counter, null_move, false);
-	}
-
-	if ( alpha >= betta )
-	{
-		return alpha;
-	}
-#endif
 
 	Figure::Type minimalType = delta2type(delta);
 
-	//QpfTimer qpt;
-	//Board::ticks_ += qpt.ticks();
-	//Board::tcounter_ ++;//= cg.count();
-
 	if ( board_.getState() == Board::UnderCheck )
 	{
-		//QpfTimer qpt;
 		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
-		//Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )
 		{
@@ -1104,10 +1018,8 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 			if ( stop_ )
 				break;
 
-#ifdef USE_KILLER
-			if ( killer == move || hmove == move )
+			if ( hmove == move )
 				continue;
-#endif
 
 			THROW_IF( !board_.validMove(move), "move validation failed" );
 
@@ -1125,9 +1037,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 	}
 	else
 	{
-    //QpfTimer qpt;
 		CapsChecksGenerator ccg(board_, minimalType, depth, ply, *this, alpha, betta, counter, null_move);
-    //Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )
 		{
@@ -1138,10 +1048,8 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 			if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
 				testTimer();
 
-#ifdef USE_KILLER
-			if ( killer == cap || hmove == cap )
+			if ( hmove == cap )
 				continue;
-#endif
 
 			THROW_IF( !board_.validMove(cap), "move validation failed" );
 
@@ -1150,10 +1058,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 
 		if ( !stop_ && alpha < betta )
 		{
-      //QpfTimer qpt;
 		  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
-      //Board::ticks_ += qpt.ticks();
-      //Board::tcounter_++;
 
 		  for ( ; !stop_ && alpha < betta ; )
 		  {
@@ -1164,17 +1069,10 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 			  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
 				  testTimer();
 
-#ifdef USE_KILLER
-			  if ( killer == check || hmove == check )
+			  if ( hmove == check )
 				  continue;
-#endif
 
 			  THROW_IF( !board_.validMove(check), "move validation failed" );
-			  //bool v = false;
-			  //if ( !board_.validMove(check) )
-			  //{
-  			//	v = board_.validMove(check);
-			  //}
 
 			  movement(depth, ply, alpha, betta, check, counter, null_move, false);
 		  }

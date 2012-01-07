@@ -279,12 +279,6 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
 bool CapsGenerator::capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter)
 {
-#ifdef USE_KILLER
-  const Move & killer = player_.contexts_[ply_].killer_;
-  if ( move == killer )
-    return false;
-#endif
-
   player_.capture(ply_, alpha, betta, move, counter);
   return alpha >= betta;
 }

@@ -34,7 +34,7 @@ typedef unsigned __int64 uint64;
 
 typedef int16 ScoreType;
 
-#define GO_IMMEDIATELY
+#undef GO_IMMEDIATELY
 
 #define PERFORM_CAPTURES_AND_CHECKS
 #define USE_ZERO_WINDOW
@@ -49,7 +49,7 @@ typedef int16 ScoreType;
 #define USE_NULL_MOVE
 #define USE_LMR
 
-#define NO_TIME_LIMIT
+#undef NO_TIME_LIMIT
 
 #undef  VERIFY_ESCAPE_GENERATOR
 #undef  VERIFY_CHECKS_GENERATOR
