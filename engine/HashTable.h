@@ -16,7 +16,7 @@ __declspec (align(16)) struct GeneralHItem
              ply_ : 7,
              flag_ : 2;
 
-  PackedMove move_, moveEx_;
+  PackedMove move_;
 };
 
 
@@ -140,12 +140,7 @@ public:
     hitem.ply_   = ply;
 
     if ( Alpha != flag )
-    {
-      if ( hitem.move_ && hitem.moveEx_ != hitem.move_ && hitem.moveEx_ != move )
-        hitem.moveEx_ = hitem.move_;
-
       hitem.move_ = move;
-    }
   }
 };
 

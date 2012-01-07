@@ -326,8 +326,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.hcode_ == board_.hashCode() )
     {
-      //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
-
       ScoreType hscore = hitem.score_;
       if ( hscore >= Figure::WeightMat-MaxPly )
       {
@@ -396,19 +394,20 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif // RETURN_IF_BETTA
       }
     }
+
 #ifdef USE_HASH_TABLE_CAPTURE
-    else
+    // if we haven't found pv in general hash, lets try captures hash
+    if ( !pv )
     {
       CaptureHItem & hitem = chash_[board_.hashCode()];
       if ( hitem.hcode_ == board_.hashCode() )
       {
-        //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
-
         if ( hitem.move_ )
           pv = board_.unpack(hitem.move_);
       }
     }
 #endif // USE_HASH_TABLE_CAPTURE
+
   }
 #endif // USE_HASH_TABLE_GENERAL
 
@@ -445,8 +444,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 #endif
 
-  // now use PV. it will be changed to hash soon
-  if ( board_.validMove(pv) )
+  // try move from hash and killer (only if we are not under check)
+  if ( board_.getState() != Board::UnderCheck && pv && board_.validMove(pv) )
     movement(depth, ply, alpha, betta, pv, counter, null_move, extension);
 
   if ( alpha >= betta )
@@ -454,33 +453,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
   }
 
-#ifdef USE_HASH_TABLE_GENERAL_EX
-  Move hmove_ex;
-  hmove_ex.clear();
-
-  GeneralHItem & hitem_ex = ghash_[board_.hashCode()];
-  if ( hitem_ex.hcode_ == board_.hashCode() && hitem_ex.moveEx_ && hitem_ex.move_ != hitem_ex.moveEx_ )
-  {
-    hmove_ex = board_.unpack(hitem_ex.moveEx_);
-
-    if ( hmove_ex )
-    {
-      movement(depth, ply, alpha, betta, hmove_ex, counter, null_move, extension);
-
-      if ( alpha >= betta )
-        return alpha;
-    }
-  }
-#endif
-
   Move & killer = contexts_[ply].killer_;
 
 #ifdef USE_KILLER
-  if ( killer && killer != pv &&
-#ifdef USE_HASH_TABLE_GENERAL_EX
-       killer != hmove_ex &&
-#endif
-       board_.validMove(killer) )
+  if ( board_.getState() != Board::UnderCheck && killer && killer != pv && board_.validMove(killer) )
   {
 #ifndef NDEBUG
     MovesGenerator mg(board_);
@@ -504,10 +480,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   if ( Board::UnderCheck == board_.getState() )
   {
-    //QpfTimer qpt;
-    EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter, null_move, extension);
-    //Board::ticks_ += qpt.ticks();
-    //Board::tcounter_++;
+    EscapeGenerator eg(pv, killer, board_, depth, ply, *this, alpha, betta, counter);
 
     int depthInc = 0;
     if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 && alpha < Figure::WeightMat-MaxPly )
@@ -518,16 +491,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       const Move & move = eg.escape();
       if ( !move || stop_ )
         break;
-
-      if ( move == pv
-#ifdef USE_KILLER
-        || move == killer
-#endif
-#ifdef USE_HASH_TABLE_GENERAL_EX
-        || move == hmove_ex
-#endif
-        )
-        continue;
 
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
@@ -549,9 +512,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	    if ( move == pv
   #ifdef USE_KILLER
         || move == killer
-  #endif
-  #ifdef USE_HASH_TABLE_GENERAL_EX
-        || move == hmove_ex
   #endif
         )
 		    continue;
@@ -605,10 +565,13 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
 
   uint64 hcode = board_.hashCode();
+  //bool pawnMove = board_.isPawnMove(move);
 
   if ( board_.makeMove(move) )
   {
     bool ext = false;
+    History & hist = MovesGenerator::history(move.from_, move.to_);
+
     bool haveCheck = board_.getState() == Board::UnderCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
           alpha < Figure::WeightMat-MaxPly &&
@@ -649,8 +612,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        const History & hist = MovesGenerator::history(move.from_, move.to_);
-        if ( counter > 4 && depth > 3 && !null_move && !ext && move.rindex_ < 0 && !move.new_type_ && hist.bad_count_ >= hist.good_count_ )
+        if ( counter > 4 && depth > 3 && !null_move && !ext && move.rindex_ < 0 && !move.new_type_ /*!pawnMove*/ && hist.bad_count_ >= hist.good_count_ )
           R = 2;
 #endif
 
@@ -683,11 +645,8 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
 #endif
 
-        if ( move.rindex_ < 0 )
-        {
-          MovesGenerator::history(move.from_, move.to_).score_ += depth;
-          MovesGenerator::history(move.from_, move.to_).good_count_++;
-        }
+        if ( move.rindex_ < 0 && !move.new_type_ )
+          hist.score_ += depth;
 
         if ( 0 == ply )
         {
@@ -704,9 +663,12 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         }
 #endif
       }
-      else if ( move.rindex_ < 0 )
+      if ( move.rindex_ < 0 && !move.new_type_ )
       {
-        MovesGenerator::history(move.from_, move.to_).bad_count_++;
+        if ( alpha >= betta )
+          hist.good_count_++;
+        else
+          hist.bad_count_++;
       }
     }
   }
@@ -862,7 +824,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   if ( board_.getState() == Board::UnderCheck )
   {
     //QpfTimer qpt;
-	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, false, false);
+	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
     //Board::ticks_ += qpt.ticks();
 
 	  for ( ; !stop_ && alpha < betta ; )
@@ -1127,7 +1089,7 @@ ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType
 	if ( board_.getState() == Board::UnderCheck )
 	{
 		//QpfTimer qpt;
-		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter, null_move, false);
+		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
 		//Board::ticks_ += qpt.ticks();
 
 		for ( ; !stop_ && alpha < betta ; )

@@ -10,7 +10,7 @@ void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( board_.getState() == Board::UnderCheck )
   {
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
-    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, false, false);
 
     Move legal[Board::MovesMax];
     int num = 0;

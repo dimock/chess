@@ -250,11 +250,22 @@ class EscapeGenerator
 {
 public:
 
-  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
+  EscapeGenerator(const Move & pv, const Move & killer, Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
+  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
 
   Move & escape()
   {
-    return escapes_[current_++];
+    Move * move = escapes_ + numOfMoves_;
+    Move * mv = escapes_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->score_ < move->score_ )
+        continue;
+
+      move = mv;
+    }
+    move->alreadyDone_ = 1;
+    return *move;
   }
 
   operator bool () const
@@ -272,10 +283,28 @@ public:
 private:
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
-  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
-  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
-  bool escape_movement(int & m, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter);
+  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter);
+
+  bool add_escape(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  {
+    Move & move = escapes_[m];
+    move.set(from, to, rindex, new_type, 0);
+
+    if ( !board_.isMoveValidUnderCheck(move) )
+      return false;
+
+    move.checkVerified_ = 1;
+    ++m;
+
+    if ( move == pv_ )
+      move.score_ = 2;
+    else if ( move == killer_ )
+      move.score_ = 1;
+
+    return true;
+  }
 
 
   int current_;
@@ -284,6 +313,9 @@ private:
   Player & player_;
   int ply_;
   int depth_;
+
+  Move pv_;
+  Move killer_;
 
   Board & board_;
   Move escapes_[Board::MovesMax];
@@ -350,13 +382,6 @@ private:
 	  move.set(from, to, -1, new_type, 0);
 	  move.score_ = MovesGenerator::history_[move.from_][move.to_].score_;
   }
-
-  //void add_check_knight(int & m, int8 from, int8 to)
-  //{
-  //  Move & move = checks_[m++];
-  //  move.set(from, to, -1, Figure::TypeKnight, 0);
-  //  move.score_ = MovesGenerator::history_[move.from_][move.to_];
-  //}
 
   Player & player_;
   int ply_;

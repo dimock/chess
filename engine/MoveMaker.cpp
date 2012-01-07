@@ -505,6 +505,7 @@ bool Board::verifyChessDraw()
 void Board::makeNullMove(MoveCmd & move)
 {
   move.zcode_old_ = hashCode();
+  move.state_ = state_;
 
   if ( en_passant_ >= 0 )
   {
@@ -526,4 +527,5 @@ void Board::unmakeNullMove(MoveCmd & move)
   color_ = Figure::otherColor(color_);
   en_passant_ = move.en_passant_;
   fmgr_.restoreHash(move.zcode_old_);
+  state_ = (State)move.state_;
 }
