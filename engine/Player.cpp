@@ -283,12 +283,9 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, bool extension)
 {
-  if ( stop_ || ply >= MaxPly )
+  if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
     return alpha;
 
-  // there is no reason to go in this direction
-  if ( alpha >= Figure::WeightMat-ply )
-    return alpha;
 
 #ifdef USE_FUTILITY_PRUNING
   if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth == 1 && ply > 1 )
@@ -303,7 +300,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   int counter = 0;
   
-  // if we haven't found best move, we write alpha-hash
+  // if we haven't found best move, we write alpha-flag to hash
   ScoreType savedAlpha = alpha;
 
   Move pv;
@@ -457,9 +454,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     EscapeGenerator eg(pv, board_, depth, ply, *this, alpha, betta, counter);
 
-    int depthInc = 0;
-    if ( ply > 0 && !firstIter_ && counter == 0 && eg.count() == 1 && alpha < Figure::WeightMat-MaxPly )
-      depthInc = 1;
+    if ( (eg.count() == 1 || board_.getNumOfChecking() == 2)&& alpha < Figure::WeightMat-MaxPly )
+      depth++;
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -470,10 +466,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      movement(depth+depthInc, ply, alpha, betta, move, counter, null_move, extension);
+      movement(depth, ply, alpha, betta, move, counter, null_move, extension);
     }
-
-    THROW_IF( 2 == depthInc && counter != 1, "depth was increased by 2, but there is not exactly 1 move" );
   }
   else
   {
@@ -536,7 +530,6 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
 
   uint64 hcode = board_.hashCode();
-  bool pawnMove = board_.isPawnMove(move);
 
   if ( board_.makeMove(move) )
   {
@@ -545,8 +538,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
-          alpha < Figure::WeightMat-MaxPly &&
-          depth > 0 )
+          alpha < Figure::WeightMat-MaxPly )
     {
       ext = extension = true;
       depth++;
@@ -583,8 +575,10 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if ( /*ply > 0 && alpha > -Figure::WeightMat-MaxPly && alpha < Figure::WeightMat-MaxPly && betta < Figure::WeightMat-MaxPly &&*/
-             counter > 4 && depth > 3 && !null_move && !ext && move.rindex_ < 0 && /*!move.new_type_ */!pawnMove && /*hist.score_ < 10 && */hist.bad_count_ >= hist.good_count_ )
+        if ( counter > 3 && depth > 3 &&
+             !null_move && !ext && move.rindex_ < 0 &&
+             !move.new_type_ && hist.bad_count_ >= hist.good_count_ &&
+             !board_.isPawnAttack(move) )
           R = 2;
 #endif
 

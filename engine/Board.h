@@ -83,8 +83,18 @@ public:
   /// used in LMR. don't allow reduction of pawn's movement
   bool isPawnMove(const Move & move) const
   {
-    const Field & ffrom = getField(move.from_);
-    return ffrom.type() == Figure::TypePawn;
+    const Field & fto = getField(move.to_);
+    return fto.type() == Figure::TypePawn;
+  }
+
+  bool isPawnAttack(const Move & move) const
+  {
+    const Field & fto = getField(move.to_);
+    if ( fto.type() != Figure::TypePawn )
+      return false;
+    const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
+    const uint64 & o_mask = fmgr_.mask(color_);
+    return (p_caps & o_mask) != 0;
   }
 
   /// verify 

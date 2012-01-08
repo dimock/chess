@@ -9,10 +9,11 @@ History MovesGenerator::history_[64][64];
 MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
 {
-  // killer already done
+#ifdef USE_KILLER
   if ( player_ && player_->contexts_[ply_].killer_ )
     killer_ = player_->contexts_[ply_].killer_;
   else
+#endif
     killer_.clear();
 
   numOfMoves_ = generate(alpha, betta, counter, null_move, extension);
@@ -62,7 +63,7 @@ void MovesGenerator::calculateWeight(Move & move)
   }
   else if ( move.new_type_ > 0 )
   {
-    move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 10000;
+    move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 5000;
   }
 #ifdef USE_KILLER
   else if ( move == killer_ )

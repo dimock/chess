@@ -41,7 +41,7 @@ typedef int16 ScoreType;
 #define USE_KILLER
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING_
-#define GO_IMMEDIATELY_CC
+#undef GO_IMMEDIATELY_CC
 #define USE_HASH_TABLE_GENERAL
 #define USE_HASH_TABLE_CAPTURE
 #define USE_GENERAL_HASH_IN_CAPS
@@ -49,7 +49,7 @@ typedef int16 ScoreType;
 #define USE_NULL_MOVE
 #define USE_LMR
 
-#undef NO_TIME_LIMIT
+#undef  NO_TIME_LIMIT
 
 #undef  VERIFY_ESCAPE_GENERATOR
 #undef  VERIFY_CHECKS_GENERATOR
