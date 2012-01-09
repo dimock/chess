@@ -35,13 +35,13 @@ typedef unsigned __int64 uint64;
 typedef int16 ScoreType;
 
 #undef GO_IMMEDIATELY
+#undef GO_IMMEDIATELY_CC
 
 #define PERFORM_CAPTURES_AND_CHECKS
 #define USE_ZERO_WINDOW
 #define USE_KILLER
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING_
-#undef GO_IMMEDIATELY_CC
 #define USE_HASH_TABLE_GENERAL
 #define USE_HASH_TABLE_CAPTURE
 #define USE_GENERAL_HASH_IN_CAPS

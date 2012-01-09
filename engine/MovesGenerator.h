@@ -73,14 +73,37 @@ private:
   int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
   bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction);
 
-  void MovesGenerator::add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  inline void MovesGenerator::add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
     Move & move = moves_[m++];
     move.set(from, to, rindex, new_type, 0);
     calculateWeight(move);
   }
 
-  void calculateWeight(Move & move);
+  inline void calculateWeight(Move & move)
+  {
+    const Field & ffield = board_.getField(move.from_);
+    THROW_IF( !ffield, "no figure on field we move from" );
+    if ( move.rindex_ >= 0 )
+    {
+      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
+      move.score_ = Figure::figureWeight_[rfig.getType()] - Figure::figureWeight_[ffield.type()] + rfig.getType() + 10000;
+    }
+    else if ( move.new_type_ > 0 )
+    {
+      move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 5000;
+    }
+#ifdef USE_KILLER
+    else if ( move == killer_ )
+    {
+      move.score_ = 2000;
+    }
+#endif
+    else
+    {
+      move.score_ = history_[move.from_][move.to_].score_;
+    }
+  }
 
   int current_;
   int numOfMoves_;

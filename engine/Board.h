@@ -80,21 +80,37 @@ public:
     return pm;
   }
 
-  /// used in LMR. don't allow reduction of pawn's movement
-  bool isPawnMove(const Move & move) const
+  /// used in LMR
+  bool canBeReduced(const Move & move) const
   {
-    const Field & fto = getField(move.to_);
-    return fto.type() == Figure::TypePawn;
-  }
-
-  bool isPawnAttack(const Move & move) const
-  {
-    const Field & fto = getField(move.to_);
-    if ( fto.type() != Figure::TypePawn )
+    // don't reduce  captures and pawn promotions
+    if ( move.rindex_ >= 0 || move.new_type_ > 0 )
       return false;
-    const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
-    const uint64 & o_mask = fmgr_.mask(color_);
-    return (p_caps & o_mask) != 0;
+
+    // don't allow reduction of pawn's movement to pre-last line or pawn's attack
+    const Field & fto = getField(move.to_);
+    if ( fto.type() == Figure::TypePawn )
+    {
+      int8 y = move.to_ >> 3;
+      if ( 1 == y || 6 == y )
+        return false;
+
+      const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
+      const uint64 & o_mask = fmgr_.mask(color_);
+      if ( p_caps & o_mask )
+        return false;
+    }
+
+    //// don't reduce knight's attack
+    //if ( fto.type() == Figure::TypeKnight )
+    //{
+    //  const uint64 & k_caps = g_movesTable->caps(fto.type(), fto.color());
+    //  const uint64 & o_mask = fmgr_.mask(color_);
+    //  if ( k_caps & o_mask )
+    //    return false;
+    //}
+
+    return true;
   }
 
   /// verify 

@@ -265,8 +265,9 @@ bool Board::doMove()
   // put new hash code to detect threefold repetition
   move.zcode_ = fmgr_.hashCode();
 
-  if ( !color_ )
-    movesCounter_++;
+  //if ( !color_ )
+  //  movesCounter_++;
+  movesCounter_ += ~color_ & 1;
 
   return true;
 }
@@ -278,8 +279,9 @@ void Board::undoMove()
   if ( !move.need_undo_ )
     return;
 
-  if ( !color_ )
-    movesCounter_--;
+  //if ( !color_ )
+  //  movesCounter_--;
+  movesCounter_ -= ~color_ & 1;
 
   // restore hash color. we change it early for 3-fold repetition detection
   //fmgr_.hashColor();

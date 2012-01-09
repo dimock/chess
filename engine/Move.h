@@ -62,7 +62,7 @@ struct Move
 
   ScoreType score_;
 
-  void clear()
+  inline void clear()
   {
     from_ = -1;
     to_ = -1;
@@ -74,7 +74,7 @@ struct Move
     flags_ = 0;
   }
 
-  void set(int8 from, int8 to, int8 rindex, int8 new_type, int8 checkVerified)
+  inline void set(int8 from, int8 to, int8 rindex, int8 new_type, int8 checkVerified)
   {
     from_ = from;
     to_ = to;
@@ -86,19 +86,19 @@ struct Move
     score_ = -std::numeric_limits<ScoreType>::max();
   }
 
-  operator bool () const
+  inline operator bool () const
   {
     return to_ >= 0;
   }
 
   // compare only first 4 bytes
-  bool operator == (const Move & other) const
+  inline bool operator == (const Move & other) const
   {
     return *reinterpret_cast<const uint32*>(this) == *reinterpret_cast<const uint32*>(&other);
   }
 
   // compare only first 4 bytes
-  bool operator != (const Move & other) const
+  inline bool operator != (const Move & other) const
   {
     return *reinterpret_cast<const uint32*>(this) != *reinterpret_cast<const uint32*>(&other);
   }

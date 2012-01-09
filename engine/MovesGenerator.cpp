@@ -49,34 +49,6 @@ bool MovesGenerator::find(const Move & m) const
   return false;
 }
 //////////////////////////////////////////////////////////////////////////
-void MovesGenerator::calculateWeight(Move & move)
-{
-  if ( !player_ )
-    return;
-
-  const Field & ffield = player_->board_.getField(move.from_);
-  THROW_IF( !ffield, "no figure on field we move from" );
-  if ( move.rindex_ >= 0 )
-  {
-    const Figure & rfig = player_->board_.getFigure(Figure::otherColor(player_->board_.color_), move.rindex_);
-    move.score_ = Figure::figureWeight_[rfig.getType()] - Figure::figureWeight_[ffield.type()] + rfig.getType() + 10000;
-  }
-  else if ( move.new_type_ > 0 )
-  {
-    move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 5000;
-  }
-#ifdef USE_KILLER
-  else if ( move == killer_ )
-  {
-    move.score_ = 2000;
-  }
-#endif
-  else
-  {
-    move.score_ = history_[move.from_][move.to_].score_;
-  }
-}
-//////////////////////////////////////////////////////////////////////////
 int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension)
 {
   int m = 0;

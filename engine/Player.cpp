@@ -576,9 +576,9 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_LMR
         if ( counter > 3 && depth > 3 &&
-             !null_move && !ext && move.rindex_ < 0 &&
-             !move.new_type_ && hist.bad_count_ >= hist.good_count_ &&
-             !board_.isPawnAttack(move) )
+             !null_move && !ext &&
+             hist.bad_count_ >= (hist.good_count_ << 1) &&
+             board_.canBeReduced(move) )
           R = 2;
 #endif
 
@@ -586,11 +586,14 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_LMR
 
-        //if ( score <= alpha && R > 1 ) // verify LMR
+        //if ( score <= alpha && R > 1 && betta>alpha+1) // verify LMR
         //{
-        //  ScoreType score1 = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, extension);
-        //  if ( score1 > alpha )
+        //  ScoreType score1 = -alphaBetta(depth-1, ply+1, -betta, -alpha, null_move, extension);
+        //  if ( score1 >= betta )
+        //  {
         //    Board::ticks_++;
+        //    Board::tcounter_ += hist.score_;
+        //  }
         //}
 
         if ( score > alpha && R > 1 ) // was LMR
