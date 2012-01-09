@@ -44,14 +44,21 @@ SetParamsDlg::SetParamsDlg(QWidget * parent) :
   connect(buttonOK_, SIGNAL(clicked()), this, SLOT(accept()));
 
   int maxPly = 16;
-  int maxT = 10;
+
+  static int ttime_ [] = { 0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 45, 60 };
 
   for (int ply = 2; ply <= maxPly; ++ply)
     depthCB_->insertItem(ply, QString("%1").arg(ply), ply);
 
-  for (int t = 1; t <= maxT; ++t)
+  for (int i = 0; i < sizeof(ttime_)/sizeof(*ttime_); ++i)
   {
-    timeCB_->insertItem(t, QString("%1").arg(t), t);
+    int t = ttime_[i];
+    QString tstr;
+    if ( t > 0 )
+      tstr = QString("%1").arg(t);
+    else
+      tstr = tr("-");
+    timeCB_->insertItem(i, tstr, t);
   }
 
   QSettings settings(tr("Dimock"), tr("qchess"));
@@ -85,6 +92,6 @@ int SetParamsDlg::getStepTime() const
   int i = timeCB_->currentIndex();
   QVariant q = timeCB_->itemData(i);
   if ( q != QVariant::Invalid )
-    return q.toInt();
-  return 1;
+      return q.toInt();
+  return 0;
 }
