@@ -267,17 +267,20 @@ ScoreType Board::expressEval() const
 	else if ( drawState() )
 		return Figure::WeightDraw;
 
+  ScoreType score = -std::numeric_limits<ScoreType>::max();
 	if ( can_win_[0] != can_win_[1] )
-		return evaluateWinnerLoser();
+		score = evaluateWinnerLoser();
+  else
+  {
+	  score = fmgr_.weight();
+	  score -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
+	  score += fmgr_.eval(Figure::ColorWhite, stages_[1]);
+  }
 
-	ScoreType weight = fmgr_.weight();
-	weight -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
-	weight += fmgr_.eval(Figure::ColorWhite, stages_[1]);
+  if ( Figure::ColorBlack  == color_ )
+		score = -score;
 
-	if ( Figure::ColorBlack  == color_ )
-		weight = -weight;
-
-	return weight;
+	return score;
 }
 
 ScoreType Board::calculateEval() const
