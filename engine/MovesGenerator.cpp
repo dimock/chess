@@ -451,22 +451,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
         THROW_IF( !pawn, "capturing pawn not found" );
 
         add_escape(m, n, to, epawn.getIndex(), 0);
-
-//        Move move;
-//        move.set(n, to, epawn.getIndex(), 0, 0);
-//
-//        if ( board_.isMoveValidUnderCheck(move) )
-//        {
-//          move.checkVerified_ = 1;
-//
-//#ifdef GO_IMMEDIATELY_CHECK
-//          // make movement if there is already at least 1 move found or we are under horizon
-//          if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
-//            return m;
-//#else
-//          escapes_[m++] = move;
-//#endif
-//        }
       }
     }
 
@@ -502,37 +486,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
         escapes_[m] = move;
         escapes_[m++].new_type_ = Figure::TypeKnight;
       }
-
-//      Move move;
-//      move.set(n, cfig.where(), cfig.getIndex(), 0, 0);
-//
-//      if ( board_.isMoveValidUnderCheck(move) )
-//      {
-//        move.checkVerified_ = 1;
-//
-//        if ( promotion )
-//          move.new_type_ = Figure::TypeQueen;
-//
-//#ifdef GO_IMMEDIATELY_CHECK
-//        // make movement if there is already at least 1 move found or we are under horizon
-//        if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
-//          return m;
-//#else
-//        escapes_[m++] = move;
-//#endif
-//
-//        if ( promotion )
-//        {
-//          escapes_[m] = move;
-//          escapes_[m++].new_type_ = Figure::TypeRook;
-//
-//          escapes_[m] = move;
-//          escapes_[m++].new_type_ = Figure::TypeBishop;
-//
-//          escapes_[m] = move;
-//          escapes_[m++].new_type_ = Figure::TypeKnight;
-//        }
-//      }
     }
   }
 
@@ -555,22 +508,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
       THROW_IF( !knight, "capturing knight not found" );
 
       add_escape(m, n, cfig.where(), cfig.getIndex(), 0);
-
-//      Move move;
-//      move.set(n, cfig.where(), cfig.getIndex(), 0, 0);
-//
-//      if ( board_.isMoveValidUnderCheck(move) )
-//      {
-//        move.checkVerified_ = 1;
-//
-//#ifdef GO_IMMEDIATELY_CHECK
-//        // make movement if there is already at least 1 move found or we are under horizon
-//        if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
-//          return m;
-//#else
-//        escapes_[m++] = move;
-//#endif
-//      }
     }
   }
 
@@ -602,22 +539,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
         continue;
 
       add_escape(m, n, cfig.where(), cfig.getIndex(), 0);
-
-//      Move move;
-//      move.set(n, cfig.where(), cfig.getIndex(), 0, 0);
-//
-//      if ( board_.isMoveValidUnderCheck(move) )
-//      {
-//        move.checkVerified_ = 1;
-//
-//#ifdef GO_IMMEDIATELY_CHECK
-//        // make movement if there is already at least 1 move found or we are under horizon
-//        if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
-//          return m;
-//#else
-//        escapes_[m++] = move;
-//#endif
-//      }
     }
   }
 
@@ -659,34 +580,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
             escapes_[m] = move;
             escapes_[m++].new_type_ = Figure::TypeKnight;
           }
-
-//          Move move;
-//          move.set(fig.where(), *table, -1, promotion ? Figure::TypeQueen : 0, 0);
-//
-//          if ( board_.isMoveValidUnderCheck(move) )
-//          {
-//            move.checkVerified_ = 1;
-//
-//#ifdef GO_IMMEDIATELY_CHECK
-//            // make movement if there is already at least 1 move found or we are under horizon
-//            if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
-//              return m;
-//#else
-//            escapes_[m++] = move;
-//#endif
-//
-//            if ( promotion )
-//            {
-//              escapes_[m] = move;
-//              escapes_[m++].new_type_ = Figure::TypeRook;
-//
-//              escapes_[m] = move;
-//              escapes_[m++].new_type_ = Figure::TypeBishop;
-//
-//              escapes_[m] = move;
-//              escapes_[m++].new_type_ = Figure::TypeKnight;
-//            }
-//          }
         }
       }
       else if ( fig.getType() == Figure::TypeKnight )
@@ -702,22 +595,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
           THROW_IF( field, "there is something between king and checking figure" );
 
           add_escape(m, fig.where(), n, -1, 0);
-
-//          Move move;
-//          move.set(fig.where(), n, -1, 0, 0);
-//
-//          if ( board_.isMoveValidUnderCheck(move) )
-//          {
-//            move.checkVerified_ = 1;
-//
-//#ifdef GO_IMMEDIATELY_CHECK
-//            // make movement if there is already at least 1 move found or we are under horizon
-//            if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
-//              return m;
-//#else
-//            escapes_[m++] = move;
-//#endif
-//         }
         }
       }
       else
@@ -740,22 +617,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
             continue;
 
           add_escape(m, fig.where(), n, -1, 0);
-
-//          Move move;
-//          move.set(fig.where(), n, -1, 0, 0);
-//
-//          if ( board_.isMoveValidUnderCheck(move) )
-//          {
-//            move.checkVerified_ = 1;
-//
-//#ifdef GO_IMMEDIATELY_CHECK
-//            // make movement if there is already at least 1 move found or we are under horizon
-//            if ( escape_movement(m, alpha, betta, move, counter, null_move, extension) )
-//              return m;
-//#else
-//            escapes_[m++] = move;
-//#endif
-//          }
         }
       }
     }
@@ -788,13 +649,7 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
       rindex = field.index();
     }
 
-    //Move move;
-    //move.set(king.where(), *table, rindex, 0, 0);
-
-    //if ( board_.isMoveValidUnderCheck(move) )
-    //{
-      add_escape(m, king.where(), *table, rindex, 0);
-    //}
+	add_escape(m, king.where(), *table, rindex, 0);
   }
 
   return m;

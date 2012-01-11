@@ -392,7 +392,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       }
     }
 
-#ifdef USE_HASH_TABLE_CAPTURE
+#ifdef USE_HASH_TABLE_ADV
     // if we haven't found pv in general hash, lets try captures hash
     if ( !pv )
     {
@@ -403,7 +403,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
           pv = board_.unpack(hitem.move_);
       }
     }
-#endif // USE_HASH_TABLE_CAPTURE
+#endif // USE_HASH_TABLE_ADV
 
   }
 #endif // USE_HASH_TABLE_GENERAL
@@ -472,6 +472,18 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
+#ifdef USE_KILLER_ADV
+	  Move killer = contexts_[ply].killer_;
+	  if ( killer && killer != pv && killer.rindex_ >= 0 && board_.validMove(killer) )
+	  {
+		  movement(depth, ply, alpha, betta, killer, counter, null_move, extension);
+		  if ( alpha >= betta )
+			  return alpha;
+	  }
+	  else
+		  killer.clear();
+#endif
+
 	  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, null_move, extension);
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
@@ -479,7 +491,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	    if ( !move || stop_ )
 		    break;
 
-	    if ( move == pv )
+	    if ( move == pv 
+#ifdef USE_KILLER_ADV
+			|| move == killer
+#endif
+			)
 		    continue;
 
 	    if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
@@ -626,7 +642,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_KILLER
         Move & killer = contexts_[ply].killer_;
-        if ( move.rindex_ < 0 && score > killer.score_ )
+        //if ( score > killer.score_ )
         {
           killer = move;
           killer.score_ = score;
@@ -742,7 +758,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       capture(depth, ply, alpha, betta, hmove, counter);
   
       if ( alpha >= betta )
-        return alpha;
+	  {
+		return alpha;
+	  }
     }
   }
 
@@ -759,7 +777,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         capture(depth, ply, alpha, betta, hmove, counter);
 
         if ( alpha >= betta )
-          return alpha;
+		{
+			return alpha;
+		}
       }
       else
         hmove.clear();
@@ -769,28 +789,48 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #endif //USE_HASH_TABLE_CAPTURE
 
+  Figure::Type minimalType = delta2type(delta);
+
+#ifdef USE_KILLER_CAPS
+  Move killer = contexts_[ply].killer_;
+  if ( killer && killer != hmove && killer.rindex_ >= 0 && board_.validMove(killer) &&
+	  board_.getFigure(Figure::otherColor(board_.getColor()), killer.rindex_).getType() >= minimalType)
+  {
+	  capture(depth, ply, alpha, betta, killer, counter);
+	  if ( alpha >= betta )
+		  return alpha;
+  }
+  else
+	  killer.clear();
+#endif
+
+
   if ( board_.getState() == Board::UnderCheck )
   {
 	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
-		  const Move & cap = eg.escape();
-		  if ( !cap || stop_ )
+		  const Move & move = eg.escape();
+		  if ( !move || stop_ )
 			  break;
 
 		  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
 			  testTimer();
 
-      if ( stop_ )
-        break;
+		  if ( stop_ )
+			break;
 
-		  if ( hmove == cap )
+		  if ( hmove == move
+#ifdef USE_KILLER_CAPS
+			  || move == killer
+#endif
+			  )
 			  continue;
 
 		  THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-		  capture(depth, ply, alpha, betta, cap, counter);
+		  capture(depth, ply, alpha, betta, move, counter);
 	  }
 
     if ( !counter )
@@ -804,8 +844,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
   else
   {
-    Figure::Type minimalType = delta2type(delta);
-
     // generate only suitable captures
     CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta ; )
@@ -817,7 +855,11 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      if ( hmove == cap )
+      if ( hmove == cap 
+#ifdef USE_KILLER_CAPS
+		  || cap == killer
+#endif
+		  )
         continue;
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
@@ -825,6 +867,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       capture(depth, ply, alpha, betta, cap, counter);
     }
 
+#ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
     if ( depth >= 0 && !stop_ && alpha < betta )
     {
@@ -839,7 +882,11 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
           testTimer();
 
-        if ( hmove == check )
+        if ( hmove == check
+#ifdef USE_KILLER_CAPS
+			|| check == killer
+#endif
+			)
           continue;
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
@@ -847,6 +894,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         capture(depth, ply, alpha, betta, check, counter);
       }
     }
+#endif // PERFORM_CHECKS_IN_CAPTURES
+
   }
 
 #ifdef USE_HASH_TABLE_CAPTURE
@@ -894,8 +943,16 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 		{
 			alpha = s;
 
+#ifdef USE_KILLER_CAPS
+			//if ( s > contexts_[ply].killer_.score_ )
+			{
+				contexts_[ply].killer_ = cap;
+				contexts_[ply].killer_.score_ = s;
+			}
+#endif
+
 #ifdef USE_HASH_TABLE_CAPTURE
-      updateCaptureHash(cap, s, betta, hcode);
+			updateCaptureHash(cap, s, betta, hcode);
 #endif
 		}
 	}
