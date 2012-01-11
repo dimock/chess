@@ -84,12 +84,12 @@ void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType bett
 
 //////////////////////////////////////////////////////////////////////////
 #ifdef VERIFY_CHECKS_GENERATOR
-void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta)
+void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType)
 {
   int counter = 0;
-  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
-  CapsChecksGenerator cg(board_, Figure::TypePawn, ply, *this, alpha, betta, counter);
-  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
+  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, false, false);
+  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+  ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
   Move legal[Board::MovesMax], checks[Board::MovesMax];
   int n = 0, m = 0;
@@ -104,24 +104,19 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
 
     if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
     {
-      if ( move.new_type_ > 0 )
-      {
-        if ( move.new_type_ == Figure::TypeQueen )
-          legal[n++] = move;
-        else if ( move.new_type_ == Figure::TypeKnight && board_.getNumOfChecking() == 1 )
-        {
-          const Field & ffield = board_.getField(move.to_);
-          THROW_IF( ffield.color() == board_.color_ || ffield.type() != Figure::TypeKnight, "invalid color or type of promoted knight" );
-          const Figure & knight = board_.getFigure(Figure::otherColor(board_.color_), ffield.index());
-          THROW_IF( knight.getType() != Figure::TypeKnight || knight.getColor() != Figure::otherColor(board_.color_), "invalid promotion to knight in check generator" );
-          const Figure & oking = board_.getFigure(board_.color_, Board::KingIndex);
-          int dir = board_.g_figureDir->dir(knight, oking.where());
-          if ( dir >= 0 )
-            legal[n++] = move;
-        }
-      }
-      else
+      if ( move.new_type_ == Figure::TypeQueen || !move.new_type_ )
         legal[n++] = move;
+      else if ( move.new_type_ == Figure::TypeKnight && board_.getNumOfChecking() == 1 )
+      {
+        const Field & ffield = board_.getField(move.to_);
+        THROW_IF( ffield.color() == board_.color_ || ffield.type() != Figure::TypeKnight, "invalid color or type of promoted knight" );
+        const Figure & knight = board_.getFigure(Figure::otherColor(board_.color_), ffield.index());
+        THROW_IF( knight.getType() != Figure::TypeKnight || knight.getColor() != Figure::otherColor(board_.color_), "invalid promotion to knight in check generator" );
+        const Figure & oking = board_.getFigure(board_.color_, Board::KingIndex);
+        int dir = board_.g_figureDir->dir(knight, oking.where());
+        if ( dir >= 0 )
+          legal[n++] = move;
+      }
     }
 
     board_.verifyMasks();
@@ -149,7 +144,7 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
 
   for ( ;; )
   {
-    const Move & move = chkg.check();
+    const Move & move = ckg.check();
     if ( !move )
       break;
 
@@ -162,13 +157,13 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
     board_.unmakeMove();
     THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
     board_.verifyMasks();
+
+    THROW_IF( cg.find(move), "duplicated move found in checks geneator" );
   }
 
   for (int i = 0; i < n; ++i)
   {
     const Move & move = legal[i];
-    if ( move.new_type_ == Figure::TypeRook || move.new_type_ == Figure::TypeBishop )
-      continue;
 
     bool found = false;
     for (int j = 0; j < m; ++j)
@@ -185,7 +180,7 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
     {
       char fen[256];
       board_.toFEN(fen);
-      ChecksGenerator chkg2(board_, ply, *this, alpha, betta, counter);
+      ChecksGenerator ckg2(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
     }
 
     THROW_IF( !found, "some check wasn't generated" );
@@ -204,6 +199,14 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
         found = true;
         break;
       }
+    }
+
+    if ( !found )
+    {
+      int ttt = 0;
+      char fen[256];
+      board_.toFEN(fen);
+      ChecksGenerator ckg2(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
     }
 
     THROW_IF( !found, "some invalid check was generated" );
@@ -227,7 +230,7 @@ void Player::verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int 
 
   int counter = 0;
   int depth = 0;
-  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, false, false);
   CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
 
   Move legal[Board::MovesMax], caps[Board::MovesMax];
@@ -259,7 +262,7 @@ void Player::verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int 
         if ( rfig.getType() >= minimalType || move.new_type_ == Figure::TypeQueen )
           legal[n++] = move;
       }
-      else if ( move.new_type_ == Figure::TypeQueen && minimalType < Figure::TypeQueen )
+      else if ( move.new_type_ == Figure::TypeQueen && minimalType <= Figure::TypeQueen )
         legal[n++] = move;
     }
   }

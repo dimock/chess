@@ -293,7 +293,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     ScoreType score = board_.evaluate();
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
     if ( delta > 0 )
-      return captures_checks(depth, ply, alpha, betta, delta, null_move);
+      return captures(depth, ply, alpha, betta, delta);
   }
 #endif
 
@@ -420,7 +420,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
-  verifyChecksGenerator(depth, ply, alpha, betta);
+  if ( board_.getState() != Board::UnderCheck )
+    verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
 #endif
 
   // first of all try null-move
@@ -555,16 +556,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       if ( haveCheck || (score > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
       {
         ScoreType betta1 = score < betta && !haveCheck ? score : betta;
-#ifdef PERFORM_CAPTURES_AND_CHECKS
-        if ( depth < 1 )
-#endif
-
-          score = -captures(ply+1, -betta1, -alpha, delta);
-
-#ifdef PERFORM_CAPTURES_AND_CHECKS
-        else
-          score = -captures_checks(0, ply+1, -betta1, -alpha, delta, null_move);
-#endif
+        score = -captures(depth-1, ply+1, -betta1, -alpha, delta);
       }
     }
     else
@@ -666,7 +658,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
+ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta)
 {
 	if ( stop_ || ply >= MaxPly )
 		return alpha;
@@ -675,7 +667,13 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
     contexts_[ply+1].killer_.clear();
 
 #ifdef VERIFY_CAPS_GENERATOR
-  verifyCapsGenerator(ply, alpha, betta, delta);
+  if ( board_.getState() != Board::UnderCheck )
+    verifyCapsGenerator(ply, alpha, betta, delta);
+#endif
+
+#ifdef VERIFY_CHECKS_GENERATOR
+  if ( board_.getState() != Board::UnderCheck )
+    verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
 #endif
 
   int counter = 0;
@@ -741,7 +739,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
     if ( hmove )
     {
       hmove.checkVerified_ = 0;
-      capture(ply, alpha, betta, hmove, counter);
+      capture(depth, ply, alpha, betta, hmove, counter);
   
       if ( alpha >= betta )
         return alpha;
@@ -758,7 +756,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
       if ( hmove && hmove.rindex_ >= 0 )
       {
         hmove.checkVerified_ = 0;
-        capture(ply, alpha, betta, hmove, counter);
+        capture(depth, ply, alpha, betta, hmove, counter);
 
         if ( alpha >= betta )
           return alpha;
@@ -770,8 +768,6 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 #endif
 
 #endif //USE_HASH_TABLE_CAPTURE
-
-  Figure::Type minimalType = delta2type(delta);
 
   if ( board_.getState() == Board::UnderCheck )
   {
@@ -794,7 +790,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
 		  THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-		  capture(ply, alpha, betta, cap, counter);
+		  capture(depth, ply, alpha, betta, cap, counter);
 	  }
 
     if ( !counter )
@@ -808,8 +804,10 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
   }
   else
   {
-	  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+    Figure::Type minimalType = delta2type(delta);
 
+    // generate only suitable captures
+    CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta ; )
     {
       const Move & cap = cg.capture();
@@ -824,7 +822,30 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-      capture(ply, alpha, betta, cap, counter);
+      capture(depth, ply, alpha, betta, cap, counter);
+    }
+
+    // generate check only on 1st iteration under horizon
+    if ( depth >= 0 && !stop_ && alpha < betta )
+    {
+      ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
+
+      for ( ; !stop_ && alpha < betta ; )
+      {
+        const Move & check = ckg.check();
+        if ( !check || stop_ )
+          break;
+
+        if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+          testTimer();
+
+        if ( hmove == check )
+          continue;
+
+        THROW_IF( !board_.validMove(check), "move validation failed" );
+
+        capture(depth, ply, alpha, betta, check, counter);
+      }
     }
   }
 
@@ -839,7 +860,7 @@ ScoreType Player::captures(int ply, ScoreType alpha, ScoreType betta, int delta)
 }
 
 //////////////////////////////////////////////////////////////////////////
-void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter)
+void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter)
 {
 	totalNodes_++;
 	nodesCount_++;
@@ -866,7 +887,7 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 			if ( haveCheck || (s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
 			{
 				ScoreType betta1 = s < betta && !haveCheck ? s : betta;
-				s = -captures(ply+1, -betta1, -alpha, delta);
+				s = -captures(depth-1, ply+1, -betta1, -alpha, delta);
 			}
 		}
 		if ( !stop_ && s > alpha )
@@ -891,197 +912,4 @@ void Player::capture(int ply, ScoreType & alpha, ScoreType betta, const Move & c
 	board_.verifyMasks();
 #endif
 }
-
 //////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures_checks(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool null_move)
-{
-	if ( stop_ || ply >= MaxPly )
-		return alpha;
-
-	if ( ply < MaxPly )
-		contexts_[ply+1].killer_.clear();
-
-	int counter = 0;
-
-  ScoreType saveAlpha = alpha;
-
-  Move hmove;
-  hmove.clear();
-
-#ifdef USE_HASH_TABLE_CAPTURE
-  CaptureHItem & hitem = chash_[board_.hashCode()];
-  if ( hitem.hcode_ == board_.hashCode() )
-  {
-    //THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "colors in hash are different" );
-
-    if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
-      return alpha;
-
-    if ( CapturesHashTable::Alpha != hitem.flag_ )
-      hmove = board_.unpack(hitem.move_);
-
-#ifdef RETURN_IF_BETTA
-    if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::Betta == hitem.flag_) && hmove && hitem.score_ >= betta )
-    {
-      totalNodes_++;
-      nodesCount_++;
-
-#ifndef NDEBUG
-      Board board0 = board_;
-#endif
-
-      bool retBetta = false;
-
-      if ( board_.makeMove(hmove) )
-      {
-        if ( board_.drawState() )
-        {
-          if ( 0 >= betta )
-            retBetta = true;
-        }
-        else
-        {
-          retBetta = true;
-        }
-      }
-
-#ifndef NDEBUG
-      board_.verifyMasks();
-#endif
-
-      board_.unmakeMove();
-
-      THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-
-#ifndef NDEBUG
-      board_.verifyMasks();
-#endif
-
-      if ( retBetta )
-      {
-        return betta;
-      }
-    }
-#endif // RETURN_IF_BETTA
-
-    if ( hmove )
-    {
-      hmove.checkVerified_ = 0;
-      capture(ply, alpha, betta, hmove, counter);
-      if ( alpha >= betta )
-        return alpha;
-    }
-  }
-
-#ifdef USE_GENERAL_HASH_IN_CAPS
-  if ( !hmove )
-  {
-    GeneralHItem & hitem = ghash_[board_.hashCode()];
-    if ( hitem.hcode_ == board_.hashCode() && hitem.move_ )
-    {
-      hmove = board_.unpack(hitem.move_);
-      if ( hmove && hmove.rindex_ >= 0 )
-      {
-        hmove.checkVerified_ = 0;
-        capture(ply, alpha, betta, hmove, counter);
-
-        if ( alpha >= betta )
-          return alpha;
-      }
-      else
-        hmove.clear();
-    }
-  }
-#endif
-
-#endif //USE_HASH_TABLE_CAPTURE
-
-	Figure::Type minimalType = delta2type(delta);
-
-	if ( board_.getState() == Board::UnderCheck )
-	{
-		EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
-
-		for ( ; !stop_ && alpha < betta ; )
-		{
-			const Move & move = eg.escape();
-			if ( !move || stop_ )
-				break;
-
-			if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-				testTimer();
-
-			if ( stop_ )
-				break;
-
-			if ( hmove == move )
-				continue;
-
-			THROW_IF( !board_.validMove(move), "move validation failed" );
-
-			movement(depth, ply, alpha, betta, move, counter, null_move, false);
-		}
-
-		if ( !counter )
-		{
-			board_.setNoMoves();
-			ScoreType s = board_.evaluate();
-			if ( Board::ChessMat == board_.getState() )
-				s += ply;
-			return s;
-		}
-	}
-	else
-	{
-		CapsChecksGenerator ccg(board_, minimalType, depth, ply, *this, alpha, betta, counter, null_move);
-
-		for ( ; !stop_ && alpha < betta ; )
-		{
-			const Move & cap = ccg.capture();
-			if ( !cap || stop_ )
-				break;
-
-			if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-				testTimer();
-
-			if ( hmove == cap )
-				continue;
-
-			THROW_IF( !board_.validMove(cap), "move validation failed" );
-
-			movement(depth, ply, alpha, betta, cap, counter, null_move, false);
-		}
-
-		if ( !stop_ && alpha < betta )
-		{
-		  ChecksGenerator chkg(board_, ply, *this, alpha, betta, counter);
-
-		  for ( ; !stop_ && alpha < betta ; )
-		  {
-			  const Move & check = chkg.check();
-			  if ( !check || stop_ )
-				  break;
-
-			  if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-				  testTimer();
-
-			  if ( hmove == check )
-				  continue;
-
-			  THROW_IF( !board_.validMove(check), "move validation failed" );
-
-			  movement(depth, ply, alpha, betta, check, counter, null_move, false);
-		  }
-		}
-	}
-
-#ifdef USE_HASH_TABLE_CAPTURE
-  if ( alpha == saveAlpha )
-  {
-    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove());
-  }
-#endif
-
-	return alpha;
-}

@@ -35,9 +35,8 @@ typedef unsigned __int64 uint64;
 typedef int16 ScoreType;
 
 #undef GO_IMMEDIATELY
-#undef GO_IMMEDIATELY_CC
 
-#define PERFORM_CAPTURES_AND_CHECKS
+#define PERFORM_CHECKS_IN_CAPTURES
 #define USE_ZERO_WINDOW
 #define USE_KILLER
 #define USE_FUTILITY_PRUNING
@@ -51,16 +50,16 @@ typedef int16 ScoreType;
 
 #undef  NO_TIME_LIMIT
 
-#undef  VERIFY_ESCAPE_GENERATOR
-#undef  VERIFY_CHECKS_GENERATOR
-#undef  VERIFY_CAPS_GENERATOR
+#undef VERIFY_ESCAPE_GENERATOR
+#undef VERIFY_CHECKS_GENERATOR
+#undef VERIFY_CAPS_GENERATOR
 
 #undef  DO_CHECK_IMMEDIATELY
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF
 #else
-  #define TIMING_FLAG 0xFFFF
+  #define TIMING_FLAG 0x7FFF
 #endif
 
 

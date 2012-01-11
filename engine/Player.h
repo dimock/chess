@@ -98,8 +98,7 @@ private:
 
   ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, bool extension);
-  ScoreType captures(int ply, ScoreType alpha, ScoreType betta, int delta);
-  ScoreType captures_checks(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool null_move);
+  ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta);
 
   void testTimer();
 
@@ -139,7 +138,7 @@ private:
 
   //////////////////////////////////////////////////////////////////////////
   void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension);
-  void capture(int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter);
+  void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter);
   
   void assemblePV(const Move & move, int ply)
   {
@@ -180,7 +179,7 @@ private:
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
-  void verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta);
+  void verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType);
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR

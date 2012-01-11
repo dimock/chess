@@ -142,6 +142,16 @@ public:
     return numOfMoves_ > 0;
   }
 
+  bool find(const Move & move) const
+  {
+    for (int i = 0; i < numOfMoves_; ++i)
+    {
+      if ( move == captures_[i] )
+        return true;
+    }
+    return false;
+  }
+
   int count() const
   {
     return numOfMoves_;
@@ -165,7 +175,21 @@ private:
     calculateWeight(move);
   }
 
-  void calculateWeight(Move & move);
+  void calculateWeight(Move & move) const
+  {
+    const Field & ffield = board_.getField(move.from_);
+    THROW_IF( !ffield, "no figure on field we move from" );
+    if ( move.rindex_ >= 0 )
+    {
+      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
+      move.score_ = Figure::figureWeight_[rfig.getType()] - Figure::figureWeight_[ffield.type()] + rfig.getType() + 10000;
+    }
+    else if ( move.new_type_ > 0 )
+    {
+      move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 5000;
+    }
+  }
+
 
   int current_;
   int numOfMoves_;
@@ -173,97 +197,6 @@ private:
   Player & player_;
   Board & board_;
   int ply_;
-  Move captures_[Board::MovesMax];
-};
-
-
-
-/// generate captures and promotions to queen only, or captures/promotions with checks
-class CapsChecksGenerator
-{
-public:
-
-  CapsChecksGenerator(Board & , Figure::Type minimalType, int depth, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
-
-  Move & capture()
-  {
-    Move * move = captures_ + numOfMoves_;
-    Move * mv = captures_;
-    for ( ; *mv; ++mv)
-    {
-      if ( mv->alreadyDone_ || mv->score_ < move->score_ )
-        continue;
-
-      move = mv;
-    }
-    move->alreadyDone_ = 1;
-    return *move;
-  }
-
-  operator bool () const
-  {
-    return numOfMoves_ > 0;
-  }
-
-  int count() const
-  {
-    return numOfMoves_;
-  }
-
-  const Move (&caps() const)[Board::MovesMax]
-  {
-    return captures_;
-  }
-
-private:
-
-  inline bool maybeCheck(const Figure & fig, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
-  {
-    bool checking = false;
-    uint64 from_msk_inv = ~(1ULL << fig.where());
-    uint64 chk_msk = board_.g_betweenMasks->from(oking.where(), fig.where()) & (brq_mask & from_msk_inv);
-    uint64 mask_all_inv_ex = ~(mask_all & from_msk_inv);
-    for ( ; !checking && chk_msk; )
-    {
-      int n = least_bit_number(chk_msk);
-
-      const Field & field = board_.getField(n);
-      THROW_IF( !field || field.color() != board_.color_, "invalid checking figure found" );
-
-      const Figure & cfig = board_.getFigure(board_.color_, field.index());
-      if ( board_.g_figureDir->dir(cfig, oking.where()) < 0 )
-        continue;
-
-      const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oking.where());
-      if ( (btw_msk & mask_all_inv_ex) != btw_msk )
-        continue;
-
-      checking = true;
-    }
-    return checking;
-  }
-
-
-  /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move);
-  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
-
-
-  inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
-  {
-    Move & move = captures_[m++];
-    move.set(from, to, rindex, new_type, 0);
-    calculateWeight(move);
-  }
-
-  void calculateWeight(Move & move);
-
-  int current_;
-  int numOfMoves_;
-  Figure::Type minimalType_;
-  Player & player_;
-  Board & board_;
-  int ply_, depth_;
   Move captures_[Board::MovesMax];
 };
 
@@ -332,12 +265,12 @@ private:
   Move escapes_[Board::MovesMax];
 };
 
-// generate only checks without captures and promotions
+// generate all captures with type gt/eq to minimalType
 class ChecksGenerator
 {
 public:
 
-  ChecksGenerator(Board &, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
+  ChecksGenerator(CapsGenerator * cg, Board &, int ply, Player & player, ScoreType & alpha, ScoreType betta, Figure::Type minimalType, int & counter);
 
   Move & check()
   {
@@ -356,11 +289,11 @@ public:
 
 private:
 
-  inline bool maybeCheck(const Figure & fig, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
+  inline bool maybeCheck(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
   {
     bool checking = false;
-    uint64 from_msk_inv = ~(1ULL << fig.where());
-    uint64 chk_msk = board_.g_betweenMasks->from(oking.where(), fig.where()) & (brq_mask & from_msk_inv);
+    uint64 from_msk_inv = ~(1ULL << pt);
+    uint64 chk_msk = board_.g_betweenMasks->from(oking.where(), pt) & (brq_mask & from_msk_inv);
     uint64 mask_all_inv_ex = ~(mask_all & from_msk_inv);
     for ( ; !checking && chk_msk; )
     {
@@ -384,18 +317,23 @@ private:
 
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
-  // returns true if there was betta pruning
-  bool do_check(ScoreType & alpha, ScoreType betta, int8 from, int8 to, Figure::Type new_type, int & counter);
-
-  void add_check(int & m, int8 from, int8 to, Figure::Type new_type)
+  void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type)
   {
-	  Move & move = checks_[m++];
-	  move.set(from, to, -1, new_type, 0);
+	  Move & move = checks_[m];
+	  move.set(from, to, rindex, new_type, 0);
+    
+    if ( rindex >= 0 && cg_ && cg_->find(move) )
+      return;
+
 	  move.score_ = MovesGenerator::history_[move.from_][move.to_].score_;
+    ++m;
   }
 
   Player & player_;
   int ply_;
+
+  CapsGenerator * cg_;
+  Figure::Type minimalType_;
 
   int numOfMoves_;
 
