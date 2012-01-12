@@ -5,9 +5,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 History MovesGenerator::history_[64][64];
+int History::history_max_;
 
 MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension) :
-  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
+  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), history_max_(0)
 {
 #ifdef USE_KILLER
   if ( player_ && player_->contexts_[ply_].killer_ )
@@ -21,7 +22,7 @@ MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * playe
 }
 
 MovesGenerator::MovesGenerator(Board & board) :
-  board_(board), current_(0), numOfMoves_(0), ply_(0), depth_(0), player_(0)
+  board_(board), current_(0), numOfMoves_(0), ply_(0), depth_(0), player_(0), history_max_(0)
 {
   killer_.clear();
   ScoreType alpha = 0, betta = 0;
@@ -35,6 +36,7 @@ void MovesGenerator::clear_history()
   for (int i = 0; i < 64; ++i)
     for (int j = 0; j < 64; ++j)
       history_[i][j].clear();
+  History::history_max_ = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -327,7 +329,7 @@ bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & m
 {
   THROW_IF( !player_, "no player to make movement" );
 
-  player_->movement(depth_, ply_, alpha, betta, move, counter, null_move, extension);
+  player_->movement(depth_, ply_, alpha, betta, move, counter, null_move, extension, 0);
   return alpha >= betta;
 }
 //////////////////////////////////////////////////////////////////////////

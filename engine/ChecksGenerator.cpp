@@ -6,6 +6,13 @@
 ChecksGenerator::ChecksGenerator(CapsGenerator * cg, Board & board, int ply, Player & player, ScoreType & alpha, ScoreType betta, Figure::Type minimalType, int & counter) :
   board_(board), player_(player), ply_(ply), numOfMoves_(0), cg_(cg), minimalType_(minimalType)
 {
+#ifdef USE_KILLER
+	if ( player_.contexts_[ply_].killer_ )
+		killer_ = player_.contexts_[ply_].killer_;
+	else
+#endif
+		killer_.clear();
+
   numOfMoves_ = generate(alpha, betta, counter);
   checks_[numOfMoves_].clear();
 }

@@ -444,7 +444,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // try move from hash and killer (only if we are not under check)
   if ( board_.getState() != Board::UnderCheck && pv && board_.validMove(pv) )
-    movement(depth, ply, alpha, betta, pv, counter, null_move, extension);
+    movement(depth, ply, alpha, betta, pv, counter, null_move, extension, 0);
 
   if ( alpha >= betta )
   {
@@ -467,7 +467,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      movement(depth, ply, alpha, betta, move, counter, null_move, extension);
+      movement(depth, ply, alpha, betta, move, counter, null_move, extension, 0);
     }
   }
   else
@@ -476,7 +476,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	  Move killer = contexts_[ply].killer_;
 	  if ( killer && killer != pv && killer.rindex_ >= 0 && board_.validMove(killer) )
 	  {
-		  movement(depth, ply, alpha, betta, killer, counter, null_move, extension);
+		  movement(depth, ply, alpha, betta, killer, counter, null_move, extension, 0);
 		  if ( alpha >= betta )
 			  return alpha;
 	  }
@@ -504,7 +504,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
   	  
-	    movement(depth, ply, alpha, betta, move, counter, null_move, extension);
+	    movement(depth, ply, alpha, betta, move, counter, null_move, extension, mg.hist_max());
 	  }
   }
 
@@ -537,7 +537,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
-void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension)
+void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension, int history_max)
 {
   totalNodes_++;
   nodesCount_++;
@@ -547,6 +547,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
 
   uint64 hcode = board_.hashCode();
+  bool check_esc = board_.getState() == Board::UnderCheck;
 
   if ( board_.makeMove(move) )
   {
@@ -586,12 +587,15 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #ifdef USE_LMR
         if ( counter > 3 &&
              depth > 4 &&
+			 !check_esc &&
              !null_move &&
              !ext &&
+			 !move.fkiller_ &&
              alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-             hist.bad_count_ >= (hist.good_count_ << 1) &&
-             board_.canBeReduced(move) &&
-             (margin-(int)board_.evaluate() < alpha) /* score + margin < alpha*/  )
+			 betta < Figure::WeightMat-MaxPly && // we are not in PV ???
+			 ((hist.score_<<1) <= history_max) &&
+             board_.canBeReduced(move) /*&&
+             (margin-(int)board_.evaluate() < alpha)*/ /* score + margin < alpha*/  )
         {
           R = 2;
         }
@@ -607,7 +611,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         //  if ( score1 > alpha )
         //  {
         //    Board::ticks_++;
-        //    Board::tcounter_ += hist.score_;
+        //    Board::tcounter_ += History::history_max_;
         //  }
         //}
 
@@ -638,7 +642,11 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
 
         if ( move.rindex_ < 0 && !move.new_type_ )
-          hist.score_ += depth;
+		{
+			hist.score_ ++;//= depth;
+			if ( hist.score_ > History::history_max_ )
+				History::history_max_ = hist.score_;
+		}
 
         if ( 0 == ply )
         {
@@ -649,11 +657,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_KILLER
         Move & killer = contexts_[ply].killer_;
-        //if ( score > killer.score_ )
-        {
-          killer = move;
-          killer.score_ = score;
-        }
+        killer = move;
 #endif
       }
       if ( move.rindex_ < 0 && !move.new_type_ )
@@ -688,6 +692,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   if ( ply < MaxPly )
     contexts_[ply+1].killer_.clear();
+
+  bool extend_check = (board_.getState() == Board::UnderCheck && depth >= 0) || depth > 0;
 
 #ifdef VERIFY_CAPS_GENERATOR
   if ( board_.getState() != Board::UnderCheck )
@@ -762,7 +768,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     if ( hmove )
     {
       hmove.checkVerified_ = 0;
-      capture(depth, ply, alpha, betta, hmove, counter, do_checks && depth > 0);
+      capture(depth, ply, alpha, betta, hmove, counter, extend_check);
   
       if ( alpha >= betta )
 	  {
@@ -781,7 +787,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( hmove && hmove.rindex_ >= 0 )
       {
         hmove.checkVerified_ = 0;
-        capture(depth, ply, alpha, betta, hmove, counter, do_checks && depth > 0);
+        capture(depth, ply, alpha, betta, hmove, counter, extend_check);
 
         if ( alpha >= betta )
 		{
@@ -803,7 +809,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( killer && killer != hmove && killer.rindex_ >= 0 && board_.validMove(killer) &&
 	  board_.getFigure(Figure::otherColor(board_.getColor()), killer.rindex_).getType() >= minimalType)
   {
-	  capture(depth, ply, alpha, betta, killer, counter, do_checks && depth > 0);
+	  capture(depth, ply, alpha, betta, killer, counter, extend_check);
 	  if ( alpha >= betta )
 		  return alpha;
   }
@@ -815,8 +821,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( board_.getState() == Board::UnderCheck )
   {
 	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
-    if ( depth >= 0 || (depth >= -1 && (eg.count() == 1 || board_.getNumOfChecking() > 1)) )
-      do_checks = true;
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
@@ -839,7 +843,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 		  THROW_IF( !board_.validMove(move), "move validation failed" );
 
-		  capture(depth, ply, alpha, betta, move, counter, do_checks);
+		  capture(depth, ply, alpha, betta, move, counter, extend_check);
 	  }
 
     if ( !counter )
@@ -873,7 +877,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-      capture(depth, ply, alpha, betta, cap, counter, do_checks && depth > 0);
+      capture(depth, ply, alpha, betta, cap, counter, extend_check);
     }
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
@@ -900,7 +904,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
-        capture(depth, ply, alpha, betta, check, counter, do_checks && depth > 0);
+        capture(depth, ply, alpha, betta, check, counter, extend_check);
       }
     }
 #endif // PERFORM_CHECKS_IN_CAPTURES
@@ -953,16 +957,20 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 			alpha = s;
 
 #ifdef USE_KILLER_CAPS
-			//if ( s > contexts_[ply].killer_.score_ )
-			{
-				contexts_[ply].killer_ = cap;
-				contexts_[ply].killer_.score_ = s;
-			}
+			contexts_[ply].killer_ = cap;
 #endif
 
 #ifdef USE_HASH_TABLE_CAPTURE
 			updateCaptureHash(cap, s, betta, hcode);
 #endif
+
+			History & hist = MovesGenerator::history(cap.from_, cap.to_);
+			if ( cap.rindex_ < 0 && !cap.new_type_ )
+			{
+				hist.score_ ++;//= depth;
+				if ( hist.score_ > History::history_max_ )
+					History::history_max_ = hist.score_;
+			}
 		}
 	}
 

@@ -16,8 +16,9 @@ struct History
     bad_count_ = 0;
   }
 
-  ScoreType score_;
+  int score_;
   int good_count_, bad_count_;
+  static int history_max_;
 };
 
 /// generate all movies from this position. don't verify and sort them. only calculate sort weights
@@ -53,6 +54,11 @@ public:
     }
     move->alreadyDone_ = 1;
     return *move;
+  }
+
+  int hist_max() const
+  {
+	  return history_max_;
   }
 
   operator bool () const
@@ -91,17 +97,25 @@ private:
     }
     else if ( move.new_type_ > 0 )
     {
-      move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 5000;
+      move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 8000;
     }
 #ifdef USE_KILLER
     else if ( move == killer_ )
     {
-      move.score_ = 2000;
+      move.score_ = 4000;
+	  move.fkiller_ = 1;
     }
 #endif
     else
     {
-      move.score_ = history_[move.from_][move.to_].score_;
+	  const History & hist = history_[move.from_][move.to_];
+	  if ( hist.bad_count_ )
+		move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
+	  else
+		move.score_ = hist.score_;
+
+	  if ( move.score_ > history_max_ )
+		  history_max_ = move.score_;
     }
   }
 
@@ -113,6 +127,7 @@ private:
   int depth_;
   int ply_;
   Move moves_[Board::MovesMax];
+  int history_max_;
 };
 
 /// generate captures and promotions to queen only, don't detect checks
@@ -325,7 +340,32 @@ private:
     if ( rindex >= 0 && cg_ && cg_->find(move) )
       return;
 
-	  move.score_ = MovesGenerator::history_[move.from_][move.to_].score_;
+	const Field & ffield = board_.getField(move.from_);
+	THROW_IF( !ffield, "no figure on field we move from" );
+	if ( move.rindex_ >= 0 )
+	{
+		const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
+		move.score_ = Figure::figureWeight_[rfig.getType()] - Figure::figureWeight_[ffield.type()] + rfig.getType() + 10000;
+	}
+	else if ( move.new_type_ > 0 )
+	{
+		move.score_ = Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 8000;
+	}
+#ifdef USE_KILLER
+	else if ( move == killer_ )
+	{
+		move.score_ = 4000;
+		move.fkiller_ = 1;
+	}
+#endif
+	else
+	{
+		const History & hist = MovesGenerator::history_[move.from_][move.to_];
+		if ( hist.bad_count_ > 0 )
+			move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
+		else
+			move.score_ = hist.score_;
+	}
     ++m;
   }
 
@@ -335,6 +375,7 @@ private:
   CapsGenerator * cg_;
   Figure::Type minimalType_;
 
+  Move killer_;
   int numOfMoves_;
 
   Board & board_;
