@@ -43,6 +43,7 @@ int main(int argc, char * argv[])
 	ofstream ofs_log("log.txt");
 #endif
 
+  Board::ticks_ = 0;
   Thinking thk;
 
 #ifdef WRITE_LOG_FILE_
@@ -291,6 +292,7 @@ int main(int argc, char * argv[])
 	}
 
 #ifdef WRITE_LOG_FILE_
+  ofs_log << "   LMR-errors count = " << (int)Board::ticks_ << endl;
 #ifndef NDEBUG
   }
   catch ( const std::exception & e )

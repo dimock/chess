@@ -49,10 +49,10 @@ Player::Player() :
   depthMax_(2),
   depth_(0),
 #ifdef USE_HASH_TABLE_CAPTURE
-  chash_(16),
+  chash_(22),
 #endif
 #ifdef USE_HASH_TABLE_GENERAL
-  ghash_(16),
+  ghash_(22),
   use_pv_(false)
 #else
   use_pv_(true)
@@ -293,7 +293,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     ScoreType score = board_.evaluate();
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
     if ( delta > 0 )
-      return captures(depth, ply, alpha, betta, delta);
+      return captures(depth, ply, alpha, betta, delta, true);
   }
 #endif
 
@@ -572,7 +572,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       if ( haveCheck || (score > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
       {
         ScoreType betta1 = score < betta && !haveCheck ? score : betta;
-        score = -captures(depth-1, ply+1, -betta1, -alpha, delta);
+        score = -captures(depth-1, ply+1, -betta1, -alpha, delta, true);
       }
     }
     else
@@ -581,23 +581,30 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       if ( counter > 1 )
       {
         int R = 1;
+        static const int margin = Figure::positionGain_;
 
 #ifdef USE_LMR
-        if ( counter > 3 && depth > 3 &&
-             !null_move && !ext &&
+        if ( counter > 3 &&
+             depth > 4 &&
+             !null_move &&
+             !ext &&
+             alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
              hist.bad_count_ >= (hist.good_count_ << 1) &&
-             board_.canBeReduced(move) )
+             board_.canBeReduced(move) &&
+             (margin-(int)board_.evaluate() < alpha) /* score + margin < alpha*/  )
+        {
           R = 2;
+        }
 #endif
 
         score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, extension);
 
 #ifdef USE_LMR
 
-        //if ( score <= alpha && R > 1 && betta>alpha+1) // verify LMR
+        //if ( score <= alpha && R > 1 ) // verify LMR
         //{
         //  ScoreType score1 = -alphaBetta(depth-1, ply+1, -betta, -alpha, null_move, extension);
-        //  if ( score1 >= betta )
+        //  if ( score1 > alpha )
         //  {
         //    Board::ticks_++;
         //    Board::tcounter_ += hist.score_;
@@ -674,7 +681,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta)
+ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks)
 {
 	if ( stop_ || ply >= MaxPly )
 		return alpha;
@@ -755,7 +762,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     if ( hmove )
     {
       hmove.checkVerified_ = 0;
-      capture(depth, ply, alpha, betta, hmove, counter);
+      capture(depth, ply, alpha, betta, hmove, counter, do_checks && depth > 0);
   
       if ( alpha >= betta )
 	  {
@@ -774,7 +781,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( hmove && hmove.rindex_ >= 0 )
       {
         hmove.checkVerified_ = 0;
-        capture(depth, ply, alpha, betta, hmove, counter);
+        capture(depth, ply, alpha, betta, hmove, counter, do_checks && depth > 0);
 
         if ( alpha >= betta )
 		{
@@ -796,7 +803,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( killer && killer != hmove && killer.rindex_ >= 0 && board_.validMove(killer) &&
 	  board_.getFigure(Figure::otherColor(board_.getColor()), killer.rindex_).getType() >= minimalType)
   {
-	  capture(depth, ply, alpha, betta, killer, counter);
+	  capture(depth, ply, alpha, betta, killer, counter, do_checks && depth > 0);
 	  if ( alpha >= betta )
 		  return alpha;
   }
@@ -808,6 +815,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( board_.getState() == Board::UnderCheck )
   {
 	  EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+    if ( depth >= 0 || (depth >= -1 && (eg.count() == 1 || board_.getNumOfChecking() > 1)) )
+      do_checks = true;
 
 	  for ( ; !stop_ && alpha < betta ; )
 	  {
@@ -828,9 +837,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 			  )
 			  continue;
 
-		  THROW_IF( !board_.validMove(cap), "move validation failed" );
+		  THROW_IF( !board_.validMove(move), "move validation failed" );
 
-		  capture(depth, ply, alpha, betta, move, counter);
+		  capture(depth, ply, alpha, betta, move, counter, do_checks);
 	  }
 
     if ( !counter )
@@ -864,12 +873,12 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-      capture(depth, ply, alpha, betta, cap, counter);
+      capture(depth, ply, alpha, betta, cap, counter, do_checks && depth > 0);
     }
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( depth >= 0 && !stop_ && alpha < betta )
+    if ( do_checks && !stop_ && alpha < betta )
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
@@ -891,7 +900,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
-        capture(depth, ply, alpha, betta, check, counter);
+        capture(depth, ply, alpha, betta, check, counter, do_checks && depth > 0);
       }
     }
 #endif // PERFORM_CHECKS_IN_CAPTURES
@@ -909,7 +918,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 }
 
 //////////////////////////////////////////////////////////////////////////
-void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter)
+void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks)
 {
 	totalNodes_++;
 	nodesCount_++;
@@ -936,7 +945,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 			if ( haveCheck || (s > alpha && delta < Figure::figureWeight_[Figure::TypeQueen]) )
 			{
 				ScoreType betta1 = s < betta && !haveCheck ? s : betta;
-				s = -captures(depth-1, ply+1, -betta1, -alpha, delta);
+				s = -captures(depth-1, ply+1, -betta1, -alpha, delta, do_checks);
 			}
 		}
 		if ( !stop_ && s > alpha )
