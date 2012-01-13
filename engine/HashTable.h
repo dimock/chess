@@ -17,6 +17,10 @@ __declspec (align(16)) struct GeneralHItem
              flag_ : 2;
 
   PackedMove move_;
+
+#ifdef USE_HASH_MOVE_EX
+  PackedMove move_ex_[2];
+#endif
 };
 
 
@@ -139,8 +143,20 @@ public:
     hitem.flag_  = flag;
     hitem.ply_   = ply;
 
-    if ( Alpha != flag )
+    if ( Alpha != flag && move && move != hitem.move_ )
+	{
+#ifdef USE_HASH_MOVE_EX
+// save previously found movies
+	  if ( hitem.move_ex_[0] == move )
+		  hitem.move_ex_[0] = hitem.move_;
+	  else
+	  {
+		  hitem.move_ex_[1] = hitem.move_ex_[0];
+		  hitem.move_ex_[0] = hitem.move_;
+	  }
+#endif
       hitem.move_ = move;
+	}
   }
 };
 

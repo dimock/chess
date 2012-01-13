@@ -286,13 +286,13 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth <= 2 && depth >= 1 && ply > 1 )
+  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth <= 1 && depth >= 1 && ply > 1 )
   {
-    static const int margin = Figure::figureWeight_[Figure::TypeRook];
+//    static const int margin = Figure::figureWeight_[Figure::TypeRook];
     ScoreType score = board_.evaluate();
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-    const MoveCmd & prev = board_.getMoveRev(0);
-    if ( (1 == depth && delta > 0) || (ply > 2 && depth > 1 && delta > margin && prev.rindex_ < 0 && !prev.new_type_) )
+//    const MoveCmd & prev = board_.getMoveRev(0);
+    if ( (/*1 == depth &&*/ delta > 0) )//|| (ply > 2 && depth > 1 && delta > margin && prev.rindex_ < 0 && !prev.new_type_) )
       return captures(1, ply, alpha, betta, delta, true);
   }
 #endif
@@ -313,6 +313,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     {
       pv = contexts_[0].pv_[ply];
       pv.checkVerified_ = 0;
+
+	  if ( !board_.validMove(pv) )
+		  pv.clear();
 
       THROW_IF( pv.rindex_ == 100, "invalid pv move" );
     }
@@ -442,8 +445,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 #endif
 
-  // try move from hash and killer (only if we are not under check)
-  if ( board_.getState() != Board::UnderCheck && pv && board_.validMove(pv) )
+  // try move from hash (only if we are not under check)
+  if ( board_.getState() != Board::UnderCheck && pv )
     movement(depth, ply, alpha, betta, pv, counter, null_move, extension, 0);
 
   if ( alpha >= betta )
@@ -472,9 +475,37 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
+#ifdef USE_HASH_MOVE_EX
+	  Move hmove_ex[2];
+	  hmove_ex[0].clear();
+	  hmove_ex[1].clear();
+
+	  GeneralHItem & hitem = ghash_[board_.hashCode()];
+	  if ( hitem.hcode_ == board_.hashCode() )
+	  {
+		  for (int i = 0; i < 2; ++i)
+		  {
+			  hmove_ex[i] = board_.unpack(hitem.move_ex_[i]);
+			  if ( hmove_ex[i] && hmove_ex[i] != pv && (!i || hmove_ex[i] != hmove_ex[i-1]) )
+			  {
+				  ScoreType alpha_prev = alpha;
+				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move, extension, 0);
+				  if ( alpha >= betta )
+					  return alpha;
+			  }
+			  else
+				  hmove_ex[i].clear();
+		  }
+	  }
+#endif
+
 #ifdef USE_KILLER_ADV
     Move killer = contexts_[ply].killer_;
-    if ( killer && killer != pv && killer.rindex_ >= 0 && board_.validMove(killer) )
+    if ( killer && killer != pv &&
+#ifdef USE_HASH_MOVE_EX
+		killer != hmove_ex[0] && killer != hmove_ex[1] &&
+#endif
+		killer.rindex_ >= 0 && board_.validMove(killer) )
     {
       movement(depth, ply, alpha, betta, killer, counter, null_move, extension, 0);
       if ( alpha >= betta )
@@ -494,6 +525,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( move == pv 
 #ifdef USE_KILLER_ADV
         || move == killer
+#endif
+#ifdef USE_HASH_MOVE_EX
+		|| move == hmove_ex[0]
+	    || move == hmove_ex[1]
 #endif
         )
         continue;
@@ -585,13 +620,14 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_LMR
         if ( counter > 3 &&
+			depth_ > 6 &&
             depth > 4 &&
             !check_esc &&
             !null_move &&
             !ext &&
             !move.fkiller_ &&
             alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-            betta < Figure::WeightMat-MaxPly && // we are not in PV ???
+            (betta < Figure::WeightMat-MaxPly || depth_ > 8) && // we are not in PV ??? or we are already searching very deep
             ((hist.score_<<1) <= history_max) &&
             board_.canBeReduced(move) )
         {
