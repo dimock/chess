@@ -627,7 +627,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
             !ext &&
             !move.fkiller_ &&
             alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-            (betta < Figure::WeightMat-MaxPly || depth_ > 8) && // we are not in PV ??? or we are already searching very deep
+            (betta < Figure::WeightMat-MaxPly || depth_ >= 8) && // we are not in PV ??? or we are already searching very deep
             ((hist.score_<<1) <= history_max) &&
             board_.canBeReduced(move) )
         {
