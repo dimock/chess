@@ -286,13 +286,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth <= 1 && depth >= 1 && ply > 1 )
+  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth == 1 && ply > 1 )
   {
-//    static const int margin = Figure::figureWeight_[Figure::TypeRook];
     ScoreType score = board_.evaluate();
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-//    const MoveCmd & prev = board_.getMoveRev(0);
-    if ( (/*1 == depth &&*/ delta > 0) )//|| (ply > 2 && depth > 1 && delta > margin && prev.rindex_ < 0 && !prev.new_type_) )
+    if ( delta > 0 )
       return captures(1, ply, alpha, betta, delta, true);
   }
 #endif
@@ -620,14 +618,14 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_LMR
         if ( counter > 3 &&
-			depth_ > 6 &&
-            depth > 4 &&
+            depth_ > 6 &&
+            depth > 3 &&
             !check_esc &&
             !null_move &&
             !ext &&
             !move.fkiller_ &&
             alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-            (betta < Figure::WeightMat-MaxPly || depth_ >= 8) && // we are not in PV ??? or we are already searching very deep
+            (betta < Figure::WeightMat-MaxPly || depth_ >= 8) && // we are not in PV ??? or we are searching very deep
             ((hist.score_<<1) <= history_max) &&
             board_.canBeReduced(move) )
         {
