@@ -204,10 +204,19 @@ public:
   /// returns max number of repetitions found. it will be set to 0 after pawns move or capture
   uint8 repsCount() const { return repsCounter_; }
 
+  /// get i-th move from begin
   const MoveCmd & getMove(int i) const
   {
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
     return g_moves[i];
+  }
+
+  /// get i-th move from end
+  /// 0 means the last one
+  const MoveCmd & getMoveRev(int i) const
+  {
+    THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
+    return g_moves[halfmovesCounter_+i-1];
   }
 
   /// returns current move color
