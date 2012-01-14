@@ -617,17 +617,17 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if ( counter > 3 &&
-            depth_ > 6 &&
-            depth > 3 &&
-            !check_esc &&
-            !null_move &&
-            !ext &&
-            !move.fkiller_ &&
-            alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-            (betta < Figure::WeightMat-MaxPly || depth_ >= 8) && // we are not in PV ??? or we are searching very deep
-            ((hist.score_<<1) <= history_max) &&
-            board_.canBeReduced(move) )
+        if (  counter > 3 &&
+              depth_ >= 6 &&
+              depth > 3 &&
+              !check_esc &&
+              !null_move &&
+              !ext &&
+              !move.fkiller_ &&
+              alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
+              (betta < Figure::WeightMat-MaxPly || depth_ >= 7) && // we are not in PV ??? or we are searching very deep
+              ((hist.score_<<1) <= history_max) &&
+              board_.canBeReduced(move) )
         {
           R = 2;
         }

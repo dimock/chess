@@ -36,6 +36,11 @@ private:
 
   static DWORD WINAPI analyze_proc(void *);
 
+  bool is_analyzing() const
+  {
+    return analyze_thread_ != INVALID_HANDLE_VALUE;
+  }
+
   void performAnalyze();
   void updateTiming();
 	void setFigure(xCmd & cmd);

@@ -17,7 +17,7 @@ Thinking::~Thinking()
 
 void Thinking::setPost(bool p)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   post_ = p;
@@ -25,7 +25,7 @@ void Thinking::setPost(bool p)
 
 void Thinking::setDepth(int depth)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   xtimeMS_ = 0;
@@ -40,7 +40,7 @@ void Thinking::setDepth(int depth)
 
 void Thinking::setTimePerMove(int ms)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   maxDepth_ = -1;
@@ -55,7 +55,7 @@ void Thinking::setTimePerMove(int ms)
 
 void Thinking::setXtime(int ms)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   maxDepth_ = -1;
@@ -68,7 +68,7 @@ void Thinking::setXtime(int ms)
 
 void Thinking::setMovesLeft(int mleft)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   maxDepth_ = -1;
@@ -83,7 +83,7 @@ void Thinking::enableBook(int v)
 
 void Thinking::undo()
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   Board & board = player_.getBoard();
@@ -93,7 +93,7 @@ void Thinking::undo()
 
 void Thinking::setMemory(int mb)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   player_.setMemory(mb);
@@ -101,6 +101,9 @@ void Thinking::setMemory(int mb)
 
 bool Thinking::init()
 {
+  if ( is_analyzing() )
+    return false;
+
   return player_.fromFEN(0);
 }
 
@@ -126,7 +129,7 @@ void Thinking::performAnalyze()
 
 void Thinking::analyze()
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   DWORD threadID;
@@ -147,7 +150,7 @@ void Thinking::stop()
 
 bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return false;
 
   updateTiming();
@@ -181,7 +184,7 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 
 bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return false;
 
 	if ( moveCmd.type() != xCmd::xMove )
@@ -216,7 +219,7 @@ bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 
 void Thinking::save()
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
 	ofstream ofs("game_001.pgn");
@@ -226,7 +229,7 @@ void Thinking::save()
 
 void Thinking::fen2file(const char * fname)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   if ( !fname )
@@ -241,7 +244,7 @@ void Thinking::fen2file(const char * fname)
 //////////////////////////////////////////////////////////////////////////
 bool Thinking::fromFEN(xCmd & cmd)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return false;
 
   if ( !cmd.paramsNum() )
@@ -260,7 +263,7 @@ bool Thinking::fromFEN(xCmd & cmd)
 //////////////////////////////////////////////////////////////////////////
 void Thinking::editCmd(xCmd & cmd)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
 	switch ( cmd.type() )
@@ -290,7 +293,7 @@ void Thinking::editCmd(xCmd & cmd)
 
 void Thinking::setFigure(xCmd & cmd)
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
 	if ( !cmd.str() || strlen(cmd.str()) < 3 )
@@ -361,7 +364,7 @@ void Thinking::setFigure(xCmd & cmd)
 //////////////////////////////////////////////////////////////////////////
 void Thinking::updateTiming()
 {
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  if ( is_analyzing() )
     return;
 
   if ( maxDepth_ > 0 )
