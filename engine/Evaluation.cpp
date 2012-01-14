@@ -273,8 +273,8 @@ ScoreType Board::expressEval() const
   else
   {
 	  score = fmgr_.weight();
-	  score -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
-	  score += fmgr_.eval(Figure::ColorWhite, stages_[1]);
+	  //score -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
+	  //score += fmgr_.eval(Figure::ColorWhite, stages_[1]);
   }
 
   if ( Figure::ColorBlack  == color_ )

@@ -252,7 +252,9 @@ void Player::testTimer()
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() || (ply < 1) || (depth < 2) || (depth_ < 3) || betta >= Figure::WeightMat-MaxPly )
+  if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() ||
+    /*(ply < 1) || */(depth < 2) || (depth_ < 3) /*|| betta >= Figure::WeightMat-MaxPly*/ ||
+    alpha <= -Figure::WeightMat+MaxPly )
     return alpha;
 
 #ifndef NDEBUG
@@ -286,11 +288,13 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth == 1 && ply > 1 )
+  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly &&
+    depth >= 1 && depth <= 4 && ply > 3 )
   {
-    ScoreType score = board_.evaluate();
-    int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-    if ( delta > 0 )
+    static const int margin[] = {0, 100, 200, 400, 600};
+    ScoreType score = board_.expressEval();
+    int delta = (int)alpha - (int)score;// - (int)Figure::positionGain_;
+    if ( delta > margin[depth] )
       return captures(1, ply, alpha, betta, delta, true);
   }
 #endif
@@ -438,6 +442,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         depth = depth1;
       if ( depth < 1 )
         depth = 1;
+
+#ifdef USE_FUTILITY_PRUNING
+      if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth == 1 && ply > 1 )
+      {
+        ScoreType score = board_.evaluate();
+        int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+        if ( delta > 0 )
+          return captures(1, ply, alpha, betta, delta, true);
+      }
+#endif
+
       null_move = true;
     }
   }
@@ -617,15 +632,15 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if (  counter > 3 &&
+        if (  /*counter > 3 &&*/
               depth_ >= 6 &&
               depth > 3 &&
-              !check_esc &&
+              //!check_esc &&
               !null_move &&
               !ext &&
               !move.fkiller_ &&
               alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-              (betta < Figure::WeightMat-MaxPly || depth_ >= 7) && // we are not in PV ??? or we are searching very deep
+              //(betta < Figure::WeightMat-MaxPly || depth_ >= 7) && // we are not in PV ??? or we are searching very deep
               ((hist.score_<<1) <= history_max) &&
               board_.canBeReduced(move) )
         {
