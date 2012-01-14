@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Player.h"
-//#include <windows.h>
 #include "xcommands.h"
+#include <Windows.h>
 
 class Thinking
 {
@@ -18,6 +18,7 @@ public:
   void setTimePerMove(int ms);
   void setXtime(int ms);
   void setMovesLeft(int mleft);
+  void setPost(bool);
 	void undo();
 
 	void save();
@@ -28,9 +29,14 @@ public:
 
 	bool move(xCmd & moveCmd, Board::State & state, bool & white);
 	bool reply(char (&)[256], Board::State & state, bool & white);
+  void analyze();
+  void stop();
 
 private:
 
+  static DWORD WINAPI analyze_proc(void *);
+
+  void performAnalyze();
   void updateTiming();
 	void setFigure(xCmd & cmd);
 
@@ -40,4 +46,6 @@ private:
   int xtimeMS_;
   int maxDepth_;
   int timePerMoveMS_;
+  bool post_;
+  HANDLE analyze_thread_;
 };

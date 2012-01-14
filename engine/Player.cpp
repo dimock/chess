@@ -41,21 +41,21 @@ SearchResult::SearchResult() :
 }
 
 Player::Player() :
-    stop_(false),
-    timeLimitMS_(0),
-    tstart_(0),
-    nodesCount_(0),
-    totalNodes_(0),
-    depthMax_(2),
-    depth_(0),
+  stop_(false),
+  timeLimitMS_(0),
+  tstart_(0),
+  nodesCount_(0),
+  totalNodes_(0),
+  depthMax_(2),
+  depth_(0),
 #ifdef USE_HASH_TABLE_CAPTURE
-    chash_(22),
+  chash_(22),
 #endif
 #ifdef USE_HASH_TABLE_GENERAL
-    ghash_(22),
-    use_pv_(false)
+  ghash_(22),
+  use_pv_(false)
 #else
-    use_pv_(true)
+  use_pv_(true)
 #endif
 {
   g_moves = new MoveCmd[Board::GameLength];

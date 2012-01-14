@@ -1,13 +1,13 @@
 #include "Thinking.h"
 #include <iostream>
 #include <fstream>
-//#include "qpf_timer.h"
 
 using namespace std;
 
 Thinking::Thinking() :
 	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
-  xtimeMS_(0), movesLeft_(0), timePerMoveMS_(0), maxDepth_(-1)
+  xtimeMS_(0), movesLeft_(0), timePerMoveMS_(0), maxDepth_(-1),
+  post_(false), analyze_thread_(INVALID_HANDLE_VALUE)
 {
 }
 
@@ -15,8 +15,19 @@ Thinking::~Thinking()
 {
 }
 
+void Thinking::setPost(bool p)
+{
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
+  post_ = p;
+}
+
 void Thinking::setDepth(int depth)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   xtimeMS_ = 0;
   movesLeft_ = 0;
   timePerMoveMS_ = -1;
@@ -29,18 +40,24 @@ void Thinking::setDepth(int depth)
 
 void Thinking::setTimePerMove(int ms)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   maxDepth_ = -1;
   xtimeMS_ = 0;
   movesLeft_ = 0;
   timePerMoveMS_ = ms;
   if ( timePerMoveMS_ < 100 )
     timePerMoveMS_ = 100;
-  player_.setTimeLimit(ms);
+  player_.setTimeLimit(timePerMoveMS_);
   player_.setMaxDepth(16);
 }
 
 void Thinking::setXtime(int ms)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   maxDepth_ = -1;
   xtimeMS_ = ms;
   if ( xtimeMS_ < 100 )
@@ -51,6 +68,9 @@ void Thinking::setXtime(int ms)
 
 void Thinking::setMovesLeft(int mleft)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   maxDepth_ = -1;
   movesLeft_ = mleft;
   timePerMoveMS_ = -1;
@@ -63,6 +83,9 @@ void Thinking::enableBook(int v)
 
 void Thinking::undo()
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   Board & board = player_.getBoard();
   if ( board.halfmovesCount() > 0 )
     board.unmakeMove();
@@ -70,6 +93,9 @@ void Thinking::undo()
 
 void Thinking::setMemory(int mb)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   player_.setMemory(mb);
 }
 
@@ -78,8 +104,52 @@ bool Thinking::init()
   return player_.fromFEN(0);
 }
 
+DWORD WINAPI Thinking::analyze_proc(void * p)
+{
+  if ( p )
+    ((Thinking*)p)->performAnalyze();
+
+  return 0;
+}
+
+void Thinking::performAnalyze()
+{
+  player_.setTimeLimit(0);
+  player_.setMaxDepth(32);
+
+  SearchResult sres;
+  player_.findMove(sres, post_ ? &cout : 0);
+
+  player_.setTimeLimit(timePerMoveMS_);
+  player_.setMaxDepth(maxDepth_ < 0 ? 16 : maxDepth_);
+}
+
+void Thinking::analyze()
+{
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
+  DWORD threadID;
+  analyze_thread_ = CreateThread(0, 0, &Thinking::analyze_proc, this, 0, &threadID);
+}
+
+void Thinking::stop()
+{
+  player_.pleaseStop();
+
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+  {
+    WaitForSingleObject(analyze_thread_, INFINITE);
+    CloseHandle(analyze_thread_);
+  }
+  analyze_thread_ = INVALID_HANDLE_VALUE;
+}
+
 bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return false;
+
   updateTiming();
 
   Board & board = player_.getBoard();
@@ -90,7 +160,7 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
     return true;
 
 	SearchResult sres;
-  if ( player_.findMove(sres, &cout) )
+  if ( player_.findMove(sres, post_ ? &cout : 0) )
   {
     if ( board.makeMove(sres.best_) )
       board.verifyState();
@@ -111,6 +181,9 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 
 bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return false;
+
 	if ( moveCmd.type() != xCmd::xMove )
 		return false;
 
@@ -143,6 +216,9 @@ bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 
 void Thinking::save()
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
 	ofstream ofs("game_001.pgn");
   const Board & board = player_.getBoard();
   bool res = Board::save(board, ofs);
@@ -150,6 +226,9 @@ void Thinking::save()
 
 void Thinking::fen2file(const char * fname)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   if ( !fname )
     return;
 
@@ -162,6 +241,9 @@ void Thinking::fen2file(const char * fname)
 //////////////////////////////////////////////////////////////////////////
 bool Thinking::fromFEN(xCmd & cmd)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return false;
+
   if ( !cmd.paramsNum() )
     return false;
 
@@ -178,6 +260,9 @@ bool Thinking::fromFEN(xCmd & cmd)
 //////////////////////////////////////////////////////////////////////////
 void Thinking::editCmd(xCmd & cmd)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
 	switch ( cmd.type() )
 	{
 	case xCmd::xEdit:
@@ -205,6 +290,9 @@ void Thinking::editCmd(xCmd & cmd)
 
 void Thinking::setFigure(xCmd & cmd)
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
 	if ( !cmd.str() || strlen(cmd.str()) < 3 )
 		return;
 
@@ -273,6 +361,9 @@ void Thinking::setFigure(xCmd & cmd)
 //////////////////////////////////////////////////////////////////////////
 void Thinking::updateTiming()
 {
+  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
+    return;
+
   if ( maxDepth_ > 0 )
   {
     player_.setTimeLimit(-1);
