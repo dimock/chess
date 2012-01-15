@@ -4,6 +4,8 @@
 
 using namespace std;
 
+#define DEPTH_MAXIMUM 20
+
 Thinking::Thinking() :
 	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
   xtimeMS_(0), movesLeft_(0), timePerMoveMS_(0), maxDepth_(-1),
@@ -50,7 +52,7 @@ void Thinking::setTimePerMove(int ms)
   if ( timePerMoveMS_ < 100 )
     timePerMoveMS_ = 100;
   player_.setTimeLimit(timePerMoveMS_);
-  player_.setMaxDepth(16);
+  player_.setMaxDepth(DEPTH_MAXIMUM);
 }
 
 void Thinking::setXtime(int ms)
@@ -63,7 +65,7 @@ void Thinking::setXtime(int ms)
   if ( xtimeMS_ < 100 )
     xtimeMS_ = 100;
   timePerMoveMS_ = -1;
-  player_.setMaxDepth(16);
+  player_.setMaxDepth(DEPTH_MAXIMUM);
 }
 
 void Thinking::setMovesLeft(int mleft)
@@ -74,7 +76,7 @@ void Thinking::setMovesLeft(int mleft)
   maxDepth_ = -1;
   movesLeft_ = mleft;
   timePerMoveMS_ = -1;
-  player_.setMaxDepth(16);
+  player_.setMaxDepth(DEPTH_MAXIMUM);
 }
 
 void Thinking::enableBook(int v)
@@ -124,7 +126,7 @@ void Thinking::performAnalyze()
   player_.findMove(sres, post_ ? &cout : 0);
 
   player_.setTimeLimit(timePerMoveMS_);
-  player_.setMaxDepth(maxDepth_ < 0 ? 16 : maxDepth_);
+  player_.setMaxDepth(maxDepth_ < 0 ? DEPTH_MAXIMUM : maxDepth_);
 }
 
 void Thinking::analyze()
