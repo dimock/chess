@@ -7,7 +7,7 @@
 History MovesGenerator::history_[64][64];
 int History::history_max_;
 
-MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension) :
+MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), history_max_(0)
 {
 #ifdef USE_KILLER
@@ -17,7 +17,7 @@ MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * playe
 #endif
     killer_.clear();
 
-  numOfMoves_ = generate(alpha, betta, counter, null_move, extension);
+  numOfMoves_ = generate(alpha, betta, counter);
   moves_[numOfMoves_].clear();
 }
 
@@ -27,7 +27,7 @@ MovesGenerator::MovesGenerator(Board & board) :
   killer_.clear();
   ScoreType alpha = 0, betta = 0;
   int counter = 0;
-  numOfMoves_ = generate(alpha, betta, counter, false, false);
+  numOfMoves_ = generate(alpha, betta, counter);
   moves_[numOfMoves_].clear();
 }
 
@@ -51,7 +51,7 @@ bool MovesGenerator::find(const Move & m) const
   return false;
 }
 //////////////////////////////////////////////////////////////////////////
-int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool extension)
+int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 {
   int m = 0;
   Figure::Color & color = board_.color_;
@@ -121,20 +121,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
               rindex = field.index();
             }
 
-#ifdef GO_IMMEDIATELY
-            if ( player_ && rindex >= 0 && field.type() > fig.getType() )
-            {
-              Move move;
-              move.set(fig.where(), p, rindex, 0, 0);
-
-              if ( movement(alpha, betta, move, counter, null_move, extension) )
-                return m;
-            }
-            else
-#endif
-            {
-              add_move(m, fig.where(), p, rindex, 0);
-            }
+            add_move(m, fig.where(), p, rindex, 0);
           }
         }
       }
@@ -155,20 +142,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
             rindex = field.index();
           }
 
-#ifdef GO_IMMEDIATELY
-          if ( player_ && rindex >= 0 && field.type() > fig.getType() )
-          {
-            Move move;
-            move.set(fig.where(), *table, rindex, 0, 0);
-
-            if ( movement(alpha, betta, move, counter, null_move, extension) )
-              return m;
-          }
-          else
-#endif
-          {
-            add_move(m, fig.where(), *table, rindex, 0);
-          }
+          add_move(m, fig.where(), *table, rindex, 0);
         }
       }
       break;
@@ -203,76 +177,14 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
 
           bool promotion = *table > 55 || *table < 8;
 
-#ifdef GO_IMMEDIATELY
-          if ( player_ && rfig.getType() > Figure::TypePawn )
+          Move & move = moves_[m++];
+          move.alreadyDone_ = 0;
+          move.set(fig.where(), *table, rfig.getIndex(), 0, 0);
+          calculateWeight(move);
+
+          if ( promotion )
           {
-            Move move;
-            move.set(fig.where(), *table, rfig.getIndex(), 0, 0);
-
-            if ( promotion )
-              move.new_type_ = Figure::TypeQueen;
-
-            if ( movement(alpha, betta, move, counter, null_move, extension) )
-              return m;
-
-            if ( promotion )
-            {
-              move.alreadyDone_ = 0;
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeRook;
-              calculateWeight(moves_[m++]);
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeBishop;
-              calculateWeight(moves_[m++]);
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeKnight;
-              calculateWeight(moves_[m++]);
-            }
-          }
-          else
-#endif
-          {
-            Move & move = moves_[m++];
-            move.alreadyDone_ = 0;
-            move.set(fig.where(), *table, rfig.getIndex(), 0, 0);
-            calculateWeight(move);
-
-            if ( promotion )
-            {
-              move.new_type_ = Figure::TypeQueen;
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeRook;
-              calculateWeight(moves_[m++]);
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeBishop;
-              calculateWeight(moves_[m++]);
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeKnight;
-              calculateWeight(moves_[m++]);
-            }
-          }
-        }
-
-        for (; *table >= 0 && !board_.getField(*table); ++table)
-        {
-          bool promotion = *table > 55 || *table < 8;
-
-#ifdef GO_IMMEDIATELY
-          if ( player_ && promotion )
-          {
-            Move move;
-            move.set(fig.where(), *table, -1, Figure::TypeQueen, 0);
-
-            if ( movement(alpha, betta, move, counter, null_move, extension) )
-              return m;
-
-            move.alreadyDone_ = 0;
+            move.new_type_ = Figure::TypeQueen;
 
             moves_[m] = move;
             moves_[m].new_type_ = Figure::TypeRook;
@@ -286,31 +198,33 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
             moves_[m].new_type_ = Figure::TypeKnight;
             calculateWeight(moves_[m++]);
           }
-          else
-#endif
+        }
+
+        for (; *table >= 0 && !board_.getField(*table); ++table)
+        {
+          bool promotion = *table > 55 || *table < 8;
+
+          Move & move = moves_[m++];
+
+          move.alreadyDone_ = 0;
+          move.set(fig.where(), *table, -1, 0, 0);
+          calculateWeight(move);
+
+          if ( promotion )
           {
-            Move & move = moves_[m++];
+            move.new_type_ = Figure::TypeQueen;
 
-            move.alreadyDone_ = 0;
-            move.set(fig.where(), *table, -1, 0, 0);
-            calculateWeight(move);
+            moves_[m] = move;
+            moves_[m].new_type_ = Figure::TypeRook;
+            calculateWeight(moves_[m++]);
 
-            if ( promotion )
-            {
-              move.new_type_ = Figure::TypeQueen;
+            moves_[m] = move;
+            moves_[m].new_type_ = Figure::TypeBishop;
+            calculateWeight(moves_[m++]);
 
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeRook;
-              calculateWeight(moves_[m++]);
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeBishop;
-              calculateWeight(moves_[m++]);
-
-              moves_[m] = move;
-              moves_[m].new_type_ = Figure::TypeKnight;
-              calculateWeight(moves_[m++]);
-            }
+            moves_[m] = move;
+            moves_[m].new_type_ = Figure::TypeKnight;
+            calculateWeight(moves_[m++]);
           }
         }
       }
@@ -324,15 +238,6 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter, 
 
   return m;
 }
-
-bool MovesGenerator::movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension)
-{
-  THROW_IF( !player_, "no player to make movement" );
-
-  player_->movement(depth_, ply_, alpha, betta, move, counter, null_move, extension, 0);
-  return alpha >= betta;
-}
-//////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
 EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :

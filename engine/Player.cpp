@@ -196,7 +196,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, false);
+    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false);
 
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
@@ -252,7 +252,9 @@ void Player::testTimer()
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() || (ply < 1) || (depth < 2) || (depth_ < 3) || betta >= Figure::WeightMat-MaxPly )
+  if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() ||
+       (ply < 1) || (depth < 2) || (depth_ < 3) || betta >= Figure::WeightMat-MaxPly ||
+        alpha <= -Figure::WeightMat+MaxPly )
     return alpha;
 
 #ifndef NDEBUG
@@ -269,7 +271,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
   if ( depth < 1 )
     depth = 1;
 
-  ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */, false /* extension */);
+  ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */);
 
   board_.unmakeNullMove(move);
 
@@ -279,22 +281,10 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, bool extension)
+ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move)
 {
   if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
     return alpha;
-
-
-#ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly && depth == 1 && ply > 1 )
-  {
-    ScoreType score = board_.evaluate();
-    int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
-    if ( delta > 0 )
-      return captures(1, ply, alpha, betta, delta, true);
-  }
-#endif
-
 
   int counter = 0;
 
@@ -438,14 +428,26 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         depth = depth1;
       if ( depth < 1 )
         depth = 1;
+
       null_move = true;
     }
   }
 #endif
 
+#ifdef USE_FUTILITY_PRUNING
+  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly &&
+       depth == 1 && ply > 1 )
+  {
+    ScoreType score = board_.evaluate();
+    int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
+    if ( delta > 0 )
+      return captures(1, ply, alpha, betta, delta, true);
+  }
+#endif
+
   // try move from hash (only if we are not under check)
   if ( board_.getState() != Board::UnderCheck && pv )
-    movement(depth, ply, alpha, betta, pv, counter, null_move, extension, 0);
+    movement(depth, ply, alpha, betta, pv, counter, null_move, 0);
 
   if ( alpha >= betta )
   {
@@ -468,7 +470,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      movement(depth, ply, alpha, betta, move, counter, null_move, extension, 0);
+      movement(depth, ply, alpha, betta, move, counter, null_move, 0);
     }
   }
   else
@@ -487,7 +489,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 			  if ( hmove_ex[i] && hmove_ex[i] != pv && (!i || hmove_ex[i] != hmove_ex[i-1]) )
 			  {
 				  ScoreType alpha_prev = alpha;
-				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move, extension, 0);
+				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move, 0);
 				  if ( alpha >= betta )
 					  return alpha;
 			  }
@@ -505,7 +507,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 		killer.rindex_ >= 0 && board_.validMove(killer) )
     {
-      movement(depth, ply, alpha, betta, killer, counter, null_move, extension, 0);
+      movement(depth, ply, alpha, betta, killer, counter, null_move, 0);
       if ( alpha >= betta )
         return alpha;
     }
@@ -513,7 +515,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       killer.clear();
 #endif
 
-    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, null_move, extension);
+    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta ; )
     {
       const Move & move = mg.move();
@@ -537,7 +539,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
 
-      movement(depth, ply, alpha, betta, move, counter, null_move, extension, mg.hist_max());
+      movement(depth, ply, alpha, betta, move, counter, null_move, mg.hist_max());
     }
   }
 
@@ -550,6 +552,19 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     ScoreType s = board_.evaluate();
     if ( Board::ChessMat == board_.getState() )
       s += ply;
+
+#ifdef USE_HASH_TABLE_GENERAL
+    GeneralHashTable::Flag flag;
+    if ( s <= savedAlpha )
+      flag = GeneralHashTable::Alpha;
+    else if ( s >= betta )
+      flag = GeneralHashTable::Betta;
+    else
+      flag = GeneralHashTable::AlphaBetta;
+
+    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
+#endif
+
     return s;
   }
 
@@ -570,7 +585,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
-void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension, int history_max)
+void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max)
 {
   totalNodes_++;
   nodesCount_++;
@@ -591,7 +606,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
       alpha < Figure::WeightMat-MaxPly )
     {
-      ext = extension = true;
+      ext = true;
       depth++;
     }
 
@@ -618,14 +633,12 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_LMR
         if (  counter > 3 &&
-              depth_ >= 6 &&
+              depth_ >= 5 &&
               depth > 3 &&
               !check_esc &&
               !null_move &&
               !ext &&
-              !move.fkiller_ &&
               alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-              (betta < Figure::WeightMat-MaxPly || depth_ >= 7) && // we are not in PV ??? or we are searching very deep
               ((hist.score_<<1) <= history_max) &&
               board_.canBeReduced(move) )
         {
@@ -633,13 +646,13 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         }
 #endif
 
-        score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, extension);
+        score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move);
 
 #ifdef USE_LMR
 
         //if ( score <= alpha && R > 1 ) // verify LMR
         //{
-        //  ScoreType score1 = -alphaBetta(depth-1, ply+1, -betta, -alpha, null_move, extension);
+        //  ScoreType score1 = -alphaBetta(depth-1, ply+1, -betta, -alpha, null_move);
         //  if ( score1 > alpha )
         //  {
         //    Board::ticks_++;
@@ -648,12 +661,12 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         //}
 
         if ( score > alpha && R > 1 ) // was LMR
-          score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, extension);
+          score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move);
 #endif
       }
       if ( counter < 2  || (score > alpha && score < betta) )
 #endif
-        score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move, extension);
+        score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move);
     }
 
     if ( !stop_ )

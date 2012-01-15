@@ -30,7 +30,7 @@ class MovesGenerator
 
 public:
 
-  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
+  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter);
   MovesGenerator(Board & );
 
   static inline History & history(int8 from, int8 to)
@@ -76,8 +76,7 @@ public:
 private:
 
   /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter, bool null_move, bool reduction);
-  bool movement(ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool reduction);
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
   inline void MovesGenerator::add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
@@ -113,7 +112,7 @@ private:
     else if ( move == killer_ )
     {
       move.score_ = 400000;
-	  move.fkiller_ = 1;
+	    move.fkiller_ = 1;
     }
 #endif
   }
