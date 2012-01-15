@@ -88,18 +88,18 @@ public:
       return false;
 
     // don't allow reduction of pawn's movement to pre-last line or pawn's attack
-    //const Field & fto = getField(move.to_);
-    //if ( fto.type() == Figure::TypePawn )
-    //{
-    //  int8 y = move.to_ >> 3;
-    //  if ( 1 == y || 6 == y )
-    //    return false;
+    const Field & fto = getField(move.to_);
+    if ( fto.type() == Figure::TypePawn )
+    {
+      int8 y = move.to_ >> 3;
+      if ( 1 == y || 6 == y )
+        return false;
 
-    //  const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
-    //  const uint64 & o_mask = fmgr_.mask(color_);
-    //  if ( p_caps & o_mask )
-    //    return false;
-    //}
+      const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
+      const uint64 & o_mask = fmgr_.mask(color_);
+      if ( p_caps & o_mask )
+        return false;
+    }
 
     //// don't reduce knight's attack
     //if ( fto.type() == Figure::TypeKnight )

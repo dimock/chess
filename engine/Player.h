@@ -97,7 +97,7 @@ private:
   void printPV(Board & pv_board, SearchResult & sres, std::ostream * out);
 
   ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
-  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, bool extension);
+  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
   ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks);
 
   void testTimer();
@@ -137,7 +137,7 @@ private:
 
 
   //////////////////////////////////////////////////////////////////////////
-  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, bool extension, int history_max);
+  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max);
   void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks);
   
   void assemblePV(const Move & move, int ply)
