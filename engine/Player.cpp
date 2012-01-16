@@ -346,36 +346,39 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
           Board board0 = board_;
 #endif
 
-          bool retBetta = false;
+          bool retBetta = pv.rindex_ >= 0;
 
-          if ( board_.makeMove(pv) )
+          if ( !retBetta )
           {
-            if ( board_.drawState() )
+            if ( board_.makeMove(pv) )
             {
-              if ( 0 >= betta )
+              if ( board_.drawState() )
+              {
+                if ( 0 >= betta )
+                  retBetta = true;
+              }
+              else if ( board_.repsCount() < 2 )
+              {
                 retBetta = true;
+              }
             }
-            else if ( board_.repsCount() < 2 )
-            {
-              assemblePV(pv, ply);
-              retBetta = true;
-            }
+
+#ifndef NDEBUG
+            board_.verifyMasks();
+#endif
+
+            board_.unmakeMove();
+
+            THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
+
+#ifndef NDEBUG
+            board_.verifyMasks();
+#endif
           }
-
-#ifndef NDEBUG
-          board_.verifyMasks();
-#endif
-
-          board_.unmakeMove();
-
-          THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-
-#ifndef NDEBUG
-          board_.verifyMasks();
-#endif
 
           if ( retBetta )
           {
+            assemblePV(pv, ply);
             return betta;
           }
         }
@@ -383,7 +386,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       }
     }
 
-#ifdef USE_HASH_TABLE_ADV
+#if (defined USE_HASH_TABLE_ADV) && (defined USE_HASH_TABLE_CAPTURE)
     // if we haven't found pv in general hash, lets try captures hash
     if ( !pv )
     {
@@ -638,8 +641,8 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
               !check_esc &&
               !null_move &&
               !ext &&
-              alpha > -Figure::WeightMat+MaxPly && // there is no MAT in current branch
-              ((hist.score_<<1) <= history_max) &&
+              alpha > -Figure::WeightMat+MaxPly &&
+              ((hist.good_count_<<1) <= hist.bad_count_) &&
               board_.canBeReduced(move) )
         {
           R = 2;
@@ -776,32 +779,35 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       Board board0 = board_;
 #endif
 
-      bool retBetta = false;
+      bool retBetta = hmove.rindex_ >= 0;
 
-      if ( board_.makeMove(hmove) )
+      if ( !retBetta )
       {
-        if ( board_.drawState() )
+        if ( board_.makeMove(hmove) )
         {
-          if ( 0 >= betta )
+          if ( board_.drawState() )
+          {
+            if ( 0 >= betta )
+              retBetta = true;
+          }
+          else
+          {
             retBetta = true;
+          }
         }
-        else
-        {
-          retBetta = true;
-        }
+
+#ifndef NDEBUG
+        board_.verifyMasks();
+#endif
+
+        board_.unmakeMove();
+
+        THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
+
+#ifndef NDEBUG
+        board_.verifyMasks();
+#endif
       }
-
-#ifndef NDEBUG
-      board_.verifyMasks();
-#endif
-
-      board_.unmakeMove();
-
-      THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-
-#ifndef NDEBUG
-      board_.verifyMasks();
-#endif
 
       if ( retBetta )
       {
@@ -1012,7 +1018,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
       History & hist = MovesGenerator::history(cap.from_, cap.to_);
       if ( cap.rindex_ < 0 && !cap.new_type_ )
       {
-        hist.score_ ++;//= depth;
+        hist.score_++;
         if ( hist.score_ > History::history_max_ )
           History::history_max_ = hist.score_;
       }

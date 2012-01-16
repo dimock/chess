@@ -122,12 +122,10 @@ public:
 
   inline bool allowNullMove() const
   {
-    //Figure::Color ocolor = Figure::otherColor(color_);
     if ( fmgr_.knights(color_)+fmgr_.bishops(color_)+fmgr_.rooks(color_)+fmgr_.queens(color_) == 0 || !can_win_[0] || !can_win_[1] )
       return false;
 
-    bool ok = fmgr_.weight(color_) > Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeBishop]; //+Figure::figureWeight_[Figure::TypeKnight] ||
-              //fmgr_.weight(ocolor) >= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight];
+    bool ok = fmgr_.weight(color_) >= Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeKnight];
 
     return ok;
   }

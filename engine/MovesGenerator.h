@@ -90,14 +90,14 @@ private:
     const Field & ffield = board_.getField(move.from_);
     THROW_IF( !ffield, "no figure on field we move from" );
 
-	const History & hist = history_[move.from_][move.to_];
-	if ( hist.bad_count_ )
-		move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
-	else
-		move.score_ = hist.score_;
+    const History & hist = history_[move.from_][move.to_];
+    if ( hist.bad_count_ )
+      move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
+    else
+      move.score_ = hist.score_;
 
-	if ( move.score_ > history_max_ )
-		history_max_ = move.score_;
+    if ( move.score_ > history_max_ )
+      history_max_ = move.score_;
 
     if ( move.rindex_ >= 0 )
     {
@@ -112,7 +112,7 @@ private:
     else if ( move == killer_ )
     {
       move.score_ = 400000;
-	    move.fkiller_ = 1;
+      move.fkiller_ = 1;
     }
 #endif
   }
@@ -345,11 +345,24 @@ private:
     if ( rindex >= 0 && cg_ && cg_->find(move) )
       return;
 
-	const History & hist = MovesGenerator::history(move.from_, move.to_);
-	if ( hist.bad_count_ > 0 )
-		move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
-	else
-		move.score_ = hist.score_;
+	  const History & hist = MovesGenerator::history(move.from_, move.to_);
+	  if ( hist.bad_count_ > 0 )
+		  move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
+	  else
+		  move.score_ = hist.score_;
+
+    if ( move.rindex_ >= 0 )
+    {
+      const Field & ffield = board_.getField(move.from_);
+      THROW_IF( !ffield, "no figure on field we move from" );
+      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
+      move.score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4) + 1000000;
+    }
+    else if ( move.new_type_ > 0 )
+    {
+      move.score_ = (int)Figure::figureWeight_[move.new_type_] - (int)Figure::figureWeight_[Figure::TypePawn] + 800000;
+    }
+
     ++m;
   }
 
