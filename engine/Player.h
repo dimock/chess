@@ -16,6 +16,7 @@ public:
   int forcedNodes_;
   int additionalNodes_;
   int nullMovesCount_;
+  int plyMax_;
   clock_t dt_;
 
   /// result
@@ -107,7 +108,7 @@ private:
   int timeLimitMS_;
   int depthMax_;
   int depth_;
-  int nodesCount_, totalNodes_;
+  int nodesCount_, totalNodes_, plyMax_;
   bool firstIter_;
   clock_t tstart_, tprev_;
   Move before_, best_;

@@ -66,7 +66,7 @@ typedef int16 ScoreType;
 
 
 
-enum { MaxPly = 40 };
+enum { MaxPly = 48 };
 
 #ifndef _M_X64
 class QpfTimer

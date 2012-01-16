@@ -48,6 +48,7 @@ Player::Player() :
   totalNodes_(0),
   depthMax_(2),
   depth_(0),
+  plyMax_(0),
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_(22),
 #endif
@@ -192,6 +193,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     best_.clear();
     beforeFound_ = false;
     nodesCount_ = 0;
+	plyMax_ = 0;
 
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
@@ -209,6 +211,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
       sres.depth_ = depth_;
       sres.nodesCount_ = nodesCount_;
       sres.totalNodes_ = totalNodes_;
+	  sres.plyMax_ = plyMax_;
       sres.dt_ = dt;
 
       if ( before_ != best_ && before_ )
@@ -283,6 +286,9 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move)
 {
+	if ( ply > plyMax_ )
+		plyMax_ = ply;
+
   if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
     return alpha;
 
@@ -607,10 +613,12 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
-      alpha < Figure::WeightMat-MaxPly )
+		alpha < Figure::WeightMat-MaxPly )
     {
       ext = true;
       depth++;
+	  if ( Figure::TypeQueen == move.new_type_ )
+		  depth++;
     }
 
     counter++;
@@ -735,6 +743,9 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks)
 {
+	if ( ply > plyMax_ )
+		plyMax_ = ply;
+
   if ( stop_ || ply >= MaxPly )
     return alpha;
 

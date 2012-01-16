@@ -75,7 +75,8 @@ inline int least_bit_number(uint64 & mask)
 	unsigned long n;
 	uint8 b = _BitScanForward64(&n, mask);
 	THROW_IF( !b, "no bit found in nonzero number" );
-	mask ^= 1ULL << n;
+	mask &= mask-1;
+	//mask ^= 1ULL << n;
 	return n;
 }
 #endif
