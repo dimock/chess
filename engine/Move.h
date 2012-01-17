@@ -58,7 +58,7 @@ struct Move
   /// flags
   uint16 checkVerified_ : 1,
          alreadyDone_ : 1,
-		 fkiller_ : 1,
+		     fkiller_ : 1,
          flags_ ;
 
   int score_;

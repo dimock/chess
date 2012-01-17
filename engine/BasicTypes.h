@@ -38,7 +38,7 @@ typedef int16 ScoreType;
 #define USE_ZERO_WINDOW
 #define USE_KILLER
 #define USE_KILLER_ADV
-#undef  USE_KILLER_CAPS
+#undef USE_KILLER_CAPS
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING_
 #define USE_HASH_TABLE_GENERAL

@@ -22,6 +22,7 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
   halfmovesNumber_ = 0;
   vmove_.clear();
+  player_.setMemory(256);
 }
 
 void ChessPosition::setMaxDepth(int d)

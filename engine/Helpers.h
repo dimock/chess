@@ -38,7 +38,7 @@ private:
 // return least significant bit index, clear it
 inline int least_bit_number(uint64 & mask)
 {
-  int n = -1;
+  int n;
   __asm
   {
     ; scan lower dword
@@ -47,9 +47,9 @@ inline int least_bit_number(uint64 & mask)
     mov eax, dword ptr [edi]
     bsf ecx, eax
     jz  nxt
-    mov ebx, 1
-    shl ebx, cl
-    xor eax, ebx
+    mov ebx, eax
+    dec ebx
+    and eax, ebx
     mov dword ptr [edi], eax
     jmp end
 
@@ -58,9 +58,9 @@ inline int least_bit_number(uint64 & mask)
 
 nxt:mov eax, dword ptr [edi+4]
     bsf ecx, eax
-    mov ebx, 1
-    shl ebx, cl
-    xor eax, ebx
+    mov ebx, eax
+    dec ebx
+    and eax, ebx
     mov dword ptr [edi+4], eax
     add ecx, 32
 
@@ -76,7 +76,6 @@ inline int least_bit_number(uint64 & mask)
 	uint8 b = _BitScanForward64(&n, mask);
 	THROW_IF( !b, "no bit found in nonzero number" );
 	mask &= mask-1;
-	//mask ^= 1ULL << n;
 	return n;
 }
 #endif

@@ -39,6 +39,7 @@ __declspec (align(16)) struct CaptureHItem
   PackedMove move_;
 };
 
+
 template <class ITEM>
 class HashTable
 {

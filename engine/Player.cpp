@@ -103,12 +103,11 @@ void Player::setMemory(int mb)
 {
   int gsize = 0;
 
-  if ( mb > 4 ) // we need at least 4mb of memory
+  if ( mb > 8 ) // we need at least 4mb of memory
   {
-    mb -= 4;
-    gsize = 16;
+    mb -= 8;
+    gsize = 15;
     for ( ; mb > 1; mb >>= 1, gsize++);
-    gsize--;
   }
 
 #ifdef USE_HASH_TABLE_GENERAL
@@ -116,7 +115,7 @@ void Player::setMemory(int mb)
 #endif
 
 #ifdef USE_HASH_TABLE_CAPTURE
-  chash_.resize(gsize);
+  chash_.resize(gsize-2);
 #endif
 
   use_pv_ = gsize == 0;
@@ -185,7 +184,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
   contexts_[0].clearPV(depthMax_);
 
-  for (depth_ = 2; !stop_ && depth_ <= depthMax_; ++depth_)
+  for (depth_ = 1; !stop_ && depth_ <= depthMax_; ++depth_)
   {
     Board pv_board(board_);
     pv_board.set_moves(pv_moves_);
@@ -343,31 +342,21 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
           return alpha;
 
 #ifdef RETURN_IF_BETTA
-        if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::Betta == hitem.flag_) && pv && hscore >= betta )
+        if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && pv && hscore >= betta )
         {
-          totalNodes_++;
-          nodesCount_++;
-
 #ifndef NDEBUG
           Board board0 = board_;
 #endif
 
-          bool retBetta = pv.rindex_ >= 0;
+          bool retBetta = pv.rindex_ >= 0 || pv.new_type_;
 
           if ( !retBetta )
           {
+            totalNodes_++;
+            nodesCount_++;
+
             if ( board_.makeMove(pv) )
-            {
-              if ( board_.drawState() )
-              {
-                if ( 0 >= betta )
-                  retBetta = true;
-              }
-              else if ( board_.repsCount() < 2 )
-              {
-                retBetta = true;
-              }
-            }
+              retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
 
 #ifndef NDEBUG
             board_.verifyMasks();
@@ -484,7 +473,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
-#ifdef USE_HASH_MOVE_EX
+#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
 	  Move hmove_ex[2];
 	  hmove_ex[0].clear();
 	  hmove_ex[1].clear();
@@ -511,7 +500,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_KILLER_ADV
     Move killer = contexts_[ply].killer_;
     if ( killer && killer != pv &&
-#ifdef USE_HASH_MOVE_EX
+#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
 		killer != hmove_ex[0] && killer != hmove_ex[1] &&
 #endif
 		killer.rindex_ >= 0 && board_.validMove(killer) )
@@ -535,7 +524,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_KILLER_ADV
         || move == killer
 #endif
-#ifdef USE_HASH_MOVE_EX
+#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
 		|| move == hmove_ex[0]
 	    || move == hmove_ex[1]
 #endif
@@ -644,7 +633,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_LMR
         if (  counter > 3 &&
-              depth_ >= 5 &&
+              depth_ >= 4 &&
               depth > 3 &&
               !check_esc &&
               !null_move &&
@@ -746,7 +735,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 	if ( ply > plyMax_ )
 		plyMax_ = ply;
 
-  if ( stop_ || ply >= MaxPly )
+  if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
     return alpha;
 
   if ( ply < MaxPly )
@@ -777,55 +766,14 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
       return alpha;
 
-    if ( CapturesHashTable::Alpha != hitem.flag_ )
+#ifdef RETURN_IF_BETTA
+    if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hitem.move_ && hitem.score_ >= betta )
+      return betta;
+    else
+#endif // RETURN_IF_BETTA
+    if ( CapturesHashTable::Alpha != hitem.flag_ && hitem.move_ )
       hmove = board_.unpack(hitem.move_);
 
-#ifdef RETURN_IF_BETTA
-    if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::Betta == hitem.flag_) && hmove && hitem.score_ >= betta )
-    {
-      totalNodes_++;
-      nodesCount_++;
-
-#ifndef NDEBUG
-      Board board0 = board_;
-#endif
-
-      bool retBetta = hmove.rindex_ >= 0;
-
-      if ( !retBetta )
-      {
-        if ( board_.makeMove(hmove) )
-        {
-          if ( board_.drawState() )
-          {
-            if ( 0 >= betta )
-              retBetta = true;
-          }
-          else
-          {
-            retBetta = true;
-          }
-        }
-
-#ifndef NDEBUG
-        board_.verifyMasks();
-#endif
-
-        board_.unmakeMove();
-
-        THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-
-#ifndef NDEBUG
-        board_.verifyMasks();
-#endif
-      }
-
-      if ( retBetta )
-      {
-        return betta;
-      }
-    }
-#endif // RETURN_IF_BETTA
 
     if ( hmove )
     {
@@ -839,7 +787,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     }
   }
 
-#ifdef USE_GENERAL_HASH_IN_CAPS
+#if ((defined USE_GENERAL_HASH_IN_CAPS) && (defined USE_HASH_TABLE_GENERAL))
   if ( !hmove )
   {
     GeneralHItem & hitem = ghash_[board_.hashCode()];
@@ -914,6 +862,18 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       ScoreType s = board_.evaluate();
       if ( Board::ChessMat == board_.getState() )
         s += ply;
+
+#ifdef USE_HASH_TABLE_CAPTURE
+      CapturesHashTable::Flag flag;
+      if ( s <= saveAlpha )
+        flag = CapturesHashTable::Alpha;
+      else if ( s >= betta )
+        flag = CapturesHashTable::Betta;
+      else
+        flag = CapturesHashTable::AlphaBetta;
+      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
+#endif
+
       return s;
     }
   }
@@ -944,7 +904,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( do_checks && !stop_ && alpha < betta )
+    if ( alpha < Figure::figureWeight_[Figure::TypeRook] && do_checks && !stop_ && alpha < betta )
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
