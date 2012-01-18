@@ -553,17 +553,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     if ( Board::ChessMat == board_.getState() )
       s += ply;
 
-//#ifdef USE_HASH_TABLE_GENERAL
-//    GeneralHashTable::Flag flag;
-//    if ( s <= savedAlpha )
-//      flag = GeneralHashTable::Alpha;
-//    else if ( s >= betta )
-//      flag = GeneralHashTable::Betta;
-//    else
-//      flag = GeneralHashTable::AlphaBetta;
-//
-//    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
-//#endif
+#ifdef USE_HASH_TABLE_GENERAL
+    GeneralHashTable::Flag flag;
+    if ( s <= savedAlpha )
+      flag = GeneralHashTable::Alpha;
+    else if ( s >= betta )
+      flag = GeneralHashTable::Betta;
+    else
+      flag = GeneralHashTable::AlphaBetta;
+
+    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
+#endif
 
     return s;
   }
@@ -865,16 +865,16 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( Board::ChessMat == board_.getState() )
         s += ply;
 
-//#ifdef USE_HASH_TABLE_CAPTURE
-//      CapturesHashTable::Flag flag;
-//      if ( s <= saveAlpha )
-//        flag = CapturesHashTable::Alpha;
-//      else if ( s >= betta )
-//        flag = CapturesHashTable::Betta;
-//      else
-//        flag = CapturesHashTable::AlphaBetta;
-//      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
-//#endif
+#ifdef USE_HASH_TABLE_CAPTURE
+      CapturesHashTable::Flag flag;
+      if ( s <= saveAlpha )
+        flag = CapturesHashTable::Alpha;
+      else if ( s >= betta )
+        flag = CapturesHashTable::Betta;
+      else
+        flag = CapturesHashTable::AlphaBetta;
+      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
+#endif
 
       return s;
     }

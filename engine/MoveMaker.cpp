@@ -476,27 +476,29 @@ bool Board::verifyChessDraw()
     return false;
 
   int reps = 1;
-  for (int i = halfmovesCounter_-3; i >= 0; i -= 2)
+  int i = halfmovesCounter_-3;
+  for (; reps < 3 && i >= 0; i -= 2)
   {
     if ( getMove(i).zcode_ == fmgr_.hashCode() )
       reps++;
-
-    if ( reps >= 3 )
-    {
-      state_ = DrawReps;
-
-      if ( reps > repsCounter_ )
-        repsCounter_ = reps;
-
-      return true;
-    }
 
     if ( getMove(i).irreversible_ )
       break;
   }
 
+  // may be we forget to test initial position?
+  if ( reps < 3 && i == -1 && fmgr_.hashCode() == getMove(0).zcode_old_ )
+	  reps++;
+
   if ( reps > repsCounter_ )
-    repsCounter_ = reps;
+	  repsCounter_ = reps;
+
+  if ( reps >= 3 )
+  {
+	  state_ = DrawReps;
+
+	  return true;
+  }
 
   return false;
 }
