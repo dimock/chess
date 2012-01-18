@@ -255,8 +255,8 @@ void Player::testTimer()
 ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
   if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() ||
-       (ply < 1) || (depth < 2) || (depth_ < 3) || betta >= Figure::WeightMat-MaxPly ||
-        alpha <= -Figure::WeightMat+MaxPly )
+       (ply < 1) || (depth < 2) || (depth_ < 4) || betta >= Figure::WeightMat-MaxPly ||
+        alpha <= -Figure::WeightMat+MaxPly || board_.getMoveRev(0).rindex_ >= 0 || board_.getMoveRev(0).new_type_ == Figure::TypeQueen )
     return alpha;
 
 #ifndef NDEBUG
@@ -268,7 +268,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 
   int depth1 = depth-4;
   depth >>= 1;
-  if ( depth1 < depth && depth1 > 0 )
+  if ( depth > depth1 )
     depth = depth1;
   if ( depth < 1 )
     depth = 1;
@@ -420,14 +420,16 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     ScoreType nullScore = nullMove(depth, ply, alpha, betta);
     if ( nullScore >= betta )
     {
-      int depth1 = depth-4;
-      depth >>= 1;
-      if ( depth1 < depth && depth1 > 0 )
-        depth = depth1;
-      if ( depth < 1 )
-        depth = 1;
+      if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeQueen] + Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeKnight] )
+      {
+        depth--;
+        if ( depth < 1 )
+          depth = 1;
+      }
+      else
+        return nullScore;
 
-      null_move = true;
+      //null_move = true;
     }
   }
 #endif
@@ -551,17 +553,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     if ( Board::ChessMat == board_.getState() )
       s += ply;
 
-#ifdef USE_HASH_TABLE_GENERAL
-    GeneralHashTable::Flag flag;
-    if ( s <= savedAlpha )
-      flag = GeneralHashTable::Alpha;
-    else if ( s >= betta )
-      flag = GeneralHashTable::Betta;
-    else
-      flag = GeneralHashTable::AlphaBetta;
-
-    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
-#endif
+//#ifdef USE_HASH_TABLE_GENERAL
+//    GeneralHashTable::Flag flag;
+//    if ( s <= savedAlpha )
+//      flag = GeneralHashTable::Alpha;
+//    else if ( s >= betta )
+//      flag = GeneralHashTable::Betta;
+//    else
+//      flag = GeneralHashTable::AlphaBetta;
+//
+//    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
+//#endif
 
     return s;
   }
@@ -633,7 +635,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
 #ifdef USE_LMR
         if (  counter > 3 &&
-              depth_ >= 4 &&
+              depth_ > 5 &&
               depth > 3 &&
               !check_esc &&
               !null_move &&
@@ -863,16 +865,16 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( Board::ChessMat == board_.getState() )
         s += ply;
 
-#ifdef USE_HASH_TABLE_CAPTURE
-      CapturesHashTable::Flag flag;
-      if ( s <= saveAlpha )
-        flag = CapturesHashTable::Alpha;
-      else if ( s >= betta )
-        flag = CapturesHashTable::Betta;
-      else
-        flag = CapturesHashTable::AlphaBetta;
-      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
-#endif
+//#ifdef USE_HASH_TABLE_CAPTURE
+//      CapturesHashTable::Flag flag;
+//      if ( s <= saveAlpha )
+//        flag = CapturesHashTable::Alpha;
+//      else if ( s >= betta )
+//        flag = CapturesHashTable::Betta;
+//      else
+//        flag = CapturesHashTable::AlphaBetta;
+//      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
+//#endif
 
       return s;
     }

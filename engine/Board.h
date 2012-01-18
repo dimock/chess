@@ -248,6 +248,11 @@ public:
     return fmgr_.hashCode();
   }
 
+  ScoreType material(Figure::Color color) const
+  {
+    return fmgr_.weight(color);
+  }
+
   /// methods
 private:
 
