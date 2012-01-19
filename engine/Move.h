@@ -17,7 +17,7 @@ struct PackedMove
 
   operator bool () const
   {
-    return from_ && to_;
+    return from_ || to_;
   }
 
   bool operator == (const PackedMove & other) const

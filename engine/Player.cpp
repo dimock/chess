@@ -210,7 +210,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
       sres.depth_ = depth_;
       sres.nodesCount_ = nodesCount_;
       sres.totalNodes_ = totalNodes_;
-	  sres.plyMax_ = plyMax_;
+	    sres.plyMax_ = plyMax_;
       sres.dt_ = dt;
 
       if ( before_ != best_ && before_ )
@@ -319,6 +319,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.hcode_ == board_.hashCode() )
     {
+      THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "identical hash code but different color in alpha-betta" );
+
       ScoreType hscore = hitem.score_;
       if ( hscore >= Figure::WeightMat-MaxPly )
       {
@@ -595,6 +597,8 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 #endif
 
   uint64 hcode = board_.hashCode();
+  int depth0 = depth;
+  Figure::Color color = board_.getColor();
   bool check_esc = board_.getState() == Board::UnderCheck;
 
   if ( board_.makeMove(move) )
@@ -680,17 +684,12 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         assemblePV(move, ply);
 
 #ifdef USE_HASH_TABLE_GENERAL
-        if ( depth >= 1 )
-          updateGeneralHash(move, depth, ply, score, betta, hcode);
-#ifdef USE_HASH_TABLE_CAPTURE
-        else
-          updateCaptureHash(move, score, betta, hcode);
-#endif
+        updateGeneralHash(move, depth0, ply, score, betta, hcode, color);
 #endif
 
         if ( move.rindex_ < 0 && !move.new_type_ )
         {
-          hist.score_ ++;//= depth;
+          hist.score_ ++;
           if ( hist.score_ > History::history_max_ )
             History::history_max_ = hist.score_;
         }
@@ -765,6 +764,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   CaptureHItem & hitem = chash_[board_.hashCode()];
   if ( hitem.hcode_ == board_.hashCode() )
   {
+    THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "identical hash code but different color in captures" );
+
     if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
       return alpha;
 
@@ -956,6 +957,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 #endif
 
   uint64 hcode = board_.hashCode();
+  Figure::Color color = board_.getColor();
 
   if ( board_.makeMove(cap) )
   {
@@ -985,7 +987,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 #endif
 
 #ifdef USE_HASH_TABLE_CAPTURE
-      updateCaptureHash(cap, s, betta, hcode);
+      updateCaptureHash(cap, s, betta, hcode, color);
 #endif
 
       History & hist = MovesGenerator::history(cap.from_, cap.to_);

@@ -158,18 +158,16 @@ private:
   }
 
 #ifdef USE_HASH_TABLE_GENERAL
-  void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode)
+  void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
-    Figure::Color color = Figure::otherColor(board_.getColor());
     PackedMove pm = board_.pack(move);
     ghash_.push(hcode, score, depth, ply, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
   }
 #endif // USE_HASH_TABLE_GENERAL
 
 #ifdef USE_HASH_TABLE_CAPTURE
-  void updateCaptureHash(const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode)
+  void updateCaptureHash(const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
-    Figure::Color color = Figure::otherColor(board_.getColor());
     PackedMove pm = board_.pack(move);
     chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, pm);
   }
