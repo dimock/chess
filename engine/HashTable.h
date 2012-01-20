@@ -134,11 +134,8 @@ public:
   void push(const uint64 & hcode, ScoreType s, int depth, int ply, Figure::Color color, Flag flag, const PackedMove & move)
   {
     GeneralHItem & hitem = operator [] (hcode);
-    if ( (depth < hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s > hitem.score_) || (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
+    if ( depth < hitem.depth_ || (Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
       return;
-
-    //if ( depth < hitem.depth_ || (Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
-    //  return;
 
     hitem.hcode_ = hcode;
     hitem.score_ = s;
@@ -174,7 +171,7 @@ public:
   void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, const PackedMove & move)
   {
     CaptureHItem & hitem = operator [] (hcode);
-    if ( (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
+    if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
       return;
 
     hitem.hcode_ = hcode;

@@ -316,72 +316,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_HASH_TABLE_GENERAL
   else // use hash table
   {
-    GeneralHItem & hitem = ghash_[board_.hashCode()];
-    if ( hitem.hcode_ == board_.hashCode() )
-    {
-      THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "identical hash code but different color in alpha-betta" );
-
-      ScoreType hscore = hitem.score_;
-      if ( hscore >= Figure::WeightMat-MaxPly )
-      {
-        hscore += hitem.ply_;
-        hscore -= ply;
-      }
-      else if ( hscore <= MaxPly-Figure::WeightMat )
-      {
-        hscore -= hitem.ply_;
-        hscore += ply;
-      }
-
-      if ( GeneralHashTable::Alpha != hitem.flag_ )
-      {
-        pv = board_.unpack(hitem.move_);
-      }
-
-      if ( hitem.depth_ >= depth )
-      {
-        if ( GeneralHashTable::Alpha == hitem.flag_ && hscore <= alpha )
-          return alpha;
-
-#ifdef RETURN_IF_BETTA
-        if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && pv && hscore >= betta )
-        {
-#ifndef NDEBUG
-          Board board0 = board_;
-#endif
-
-          bool retBetta = pv.rindex_ >= 0 || pv.new_type_;
-
-          if ( !retBetta )
-          {
-            totalNodes_++;
-            nodesCount_++;
-
-            if ( board_.makeMove(pv) )
-              retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
-
-#ifndef NDEBUG
-            board_.verifyMasks();
-#endif
-
-            board_.unmakeMove();
-
-            THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-
-#ifndef NDEBUG
-            board_.verifyMasks();
-#endif
-          }
-
-          if ( retBetta )
-          {
-            assemblePV(pv, ply);
-            return betta;
-          }
-        }
-#endif // RETURN_IF_BETTA
-      }
-    }
+    GeneralHashTable::Flag flag = getGeneralHashItem(depth, ply, alpha, betta, pv);
+    if ( GeneralHashTable::Alpha == flag )
+      return alpha;
+    else if ( GeneralHashTable::Betta == flag )
+      return betta;
 
 #if (defined USE_HASH_TABLE_ADV) && (defined USE_HASH_TABLE_CAPTURE)
     // if we haven't found pv in general hash, lets try captures hash
@@ -607,13 +546,10 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
     History & hist = MovesGenerator::history(move.from_, move.to_);
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
-    if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 &&
-		alpha < Figure::WeightMat-MaxPly )
+    if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
     {
       ext = true;
       depth++;
-	  if ( Figure::TypeQueen == move.new_type_ )
-		  depth++;
     }
 
     counter++;
