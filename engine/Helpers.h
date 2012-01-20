@@ -68,8 +68,28 @@ end:mov dword ptr [n], ecx
   }
   return n;
 }
+
+// return logarithm with base 2 of given int
+inline int log2(int n)
+{
+	int m = 0;
+	__asm
+	{
+		mov eax, dword ptr [n]
+		bsr ecx, eax
+		jz end
+		mov dword ptr [m], ecx
+end:
+		xor eax, eax
+	}
+	return m;
+}
+
 #else
+
 #pragma intrinsic(_BitScanForward64)
+#pragma intrinsic(_BitScanReverse)
+
 inline int least_bit_number(uint64 & mask)
 {
 	unsigned long n;
@@ -77,6 +97,14 @@ inline int least_bit_number(uint64 & mask)
 	THROW_IF( !b, "no bit found in nonzero number" );
 	mask &= mask-1;
 	return n;
+}
+
+inline int log2(int n)
+{
+	unsigned long m;
+	if ( !_BitScanReverse(&m, (unsigned long)n) )
+		return 0;
+	return m;
 }
 #endif
 

@@ -50,10 +50,10 @@ Player::Player() :
   depth_(0),
   plyMax_(0),
 #ifdef USE_HASH_TABLE_CAPTURE
-  chash_(22),
+  chash_(20),
 #endif
 #ifdef USE_HASH_TABLE_GENERAL
-  ghash_(22),
+  ghash_(20),
   use_pv_(false)
 #else
   use_pv_(true)
@@ -101,24 +101,27 @@ Player::~Player()
 
 void Player::setMemory(int mb)
 {
-  int gsize = 0;
+  use_pv_ = true;
+  if ( mb < 1 )
+    return;
 
-  if ( mb > 8 ) // we need at least 4mb of memory
-  {
-    mb -= 8;
-    gsize = 15;
-    for ( ; mb > 1; mb >>= 1, gsize++);
-  }
+  int ghitemSize = sizeof(GeneralHItem)*HashItemsN_;
+  int bytesN = mb*1024*1024;
+
+  int hsize = log2(bytesN/ghitemSize) - 1;
+  if ( hsize < 10 )
+    return;
 
 #ifdef USE_HASH_TABLE_GENERAL
-  ghash_.resize(gsize);
+  ghash_.resize(hsize);
+  use_pv_ = false;
 #endif
 
 #ifdef USE_HASH_TABLE_CAPTURE
-  chash_.resize(gsize-2);
+  chash_.resize(hsize);
+  use_pv_ = false;
 #endif
 
-  use_pv_ = gsize == 0;
 }
 
 
@@ -176,6 +179,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   totalNodes_ = 0;
   firstIter_ = true;
   tprev_ = tstart_ = clock();
+  halfmovesCounter_ = board_.halfmovesCount();
 
   MovesGenerator::clear_history();
 
@@ -317,7 +321,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   else // use hash table
   {
     GeneralHashTable::Flag flag = getGeneralHashItem(depth, ply, alpha, betta, pv);
-    if ( GeneralHashTable::Alpha == flag )
+	if ( GeneralHashTable::Alpha == flag )
       return alpha;
     else if ( GeneralHashTable::Betta == flag )
       return betta;
@@ -334,7 +338,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       }
     }
 #endif // USE_HASH_TABLE_ADV
-
   }
 #endif // USE_HASH_TABLE_GENERAL
 
@@ -374,6 +377,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     }
   }
 #endif
+
+  if ( depth > 2 && !null_move && !pv )
+  {
+    ScoreType score = alphaBetta(depth-2, ply, alpha, betta, false);
+    getGeneralHashItem(depth, ply, alpha, betta, pv);
+    if ( pv && board_.getState() != Board::UnderCheck )
+      Board::ticks_++;
+  }
 
 #ifdef USE_FUTILITY_PRUNING
   if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly &&
@@ -503,7 +514,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     else
       flag = GeneralHashTable::AlphaBetta;
 
-    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
+    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove(), halfmovesCounter_);
 #endif
 
     return s;
@@ -519,7 +530,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_HASH_TABLE_GENERAL
   if ( alpha == savedAlpha )
   {
-    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.getColor(), GeneralHashTable::Alpha, PackedMove());
+    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.getColor(), GeneralHashTable::Alpha, PackedMove(), halfmovesCounter_);
   }
 #endif
 
@@ -810,7 +821,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         flag = CapturesHashTable::Betta;
       else
         flag = CapturesHashTable::AlphaBetta;
-      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
+      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove(), halfmovesCounter_);
 #endif
 
       return s;
@@ -875,7 +886,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #ifdef USE_HASH_TABLE_CAPTURE
   if ( alpha == saveAlpha )
   {
-    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove());
+    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove(), halfmovesCounter_);
   }
 #endif
 
