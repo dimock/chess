@@ -134,9 +134,9 @@ public:
   void push(const uint64 & hcode, ScoreType s, int depth, int ply, Figure::Color color, Flag flag, const PackedMove & move)
   {
     GeneralHItem & hitem = (*this)[hcode];
-    if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
-	  //if ( (depth < hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s > hitem.score_) ||
-		 //    (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
+    //if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
+	  if ( (depth < hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
+		     (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
       return;
 
     hitem.hcode_ = hcode;
