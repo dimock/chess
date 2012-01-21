@@ -161,7 +161,7 @@ private:
   void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
-    ghash_.push(hcode, score, depth, ply, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm, halfmovesCounter_);
+    ghash_.push(hcode, score, depth, ply, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
   }
 
   // we should return alpha if flag is Alpha, or betta if flag is Betta
@@ -240,7 +240,7 @@ private:
   void updateCaptureHash(const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
-    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, pm, halfmovesCounter_);
+    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, pm);
   }
 #endif // USE_HASH_TABLE_CAPTURE
 

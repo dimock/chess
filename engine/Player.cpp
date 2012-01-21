@@ -105,7 +105,7 @@ void Player::setMemory(int mb)
   if ( mb < 1 )
     return;
 
-  int ghitemSize = sizeof(GeneralHItem)*HashItemsN_;
+  int ghitemSize = sizeof(GeneralHItem);
   int bytesN = mb*1024*1024;
 
   int hsize = log2(bytesN/ghitemSize) - 1;
@@ -382,8 +382,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     ScoreType score = alphaBetta(depth-2, ply, alpha, betta, false);
     getGeneralHashItem(depth, ply, alpha, betta, pv);
-    if ( pv && board_.getState() != Board::UnderCheck )
-      Board::ticks_++;
   }
 
 #ifdef USE_FUTILITY_PRUNING
@@ -514,7 +512,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     else
       flag = GeneralHashTable::AlphaBetta;
 
-    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove(), halfmovesCounter_);
+    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
 #endif
 
     return s;
@@ -530,7 +528,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_HASH_TABLE_GENERAL
   if ( alpha == savedAlpha )
   {
-    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.getColor(), GeneralHashTable::Alpha, PackedMove(), halfmovesCounter_);
+    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.getColor(), GeneralHashTable::Alpha, PackedMove());
   }
 #endif
 
@@ -821,7 +819,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         flag = CapturesHashTable::Betta;
       else
         flag = CapturesHashTable::AlphaBetta;
-      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove(), halfmovesCounter_);
+      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
 #endif
 
       return s;
@@ -886,7 +884,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #ifdef USE_HASH_TABLE_CAPTURE
   if ( alpha == saveAlpha )
   {
-    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove(), halfmovesCounter_);
+    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove());
   }
 #endif
 

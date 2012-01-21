@@ -4,7 +4,7 @@
 
 __declspec (align(16)) struct GeneralHItem
 {
-  GeneralHItem() : hcode_(0), score_(0), depth_(0), color_(0), flag_(0), ply_(0), counter_(0)
+  GeneralHItem() : hcode_(0), score_(0), depth_(0), color_(0), flag_(0), ply_(0)
   {}
 
   operator bool () const { return hcode_ != 0; }
@@ -15,7 +15,6 @@ __declspec (align(16)) struct GeneralHItem
              depth_ : 6,
              ply_ : 7,
              flag_ : 2;
-  uint8      counter_;
 
   PackedMove move_;
 
@@ -27,7 +26,7 @@ __declspec (align(16)) struct GeneralHItem
 
 __declspec (align(16)) struct CaptureHItem
 {
-  CaptureHItem() : hcode_(0), score_(0), color_(0), flag_(0), counter_(0)
+  CaptureHItem() : hcode_(0), score_(0), color_(0), flag_(0)
   {}
 
   operator bool () const { return hcode_ != 0; }
@@ -37,46 +36,13 @@ __declspec (align(16)) struct CaptureHItem
   uint8      color_ : 1,
              flag_ : 2;
 
-  uint8      counter_;
   PackedMove move_;
 };
 
 
-template <class ITEM, int N_ITEMS>
+template <class ITEM>
 class HashTable
 {
-	class InternalItem
-	{
-		ITEM items_[N_ITEMS];
-
-	public:
-
-		ITEM & find(const uint64 & code)
-		{
-			for (int i = 0; i < N_ITEMS; ++i)
-			{
-				if ( !items_[i].hcode_ || items_[i].hcode_ == code )
-          return items_[i];
-			}
-			return items_[0];
-		}
-
-    ITEM & get(const uint64 & code)
-    {
-      for (int i = 0; i < N_ITEMS; ++i)
-      {
-        if ( !items_[i].hcode_ || items_[i].hcode_ == code )
-          return items_[i];
-      }
-      int j = 0;
-      for (int i = 1; i < N_ITEMS; ++i)
-      {
-        if ( items_[i].counter_ < items_[j].counter_ )
-          j = i;
-      }
-      return items_[j];
-    }
-};
 
 public:
 
@@ -101,7 +67,7 @@ public:
 
     THROW_IF((unsigned)size > 24, "hash table size if too big");
 
-    buffer_ = new InternalItem[1<<size_];
+    buffer_ = new ITEM[1<<size_];
     szMask_ = (1<<size_) - 1;
   }
 
@@ -112,12 +78,12 @@ public:
 
   ITEM & operator [] (const uint64 & code)
   {
-    return buffer_[code & szMask_].find(code);
+    return buffer_[code & szMask_];
   }
 
   ITEM & get(const uint64 & code)
   {
-    return buffer_[code & szMask_].get(code);
+    return buffer_[code & szMask_];
   }
 
   bool load(const char * fname)
@@ -129,9 +95,9 @@ public:
     if ( fread(&size_, sizeof(size_), 1, f) == 1 && size_ > 0 && size_ <= 24 )
     {
       delete [] buffer_;
-      buffer_ = new InternalItem[1<<size_];
+      buffer_ = new ITEM[1<<size_];
       szMask_ = (1<<size_) - 1;
-      n = fread(buffer_, sizeof(InternalItem), size(), f);
+      n = fread(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);
     return n == size();
@@ -145,7 +111,7 @@ public:
     size_t n = 0;
     if ( fwrite(&size_, sizeof(size_), 1, f) == 1 )
     {
-      n = fwrite(buffer_, sizeof(InternalItem), size(), f);
+      n = fwrite(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);
     return n == size();
@@ -153,24 +119,24 @@ public:
 
 private:
 
-  InternalItem * buffer_;
+  ITEM * buffer_;
   int size_;
   uint32 szMask_;
 };
 
-class GeneralHashTable : public HashTable<GeneralHItem, HashItemsN_>
+class GeneralHashTable : public HashTable<GeneralHItem>
 {
 public:
 
-  GeneralHashTable(int size) : HashTable<GeneralHItem, HashItemsN_>(size)
+  GeneralHashTable(int size) : HashTable<GeneralHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, int depth, int ply, Figure::Color color, Flag flag, const PackedMove & move, uint8 counter)
+  void push(const uint64 & hcode, ScoreType s, int depth, int ply, Figure::Color color, Flag flag, const PackedMove & move)
   {
-    GeneralHItem & hitem = get(hcode);
-	  //if ( depth < hitem.depth_ || (Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
-	  if ( (depth < hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s > hitem.score_) ||
-		     (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
+    GeneralHItem & hitem = (*this)[hcode];
+    if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
+	  //if ( (depth < hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s > hitem.score_) ||
+		 //    (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
       return;
 
     hitem.hcode_ = hcode;
@@ -179,7 +145,6 @@ public:
     hitem.color_ = color;
     hitem.flag_  = flag;
     hitem.ply_   = ply;
-    hitem.counter_ = counter;
 
     if ( flag != Alpha && move && move != hitem.move_ )
     {
@@ -198,16 +163,17 @@ public:
   }
 };
 
-class CapturesHashTable : public HashTable<CaptureHItem, HashItemsN_>
+class CapturesHashTable : public HashTable<CaptureHItem>
 {
 public:
 
-  CapturesHashTable(int size) : HashTable<CaptureHItem, HashItemsN_>(size)
+  CapturesHashTable(int size) : HashTable<CaptureHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, const PackedMove & move, uint8 counter)
+  void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, const PackedMove & move)
   {
-    CaptureHItem & hitem = get(hcode);
+    CaptureHItem & hitem = operator [] (hcode);
+
     if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
       return;
 
@@ -215,7 +181,6 @@ public:
     hitem.score_ = s;
     hitem.color_ = color;
     hitem.flag_  = flag;
-    hitem.counter_ = counter;
 
     if ( Alpha != flag )
       hitem.move_ = move;

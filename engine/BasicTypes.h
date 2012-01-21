@@ -34,8 +34,6 @@ typedef unsigned __int64 uint64;
 
 typedef int16 ScoreType;
 
-const int HashItemsN_ = 4;
-
 #define PERFORM_CHECKS_IN_CAPTURES
 #define USE_ZERO_WINDOW
 #define USE_KILLER
