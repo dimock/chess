@@ -320,7 +320,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   else // use hash table
   {
     GeneralHashTable::Flag flag = getGeneralHashItem(depth, ply, alpha, betta, pv);
-	if ( GeneralHashTable::Alpha == flag )
+	  if ( GeneralHashTable::Alpha == flag )
       return alpha;
     else if ( GeneralHashTable::Betta == flag )
       return betta;
