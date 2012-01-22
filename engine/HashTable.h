@@ -4,7 +4,7 @@
 
 __declspec (align(16)) struct GeneralHItem
 {
-  GeneralHItem() : hcode_(0), score_(0), depth_(0), color_(0), flag_(0), ply_(0)
+  GeneralHItem() : hcode_(0), score_(0), depth_(0), color_(0), flag_(0), ply_(0), halfmovesCount_(0)
   {}
 
   operator bool () const { return hcode_ != 0; }
@@ -16,6 +16,8 @@ __declspec (align(16)) struct GeneralHItem
              ply_ : 7,
              flag_ : 2;
 
+  uint8      halfmovesCount_;
+
   PackedMove move_;
 
 #ifdef USE_HASH_MOVE_EX
@@ -26,15 +28,19 @@ __declspec (align(16)) struct GeneralHItem
 
 __declspec (align(16)) struct CaptureHItem
 {
-  CaptureHItem() : hcode_(0), score_(0), color_(0), flag_(0)
+  CaptureHItem() : hcode_(0), score_(0), color_(0), flag_(0), depth_(0), ply_(0), halfmovesCount_(0)
   {}
 
   operator bool () const { return hcode_ != 0; }
 
   uint64     hcode_;
   ScoreType  score_;
-  uint8      color_ : 1,
-             flag_ : 2;
+  uint16     color_ : 1,
+             flag_ : 2,
+             ply_ : 7,
+             depth_ : 6;
+
+  uint8      halfmovesCount_;
 
   PackedMove move_;
 };
@@ -77,11 +83,6 @@ public:
   }
 
   ITEM & operator [] (const uint64 & code)
-  {
-    return buffer_[code & szMask_];
-  }
-
-  ITEM & get(const uint64 & code)
   {
     return buffer_[code & szMask_];
   }
@@ -131,13 +132,22 @@ public:
   GeneralHashTable(int size) : HashTable<GeneralHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, int depth, int ply, Figure::Color color, Flag flag, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount, Figure::Color color, Flag flag, const PackedMove & move)
   {
     GeneralHItem & hitem = (*this)[hcode];
     //if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
+
 	  if ( (depth < hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
 		     (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
-      return;
+    {
+      // we are going to skip this item, check is it to old so we could overwrite it
+      bool overwrite = hitem.hcode_ != hcode && hitem.halfmovesCount_+hitem.depth_ < halfmovesCount+depth-HalfnodesCountToOverwrite;
+
+      if ( !overwrite )
+        return;
+      else
+        Board::ticks_++;
+    }
 
     hitem.hcode_ = hcode;
     hitem.score_ = s;
@@ -145,6 +155,7 @@ public:
     hitem.color_ = color;
     hitem.flag_  = flag;
     hitem.ply_   = ply;
+    hitem.halfmovesCount_ = halfmovesCount;
 
     if ( flag != Alpha && move && move != hitem.move_ )
     {
@@ -170,17 +181,28 @@ public:
   CapturesHashTable(int size) : HashTable<CaptureHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, int depth, int ply, int halfmovesCount, const PackedMove & move)
   {
     CaptureHItem & hitem = operator [] (hcode);
 
     if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
-      return;
+    {
+      // if we are going to return, check if we could overwrite this item
+      bool overwrite = hitem.hcode_ != hcode && hitem.halfmovesCount_ < halfmovesCount-HalfnodesCountToOverwrite;
+
+      if ( !overwrite )
+        return;
+      else
+        Board::ticks_++;
+    }
 
     hitem.hcode_ = hcode;
     hitem.score_ = s;
     hitem.color_ = color;
     hitem.flag_  = flag;
+    hitem.depth_ = depth;
+    hitem.ply_   = ply;
+    hitem.halfmovesCount_ = halfmovesCount;
 
     if ( Alpha != flag )
       hitem.move_ = move;

@@ -179,7 +179,6 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   totalNodes_ = 0;
   firstIter_ = true;
   tprev_ = tstart_ = clock();
-  halfmovesCounter_ = board_.halfmovesCount();
 
   MovesGenerator::clear_history();
 
@@ -512,7 +511,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     else
       flag = GeneralHashTable::AlphaBetta;
 
-    ghash_.push(board_.hashCode(), s, depth, ply, board_.getColor(),  flag, PackedMove());
+    ghash_.push(board_.hashCode(), s, depth, ply, board_.halfmovesCount(), board_.getColor(),  flag, PackedMove());
 #endif
 
     return s;
@@ -528,7 +527,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_HASH_TABLE_GENERAL
   if ( alpha == savedAlpha )
   {
-    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.getColor(), GeneralHashTable::Alpha, PackedMove());
+    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.halfmovesCount(), board_.getColor(), GeneralHashTable::Alpha, PackedMove());
   }
 #endif
 
@@ -819,7 +818,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         flag = CapturesHashTable::Betta;
       else
         flag = CapturesHashTable::AlphaBetta;
-      chash_.push(board_.hashCode(), s, board_.getColor(), flag, PackedMove());
+      chash_.push(board_.hashCode(), s, board_.getColor(), flag, depth, ply, board_.halfmovesCount(), PackedMove());
 #endif
 
       return s;
@@ -884,7 +883,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #ifdef USE_HASH_TABLE_CAPTURE
   if ( alpha == saveAlpha )
   {
-    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, PackedMove());
+    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, depth, ply, board_.halfmovesCount(), PackedMove());
   }
 #endif
 
@@ -932,7 +931,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 #endif
 
 #ifdef USE_HASH_TABLE_CAPTURE
-      updateCaptureHash(cap, s, betta, hcode, color);
+      updateCaptureHash(depth, ply, cap, s, betta, hcode, color);
 #endif
 
       History & hist = MovesGenerator::history(cap.from_, cap.to_);

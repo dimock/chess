@@ -135,7 +135,6 @@ private:
 #endif
 
   bool use_pv_;
-  uint8 halfmovesCounter_;
 
   //////////////////////////////////////////////////////////////////////////
   void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max);
@@ -161,7 +160,7 @@ private:
   void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
-    ghash_.push(hcode, score, depth, ply, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
+    ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
   }
 
   // we should return alpha if flag is Alpha, or betta if flag is Betta
@@ -237,10 +236,10 @@ private:
 #endif // USE_HASH_TABLE_GENERAL
 
 #ifdef USE_HASH_TABLE_CAPTURE
-  void updateCaptureHash(const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
+  void updateCaptureHash(int depth, int ply, const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
-    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, pm);
+    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, depth, ply, board_.halfmovesCount(), pm);
   }
 #endif // USE_HASH_TABLE_CAPTURE
 
