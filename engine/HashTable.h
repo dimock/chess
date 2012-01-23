@@ -141,9 +141,9 @@ public:
 		     (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
     {
       // we are going to skip this item, check is it to old so we could overwrite it
-      //bool overwrite = hitem.hcode_ != hcode && hitem.halfmovesCount_+hitem.depth_ < halfmovesCount+depth-HalfnodesCountToOverwrite;
+      bool overwrite = hitem.halfmovesCount_+hitem.depth_ < halfmovesCount+depth-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
 
-      //if ( !overwrite )
+      if ( !overwrite )
         return;
     }
 
@@ -186,9 +186,9 @@ public:
     if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
     {
       // if we are going to return, check if we could overwrite this item
-      //bool overwrite = hitem.hcode_ != hcode && hitem.halfmovesCount_ < halfmovesCount-HalfnodesCountToOverwrite;
+      bool overwrite = hitem.halfmovesCount_ < halfmovesCount-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
 
-      //if ( !overwrite )
+      if ( !overwrite )
         return;
     }
 

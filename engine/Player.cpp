@@ -106,6 +106,7 @@ void Player::setMemory(int mb)
     return;
 
   int ghitemSize = sizeof(GeneralHItem);
+  int chitemSize = sizeof(CaptureHItem);
   int bytesN = mb*1024*1024;
 
   int hsize = log2(bytesN/ghitemSize) - 1;
@@ -377,11 +378,13 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 #endif
 
+#ifdef USE_HASH_TABLE_GENERAL
   if ( depth > 2 && !null_move && !pv )
   {
     ScoreType score = alphaBetta(depth-2, ply, alpha, betta, false);
     getGeneralHashItem(depth, ply, alpha, betta, pv);
   }
+#endif
 
 #ifdef USE_FUTILITY_PRUNING
   if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly &&

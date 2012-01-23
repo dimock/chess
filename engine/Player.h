@@ -89,7 +89,7 @@ public:
 
   void setMaxDepth(int d)
   {
-    if ( d > 1 && d <= 32 )
+    if ( d >= 1 && d <= 32 )
       depthMax_ = d;
   }
 

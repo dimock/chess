@@ -47,7 +47,7 @@ SetParamsDlg::SetParamsDlg(QWidget * parent) :
 
   static int ttime_ [] = { 0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 45, 60 };
 
-  for (int ply = 2; ply <= maxPly; ++ply)
+  for (int ply = 1; ply <= maxPly; ++ply)
     depthCB_->insertItem(ply, QString("%1").arg(ply), ply);
 
   for (int i = 0; i < sizeof(ttime_)/sizeof(*ttime_); ++i)
