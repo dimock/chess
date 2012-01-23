@@ -1,0 +1,110 @@
+r1b2r2/pp3pk1/4p2p/6p1/2B5/4R3/P1P2KP1/3R4 w - - 2 27 
+3r1r2/pb3pk1/1p2p2p/6p1/2BK4/4R3/P1P3P1/3R4 w - - 4 30 
+r2qr2k/p1R2ppp/1ppP4/3QP3/8/P4N2/4NKPP/2R5 w - - 0 27 
+
+
+8/1b6/8/2Pp4/4K3/8/1k6/8 w - d6 0 1 
+8/8/8/1PpP4/1P1K4/8/5k2/8 w - c6 0 1 
+r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w Kk - 2 4
+
+r1b1kb1r/5ppp/pp2p3/8/3P4/2P2B2/P4PPP/R1B1K2R b KQkq - 1 13
+2r1k2r/1p4pp/2p1p3/8/2P1R3/6PB/PP2Pb1P/1K5R b k - 1 22  
+
+r2qkb1r/1p3pp1/p1np4/3npP2/4P3/3B4/PPPB1P2/R2QR1K1 b kq - 1 17 
+
+bug - don't detect mat in captures-search
+6rk/3R2p1/8/5P1p/8/6PP/8/1q1Q2K1 b - - 15 64
+
+bug - can't find move
+8/QP6/5k2/7P/8/8/3KB3/8 b - - 0 65 
+
+can't mat
+1r6/5k2/8/4R1K1/6PP/8/8/8 w - - 3 49
+1r6/4k3/8/5RK1/6PP/8/8/8 w - - 1 48
+
+PV bug
+r4rk1/ppb2pp1/1np4p/8/3PNqb1/3BQN2/PP3PPP/1K2R1R1 w - - 9 18 
+
+1r6/7k/7P/4RKP1/8/8/8/8 w - - 1 53
+
+r2r2k1/1p3ppp/p1p2n2/4p3/1qP1P3/2NB1QPb/P4P1P/2R1K2R w K - 2 16 
+
+
+board0 != board_
+8/1p4pp/1Kp1kp2/4p3/p3P1PP/5P2/2r5/8 w - - 0 44 
+
+strange move
+r5k1/1p3ppp/p1p2n2/q3p3/2PrP3/2NB2P1/P1Q2PbP/1R2K2R w K - 8 19 
+r1bqkb1r/pp2pppp/2n5/3np3/3P4/5N2/PP1N1PPP/R1BQKB1R w KQkq - 0 8 
+5r2/r6p/1pp3p1/3k2P1/1P1Pp2P/2RbP3/3B4/4R1K1 w - - 1 43 
+
+invalid queen mask
+8/4k1p1/p3Pp2/1p5P/1Pn2K2/P7/8/8 w - - 2 57 
+
+
+r6k/pp1n1p1p/4p3/3pP2Q/2PP1P1P/5P2/P7/q5RK b - - 1 26 
+
+incomplete PV
+r1bqkb1r/pp2pppp/2n5/3np3/3P4/5N2/PP1N1PPP/R1BQKB1R w KQkq - 0 8 
+r1bqkb1r/1p2pppp/p1n5/4P3/8/5N2/PP1N1PPP/R1BQK2R w KQkq - 0 11 
+r1bqkb1r/1p2pppp/p1n5/4P3/8/5N2/PP1N1PPP/R1BQK2R w KQkq - 0 11 
+4k2r/5pb1/4p1p1/4P2p/3NbB2/8/R4PPP/6K1 w - - 2 32 
+4k1r1/2R5/2bP1pp1/4p2p/1B6/8/5PPP/6K1 w - - 6 40 
+
+
+2kr1b1r/ppp1ppp1/2n1qn1p/5b2/8/1PNP1N2/PBP1BPPP/R2Q1RK1 b - - 4 9
+
+FP bug
+rnbqkb1r/pp3pp1/2p1pB1p/3p4/2PP4/2N2N2/PP2PPPP/R2QKB1R b KQkq - 0 6 
+r1b2rk1/ppp2ppp/8/4b3/2B5/B1P5/P1P2PPP/R4RK1 b - - 1 14
+
+performance test case:
+r3kb1r/1p2qppp/p2p1nb1/2pPn3/4PP2/2N3PN/PP2B2P/R1BQK2R b KQkq - 0 12 
+
+
+
+Check generator bug:
+r1bqk2r/pppp1ppp/2n2n2/4p3/1b1PP3/2N2N2/PPP2PPP/R1BQKB1R w KQkq - 1 5
+3k4/R2b4/2P1p3/4P3/3N4/5PK1/3n4/7r b - - 0 51 
+8/R2Pk3/4N3/4P3/8/5PK1/3n4/7r w - - 1 54
+
+8/8/8/5N2/8/p2K4/Pk6/8 b - - 4 51 
+
+caps generator bugs:
+r1b1kbnr/ppqp1ppp/2n1p3/8/3NP3/2N3P1/PPP2P1P/R1BQKB1R b KQkq - 0 6 
+
+weak move:
+2rr2k1/p1p1qpp1/1pb1p2p/3PR3/2P5/3BQ3/PP3PPP/4R1K1 b - - 0 20 
+8/8/3rk1pp/2Q2p2/1p2p3/1Pb1P1P1/P4P1P/6K1 w - - 2 35
+r1bqk2r/pp1n1ppp/3bp3/2pp4/3P1P2/2PB1NP1/PP3P1P/RN1QK2R w KQkq c6 0 9 
+r1bq1rk1/pp2bppp/2nppn2/6B1/3NP3/2N5/PPPQ1PPP/2KR1B1R w - - 4 9 
+
+
+stupid move:
+8/1b6/8/1B6/6k1/6p1/8/6K1 w - - 18 80
+4K3/8/8/8/8/5Q2/P7/6k1 w - - 29 86
+
+null move bug:
+8/8/8/6p1/2P1bk2/3K4/6p1/8 w - - 2 59 
+
+
+weak with adamant:
+r1b1r1kn/3p1ppp/2p1p3/p1B1P3/P1P1BP2/6PP/8/1R1R2K1 b - - 0 25
+R7/2kp4/b1p1p3/p1P1K3/P3BPr1/8/8/8 b - - 14 53
+8/1bkp4/2p1p3/R1P1K3/P3BPr1/8/8/8 b - - 0 54
+
+stupid:
+4k3/8/8/8/4bP2/2B1P1K1/1P6/8 b - - 2 43
+
+with adamant - differs from Queen4:
+r1b1k2r/p2p1ppp/2p1p3/q3P3/2P2P2/2n5/P1PBB1PP/R2QK2R b KQkq f3 0 12
+
+
+bad move with slow:
+r4rk1/1p4pp/1q1p3n/p2Pp3/4B3/1PB3Pb/P3QP1P/R4RK1 w - - 0 22 
+r4rk1/1p4pp/1q1p3n/p2Pp3/4B3/1PB3Pb/P3QP1P/R3R1K1 b - - 1 22 
+6k1/1p4pp/1q1p4/p2Pp3/6n1/1PB3Pb/P3Qr1P/R3R1K1 w - - 0 26 
+
+weak game with ALchess:
+r3r2k/pp4pp/n1p1bq2/Q2pN3/P2P1PP1/8/1P4BP/2R1R2K w - - 1 29 
+r3r2k/pp4pp/n1p1bq2/Q2pNP2/P2P2P1/8/1P4BP/2R1R2K b - - 0 29 
