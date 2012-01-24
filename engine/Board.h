@@ -211,7 +211,7 @@ public:
 
   /// get i-th move from end
   /// 0 means the last one
-  const MoveCmd & getMoveRev(int i) const
+  MoveCmd & getMoveRev(int i)
   {
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
     return g_moves[halfmovesCounter_+i-1];

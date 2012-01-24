@@ -4,17 +4,18 @@
 
 __declspec (align(16)) struct GeneralHItem
 {
-  GeneralHItem() : hcode_(0), score_(0), depth_(0), color_(0), flag_(0), ply_(0), halfmovesCount_(0)
+  GeneralHItem() : hcode_(0), score_(0), depth_(0), color_(0), flag_(0), ply_(0), threat_(0), halfmovesCount_(0)
   {}
 
   operator bool () const { return hcode_ != 0; }
 
   uint64     hcode_;
   ScoreType  score_;
-  uint16     color_ : 1,
+  uint32     color_ : 1,
              depth_ : 6,
              ply_ : 7,
-             flag_ : 2;
+             flag_ : 2,
+             threat_ : 1;
 
   uint8      halfmovesCount_;
 
@@ -132,7 +133,7 @@ public:
   GeneralHashTable(int size) : HashTable<GeneralHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount, Figure::Color color, Flag flag, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount, Figure::Color color, Flag flag, const PackedMove & move, bool threat)
   {
     GeneralHItem & hitem = (*this)[hcode];
     //if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
@@ -153,6 +154,7 @@ public:
     hitem.color_ = color;
     hitem.flag_  = flag;
     hitem.ply_   = ply;
+    hitem.threat_ = threat;
     hitem.halfmovesCount_ = halfmovesCount;
 
     if ( flag != Alpha && move && move != hitem.move_ )

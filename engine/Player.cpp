@@ -296,6 +296,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
 
   int counter = 0;
+  bool threat = false;
 
   // if we haven't found best move, we write alpha-flag to hash
   ScoreType savedAlpha = alpha;
@@ -324,7 +325,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	  if ( GeneralHashTable::Alpha == flag )
       return alpha;
     else if ( GeneralHashTable::Betta == flag )
+    {
+      GeneralHItem & hitem = ghash_[board_.hashCode()];
+      // previous move has some threat, recalculate it with full depth
+      if ( hitem.threat_ && board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_ )
+        return betta - 1;
+
       return betta;
+    }
 
 #if (defined USE_HASH_TABLE_ADV) && (defined USE_HASH_TABLE_CAPTURE)
     // if we haven't found pv in general hash, lets try captures hash
@@ -371,9 +379,22 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
           depth = 1;
       }
       else
-        return nullScore;
-
-      //null_move = true;
+      {
+        int depth1 = depth-4;
+        depth >>= 1;
+        if ( depth > depth1 )
+          depth = depth1;
+        if ( depth < 1 )
+          depth = 1;
+        null_move = true;
+      }
+    }
+    else if ( ply < MaxPly-1 && (contexts_[ply+1].pv_[ply+1].rindex_ >= 0 || contexts_[ply+1].pv_[ply+1].checking_) )
+    {
+      if ( board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_ )
+        return betta - 1; // force to recalculate with full depth
+      else
+        threat = true; // remember this position as threat to prevent further reductions
     }
   }
 #endif
@@ -399,7 +420,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // try move from hash (only if we are not under check)
   if ( board_.getState() != Board::UnderCheck && pv )
-    movement(depth, ply, alpha, betta, pv, counter, null_move, 0);
+    movement(depth, ply, alpha, betta, pv, counter, null_move, 0, threat);
 
   if ( alpha >= betta )
   {
@@ -422,7 +443,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      movement(depth, ply, alpha, betta, move, counter, null_move, 0);
+      movement(depth, ply, alpha, betta, move, counter, null_move, 0, threat);
     }
   }
   else
@@ -441,7 +462,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 			  if ( hmove_ex[i] && hmove_ex[i] != pv && (!i || hmove_ex[i] != hmove_ex[i-1]) )
 			  {
 				  ScoreType alpha_prev = alpha;
-				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move, 0);
+				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move, 0, threat);
 				  if ( alpha >= betta )
 					  return alpha;
 			  }
@@ -459,7 +480,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 		killer.rindex_ >= 0 && board_.validMove(killer) )
     {
-      movement(depth, ply, alpha, betta, killer, counter, null_move, 0);
+      movement(depth, ply, alpha, betta, killer, counter, null_move, 0, threat);
       if ( alpha >= betta )
         return alpha;
     }
@@ -491,7 +512,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
 
-      movement(depth, ply, alpha, betta, move, counter, null_move, mg.hist_max());
+      movement(depth, ply, alpha, betta, move, counter, null_move, mg.hist_max(), threat);
     }
   }
 
@@ -514,7 +535,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     else
       flag = GeneralHashTable::AlphaBetta;
 
-    ghash_.push(board_.hashCode(), s, depth, ply, board_.halfmovesCount(), board_.getColor(),  flag, PackedMove());
+    ghash_.push(board_.hashCode(), s, depth, ply, board_.halfmovesCount(), board_.getColor(),  flag, PackedMove(), threat);
 #endif
 
     return s;
@@ -530,14 +551,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_HASH_TABLE_GENERAL
   if ( alpha == savedAlpha )
   {
-    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.halfmovesCount(), board_.getColor(), GeneralHashTable::Alpha, PackedMove());
+    ghash_.push(board_.hashCode(), alpha, depth, ply, board_.halfmovesCount(), board_.getColor(), GeneralHashTable::Alpha, PackedMove(), threat);
   }
 #endif
 
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
-void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max)
+void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max, bool threat)
 {
   totalNodes_++;
   nodesCount_++;
@@ -553,6 +574,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
 
   if ( board_.makeMove(move) )
   {
+    MoveCmd & mv_cmd = board_.getMoveRev(0);
     bool ext = false;
     History & hist = MovesGenerator::history(move.from_, move.to_);
 
@@ -560,6 +582,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
     if ( (haveCheck || Figure::TypeQueen == move.new_type_) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
     {
       ext = true;
+      mv_cmd.extended_ = true;
       depth++;
     }
 
@@ -596,10 +619,13 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
               board_.canBeReduced(move) )
         {
           R = 2;
+          mv_cmd.reduced_ = true;
         }
 #endif
 
         score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move);
+
+        mv_cmd.reduced_ = false;
 
 #ifdef USE_LMR
 
@@ -628,10 +654,10 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       {
         alpha = score;
 
-        assemblePV(move, ply);
+        assemblePV(move, haveCheck, ply);
 
 #ifdef USE_HASH_TABLE_GENERAL
-        updateGeneralHash(move, depth0, ply, score, betta, hcode, color);
+        updateGeneralHash(move, depth0, ply, score, betta, hcode, color, threat);
 #endif
 
         if ( move.rindex_ < 0 && !move.new_type_ )
@@ -928,6 +954,8 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
     if ( !stop_ && s > alpha )
     {
       alpha = s;
+
+      assemblePV(cap, haveCheck, ply);
 
 #ifdef USE_KILLER_CAPS
       contexts_[ply].killer_ = cap;

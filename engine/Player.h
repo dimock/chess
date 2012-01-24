@@ -137,15 +137,16 @@ private:
   bool use_pv_;
 
   //////////////////////////////////////////////////////////////////////////
-  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max);
+  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max, bool threat);
   void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks);
   
-  void assemblePV(const Move & move, int ply)
+  void assemblePV(const Move & move, bool checking, int ply)
   {
-    if ( ply >= depth_ )
+    if ( ply > depth_ || ply >= MaxPly )
       return;
 
     contexts_[ply].pv_[ply] = move;
+    contexts_[ply].pv_[ply].checking_ = checking;
     contexts_[ply].pv_[ply+1].clear();
 
     for (int i = ply+1; i < depth_; ++i)
@@ -157,10 +158,10 @@ private:
   }
 
 #ifdef USE_HASH_TABLE_GENERAL
-  void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
+  void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color, bool threat)
   {
     PackedMove pm = board_.pack(move);
-    ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
+    ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm, threat);
   }
 
   // we should return alpha if flag is Alpha, or betta if flag is Betta
@@ -200,6 +201,7 @@ private:
 #endif
 
         bool retBetta = pv.rindex_ >= 0 || pv.new_type_;
+        bool checking = false;
 
         if ( !retBetta )
         {
@@ -207,7 +209,10 @@ private:
           nodesCount_++;
 
           if ( board_.makeMove(pv) )
+          {
+            checking = board_.getState() == Board::UnderCheck;
             retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
+          }
 
 #ifndef NDEBUG
           board_.verifyMasks();
@@ -224,7 +229,7 @@ private:
 
         if ( retBetta )
         {
-          assemblePV(pv, ply);
+          assemblePV(pv, checking, ply);
           return GeneralHashTable::Betta;
         }
       }

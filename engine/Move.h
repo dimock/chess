@@ -59,6 +59,7 @@ struct Move
   uint16 checkVerified_ : 1,
          alreadyDone_ : 1,
 		     fkiller_ : 1,
+         checking_ : 1,
          flags_ ;
 
   int score_;
@@ -72,7 +73,8 @@ struct Move
     score_ = -std::numeric_limits<ScoreType>::max();
     checkVerified_ = 0;
     alreadyDone_ = 0;
-	fkiller_ = 0;
+	  fkiller_ = 0;
+    checking_ = 0;
     flags_ = 0;
   }
 
@@ -84,7 +86,8 @@ struct Move
     new_type_ = new_type;
     checkVerified_ = checkVerified;
     alreadyDone_ = 0;
-	fkiller_ = 0;
+	  fkiller_ = 0;
+    checking_ = 0;
     flags_ = 0;
     score_ = -std::numeric_limits<ScoreType>::max();
   }
@@ -202,6 +205,10 @@ struct MoveCmd : public Move
 
   bool can_win_[2];
 
+  /// reduced || extended flags
+  bool reduced_;
+  bool extended_;
+
   /// performs clear operation before doing movement. it clears only undo info
   void clearUndo()
   {
@@ -220,6 +227,8 @@ struct MoveCmd : public Move
     need_unmake_ = false;
     rook_to_ = -1;
     rook_from_ = -1;
+    reduced_ = false;
+    extended_ = false;
   }
 };
 
