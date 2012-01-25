@@ -133,7 +133,7 @@ public:
   GeneralHashTable(int size) : HashTable<GeneralHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount, Figure::Color color, Flag flag, const PackedMove & move, bool threat)
+  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount, Figure::Color color, Flag flag, const PackedMove & move)
   {
     GeneralHItem & hitem = (*this)[hcode];
     //if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
@@ -146,6 +146,8 @@ public:
 
       if ( !overwrite )
         return;
+
+      hitem.threat_ = 0;
     }
 
     hitem.hcode_ = hcode;
@@ -154,7 +156,6 @@ public:
     hitem.color_ = color;
     hitem.flag_  = flag;
     hitem.ply_   = ply;
-    hitem.threat_ = threat;
     hitem.halfmovesCount_ = halfmovesCount;
 
     if ( flag != Alpha && move && move != hitem.move_ )
@@ -171,6 +172,8 @@ public:
 #endif
       hitem.move_ = move;
     }
+    else
+      hitem.threat_ = 0;
   }
 };
 

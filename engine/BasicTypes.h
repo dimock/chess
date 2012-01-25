@@ -66,7 +66,7 @@ typedef int16 ScoreType;
 
 
 
-enum { MaxPly = 48, HalfnodesCountToOverwrite = 10 };
+enum { MaxPly = 48, HalfnodesCountToOverwrite = 16 };
 
 #ifndef _M_X64
 class QpfTimer

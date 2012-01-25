@@ -101,17 +101,37 @@ public:
         return false;
     }
 
-    //// don't reduce knight's attack
-    //if ( fto.type() == Figure::TypeKnight )
-    //{
-    //  const uint64 & k_caps = g_movesTable->caps(fto.type(), fto.color());
-    //  const uint64 & o_mask = fmgr_.mask(color_);
-    //  if ( k_caps & o_mask )
-    //    return false;
-    //}
+    return true;
+  }
+
+  /// test if line between from and to is crossed by pt
+  bool crossTheWay(int8 from, int8 to, int8 pt) const
+  {
+    return (g_betweenMasks->between(from, to) & (1ULL << pt)) != 0;
+  }
+
+  /// is pt attacked by given figure
+  inline bool isAttackedBy(Figure::Color color, int8 pt, const Figure & fig) const
+  {
+    int dir = g_figureDir->dir(fig, pt);
+    if ( dir < 0 )
+      return false;
+
+    const uint64 & mask = g_betweenMasks->between(fig.where(), pt);
+    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+    if ( (~black & mask) != mask )
+      return false;
+
+    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+    if ( (~white & mask) != mask )
+      return false;
 
     return true;
   }
+
+  /// is pt attacked from given direction by given color
+  bool isAttackedFrom(Figure::Color color, int8 pt, int8 from) const;
+
 
   /// verify 
   bool validMove(const Move &) const;

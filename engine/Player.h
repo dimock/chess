@@ -44,6 +44,11 @@ struct PlyContext
     for (int i = 0; i < depth; ++i)
       pv_[i].clear();
   }
+
+  void clear(int ply)
+  {
+    pv_[ply].clear();
+  }
 };
 
 class Player
@@ -97,7 +102,7 @@ private:
 
   void printPV(Board & pv_board, SearchResult & sres, std::ostream * out);
 
-  ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
+  ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta, bool & threat);
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
   ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks);
 
@@ -137,7 +142,7 @@ private:
   bool use_pv_;
 
   //////////////////////////////////////////////////////////////////////////
-  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move, int history_max, bool threat);
+  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
   void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks);
   
   void assemblePV(const Move & move, bool checking, int ply)
@@ -158,10 +163,10 @@ private:
   }
 
 #ifdef USE_HASH_TABLE_GENERAL
-  void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color, bool threat)
+  void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
-    ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm, threat);
+    ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
   }
 
   // we should return alpha if flag is Alpha, or betta if flag is Betta
@@ -260,4 +265,67 @@ private:
   void verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int delta);
 #endif
 
+  bool maybeThreat(ScoreType nullScore, int ply)
+  {
+    // mat threat
+    //if ( nullScore <= -Figure::WeightMat+MaxPly )
+    //  return true;
+
+    if ( board_.halfmovesCount() <= 0 || ply >= MaxPly )
+      return false;
+
+    MoveCmd & prev = board_.getMoveRev(0);
+    Move & nullMove = contexts_[ply+1].pv_[ply+1];
+
+    if ( !prev || !nullMove )
+      return false;
+
+    // test if thread is caused by previous movement
+    // move of the same figure
+    if ( prev.to_ == nullMove.from_ )
+      return true;
+
+    // move through field, freed by previous movement
+    if ( board_.crossTheWay(nullMove.from_, nullMove.to_, prev.from_) )
+      return true;
+
+    return false;
+    //return || (ply < MaxPly-1 && (contexts_[ply+1].pv_[ply+1].rindex_ >= 0 || contexts_[ply+1].pv_[ply+1].checking_));
+  }
+
+  bool recapture()
+  {
+    if ( board_.halfmovesCount() < 2 )
+      return false;
+
+    MoveCmd & curr = board_.getMoveRev(0);
+    MoveCmd & prev = board_.getMoveRev(-1);
+
+    if ( curr.rindex_ < 0 || prev.rindex_ < 0 )
+      return false;
+
+    // on the same field
+    if ( curr.to_ == prev.to_ )
+      return true;
+
+    // the same or equivalent type
+    return (curr.eaten_type_ == prev.eaten_type_) ||
+           (curr.eaten_type_ == Figure::TypeKnight && prev.eaten_type_ == Figure::TypeBishop) ||
+           (curr.eaten_type_ == Figure::TypeBishop && prev.eaten_type_ == Figure::TypeKnight);
+  }
+
+  // is given movement caused by previous. this mean that if we don't do this move we loose
+  // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
+  bool causedBy(const MoveCmd & prev, const Move & move)
+  {
+    Figure::Color color = Figure::otherColor(board_.getColor());
+
+    const Field & field = board_.getField(prev.to_);
+    THROW_IF( !field || field.color() != color, "no figure of required color on the field it was move to" );
+    const Figure & fig = board_.getFigure(color, field.index());
+    THROW_IF( !fig, "field is occupied but there is no figure in the list" );
+
+    return board_.isAttackedBy(color, move.from_, fig) ||
+           board_.isAttackedFrom(color, move.from_, prev.from_);
+  }
 };

@@ -372,6 +372,55 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
   return -1;
 }
 
+bool Board::isAttackedFrom(Figure::Color color, int8 pt, int8 from) const
+{
+  const uint64 & mask = g_betweenMasks->from(pt, from);
+  if ( !mask )
+    return false;
+
+  Figure::Color ocolor = Figure::otherColor(color);
+  const uint64 & bishops = fmgr_.bishop_mask(ocolor);
+  const uint64 & rooks = fmgr_.rook_mask(ocolor);
+  const uint64 & queens = fmgr_.queen_mask(ocolor);
+
+  uint64 all = (bishops | rooks | queens) & mask;
+  if ( !all )
+    return false;
+
+  const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+  const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+
+  uint64 figs_msk_inv = ~(black | white);
+
+  for ( ; all; )
+  {
+    int n = least_bit_number(all);
+
+    THROW_IF( (unsigned)n > 63, "least siginficant bit is invalid" );
+
+    const Field & field = getField(n);
+    THROW_IF( !field || field.color() == color, "there should be some figure of opponent's color on this field" );
+
+    THROW_IF( field.type() != Figure::TypeBishop && field.type() != Figure::TypeRook && field.type() != Figure::TypeQueen, "figure should be bishop, rook or queen" );
+
+    const Figure & afig = getFigure(ocolor, field.index());
+    THROW_IF( !afig, "no figure, but bit in mask isn't zero" );
+
+    int dir = g_figureDir->dir(afig, pt);
+    if ( dir < 0 )
+      continue;
+
+    const uint64 & btw_msk = g_betweenMasks->between(afig.where(), pt);
+
+    if ( (figs_msk_inv & btw_msk) != btw_msk )
+      continue;
+
+    return true;
+  }
+
+  return false;
+}
+
 int Board::fastAttackedFrom(Figure::Color color, int apt,
                             const uint64 & clear_msk /* figure goes from */,
                             const uint64 & set_msk /* figure goes to */,
