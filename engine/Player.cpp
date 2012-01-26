@@ -302,6 +302,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // set this flag in case of null-move fail. we need to verify it more carefully to prevent reduction of dangerous movement
   bool threat = false;
+  if ( ply > 0 )
+    contexts_[ply-1].threat_ = false;
 
   // previous move was reduced
   bool reduced = board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_;
@@ -434,7 +436,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( alpha >= betta )
   {
     // force to recalculate again with full depth
-    if ( threat && ply > 1 && causedBy(board_.getMoveRev(0), pv) )
+    if ( threat && ply > 0 && causedBy(board_.getMoveRev(0), pv) )
     {
       contexts_[ply-1].threat_ = true;
       if ( reduced )
@@ -511,7 +513,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 				  if ( alpha >= betta )
           {
             // force to recalculate again with full depth
-            if ( alpha >= betta && threat && ply > 1 && causedBy(board_.getMoveRev(0), hmove_ex[i]) )
+            if ( alpha >= betta && threat && ply > 0 && causedBy(board_.getMoveRev(0), hmove_ex[i]) )
             {
               contexts_[ply-1].threat_ = true;
               if ( reduced )
@@ -541,7 +543,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( alpha >= betta )
       {
         // recalculate again with full depth
-        if ( alpha >= betta && threat && ply  > 1 && causedBy(board_.getMoveRev(0), killer) )
+        if ( alpha >= betta && threat && ply  > 0 && causedBy(board_.getMoveRev(0), killer) )
         {
           contexts_[ply-1].threat_ = true;
           if ( reduced )
@@ -583,7 +585,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       movement(depth, ply, alpha, betta, move, counter, null_move);
 
       // recalculate again with full depth
-      if ( alpha >= betta && threat && ply > 1 && causedBy(board_.getMoveRev(0), move) )
+      if ( alpha >= betta && threat && ply > 0 && causedBy(board_.getMoveRev(0), move) )
       {
         contexts_[ply-1].threat_ = true;
         if ( reduced )
