@@ -11,6 +11,8 @@
 #include <iostream>
 #include <sstream>
 
+#define LOAD_HASH
+
 std::auto_ptr<QImage> ChessPosition::fimages_[12];
 
 using namespace std;
@@ -52,6 +54,10 @@ bool ChessPosition::fromFEN(const char * fen)
   vmove_.clear();
   halfmovesNumber_ = 0;
   vboard_ = player_.getBoard();
+
+#ifdef LOAD_HASH
+  player_.loadHash("d:\\arena_3.0\\engines\\tequilla\\hash");
+#endif
 
   return true;
 }

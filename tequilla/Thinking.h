@@ -23,6 +23,7 @@ public:
 
 	void save();
   void fen2file(const char * fname);
+  void hash2file(const char * fname);
 
   bool fromFEN(xCmd & cmd);
 	void editCmd(xCmd & cmd);

@@ -10,7 +10,7 @@ xBoardMgr::xBoardMgr() :
   os_(cout)
 {
 #ifdef WRITE_LOG_FILE_
-  ofs_log_.open("log.txt");
+  ofs_log_.open("log.txt", ios_base::app);
 #endif
 
   vNum_ = 0;
@@ -54,6 +54,7 @@ void xBoardMgr::write_error(const std::exception * e /*= 0*/)
   else
     ofs_log_ << "some other exception" << endl;
   thk_.fen2file("fen.txt");
+  thk_.hash2file("hash");
 #endif
 }
 

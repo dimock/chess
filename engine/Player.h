@@ -74,6 +74,9 @@ public:
   bool fromFEN(const char * fen);
   bool toFEN(char * fen) const;
 
+  void saveHash(const char * fname) const;
+  void loadHash(const char * fname);
+
   bool findMove(SearchResult & , std::ostream * out = 0);
   
   Board & getBoard()

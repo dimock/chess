@@ -25,7 +25,7 @@ int main(int argc, char * argv[])
 
 
 #ifdef WRITE_LOG_FILE_
-  xbrd.get_log() << "   LMR-errors count = " << (int)Board::ticks_ << endl;
+//  xbrd.get_log() << "   LMR-errors count = " << (int)Board::ticks_ << endl;
 #ifndef NDEBUG
   }
   catch ( const std::exception & e )

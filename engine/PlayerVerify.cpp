@@ -1,7 +1,28 @@
 
 #include "Player.h"
 #include "MovesGenerator.h"
+#include "windows.h"
 
+//////////////////////////////////////////////////////////////////////////
+void Player::saveHash(const char * fname) const
+{
+  if ( !fname )
+    return;
+  char gfname[MAX_PATH], cfname[MAX_PATH];
+  sprintf(gfname, "%s_g.hash", fname);
+  sprintf(cfname, "%s_c.hash", fname);
+  ghash_.save(gfname);
+  chash_.save(cfname);
+}
+
+void Player::loadHash(const char * fname)
+{
+  char gfname[MAX_PATH], cfname[MAX_PATH];
+  sprintf(gfname, "%s_g.hash", fname);
+  sprintf(cfname, "%s_c.hash", fname);
+  ghash_.load(gfname);
+  chash_.load(cfname);
+}
 //////////////////////////////////////////////////////////////////////////
 #ifdef VERIFY_ESCAPE_GENERATOR
 void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType betta)

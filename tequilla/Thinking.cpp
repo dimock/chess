@@ -243,6 +243,14 @@ void Thinking::fen2file(const char * fname)
   ofs << std::string(fen) << endl;
 }
 
+void Thinking::hash2file(const char * fname)
+{
+  if ( is_analyzing() || !fname )
+    return;
+
+  player_.saveHash(fname);
+}
+
 //////////////////////////////////////////////////////////////////////////
 bool Thinking::fromFEN(xCmd & cmd)
 {
