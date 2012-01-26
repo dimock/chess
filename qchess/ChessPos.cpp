@@ -11,7 +11,7 @@
 #include <iostream>
 #include <sstream>
 
-#define LOAD_HASH
+#undef LOAD_HASH
 
 std::auto_ptr<QImage> ChessPosition::fimages_[12];
 

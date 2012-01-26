@@ -10,8 +10,11 @@
 #include <string.h>
 
 #ifdef _M_X64
-#include <intrin.h>
-#pragma intrinsic(__rdtsc)
+  #include <intrin.h>
+  #pragma intrinsic(__rdtsc)
+  #define ONE_SIZE_T 1ULL
+#else
+  #define ONE_SIZE_T 1
 #endif
 
 #undef DONT_USE_EXTS_

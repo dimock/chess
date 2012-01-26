@@ -302,8 +302,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // set this flag in case of null-move fail. we need to verify it more carefully to prevent reduction of dangerous movement
   bool threat = false;
-  if ( ply > 0 )
-    contexts_[ply-1].threat_ = false;
 
   // previous move was reduced
   bool reduced = board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_;
@@ -436,7 +434,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( alpha >= betta )
   {
     // force to recalculate again with full depth
-    if ( threat && ply > 0 && causedBy(board_.getMoveRev(0), pv) )
+    if ( threat && ply > 0 && causedByPrev(pv) )
     {
       contexts_[ply-1].threat_ = true;
       if ( reduced )
@@ -471,31 +469,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     GeneralHItem & hitem = ghash_[board_.hashCode()];
 
-    // threat move, if we have one
-    Move htmove = board_.unpack(hitem.tmove_);
-    if ( htmove && htmove != pv 
-//#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
-//      && htmove != hmove_ex[0] && htmove != hmove_ex[1]
-//#endif
-    )
-    {
-      htmove.threat_ = 1;
-      movement(depth, ply, alpha, betta, htmove, counter, null_move);
-      if ( alpha >= betta )
-      {
-        // recalculate again with full depth
-        if ( alpha >= betta && threat && ply  > 1 && causedBy(board_.getMoveRev(0), htmove) )
-        {
-          contexts_[ply-1].threat_ = true;
-          if ( reduced )
-            return betta - 1;
-          else
-            ghash_[board_.hashCode()].threat_ = 1;
-        }
-        return alpha;
-      }
-    }
-
 #if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
 	  Move hmove_ex[2];
 	  hmove_ex[0].clear();
@@ -506,14 +479,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 		  for (int i = 0; i < 2; ++i)
 		  {
 			  hmove_ex[i] = board_.unpack(hitem.move_ex_[i]);
-			  if ( hmove_ex[i] && hmove_ex[i] != pv && hmove_ex[i] != htmove && (!i || hmove_ex[i] != hmove_ex[i-1]) )
+			  if ( hmove_ex[i] && hmove_ex[i] != pv && /*hmove_ex[i] != htmove && */(!i || hmove_ex[i] != hmove_ex[i-1]) )
 			  {
 				  ScoreType alpha_prev = alpha;
 				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move);
 				  if ( alpha >= betta )
           {
             // force to recalculate again with full depth
-            if ( alpha >= betta && threat && ply > 0 && causedBy(board_.getMoveRev(0), hmove_ex[i]) )
+            if ( alpha >= betta && threat && ply > 0 && causedByPrev(hmove_ex[i]) )
             {
               contexts_[ply-1].threat_ = true;
               if ( reduced )
@@ -531,6 +504,31 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	  }
 #endif
 
+    // threat move, if we have one
+    Move htmove = board_.unpack(hitem.tmove_);
+    if ( htmove && htmove != pv 
+#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
+          && htmove != hmove_ex[0] && htmove != hmove_ex[1]
+#endif
+      )
+    {
+      htmove.threat_ = 1;
+      movement(depth, ply, alpha, betta, htmove, counter, null_move);
+      if ( alpha >= betta )
+      {
+        // recalculate again with full depth
+        if ( alpha >= betta && threat && ply  > 1 && causedByPrev(htmove) )
+        {
+          contexts_[ply-1].threat_ = true;
+          if ( reduced )
+            return betta - 1;
+          else
+            ghash_[board_.hashCode()].threat_ = 1;
+        }
+        return alpha;
+      }
+    }
+
 #ifdef USE_KILLER_ADV
     Move killer = contexts_[ply].killer_;
     if ( killer && killer != pv && killer != htmove &&
@@ -543,7 +541,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( alpha >= betta )
       {
         // recalculate again with full depth
-        if ( alpha >= betta && threat && ply  > 0 && causedBy(board_.getMoveRev(0), killer) )
+        if ( alpha >= betta && threat && ply  > 0 && causedByPrev(killer) )
         {
           contexts_[ply-1].threat_ = true;
           if ( reduced )
@@ -585,7 +583,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       movement(depth, ply, alpha, betta, move, counter, null_move);
 
       // recalculate again with full depth
-      if ( alpha >= betta && threat && ply > 0 && causedBy(board_.getMoveRev(0), move) )
+      if ( alpha >= betta && threat && ply > 0 && causedByPrev(move) )
       {
         contexts_[ply-1].threat_ = true;
         if ( reduced )
@@ -652,6 +650,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
   Figure::Color color = board_.getColor();
   bool check_esc = board_.getState() == Board::UnderCheck;
   //GeneralHItem & hitem = ghash_[hcode];
+  contexts_[ply].threat_ = false;
 
   if ( board_.makeMove(move) )
   {
@@ -692,7 +691,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if (  /*counter > 3 &&*/
+        if (  counter > 3 &&
               depth_ > 5 &&
               depth > 3 &&
               !move.threat_ &&
@@ -767,6 +766,10 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       }
       else if ( contexts_[ply].threat_ )
       {
+        if ( move.from_ == 30 && move.to_ == 38 && hcode == 5831221830550757135 )
+        {
+          int ttt = 0;
+        }
         ghash_[hcode].tmove_ = board_.pack(move);
       }
 

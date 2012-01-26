@@ -200,7 +200,7 @@ private:
       pv = board_.unpack(hitem.move_);
     }
 
-    if ( hitem.depth_ >= depth )
+    if ( (int)hitem.depth_ >= depth )
     {
       if ( GeneralHashTable::Alpha == hitem.flag_ && hscore <= alpha )
         return GeneralHashTable::Alpha;
@@ -323,8 +323,9 @@ private:
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
-  bool causedBy(const MoveCmd & prev, const Move & move)
+  bool causedByPrev(const Move & move)
   {
+    const MoveCmd & prev = board_.getMoveRev(0);
     Figure::Color color = Figure::otherColor(board_.getColor());
 
     const Field & field = board_.getField(prev.to_);
@@ -332,7 +333,14 @@ private:
     const Figure & fig = board_.getFigure(color, field.index());
     THROW_IF( !fig, "field is occupied but there is no figure in the list" );
 
-    return board_.isAttackedBy(color, move.from_, fig) ||
+    // don't need to extend captures or checks or promotions
+    if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 )
+      return false;
+
+    if ( board_.isDangerPawn(prev) )
+      return false;
+
+    return board_.isAttackedBy(move.from_, fig) ||
            board_.isAttackedFrom(color, move.from_, prev.from_);
   }
 };

@@ -73,7 +73,7 @@ bool Board::fromFEN(const char * fen)
   strncpy(fen_, fen, FENsize);
   
   // trim right
-  int n = strlen(fen_) - 1;
+  int n = (int)strlen(fen_) - 1;
   for (; n >= 0 && strchr(sepr, fen_[n]); --n);
   fen_[n+1] = 0;
 

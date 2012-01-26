@@ -88,20 +88,42 @@ public:
       return false;
 
     // don't allow reduction of pawn's movement to pre-last line or pawn's attack
+    return !isDangerPawn(move);
+    //const Field & fto = getField(move.to_);
+    //if ( fto.type() == Figure::TypePawn )
+    //{
+    //  int8 y = move.to_ >> 3;
+    //  if ( 1 == y || 6 == y )
+    //    return false;
+
+    //  const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
+    //  const uint64 & o_mask = fmgr_.mask(color_);
+    //  if ( p_caps & o_mask )
+    //    return false;
+    //}
+
+    //return true;
+  }
+
+  /// used to detect reduction/extension necessity
+  bool isDangerPawn(const Move & move) const
+  {
     const Field & fto = getField(move.to_);
     if ( fto.type() == Figure::TypePawn )
     {
+      // before promotion
       int8 y = move.to_ >> 3;
       if ( 1 == y || 6 == y )
-        return false;
+        return true;
 
+      // attacking
       const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
       const uint64 & o_mask = fmgr_.mask(color_);
       if ( p_caps & o_mask )
-        return false;
+        return true;
     }
 
-    return true;
+    return false;
   }
 
   /// test if line between from and to is crossed by pt
@@ -111,7 +133,7 @@ public:
   }
 
   /// is pt attacked by given figure
-  inline bool isAttackedBy(Figure::Color color, int8 pt, const Figure & fig) const
+  inline bool isAttackedBy(int8 pt, const Figure & fig) const
   {
     int dir = g_figureDir->dir(fig, pt);
     if ( dir < 0 )

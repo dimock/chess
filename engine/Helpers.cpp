@@ -267,7 +267,7 @@ bool parseSAN(Board & board, const char * str, Move & move)
   if ( to < 0 ) // not found yet
   {
     // should be at least 2 chars
-    int n = strlen(s);
+    size_t n = strlen(s);
     if ( n < 2 )
       return false;
 
@@ -694,7 +694,7 @@ bool moveToStr(const Move & move, char * str, bool full)
 	Index from(move.from_);
 	Index to(move.to_);
 
-  int n = 0;
+  size_t n = 0;
   if ( full )
   {
     strcpy(str, "move ");

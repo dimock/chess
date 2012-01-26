@@ -76,13 +76,13 @@ public:
 
     THROW_IF((unsigned)size > 24, "hash table size if too big");
 
-    buffer_ = new ITEM[1<<size_];
-    szMask_ = (1<<size_) - 1;
+    buffer_ = new ITEM[ONE_SIZE_T<<size_];
+    szMask_ = (ONE_SIZE_T<<size_) - 1;
   }
 
   size_t size() const
   {
-    return (1<<size_) - 1;
+    return (ONE_SIZE_T<<size_) - 1;
   }
 
   ITEM & operator [] (const uint64 & code)
@@ -99,8 +99,8 @@ public:
     if ( fread(&size_, sizeof(size_), 1, f) == 1 && size_ > 0 && size_ <= 24 )
     {
       delete [] buffer_;
-      buffer_ = new ITEM[1<<size_];
-      szMask_ = (1<<size_) - 1;
+      buffer_ = new ITEM[ONE_SIZE_T<<size_];
+      szMask_ = (ONE_SIZE_T<<size_) - 1;
       n = fread(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);
@@ -140,11 +140,11 @@ public:
     GeneralHItem & hitem = (*this)[hcode];
     //if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
 
-	  if ( (depth < hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
-		     (depth == hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
+	  if ( (depth < (int)hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
+		     (depth == (int)hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
     {
       // we are going to skip this item, check is it to old so we could overwrite it
-      bool overwrite = hitem.halfmovesCount_+hitem.depth_ < halfmovesCount+depth-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
+      bool overwrite = (int)(hitem.halfmovesCount_+hitem.depth_) < halfmovesCount+depth-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
 
       if ( !overwrite )
         return;
