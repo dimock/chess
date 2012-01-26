@@ -60,7 +60,8 @@ struct Move
          alreadyDone_ : 1,
 		     fkiller_ : 1,
          checking_ : 1,
-         flags_ ;
+         threat_ : 1,
+         flags_;
 
   int score_;
 
@@ -75,6 +76,7 @@ struct Move
     alreadyDone_ = 0;
 	  fkiller_ = 0;
     checking_ = 0;
+    threat_ = 0;
     flags_ = 0;
   }
 
@@ -88,6 +90,7 @@ struct Move
     alreadyDone_ = 0;
 	  fkiller_ = 0;
     checking_ = 0;
+    threat_ = 0;
     flags_ = 0;
     score_ = -std::numeric_limits<ScoreType>::max();
   }
