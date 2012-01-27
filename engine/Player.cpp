@@ -1112,7 +1112,7 @@ bool Player::isRealThreat(const Move & move)
       return true;
   }
 
-  // prev move was attack of equal or stronger, and we should escape from it
+  // prev move was attack by equal or stronger, and we should escape from it
   if ( board_.ptAttackedBy(move.from_, pfig) &&
       (pfig.getType() >= cfig.getType() || pfig.getType() == Figure::TypeKnight && cfig.getType() == Figure::TypeBishop) )
   {
