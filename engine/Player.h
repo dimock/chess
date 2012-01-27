@@ -149,7 +149,7 @@ private:
   bool use_pv_;
 
   //////////////////////////////////////////////////////////////////////////
-  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move);
+  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move);
   void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks);
   
   void assemblePV(const Move & move, bool checking, int ply)
@@ -312,8 +312,12 @@ private:
       return false;
 
     // on the same field
-    if ( curr.to_ == prev.to_ )
-      return true;
+    if ( curr.to_ != prev.to_ )
+      return false;
+
+    // don't extend pawns recaptures
+    if ( curr.eaten_type_ == Figure::TypePawn )
+      return false;
 
     // the same or equivalent type
     return (curr.eaten_type_ == prev.eaten_type_) ||
@@ -323,24 +327,5 @@ private:
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
-  bool causedByPrev(const Move & move)
-  {
-    const MoveCmd & prev = board_.getMoveRev(0);
-    Figure::Color color = Figure::otherColor(board_.getColor());
-
-    const Field & field = board_.getField(prev.to_);
-    THROW_IF( !field || field.color() != color, "no figure of required color on the field it was move to" );
-    const Figure & fig = board_.getFigure(color, field.index());
-    THROW_IF( !fig, "field is occupied but there is no figure in the list" );
-
-    // don't need to extend captures or checks or promotions
-    if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 )
-      return false;
-
-    if ( board_.isDangerPawn(prev) )
-      return false;
-
-    return board_.isAttackedBy(move.from_, fig) ||
-           board_.isAttackedFrom(color, move.from_, prev.from_);
-  }
+  bool isRealThreat(const Move & move);
 };

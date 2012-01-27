@@ -133,11 +133,14 @@ public:
   }
 
   /// is pt attacked by given figure
-  inline bool isAttackedBy(int8 pt, const Figure & fig) const
+  inline bool ptAttackedBy(int8 pt, const Figure & fig) const
   {
     int dir = g_figureDir->dir(fig, pt);
     if ( dir < 0 )
       return false;
+
+    if ( fig.getType() == Figure::TypeKnight )
+      return true;
 
     const uint64 & mask = g_betweenMasks->between(fig.where(), pt);
     const uint64 & black = fmgr_.mask(Figure::ColorBlack);
@@ -151,8 +154,9 @@ public:
     return true;
   }
 
-  /// is pt attacked from given direction by given color
-  bool isAttackedFrom(Figure::Color color, int8 pt, int8 from) const;
+  /// get index of figure of color 'ocolor', which attacks field 'pt'
+  /// returns -1 if 'pt' was already attacked from this direction (independently of figure)
+  int getAttackedFrom(Figure::Color ocolor, int8 pt, int8 from) const;
 
 
   /// verify 

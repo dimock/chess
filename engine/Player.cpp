@@ -434,7 +434,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( alpha >= betta )
   {
     // force to recalculate again with full depth
-    if ( threat && ply > 0 && causedByPrev(pv) )
+    if ( threat && ply > 0 && isRealThreat(pv) )
     {
       contexts_[ply-1].threat_ = true;
       if ( reduced )
@@ -455,7 +455,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     for ( ; !stop_ && alpha < betta ; )
     {
-      const Move & move = eg.escape();
+      Move & move = eg.escape();
       if ( !move || stop_ )
         break;
 
@@ -469,6 +469,31 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     GeneralHItem & hitem = ghash_[board_.hashCode()];
 
+    // threat move, if we have one
+    Move htmove = board_.unpack(hitem.tmove_);
+    if ( htmove && htmove != pv 
+//#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
+//      && htmove != hmove_ex[0] && htmove != hmove_ex[1]
+//#endif
+    )
+    {
+      htmove.threat_ = 1;
+      movement(depth, ply, alpha, betta, htmove, counter, null_move);
+      if ( alpha >= betta )
+      {
+        // recalculate again with full depth
+        if ( alpha >= betta && threat && ply  > 1 && isRealThreat(htmove) )
+        {
+          contexts_[ply-1].threat_ = true;
+          if ( reduced )
+            return betta - 1;
+          else
+            ghash_[board_.hashCode()].threat_ = 1;
+        }
+        return alpha;
+      }
+    }
+
 #if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
 	  Move hmove_ex[2];
 	  hmove_ex[0].clear();
@@ -479,14 +504,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 		  for (int i = 0; i < 2; ++i)
 		  {
 			  hmove_ex[i] = board_.unpack(hitem.move_ex_[i]);
-			  if ( hmove_ex[i] && hmove_ex[i] != pv && /*hmove_ex[i] != htmove && */(!i || hmove_ex[i] != hmove_ex[i-1]) )
+			  if ( hmove_ex[i] && hmove_ex[i] != pv && hmove_ex[i] != htmove && (!i || hmove_ex[i] != hmove_ex[i-1]) )
 			  {
 				  ScoreType alpha_prev = alpha;
 				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move);
 				  if ( alpha >= betta )
           {
             // force to recalculate again with full depth
-            if ( alpha >= betta && threat && ply > 0 && causedByPrev(hmove_ex[i]) )
+            if ( alpha >= betta && threat && ply > 0 && isRealThreat(hmove_ex[i]) )
             {
               contexts_[ply-1].threat_ = true;
               if ( reduced )
@@ -504,31 +529,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	  }
 #endif
 
-    // threat move, if we have one
-    Move htmove = board_.unpack(hitem.tmove_);
-    if ( htmove && htmove != pv 
-#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
-          && htmove != hmove_ex[0] && htmove != hmove_ex[1]
-#endif
-      )
-    {
-      htmove.threat_ = 1;
-      movement(depth, ply, alpha, betta, htmove, counter, null_move);
-      if ( alpha >= betta )
-      {
-        // recalculate again with full depth
-        if ( alpha >= betta && threat && ply  > 1 && causedByPrev(htmove) )
-        {
-          contexts_[ply-1].threat_ = true;
-          if ( reduced )
-            return betta - 1;
-          else
-            ghash_[board_.hashCode()].threat_ = 1;
-        }
-        return alpha;
-      }
-    }
-
 #ifdef USE_KILLER_ADV
     Move killer = contexts_[ply].killer_;
     if ( killer && killer != pv && killer != htmove &&
@@ -541,7 +541,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( alpha >= betta )
       {
         // recalculate again with full depth
-        if ( alpha >= betta && threat && ply  > 0 && causedByPrev(killer) )
+        if ( alpha >= betta && threat && ply  > 0 && isRealThreat(killer) )
         {
           contexts_[ply-1].threat_ = true;
           if ( reduced )
@@ -559,7 +559,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta ; )
     {
-      const Move & move = mg.move();
+      Move & move = mg.move();
       if ( !move || stop_ )
         break;
 
@@ -583,7 +583,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       movement(depth, ply, alpha, betta, move, counter, null_move);
 
       // recalculate again with full depth
-      if ( alpha >= betta && threat && ply > 0 && causedByPrev(move) )
+      if ( alpha >= betta && threat && ply > 0 && isRealThreat(move) )
       {
         contexts_[ply-1].threat_ = true;
         if ( reduced )
@@ -636,7 +636,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
-void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & move, int & counter, bool null_move)
+void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move)
 {
   totalNodes_++;
   nodesCount_++;
@@ -659,6 +659,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
     History & hist = MovesGenerator::history(move.from_, move.to_);
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
+    move.checking_ = haveCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_ /*|| recapture()*/) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
     {
       mv_cmd.extended_ = true;
@@ -691,7 +692,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         int R = 1;
 
 #ifdef USE_LMR
-        if (  counter > 3 &&
+        if (  counter > 2 &&
               depth_ > 5 &&
               depth > 3 &&
               !move.threat_ &&
@@ -712,16 +713,6 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
         mv_cmd.reduced_ = false;
 
 #ifdef USE_LMR
-
-        //if ( score <= alpha && R > 1 ) // verify LMR
-        //{
-        //  ScoreType score1 = -alphaBetta(depth-1, ply+1, -betta, -alpha, null_move);
-        //  if ( score1 > alpha )
-        //  {
-        //    Board::ticks_++;
-        //    Board::tcounter_ += History::history_max_;
-        //  }
-        //}
 
         if ( !stop_ && score > alpha && R > 1 ) // was LMR
           score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move);
@@ -766,10 +757,6 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, co
       }
       else if ( contexts_[ply].threat_ )
       {
-        if ( move.from_ == 30 && move.to_ == 38 && hcode == 5831221830550757135 )
-        {
-          int ttt = 0;
-        }
         ghash_[hcode].tmove_ = board_.pack(move);
       }
 
@@ -1082,3 +1069,65 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 #endif
 }
 //////////////////////////////////////////////////////////////////////////
+// is given movement caused by previous? this mean that if we don't do this move we loose
+// we actually check if moved figure was/willbe attacked by previously moved one or from direction it was moved from
+//////////////////////////////////////////////////////////////////////////
+bool Player::isRealThreat(const Move & move)
+{
+  // don't need to forbid if our answer is capture or check ???
+  if ( move.rindex_ >= 0 || move.checking_ )
+    return false;
+
+  const MoveCmd & prev = board_.getMoveRev(0);
+  Figure::Color ocolor = Figure::otherColor(board_.getColor());
+
+  const Field & pfield = board_.getField(prev.to_);
+  THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
+  const Figure & pfig = board_.getFigure(ocolor, pfield.index());
+  THROW_IF( !pfig, "field is occupied but there is no figure in the list in threat detector" );
+
+  // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
+  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) )
+    return false;
+
+  const Field & cfield = board_.getField(move.from_);
+  THROW_IF( !cfield || cfield.color() != board_.getColor(), "no figure of required color in while detecting threat" );
+  const Figure & cfig = board_.getFigure(cfield.color(), cfield.index());
+  THROW_IF( !cfig, "field is occupied but there is no figure in the list in threat detector" );
+
+  // we have to put figure under attack of weaker or equal figure
+  if ( board_.ptAttackedBy(move.to_, pfig) &&
+      (cfig.getType() >= pfig.getType() || cfig.getType() == Figure::TypeKnight && pfig.getType() == Figure::TypeBishop) )
+  {
+    return true;
+  }
+
+  int tindex = board_.getAttackedFrom(ocolor, move.to_, prev.from_);
+  if ( tindex >= 0 )
+  {
+    const Figure & afig = board_.getFigure(ocolor, tindex);
+
+    // put our figure under attack of weaker of equal figure
+    if ( cfig.getType() >= afig.getType() || cfig.getType() == Figure::TypeKnight && afig.getType() == Figure::TypeBishop )
+      return true;
+  }
+
+  // prev move was attack of equal or stronger, and we should escape from it
+  if ( board_.ptAttackedBy(move.from_, pfig) &&
+      (pfig.getType() >= cfig.getType() || pfig.getType() == Figure::TypeKnight && cfig.getType() == Figure::TypeBishop) )
+  {
+    return true;
+  }
+
+  int findex = board_.getAttackedFrom(ocolor, move.from_, prev.from_);
+  if ( findex >= 0 )
+  {
+    const Figure & afig = board_.getFigure(ocolor, findex);
+
+    // our figure was attacked by stronger of equal one
+    if ( afig.getType() >= cfig.getType() || afig.getType() == Figure::TypeKnight && cfig.getType() == Figure::TypeBishop )
+      return true;
+  }
+
+  return false;
+}
