@@ -143,14 +143,19 @@ public:
 	  if ( (depth < (int)hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
 		     (depth == (int)hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
     {
-      // we are going to skip this item, check is it to old so we could overwrite it
-      bool overwrite = (int)(hitem.halfmovesCount_+hitem.depth_) < halfmovesCount+depth-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
+      //// we are going to skip this item, check is it to old so we could overwrite it
+      //bool overwrite = (int)(hitem.halfmovesCount_+hitem.depth_) < halfmovesCount+depth-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
 
-      if ( !overwrite )
+      //if ( !overwrite )
         return;
+    }
 
+    if ( hitem.hcode_ && hitem.hcode_ != hcode )
+    {
       hitem.threat_ = 0;
       hitem.tmove_ = PackedMove();
+      hitem.move_ex_[0] = PackedMove();
+      hitem.move_ex_[1] = PackedMove();
     }
 
     hitem.hcode_ = hcode;
@@ -194,9 +199,9 @@ public:
     if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
     {
       // if we are going to return, check if we could overwrite this item
-      bool overwrite = hitem.halfmovesCount_ < halfmovesCount-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
+      //bool overwrite = hitem.halfmovesCount_ < halfmovesCount-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
 
-      if ( !overwrite )
+      //if ( !overwrite )
         return;
     }
 

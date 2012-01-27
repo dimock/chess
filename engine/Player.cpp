@@ -467,32 +467,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
-    GeneralHItem & hitem = ghash_[board_.hashCode()];
+#ifdef USE_KILLER_ADV
+    Move killer = contexts_[ply].killer_;
+#endif
 
-    // threat move, if we have one
-    Move htmove = board_.unpack(hitem.tmove_);
-    if ( htmove && htmove != pv 
-//#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
-//      && htmove != hmove_ex[0] && htmove != hmove_ex[1]
-//#endif
-    )
-    {
-      htmove.threat_ = 1;
-      movement(depth, ply, alpha, betta, htmove, counter, null_move);
-      if ( alpha >= betta )
-      {
-        // recalculate again with full depth
-        if ( alpha >= betta && threat && ply  > 1 && isRealThreat(htmove) )
-        {
-          contexts_[ply-1].threat_ = true;
-          if ( reduced )
-            return betta - 1;
-          else
-            ghash_[board_.hashCode()].threat_ = 1;
-        }
-        return alpha;
-      }
-    }
+    GeneralHItem & hitem = ghash_[board_.hashCode()];
 
 #if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
 	  Move hmove_ex[2];
@@ -504,7 +483,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 		  for (int i = 0; i < 2; ++i)
 		  {
 			  hmove_ex[i] = board_.unpack(hitem.move_ex_[i]);
-			  if ( hmove_ex[i] && hmove_ex[i] != pv && hmove_ex[i] != htmove && (!i || hmove_ex[i] != hmove_ex[i-1]) )
+			  if ( hmove_ex[i] && hmove_ex[i] != pv && /*hmove_ex[i] != htmove && */(!i || hmove_ex[i] != hmove_ex[i-1]) )
 			  {
 				  ScoreType alpha_prev = alpha;
 				  movement(depth, ply, alpha, betta, hmove_ex[i], counter, null_move);
@@ -529,8 +508,32 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	  }
 #endif
 
+    // threat move, if we have one
+    Move htmove = board_.unpack(hitem.tmove_);
+    if ( htmove && htmove != pv 
+      #if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
+            && htmove != hmove_ex[0] && htmove != hmove_ex[1]
+      #endif
+      )
+    {
+      htmove.threat_ = 1;
+      movement(depth, ply, alpha, betta, htmove, counter, null_move);
+      if ( alpha >= betta )
+      {
+        // recalculate again with full depth
+        if ( alpha >= betta && threat && ply  > 1 && isRealThreat(htmove) )
+        {
+          contexts_[ply-1].threat_ = true;
+          if ( reduced )
+            return betta - 1;
+          else
+            ghash_[board_.hashCode()].threat_ = 1;
+        }
+        return alpha;
+      }
+    }
+
 #ifdef USE_KILLER_ADV
-    Move killer = contexts_[ply].killer_;
     if ( killer && killer != pv && killer != htmove &&
 #if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
 		     killer != hmove_ex[0] && killer != hmove_ex[1] &&
@@ -692,7 +695,7 @@ void Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         int R = 1;
 
 #ifdef USE_LMR
-        if (  counter > 2 &&
+        if (  counter > 3 &&
               depth_ > 5 &&
               depth > 3 &&
               !move.threat_ &&
