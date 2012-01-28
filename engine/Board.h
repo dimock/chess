@@ -126,12 +126,6 @@ public:
     return false;
   }
 
-  /// test if line between from and to is crossed by pt
-  bool crossTheWay(int8 from, int8 to, int8 pt) const
-  {
-    return (g_betweenMasks->between(from, to) & (1ULL << pt)) != 0;
-  }
-
   /// is pt attacked by given figure
   inline bool ptAttackedBy(int8 pt, const Figure & fig) const
   {

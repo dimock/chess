@@ -36,11 +36,12 @@ class CapsChecksGenerator;
 
 struct PlyContext
 {
-  PlyContext() : threat_(0) {}
+  PlyContext() : threat_(0), null_move_threat_(0) {}
 
   Move killer_;
   Move pv_[MaxPly+1];
-  uint16 threat_ : 1;
+  uint16 threat_ : 1,
+         null_move_threat_ : 1;
 
   void clearPV(int depth)
   {
@@ -52,6 +53,7 @@ struct PlyContext
   {
     pv_[ply].clear();
     threat_ = 0;
+    null_move_threat_ = 0;
   }
 };
 
@@ -109,7 +111,7 @@ private:
 
   void printPV(Board & pv_board, SearchResult & sres, std::ostream * out);
 
-  ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta, bool & threat);
+  ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
   ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks);
 
@@ -149,9 +151,13 @@ private:
   bool use_pv_;
 
   //////////////////////////////////////////////////////////////////////////
-  void movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move);
+  // return true if we have to return betta-1 to recalculate with full depth
+  bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move);
+
   void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks);
-  
+  int collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha, ScoreType betta, Move (&moves)[HashedMoves_Size]);
+  int collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[HashedMoves_Size]);
+
   void assemblePV(const Move & move, bool checking, int ply)
   {
     if ( ply > depth_ || ply >= MaxPly )
@@ -177,7 +183,7 @@ private:
   }
 
   // we should return alpha if flag is Alpha, or betta if flag is Betta
-  GeneralHashTable::Flag getGeneralHashItem(int depth, int ply, ScoreType alpha, ScoreType betta, Move & pv)
+  GeneralHashTable::Flag getGeneralHashFlag(int depth, int ply, ScoreType alpha, ScoreType betta)
   {
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.hcode_ != board_.hashCode() )
@@ -195,10 +201,7 @@ private:
       hscore += ply;
     }
 
-    //if ( GeneralHashTable::Alpha != hitem.flag_ )
-    //{
-      pv = board_.unpack(hitem.move_);
-    //}
+    Move hmove = board_.unpack(hitem.move_);
 
     if ( (int)hitem.depth_ >= depth )
     {
@@ -206,13 +209,13 @@ private:
         return GeneralHashTable::Alpha;
 
 #ifdef RETURN_IF_BETTA
-      if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && pv && hscore >= betta )
+      if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hmove && hscore >= betta )
       {
 #ifndef NDEBUG
         Board board0 = board_;
 #endif
 
-        bool retBetta = pv.rindex_ >= 0 || pv.new_type_;
+        bool retBetta = hmove.rindex_ >= 0 || hmove.new_type_;
         bool checking = false;
 
         if ( !retBetta )
@@ -220,7 +223,7 @@ private:
           totalNodes_++;
           nodesCount_++;
 
-          if ( board_.makeMove(pv) )
+          if ( board_.makeMove(hmove) )
           {
             checking = board_.getState() == Board::UnderCheck;
             retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
@@ -241,7 +244,7 @@ private:
 
         if ( retBetta )
         {
-          assemblePV(pv, checking, ply);
+          assemblePV(hmove, checking, ply);
           return GeneralHashTable::Betta;
         }
       }
@@ -271,34 +274,6 @@ private:
 #ifdef VERIFY_CAPS_GENERATOR
   void verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int delta);
 #endif
-
-  bool maybeThreat(ScoreType nullScore, int ply)
-  {
-    // mat threat
-    //if ( nullScore <= -Figure::WeightMat+MaxPly )
-    //  return true;
-
-    if ( board_.halfmovesCount() <= 0 || ply >= MaxPly )
-      return false;
-
-    MoveCmd & prev = board_.getMoveRev(0);
-    Move & nullMove = contexts_[ply+1].pv_[ply+1];
-
-    if ( !prev || !nullMove )
-      return false;
-
-    // test if thread is caused by previous movement
-    // move of the same figure
-    if ( prev.to_ == nullMove.from_ )
-      return true;
-
-    // move through field, freed by previous movement
-    if ( board_.crossTheWay(nullMove.from_, nullMove.to_, prev.from_) )
-      return true;
-
-    return false;
-    //return || (ply < MaxPly-1 && (contexts_[ply+1].pv_[ply+1].rindex_ >= 0 || contexts_[ply+1].pv_[ply+1].checking_));
-  }
 
   bool recapture()
   {

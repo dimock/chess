@@ -52,6 +52,7 @@ typedef int16 ScoreType;
 #define RETURN_IF_BETTA
 #define USE_NULL_MOVE
 #define USE_LMR
+#define USE_IID
 
 #undef  NO_TIME_LIMIT
 
@@ -69,7 +70,15 @@ typedef int16 ScoreType;
 
 
 
-enum { MaxPly = 48, HalfnodesCountToOverwrite = 16 };
+static const int HalfnodesCountToOverwrite = 16;
+static const int MaxPly = 48;
+static const int LMR_PlyReduce = 2;
+static const int LMR_DepthLimit = 3;
+static const int LMR_MaxDepthLimit = 5;
+static const int LMR_Counter = 3;
+static const int NullMove_PlyReduce = 4;
+static const int NullMove_DepthMin = 1;
+static const int HashedMoves_Size = 8;
 
 #ifndef _M_X64
 class QpfTimer
