@@ -153,6 +153,7 @@ public:
     if ( hitem.hcode_ && hitem.hcode_ != hcode )
     {
       hitem.threat_ = 0;
+      hitem.move_ = PackedMove();
       hitem.tmove_ = PackedMove();
       hitem.move_ex_[0] = PackedMove();
       hitem.move_ex_[1] = PackedMove();
@@ -180,8 +181,8 @@ public:
 #endif
       hitem.move_ = move;
     }
-    else
-      hitem.threat_ = 0;
+    //else
+    //  hitem.threat_ = 0;
   }
 };
 
