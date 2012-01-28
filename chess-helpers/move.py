@@ -7,9 +7,9 @@ while True:
     if len(m) == 2 and m[0].isalpha():
         x = ord(m[0]) - ord('a')
         y = ord(m[1]) - ord('1')
-        print x+y*8
+        print ' - ', x+y*8
     elif len(m) > 0 and m[0].isdigit():
         i = int(m)
         x = i & 7
         y = i >> 3
-        print chr(ord('a') + x) + str(y+1)
+        print ' - ', chr(ord('a') + x) + str(y+1)

@@ -195,10 +195,10 @@ private:
       hscore += ply;
     }
 
-    if ( GeneralHashTable::Alpha != hitem.flag_ )
-    {
+    //if ( GeneralHashTable::Alpha != hitem.flag_ )
+    //{
       pv = board_.unpack(hitem.move_);
-    }
+    //}
 
     if ( (int)hitem.depth_ >= depth )
     {

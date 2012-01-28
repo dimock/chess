@@ -373,7 +373,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // first of all try null-move
 #ifdef USE_NULL_MOVE
-  if ( !null_move )
+  if ( !null_move && betta == alpha+1 )
   {
     ScoreType nullScore = nullMove(depth, ply, alpha, betta, threat);
     if ( nullScore >= betta )
@@ -831,7 +831,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       return betta;
     else
 #endif // RETURN_IF_BETTA
-    if ( CapturesHashTable::Alpha != hitem.flag_ && hitem.move_ )
+    //if ( CapturesHashTable::Alpha != hitem.flag_ && hitem.move_ )
       hmove = board_.unpack(hitem.move_);
 
 
