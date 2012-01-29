@@ -513,7 +513,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     int ext = -1;
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checking_ = haveCheck;
-    if ( (haveCheck || Figure::TypeQueen == move.new_type_ || ((ext = need_extension(counter)) > 0) ) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
+    if ( (haveCheck || Figure::TypeQueen == move.new_type_ /*|| ((ext = need_extension(counter)) > 0)*/ ) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
     {
       mv_cmd.extended_ = true;
       depth++;

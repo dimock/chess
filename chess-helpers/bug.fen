@@ -113,6 +113,7 @@ weak game with ALchess:
 r3r2k/pp4pp/n1p1bq2/Q2pN3/P2P1PP1/8/1P4BP/2R1R2K w - - 1 29 
 r3r2k/pp4pp/n1p1bq2/Q2pNP2/P2P2P1/8/1P4BP/2R1R2K b - - 0 29 
 r2qkb1r/1p1nnppp/2p1p3/1p1pP3/3P4/2NQ1N2/PPPB1PPP/R4RK1 b kq - 5 10
+r3kb1r/1p2n1p1/2p1q2p/3p4/1p1Pn3/3Q1P2/PPPB2PP/R2NR1K1 w kq - 0 17 
 
 don't recapture queens
 4bk2/8/6pK/5qQp/8/8/8/8 b - - 79 93
