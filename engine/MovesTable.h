@@ -43,27 +43,27 @@ public:
 
   inline const int8 * king(int pos) const
   {
-    THROW_IF((unsigned)pos > 63, "try to get king move for invalid position");
+    THROW_IF((unsigned)pos > 63, "try to get king move from invalid position");
     return s_tableKing_[pos];
   }
 
   inline const uint16 * move(int type, int pos) const
   {
-    THROW_IF((unsigned)type > 2 || (unsigned)pos > 63, "try to get figure move for invalid position or type");
+    THROW_IF((unsigned)type > 2 || (unsigned)pos > 63, "try to get figure move from invalid position or type");
     return s_tableOther_[type][pos];
   }
 
   // transposed captures
   inline const uint64 & pawnCaps_t(int color, int pos) const
   {
-    THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");
+    THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move from invalid position, color");
     return s_pawnsCaps_t_[color][pos];
   }
 
   // ordinary captures
   inline const uint64 & pawnCaps_o(int color, int pos) const
   {
-    THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move for invalid position, color");
+    THROW_IF((unsigned)color > 1 || (unsigned)pos > 63, "try to get pawn move from invalid position or color");
     return s_pawnsCaps_o_[color][pos];
   }
 

@@ -479,11 +479,11 @@ bool Board::verifyChessDraw()
   int i = halfmovesCounter_-3;
   for (; reps < 3 && i >= 0; i -= 2)
   {
-    if ( getMove(i).zcode_ == fmgr_.hashCode() )
-      reps++;
-
     if ( getMove(i).irreversible_ )
       break;
+
+    if ( getMove(i).zcode_ == fmgr_.hashCode() )
+      reps++;
   }
 
   // may be we forget to test initial position?

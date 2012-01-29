@@ -575,7 +575,7 @@ ScoreType Board::evaluateWinnerLoser() const
   else
     weight -= fmgr_.weight(lose_color);
 
-  weight += fmgr_.pawns() << 6;
+ // weight += fmgr_.pawns() << 6;
 
   if ( win_color == Figure::ColorBlack )
     weight = -weight;
@@ -588,25 +588,19 @@ ScoreType Board::evaluateWinnerLoser() const
 
   weight += fmgr_.pawns(win_color) * PAWN_PROMOTION_MAX_;
 
-  //if ( fmgr_.pawns(Figure::ColorBlack) )
-  //{
-  //  ScoreType pweight0 = 0;
-  //  EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
-  //  weight -= pweight0;
-  //}
+  if ( fmgr_.pawns(Figure::ColorBlack) )
+  {
+    ScoreType pweight0 = 0;
+    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
+    weight -= pweight0;
+  }
 
-  //if ( fmgr_.pawns(Figure::ColorWhite) )
-  //{
-  //  ScoreType pweight1 = 0;
-  //  EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
-  //  weight += pweight1;
-  //}
-
-  //if ( UnderCheck == state_ )
-  //{
-  //  static ScoreType s_checkWeight[2] = { 5, -5 };
-  //  weight += s_checkWeight[color_];
-  //}
+  if ( fmgr_.pawns(Figure::ColorWhite) )
+  {
+    ScoreType pweight1 = 0;
+    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
+    weight += pweight1;
+  }
 
   return weight;
 }

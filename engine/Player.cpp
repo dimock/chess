@@ -510,9 +510,10 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     mv_cmd.extended_ = false;
     History & hist = MovesGenerator::history(move.from_, move.to_);
 
+    int ext = -1;
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checking_ = haveCheck;
-    if ( (haveCheck || Figure::TypeQueen == move.new_type_ /*|| (!counter && recapture())*/) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
+    if ( (haveCheck || Figure::TypeQueen == move.new_type_ || ((ext = need_extension(counter)) > 0) ) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
     {
       mv_cmd.extended_ = true;
       depth++;
@@ -547,6 +548,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         if (  counter > LMR_Counter &&
               depth_ > LMR_MaxDepthLimit &&
               depth > LMR_DepthLimit &&
+              ext < 0 &&
               !move.threat_ &&
               !check_esc &&
               !null_move &&
@@ -1110,4 +1112,161 @@ bool Player::isRealThreat(const Move & move)
   }
 
   return false;
+}
+//////////////////////////////////////////////////////////////////////////
+// do we need extent move if there is great pressure on king
+int Player::need_extension(int counter)
+{
+  // get current move
+  MoveCmd & move = board_.getMoveRev(0);
+
+  const Figure & fig = board_.getFigure(move.to_);
+  if ( fig.getType() == Figure::TypePawn )
+  {
+    // before promotion
+    int8 y = move.to_ >> 3;
+    if ( 1 == y || 6 == y )
+      return 1;
+  }
+
+  // Attention - 'Ocolor' is attacker !!!
+
+  Figure::Color color = board_.getColor();
+  Figure::Color ocolor = Figure::otherColor(color);
+
+  // don't need extension if there is already plenty of material
+  if ( (board_.fmgr().weight() > +Figure::figureWeight_[Figure::TypeBishop] && ocolor) ||
+       (board_.fmgr().weight() < -Figure::figureWeight_[Figure::TypeBishop] && color) ||
+       (board_.fmgr().weight(ocolor) < (Figure::figureWeight_[Figure::TypePawn]*20)) )
+       return -1;
+
+  const Figure & king = board_.getFigure(color, Board::KingIndex);
+  THROW_IF( !king || king.getType() != Figure::TypeKing, "no king found" );
+
+  const uint64 & king_mask = g_movesTable->caps(Figure::TypeKing, king.where());
+  const uint64 & fig_mask = g_movesTable->caps(fig.getType(), fig.where());
+
+  uint64 around = king_mask & fig_mask;
+  if ( !around )
+    return -1;
+
+  const uint64 & black = board_.fmgr().mask(Figure::ColorBlack);
+  const uint64 & white = board_.fmgr().mask(Figure::ColorWhite);
+  uint64 mask_all_inv = ~(black | white);
+
+  const uint64 & b_mask  = board_.fmgr().bishop_mask(ocolor);
+  const uint64 & r_mask  = board_.fmgr().rook_mask(ocolor);
+  const uint64 & q_mask  = board_.fmgr().queen_mask(ocolor);
+  const uint64 & kn_mask = board_.fmgr().knight_mask(ocolor);
+  const uint64 & pw_mask = board_.fmgr().pawn_mask_o(ocolor);
+  const uint64 & ki_mask = board_.fmgr().king_mask(ocolor);
+
+  uint64 fig_mask_i = ~(1ULL << fig.where());
+
+  bool npk = fig.getType() == Figure::TypeKnight || fig.getType() == Figure::TypePawn || fig.getType() == Figure::TypeKing;
+  int attackers = 0;
+  if ( npk )
+    attackers++;
+
+  Figure ffig = fig;
+  ffig.go(move.from_);
+  if ( move.new_type_ )
+    ffig.setType(Figure::TypePawn);
+
+  while ( around )
+  {
+    int n = least_bit_number(around);
+
+    if ( !npk )
+    {
+      const uint64 & btw_msk = g_betweenMasks->between(fig.where(), n);
+      if ( (btw_msk & mask_all_inv) != btw_msk )
+        continue;
+    }
+
+    // field found. test if this field was attacked by our figure before movement?
+    int fdir = g_figureDir->dir(ffig, n);
+    if ( fdir >= 0 )
+    {
+      if ( npk )
+        continue;
+
+      const uint64 & btw_msk = g_betweenMasks->between(move.from_, n);
+      if ( (btw_msk & mask_all_inv) == btw_msk )
+        continue;
+    }
+
+    const uint64 & p_caps = g_movesTable->pawnCaps_o(color, n);
+    const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, n);
+    const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, n);
+    const uint64 & b_caps = g_movesTable->caps(Figure::TypeBishop, n);
+    const uint64 & r_caps = g_movesTable->caps(Figure::TypeRook, n);
+    const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, n);
+
+    // pawn, knight or king
+    if ( (p_caps & fig_mask_i & pw_mask) || (n_caps & fig_mask_i & kn_mask) || (k_caps & fig_mask_i & ki_mask) )
+      attackers++;
+
+    if ( attackers > 2 )
+      return 1;
+
+    // bishop
+    uint64 amask = b_caps & b_mask & fig_mask_i;
+    while ( amask )
+    {
+      int x = least_bit_number(amask);
+      const Figure & bishop = board_.getFigure(x);
+      THROW_IF( bishop.getType() != Figure::TypeBishop, "no bishop found, but mask isn't empty" );
+
+      const uint64 & btw_msk = g_betweenMasks->between(n, x);
+      if ( (btw_msk & mask_all_inv) != btw_msk )
+        continue;
+
+      attackers++;
+      if ( attackers > 2 )
+        return 1;
+    }
+
+    // rook
+    amask = r_caps & r_mask & fig_mask_i;
+    while ( amask )
+    {
+      int x = least_bit_number(amask);
+      const Figure & rook = board_.getFigure(x);
+      THROW_IF( rook.getType() != Figure::TypeRook, "no rook found, but mask isn't empty" );
+
+      const uint64 & btw_msk = g_betweenMasks->between(n, x);
+      if ( (btw_msk & mask_all_inv) != btw_msk )
+        continue;
+
+      attackers++;
+      if ( attackers > 2 )
+        return 1;
+    }
+
+    // queen
+    amask = q_caps & q_mask & fig_mask_i;
+    while ( amask )
+    {
+      int x = least_bit_number(amask);
+      const Figure & queen = board_.getFigure(x);
+      THROW_IF( queen.getType() != Figure::TypeQueen, "no rook found, but mask isn't empty" );
+
+      const uint64 & btw_msk = g_betweenMasks->between(n, x);
+      if ( (btw_msk & mask_all_inv) != btw_msk )
+        continue;
+
+      attackers++;
+      if ( attackers > 2 )
+        return 1;
+    }
+  }
+
+  if ( attackers > 2 )
+    return 1;
+
+  if ( attackers > 1 )
+    return 0;
+
+  return -1;
 }

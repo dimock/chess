@@ -152,6 +152,10 @@ public:
   /// returns -1 if 'pt' was already attacked from this direction (independently of figure)
   int getAttackedFrom(Figure::Color ocolor, int8 pt, int8 from) const;
 
+  const FiguresManager & fmgr() const
+  {
+    return fmgr_;
+  }
 
   /// verify 
   bool validMove(const Move &) const;
@@ -205,6 +209,15 @@ public:
   {
     THROW_IF( (size_t)index >= NumOfFigures, "\"Figure & getFigure(Figure::Color, int) const\" - try to get invalid figure");
     return figures_[color][index];
+  }
+
+  /// always use this method to get figure
+  inline const Figure & getFigure(int8 pos) const
+  {
+    THROW_IF( (uint8)pos > 63, "\"Figure & getFigure(int8) const\" - try to get invalid figure");
+    const Field & field = getField(pos);
+    THROW_IF( !field, "no figure on given field" );
+    return figures_[field.color()][field.index()];
   }
 
   /// always use this method to get figure
