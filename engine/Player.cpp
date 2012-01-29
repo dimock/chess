@@ -923,7 +923,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
 #ifdef USE_IID
   // internal iterative deeping
   // if we don't have move in hashes, let's try to calculate to reduced depth to find some appropriate move
-  if ( depth > 1 && !null_move && !pv )
+  if ( depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha )
   {
     depth--;
     if ( depth > 1 )
