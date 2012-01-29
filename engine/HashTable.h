@@ -80,7 +80,7 @@ public:
     szMask_ = (ONE_SIZE_T<<size_) - 1;
   }
 
-  size_t size() const
+  int size() const
   {
     return (ONE_SIZE_T<<size_) - 1;
   }
@@ -95,7 +95,7 @@ public:
     FILE * f = fopen(fname, "rb");
     if ( !f )
       return false;
-    size_t n = 0;
+    int n = 0;
     if ( fread(&size_, sizeof(size_), 1, f) == 1 && size_ > 0 && size_ <= 24 )
     {
       delete [] buffer_;
@@ -112,7 +112,7 @@ public:
     FILE * f = fopen(fname, "wb");
     if ( !f )
       return false;
-    size_t n = 0;
+    int n = 0;
     if ( fwrite(&size_, sizeof(size_), 1, f) == 1 )
     {
       n = fwrite(buffer_, sizeof(ITEM), size(), f);

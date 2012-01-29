@@ -259,7 +259,9 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     firstIter_ = false;
 
     if ( !best_ || score >= Figure::WeightMat-MaxPly || score <= MaxPly-Figure::WeightMat )
+    {
       break;
+    }
   }
 
   sres.totalNodes_ = totalNodes_;
@@ -925,13 +927,13 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
 #ifdef USE_IID
   // internal iterative deeping
   // if we don't have move in hashes, let's try to calculate to reduced depth to find some appropriate move
-  if ( depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha )
+  if ( ply > 0 && depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha )
   {
     depth--;
     if ( depth > 1 )
       depth--;
 
-    ScoreType score = alphaBetta(depth, ply, alpha, alpha+1, false);
+    ScoreType score = alphaBetta(depth, ply, alpha, betta, false);
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.move_ && hitem.hcode_ == board_.hashCode() )
       pv = board_.unpack(hitem.move_);
