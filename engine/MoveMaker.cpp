@@ -110,6 +110,16 @@ Move Board::unpack(const PackedMove & pm) const
 
   if ( fto )
     move.rindex_ = fto.index();
+  else if ( en_passant_ >= 0 )
+  {
+    const Figure & epawn = getFigure(Figure::otherColor(color_), en_passant_);
+    if ( epawn )
+    {
+      int epos = color_ ? epawn.where()+8 : epawn.where()-8;
+      if ( move.to_ == epos )
+        move.rindex_ = en_passant_;
+    }
+  }
 
   if ( !validMove(move) )
     move.clear();
