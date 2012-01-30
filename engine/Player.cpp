@@ -927,13 +927,13 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
 #ifdef USE_IID
   // internal iterative deeping
   // if we don't have move in hashes, let's try to calculate to reduced depth to find some appropriate move
-  if ( ply > 0 && depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha )
+  if ( ply > 0 && depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha && alpha > -Figure::WeightMat+MaxPly )
   {
     depth--;
     if ( depth > 1 )
       depth--;
 
-    ScoreType score = alphaBetta(depth, ply, alpha, betta, false);
+    ScoreType score = alphaBetta(depth, ply, alpha, alpha+1, false);
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.move_ && hitem.hcode_ == board_.hashCode() )
       pv = board_.unpack(hitem.move_);
