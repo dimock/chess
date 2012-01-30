@@ -859,3 +859,41 @@ void Board::verifyMasks() const
 
   }
 }
+
+//////////////////////////////////////////////////////////////////////////
+void Board::save(const char * fname) const
+{
+  FILE * f = fopen(fname, "wb");
+  if ( !f )
+    return;
+  fwrite((char*)this, sizeof(*this), 1, f);
+  fwrite((char*)g_moves, sizeof(MoveCmd), GameLength, f);
+  fclose(f);
+}
+
+void Board::load(const char * fname)
+{
+  FILE * f = fopen(fname, "rb");
+  if ( !f )
+    return;
+  MoveCmd * moves = g_moves;
+  const MovesTable * movesTable = g_movesTable;
+  const FigureDir * figuresDir = g_figureDir;
+  const PawnMasks * pawnMask = g_pawnMasks;
+  const BetweenMask * betweenMask = g_betweenMasks;
+  const DeltaPosCounter * deltaPos = g_deltaPosCounter;
+  const DistanceCounter * distCounter = g_distanceCounter;
+
+  fread((char*)this, sizeof(*this), 1, f);
+  g_moves = moves;
+  fread((char*)g_moves, sizeof(MoveCmd), GameLength, f);
+  fclose(f);
+
+  g_movesTable = movesTable;
+  g_figureDir = figuresDir;
+  g_pawnMasks = pawnMask;
+  g_betweenMasks = betweenMask;
+  g_deltaPosCounter = deltaPos;
+  g_distanceCounter = distCounter;
+
+}

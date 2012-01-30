@@ -236,10 +236,12 @@ void xBoardMgr::process_cmd(xCmd & cmd)
           out_state(os_, state, white);
 
 #ifdef WRITE_LOG_FILE_
-          if ( Board::isDraw(state) )
-            ofs_log_ << " draw" << endl; 
-          else
-            ofs_log_ << (white ? " white" : " black") << endl;
+          out_state(ofs_log_, state, white);
+          thk_.hash2file("hash");
+          //if ( Board::isDraw(state) )
+          //  ofs_log_ << " draw" << endl; 
+          //else
+          //  ofs_log_ << (white ? " white" : " black") << endl;
 #endif
         }
       }
@@ -265,10 +267,12 @@ void xBoardMgr::process_cmd(xCmd & cmd)
           out_state(os_, state, white);
 
 #ifdef WRITE_LOG_FILE_
-          if ( Board::isDraw(state) )
-            ofs_log_ << " draw" << endl; 
-          else
-            ofs_log_ << (white ? " white" : " black") << endl;
+          out_state(ofs_log_, state, white);
+          thk_.hash2file("hash");
+         //if ( Board::isDraw(state) )
+         //   ofs_log_ << " draw" << endl; 
+         // else
+         //   ofs_log_ << (white ? " white" : " black") << endl;
 #endif
         }
         else if ( !force_ )
@@ -288,10 +292,12 @@ void xBoardMgr::process_cmd(xCmd & cmd)
               out_state(os_, state, white);
 
 #ifdef WRITE_LOG_FILE_
-              if ( Board::isDraw(state) )
-                ofs_log_ << " draw" << endl; 
-              else
-                ofs_log_ << (white ? " white" : " black") << endl;
+              out_state(ofs_log_, state, white);
+              thk_.hash2file("hash");
+              //if ( Board::isDraw(state) )
+              //  ofs_log_ << " draw" << endl; 
+              //else
+              //  ofs_log_ << (white ? " white" : " black") << endl;
 #endif
             }
           }

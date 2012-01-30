@@ -8,20 +8,24 @@ void Player::saveHash(const char * fname) const
 {
   if ( !fname )
     return;
-  char gfname[MAX_PATH], cfname[MAX_PATH];
+  char gfname[MAX_PATH], cfname[MAX_PATH], bfname[MAX_PATH];
   sprintf(gfname, "%s_g.hash", fname);
   sprintf(cfname, "%s_c.hash", fname);
+  sprintf(bfname, "%s_b.hash", fname);
   ghash_.save(gfname);
   chash_.save(cfname);
+  board_.save(bfname);
 }
 
 void Player::loadHash(const char * fname)
 {
-  char gfname[MAX_PATH], cfname[MAX_PATH];
+  char gfname[MAX_PATH], cfname[MAX_PATH], bfname[MAX_PATH];
   sprintf(gfname, "%s_g.hash", fname);
   sprintf(cfname, "%s_c.hash", fname);
+  sprintf(bfname, "%s_b.hash", fname);
   ghash_.load(gfname);
   chash_.load(cfname);
+  board_.load(bfname);
 }
 //////////////////////////////////////////////////////////////////////////
 #ifdef VERIFY_ESCAPE_GENERATOR

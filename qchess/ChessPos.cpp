@@ -56,7 +56,9 @@ bool ChessPosition::fromFEN(const char * fen)
   vboard_ = player_.getBoard();
 
 #ifdef LOAD_HASH
-  player_.loadHash("d:\\arena_3.0\\engines\\tequilla\\hash");
+  player_.loadHash("hash");
+  halfmovesNumber_ = player_.getBoard().halfmovesCount();
+  vboard_ = player_.getBoard();
 #endif
 
   return true;
