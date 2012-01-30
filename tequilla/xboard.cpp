@@ -52,8 +52,14 @@ void xBoardMgr::write_error(const std::exception * e /*= 0*/)
   if ( e )
     ofs_log_ << "exception: " << e->what() << endl;
   else
-    ofs_log_ << "some other exception" << endl;
-  thk_.fen2file("fen.txt");
+    ofs_log_ << "exception" << endl;
+ 
+  time_t curtime;
+  time(&curtime);
+  tm * t = localtime(&curtime);
+  char fen_fname[MAX_PATH];
+  strftime(fen_fname, MAX_PATH, "fen_%d-%m-%Y_%H-%M-%S.txt", t);
+  thk_.fen2file(fen_fname);
 //  thk_.hash2file("hash");
 #endif
 }
