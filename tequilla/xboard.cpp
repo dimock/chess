@@ -54,7 +54,7 @@ void xBoardMgr::write_error(const std::exception * e /*= 0*/)
   else
     ofs_log_ << "some other exception" << endl;
   thk_.fen2file("fen.txt");
-  thk_.hash2file("hash");
+//  thk_.hash2file("hash");
 #endif
 }
 
@@ -237,11 +237,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
 #ifdef WRITE_LOG_FILE_
           out_state(ofs_log_, state, white);
-          thk_.hash2file("hash");
-          //if ( Board::isDraw(state) )
-          //  ofs_log_ << " draw" << endl; 
-          //else
-          //  ofs_log_ << (white ? " white" : " black") << endl;
+          //thk_.hash2file("hash");
 #endif
         }
       }
@@ -268,11 +264,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
 #ifdef WRITE_LOG_FILE_
           out_state(ofs_log_, state, white);
-          thk_.hash2file("hash");
-         //if ( Board::isDraw(state) )
-         //   ofs_log_ << " draw" << endl; 
-         // else
-         //   ofs_log_ << (white ? " white" : " black") << endl;
+          //thk_.hash2file("hash");
 #endif
         }
         else if ( !force_ )
@@ -293,11 +285,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
 #ifdef WRITE_LOG_FILE_
               out_state(ofs_log_, state, white);
-              thk_.hash2file("hash");
-              //if ( Board::isDraw(state) )
-              //  ofs_log_ << " draw" << endl; 
-              //else
-              //  ofs_log_ << (white ? " white" : " black") << endl;
+              //thk_.hash2file("hash");
 #endif
             }
           }
