@@ -47,6 +47,9 @@ public:
   static bool load(Board & , std::istream &);
   static bool save(const Board & , std::ostream &);
 
+  void save(const char * fname) const;
+  void load(const char * fname);
+
   /// init global data
   void set_moves(MoveCmd * moves) { g_moves = moves; }
   void set_MovesTable(const MovesTable * movesTable) { g_movesTable = movesTable; }
