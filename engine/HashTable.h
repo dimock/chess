@@ -74,7 +74,7 @@ public:
     szMask_ = 0;
     size_ = size;
 
-    THROW_IF((unsigned)size > 24, "hash table size if too big");
+    THROW_IF((unsigned)size > 24, "hash table size if too large");
 
     buffer_ = new ITEM[ONE_SIZE_T<<size_];
     szMask_ = (ONE_SIZE_T<<size_) - 1;
@@ -101,7 +101,7 @@ public:
       delete [] buffer_;
       buffer_ = new ITEM[ONE_SIZE_T<<size_];
       szMask_ = (ONE_SIZE_T<<size_) - 1;
-      n = fread(buffer_, sizeof(ITEM), size(), f);
+      n = (int)fread(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);
     return n == size();
@@ -115,7 +115,7 @@ public:
     int n = 0;
     if ( fwrite(&size_, sizeof(size_), 1, f) == 1 )
     {
-      n = fwrite(buffer_, sizeof(ITEM), size(), f);
+      n = (int)fwrite(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);
     return n == size();
