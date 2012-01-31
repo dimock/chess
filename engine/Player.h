@@ -164,7 +164,7 @@ private:
       return;
 
     contexts_[ply].pv_[ply] = move;
-    contexts_[ply].pv_[ply].checking_ = checking;
+    contexts_[ply].pv_[ply].checkFlag_ = checking;
     contexts_[ply].pv_[ply+1].clear();
 
     for (int i = ply+1; i < depth_; ++i)

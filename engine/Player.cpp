@@ -176,16 +176,19 @@ void Player::printPV(Board & pv_board, SearchResult & sres, std::ostream * out)
   {
     *out << " ";
 
-    if ( !pv_board.validMove(sres.pv_[i]) || !pv_board.makeMove(sres.pv_[i]) )
+    Move pv = sres.pv_[i];
+    pv.clearFlags();
+
+    if ( !pv_board.validMove(pv) || !pv_board.makeMove(pv) )
       break;
 
     pv_board.unmakeMove();
 
     char str[64];
-    if ( !printSAN(pv_board, sres.pv_[i], str) )
+    if ( !printSAN(pv_board, pv, str) )
       break;
 
-    pv_board.makeMove(sres.pv_[i]);
+    pv_board.makeMove(pv);
 
     *out << str;
   }
@@ -514,7 +517,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
     int ext = -1;
     bool haveCheck = board_.getState() == Board::UnderCheck;
-    move.checking_ = haveCheck;
+    move.checkFlag_ = haveCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_ /*|| ((ext = need_extension(counter)) > 0)*/ ) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
     {
       mv_cmd.extended_ = true;
@@ -1059,7 +1062,7 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
 bool Player::isRealThreat(const Move & move)
 {
   // don't need to forbid if our answer is capture or check ???
-  if ( move.rindex_ >= 0 || move.checking_ )
+  if ( move.rindex_ >= 0 || move.checkFlag_ )
     return false;
 
   const MoveCmd & prev = board_.getMoveRev(0);

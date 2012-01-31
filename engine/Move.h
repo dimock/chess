@@ -59,7 +59,7 @@ struct Move
   uint16 checkVerified_ : 1,
          alreadyDone_ : 1,
 		     fkiller_ : 1,
-         checking_ : 1,
+         checkFlag_ : 1,
          threat_ : 1,
          flags_;
 
@@ -72,10 +72,21 @@ struct Move
     new_type_ = 0;
     rindex_ = -1;
     score_ = -std::numeric_limits<ScoreType>::max();
+
     checkVerified_ = 0;
     alreadyDone_ = 0;
 	  fkiller_ = 0;
-    checking_ = 0;
+    checkFlag_ = 0;
+    threat_ = 0;
+    flags_ = 0;
+  }
+
+  inline void clearFlags()
+  {
+    checkVerified_ = 0;
+    alreadyDone_  = 0;
+    fkiller_ = 0;
+    checkFlag_ = 0;
     threat_ = 0;
     flags_ = 0;
   }
@@ -89,7 +100,7 @@ struct Move
     checkVerified_ = checkVerified;
     alreadyDone_ = 0;
 	  fkiller_ = 0;
-    checking_ = 0;
+    checkFlag_ = 0;
     threat_ = 0;
     flags_ = 0;
     score_ = -std::numeric_limits<ScoreType>::max();
