@@ -72,17 +72,40 @@ end:mov dword ptr [n], ecx
 // return logarithm with base 2 of given int
 inline int log2(int n)
 {
-	int m = 0;
-	__asm
-	{
-		mov eax, dword ptr [n]
-		bsr ecx, eax
-		jz end
-		mov dword ptr [m], ecx
+  int m;
+  __asm
+  {
+    mov eax, dword ptr [n]
+    bsr ecx, eax
+    jnz end
+    xor ecx, ecx
+
 end:
-		xor eax, eax
-	}
-	return m;
+    mov dword ptr [m], ecx
+  }
+  return m;
+}
+
+// multiplies v*n and diveides by d v*n/(2*d) to avoid negative numbers
+inline unsigned mul_div2(unsigned v, unsigned n, unsigned d)
+{
+  unsigned int r = 0;
+  __asm
+  {
+    mov eax, dword ptr [d]
+    bsr ecx, eax
+    jnz md_begin
+    xor ecx, ecx
+
+md_begin:
+
+    mov eax, dword ptr [v]
+    mul dword ptr [n]
+    shrd eax, edx, cl
+    shr eax, 1
+    mov dword ptr [r], eax
+  }
+  return r;
 }
 
 #else
@@ -93,7 +116,10 @@ end:
 inline int least_bit_number(uint64 & mask)
 {
 	unsigned long n;
-	uint8 b = _BitScanForward64(&n, mask);
+#ifndef NDEBUG
+	uint8 b = 
+#endif
+  _BitScanForward64(&n, mask);
 	THROW_IF( !b, "no bit found in nonzero number" );
 	mask &= mask-1;
 	return n;
@@ -105,6 +131,15 @@ inline int log2(int n)
 	if ( !_BitScanReverse(&m, (unsigned long)n) )
 		return 0;
 	return m;
+}
+
+inline unsigned mul_div2(unsigned v, unsigned n, unsigned d)
+{
+  unsigned long long r = (unsigned long long)v * n;
+  r >>= log2(d);
+  unsigned x = *((unsigned*)&r);
+  x >>= 1;
+  return x;
 }
 #endif
 

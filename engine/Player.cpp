@@ -350,12 +350,18 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 
 #ifdef VERIFY_ESCAPE_GENERATOR
-  verifyEscapeGen(depth, ply, alpha, betta);
+  if ( board_.getState() == Board::UnderCheck )
+    verifyEscapeGen(depth, ply, alpha, betta);
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
   if ( board_.getState() != Board::UnderCheck )
     verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
+#endif
+
+#ifdef VERIFY_CAPS_GENERATOR
+  if ( board_.getState() != Board::UnderCheck )
+    verifyCapsGenerator(ply, alpha, betta, 0);
 #endif
 
   // first of all try null-move
@@ -679,6 +685,11 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
 #endif
 
+#ifdef VERIFY_ESCAPE_GENERATOR
+  if ( board_.getState() == Board::UnderCheck )
+    verifyEscapeGen(depth, ply, alpha, betta);
+#endif
+
   int counter = 0;
   ScoreType saveAlpha = alpha;
 
@@ -829,6 +840,8 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 
   if ( board_.makeMove(cap) )
   {
+    History & hist = MovesGenerator::history(cap.from_, cap.to_);
+
     bool haveCheck = board_.getState() == Board::UnderCheck;
 
     counter++;
@@ -860,7 +873,6 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
       updateCaptureHash(depth, ply, cap, s, betta, hcode, color);
 #endif
 
-      History & hist = MovesGenerator::history(cap.from_, cap.to_);
       if ( cap.rindex_ < 0 && !cap.new_type_ )
       {
         hist.score_++;
@@ -868,6 +880,15 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
           History::history_max_ = hist.score_;
       }
     }
+
+    if ( cap.rindex_ < 0 && !cap.new_type_ )
+    {
+      if ( alpha >= betta )
+        hist.good_count_++;
+      else
+        hist.bad_count_++;
+    }
+
   }
 
 #ifndef NDEBUG

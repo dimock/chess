@@ -16,6 +16,11 @@ struct History
     bad_count_ = 0;
   }
 
+  int score() const
+  {
+    return mul_div2(score_, good_count_, bad_count_);
+  }
+
   int score_;
   int good_count_, bad_count_;
   static int history_max_;
@@ -91,10 +96,7 @@ private:
     THROW_IF( !ffield, "no figure on field we move from" );
 
     const History & hist = history_[move.from_][move.to_];
-    if ( hist.bad_count_ )
-      move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
-    else
-      move.score_ = hist.score_;
+    move.score_ = hist.score();
 
     if ( move.score_ > history_max_ )
       history_max_ = move.score_;
@@ -193,11 +195,8 @@ private:
     const Field & ffield = board_.getField(move.from_);
     THROW_IF( !ffield, "no figure on field we move from" );
 	
-	const History & hist = MovesGenerator::history(move.from_, move.to_);
-	if ( hist.bad_count_ > 0 )
-		move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
-	else
-		move.score_ = hist.score_;
+	  const History & hist = MovesGenerator::history(move.from_, move.to_);
+    move.score_ = hist.score();
 
     if ( move.rindex_ >= 0 )
     {
@@ -346,10 +345,7 @@ private:
       return;
 
 	  const History & hist = MovesGenerator::history(move.from_, move.to_);
-	  if ( hist.bad_count_ > 0 )
-		  move.score_ = hist.score_*hist.good_count_/hist.bad_count_;
-	  else
-		  move.score_ = hist.score_;
+    move.score_ = hist.score();
 
     if ( move.rindex_ >= 0 )
     {

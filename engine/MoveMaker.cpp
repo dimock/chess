@@ -144,6 +144,13 @@ bool Board::doMove()
   move.mask_[0] = fmgr_.mask(Figure::ColorBlack);
   move.mask_[1] = fmgr_.mask(Figure::ColorWhite);
 
+  if ( move.en_passant_ >= 0 )
+  {
+    const Figure & epawn = getFigure(ocolor, move.en_passant_);
+    THROW_IF(!epawn || epawn.getType() != Figure::TypePawn, "no en-passant pawn to undo hash");
+    fmgr_.hashEnPassant(epawn.where(), ocolor);
+  }
+
   /// hashing castle possibility
   if ( castling(color_, 0) && (fig.getType() == Figure::TypeKing || fig.getType() == Figure::TypeRook && (fig.where() == 63 && !color_ || fig.where() == 7 && color_)) )
     fmgr_.hashCastling(color_, 0);
@@ -230,7 +237,7 @@ bool Board::doMove()
   if ( Figure::TypePawn == fig.getType() && fig.isFirstStep() && (16 == pw_dy || -16 == pw_dy) )
   {
     en_passant_ = fig.getIndex();
-    fmgr_.hashEnPassant(fig.where(), color_);
+    fmgr_.hashEnPassant(move.to_, color_);
   }
 
   move.first_move_ = fig.isFirstStep();
@@ -481,19 +488,19 @@ bool Board::verifyChessDraw()
     return true;
   }
 
-  // we don't need to verify threefold repetition if capture or pawn's move was less than 4 steps ago
-  if ( fiftyMovesCount_ < 4 )
-    return false;
+  //// we don't need to verify threefold repetition if capture or pawn's move was less than 4 steps ago
+  //if ( fiftyMovesCount_ < 4 )
+  //  return false;
 
   int reps = 1;
   int i = halfmovesCounter_-3;
   for (; reps < 3 && i >= 0; i -= 2)
   {
-    if ( getMove(i).irreversible_ )
-      break;
-
     if ( getMove(i).zcode_ == fmgr_.hashCode() )
       reps++;
+
+    if ( getMove(i).irreversible_ )
+      break;
   }
 
   // may be we forget to test initial position?
@@ -506,7 +513,6 @@ bool Board::verifyChessDraw()
   if ( reps >= 3 )
   {
 	  state_ = DrawReps;
-
 	  return true;
   }
 

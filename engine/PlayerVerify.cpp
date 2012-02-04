@@ -35,7 +35,7 @@ void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( board_.getState() == Board::UnderCheck )
   {
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
-    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, false, false);
+    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
 
     Move legal[Board::MovesMax];
     int num = 0;
@@ -112,7 +112,7 @@ void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType bett
 void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType)
 {
   int counter = 0;
-  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, false, false);
+  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
   CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
   ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
@@ -255,7 +255,7 @@ void Player::verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int 
 
   int counter = 0;
   int depth = 0;
-  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter, false, false);
+  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
   CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
 
   Move legal[Board::MovesMax], caps[Board::MovesMax];

@@ -24,6 +24,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   Figure::Color color  = board_.getColor();
   Figure::Color ocolor = Figure::otherColor(color);
 
+  const Figure & king  = board_.getFigure(color, Board::KingIndex);
   const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
   uint64 brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
   const uint64 & pw_check_mask = board_.g_movesTable->pawnCaps_o(ocolor, oking.where());
@@ -61,6 +62,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         }
 
         // castling also could be with check
+        uint64 all_but_king_mask = ~mask_all | (1ULL << king.where());
         if ( board_.castling(board_.color_, 0) && !board_.getField(fig.where()+2) ) // short
         {
           const Field & rfield = board_.getField(board_.color_ ? 7 : 63);
@@ -68,7 +70,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           Figure rook = board_.getFigure(board_.color_, rfield.index());
           rook.go(rook.where()-2);
           uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
-          if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & ~mask_all) == rk_mask )
+          if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
             add_check(m, fig.where(), fig.where()+2, -1, Figure::TypeNone);
         }
 
@@ -79,7 +81,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           Figure rook = board_.getFigure(board_.color_, rfield.index());
           rook.go(rook.where()+3);
           uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
-          if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & ~mask_all) == rk_mask )
+          if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
             add_check(m, fig.where(), fig.where()-2, -1, Figure::TypeNone);
         }
       }

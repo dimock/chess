@@ -371,7 +371,7 @@ bool ChessPosition::makeMovement(const QPoint & pt)
         Move & move = moves[i];
         if ( move.new_type_ == type )
         {
-          idx = i;
+          idx = (int)i;
           break;
         }
       }
