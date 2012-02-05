@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 History MovesGenerator::history_[64][64];
-int History::history_max_;
+unsigned History::history_max_;
 
 MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), history_max_(0)

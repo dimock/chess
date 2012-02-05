@@ -40,7 +40,7 @@ struct Move
 #ifndef NDEBUG
   // make all values invalid
   Move() : from_(-1), to_(-1), rindex_(100), new_type_(10), checkVerified_(1), alreadyDone_(1), flags_(-1),
-    fkiller_(1), checkFlag_(1), threat_(1), score_(std::numeric_limits<int>::max())
+    fkiller_(1), checkFlag_(1), threat_(1), srt_score_(0)
   {}
 #endif
 
@@ -64,7 +64,7 @@ struct Move
          threat_ : 1,
          flags_;
 
-  int score_;
+  unsigned srt_score_;
 
   inline void clear()
   {
@@ -72,7 +72,7 @@ struct Move
     to_ = -1;
     new_type_ = 0;
     rindex_ = -1;
-    score_ = -std::numeric_limits<int>::max();
+    srt_score_ = 0;//-std::numeric_limits<int>::max();
 
     checkVerified_ = 0;
     alreadyDone_ = 0;
@@ -104,7 +104,7 @@ struct Move
     checkFlag_ = 0;
     threat_ = 0;
     flags_ = 0;
-    score_ = -std::numeric_limits<int>::max();
+    srt_score_ = 0;//-std::numeric_limits<int>::max();
   }
 
   inline operator bool () const

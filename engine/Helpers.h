@@ -86,8 +86,8 @@ end:
   return m;
 }
 
-// multiplies v*n and diveides by d v*n/(2*d) to avoid negative numbers
-inline unsigned mul_div2(unsigned v, unsigned n, unsigned d)
+// multiplies v*n and diveides by d v*n/d
+inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
   unsigned int r = 0;
   __asm
@@ -102,7 +102,6 @@ md_begin:
     mov eax, dword ptr [v]
     mul dword ptr [n]
     shrd eax, edx, cl
-    shr eax, 1
     mov dword ptr [r], eax
   }
   return r;
@@ -133,12 +132,11 @@ inline int log2(int n)
 	return m;
 }
 
-inline unsigned mul_div2(unsigned v, unsigned n, unsigned d)
+inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
   unsigned long long r = (unsigned long long)v * n;
   r >>= log2(d);
   unsigned x = *((unsigned*)&r);
-  x >>= 1;
   return x;
 }
 #endif
