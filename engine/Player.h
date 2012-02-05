@@ -201,7 +201,6 @@ private:
       hscore += ply;
     }
 
-    Move hmove = board_.unpack(hitem.move_);
 
     if ( (int)hitem.depth_ >= depth )
     {
@@ -209,6 +208,7 @@ private:
         return GeneralHashTable::Alpha;
 
 #ifdef RETURN_IF_BETTA
+      Move hmove = board_.unpack(hitem.move_);
       if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hmove && hscore >= betta )
       {
 #ifndef NDEBUG
@@ -249,6 +249,10 @@ private:
         }
       }
 #endif // RETURN_IF_BETTA
+    }
+    else if ( GeneralHashTable::Alpha == hitem.flag_ && ply > 4 && hitem.depth_ > 3 && (!hitem.move_ && hscore <= alpha  || board_.material() < 0) )
+    {
+      return GeneralHashTable::Alpha;
     }
 
     return GeneralHashTable::AlphaBetta;

@@ -328,13 +328,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef USE_HASH_TABLE_GENERAL
   if ( !use_pv_ ) // use hash table
   {
-    bool reduced = board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_;
     GeneralHashTable::Flag flag = getGeneralHashFlag(depth, ply, alpha, betta);
     if ( GeneralHashTable::Alpha == flag )
       return alpha;
     else if ( GeneralHashTable::Betta == flag )
     {
-      if ( ghash_[board_.hashCode()].threat_ && reduced )
+      if ( ghash_[board_.hashCode()].threat_ && board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_ )
         return betta - 1;
 
       return betta;
@@ -406,10 +405,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     EscapeGenerator eg(hmoves[0], board_, depth, ply, *this, alpha, betta, counter);
 
-    if ( (eg.count() == 1 || board_.getNumOfChecking() == 2)&& alpha < Figure::WeightMat-MaxPly )
+    if ( (eg.count() == 1 || board_.getNumOfChecking() == 2)&& alpha < Figure::figureWeight_[Figure::TypeRook] && alpha > -Figure::figureWeight_[Figure::TypeRook] )
       depth++;
 
-    for ( ; !stop_ && alpha < betta ; )
+    for ( ; !stop_ && alpha < betta; )
     {
       Move & move = eg.escape();
       if ( !move || stop_ )
@@ -524,7 +523,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     int ext = -1;
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    if ( (haveCheck || Figure::TypeQueen == move.new_type_ /*|| ((ext = need_extension(counter)) > 0)*/ ) && depth > 0 && alpha < Figure::WeightMat-MaxPly )
+    if ( (haveCheck || Figure::TypeQueen == move.new_type_ /*|| ((ext = need_extension(counter)) > 0)*/ ) && depth > 0 && alpha < Figure::figureWeight_[Figure::TypeQueen] )
     {
       mv_cmd.extended_ = true;
       depth++;

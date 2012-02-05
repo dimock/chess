@@ -309,6 +309,14 @@ public:
     return fmgr_.weight(color);
   }
 
+  ScoreType material() const
+  {
+    ScoreType score = fmgr_.weight();
+    if ( !color_ )
+      score = -score;
+    return score;
+  }
+
   /// methods
 private:
 
