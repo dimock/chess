@@ -574,3 +574,28 @@ bool EscapeGenerator::find(const Move & m) const
   return false;
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+void MovesGenerator::save_history(const char * fname)
+{
+  FILE * f = fopen(fname, "wb");
+  if ( !f )
+    return;
+  
+  fwrite(&History::history_max_, sizeof(History::history_max_), 1, f);
+  fwrite((char*)history_, sizeof(History), 64*64, f);
+
+  fclose(f);
+}
+
+void MovesGenerator::load_history(const char * fname)
+{
+  FILE * f = fopen(fname, "rb");
+  if ( !f )
+    return;
+
+  fread(&History::history_max_, sizeof(History::history_max_), 1, f);
+  fread((char*)history_, sizeof(History), 64*64, f);
+
+  fclose(f);
+}

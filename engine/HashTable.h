@@ -150,6 +150,8 @@ public:
         return;
     }
 
+    THROW_IF(s > 32760, "wrong value to hash");
+
     if ( hitem.hcode_ && hitem.hcode_ != hcode )
     {
       hitem.threat_ = 0;

@@ -201,11 +201,15 @@ private:
       hscore += ply;
     }
 
+    THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
 
-    if ( (int)hitem.depth_ >= depth )
+    if ( (int)hitem.depth_ >= depth && ply > 0 )
     {
       if ( GeneralHashTable::Alpha == hitem.flag_ && hscore <= alpha )
+      {
+        THROW_IF( !stop_ && alpha < -32760, "invalid hscore" );
         return GeneralHashTable::Alpha;
+      }
 
 #ifdef RETURN_IF_BETTA
       Move hmove = board_.unpack(hitem.move_);
@@ -250,10 +254,6 @@ private:
       }
 #endif // RETURN_IF_BETTA
     }
-    //else if ( GeneralHashTable::Alpha == hitem.flag_ && ply > 4 && hitem.depth_ > 3 && (!hitem.move_ && hscore <= alpha  || board_.material() < 0) )
-    //{
-    //  return GeneralHashTable::Alpha;
-    //}
 
     return GeneralHashTable::AlphaBetta;
   }

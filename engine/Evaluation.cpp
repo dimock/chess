@@ -257,6 +257,9 @@ ScoreType Board::evaluate() const
   if ( Figure::ColorBlack  == color_ )
     score = -score;
 
+  THROW_IF( score < -32760 || score > 32760, "invalid score" );
+    
+
   return score;
 }
 

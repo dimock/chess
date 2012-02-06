@@ -46,6 +46,9 @@ public:
 
   static void clear_history();
 
+  static void save_history(const char * fname);
+  static void load_history(const char * fname);
+
   Move & move()
   {
     Move * move = moves_ + numOfMoves_;

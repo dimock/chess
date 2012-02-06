@@ -318,7 +318,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 		plyMax_ = ply;
 
   if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
+  {
+    THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
     return alpha;
+  }
 
   int counter = 0;
 
@@ -330,12 +333,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     GeneralHashTable::Flag flag = getGeneralHashFlag(depth, ply, alpha, betta);
     if ( GeneralHashTable::Alpha == flag )
+    {
+      THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
       return alpha;
+    }
+
     else if ( GeneralHashTable::Betta == flag )
     {
       if ( ghash_[board_.hashCode()].threat_ && board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_ )
         return betta - 1;
 
+      THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
       return betta;
     }
   }
@@ -427,11 +435,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     {
       // if movement return true we were reduced threat move and need to recalculate it with full depth
       if ( movement(depth, ply, alpha, betta, *m, counter, null_move) )
+      {
+        THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
+      }
     }
 
     if ( stop_ || alpha >= betta )
+    {
+      THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
       return alpha;
+    }
 
     MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta ; )
@@ -450,7 +464,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         break;
 
       if ( movement(depth, ply, alpha, betta, move, counter, null_move) )
+      {
+        THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
+      }
     }
   }
 
@@ -476,6 +493,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     ghash_.push(board_.hashCode(), s, depth, ply, board_.halfmovesCount(), board_.getColor(),  flag, PackedMove());
 #endif
 
+    THROW_IF( !stop_ && (s < -32760 || s > 32760), "invalid score" );
     return s;
   }
 
@@ -493,6 +511,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 #endif
 
+  THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -545,6 +564,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
       {
         ScoreType betta1 = score < betta && !haveCheck ? score : betta;
         score = -captures(depth-1, ply+1, -betta1, -alpha, delta, true);
+        THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
       }
     }
     else
@@ -574,18 +594,23 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
         score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move);
 
+        THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
         mv_cmd.reduced_ = false;
 
 #ifdef USE_LMR
 
         if ( !stop_ && score > alpha && R > 1 ) // was LMR
           score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move);
+
+        THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
 #endif
       }
 
       if ( !stop_ && counter < 2  || (score > alpha && score < betta) )
 #endif
         score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move);
+
+      THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
     }
 
     if ( !stop_ )
@@ -667,7 +692,10 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 		plyMax_ = ply;
 
   if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
+  {
+    THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
     return alpha;
+  }
 
   if ( ply < MaxPly )
     contexts_[ply+1].killer_.clear();
@@ -699,11 +727,17 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "identical hash code but different color in captures" );
 
     if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
+    {
+      THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
       return alpha;
+    }
 
 #ifdef RETURN_IF_BETTA
     if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hitem.move_ && hitem.score_ >= betta )
+    {
+      THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
       return betta;
+    }
 #endif // RETURN_IF_BETTA
   }
 #endif //USE_HASH_TABLE_CAPTURE
@@ -719,7 +753,10 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
 
   if ( stop_ || alpha >= betta )
+  {
+    THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
     return alpha;
+  }
 
   if ( board_.getState() == Board::UnderCheck )
   {
@@ -763,6 +800,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       chash_.push(board_.hashCode(), s, board_.getColor(), flag, depth, ply, board_.halfmovesCount(), PackedMove());
 #endif
 
+      THROW_IF( !stop_ && (s < -32760 || s > 32760), "invalid score" );
       return s;
     }
   }
@@ -821,6 +859,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
 #endif
 
+  THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
   return alpha;
 }
 
@@ -856,6 +895,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
       {
         ScoreType betta1 = s < betta && !haveCheck ? s : betta;
         s = -captures(depth-1, ply+1, -betta1, -alpha, delta, do_checks);
+        THROW_IF( !stop_ && (s < -32760 || s > 32760), "invalid score" );
       }
     }
     if ( !stop_ && s > alpha )
