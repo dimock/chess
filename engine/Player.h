@@ -250,10 +250,10 @@ private:
       }
 #endif // RETURN_IF_BETTA
     }
-    else if ( GeneralHashTable::Alpha == hitem.flag_ && ply > 4 && hitem.depth_ > 3 && (!hitem.move_ && hscore <= alpha  || board_.material() < 0) )
-    {
-      return GeneralHashTable::Alpha;
-    }
+    //else if ( GeneralHashTable::Alpha == hitem.flag_ && ply > 4 && hitem.depth_ > 3 && (!hitem.move_ && hscore <= alpha  || board_.material() < 0) )
+    //{
+    //  return GeneralHashTable::Alpha;
+    //}
 
     return GeneralHashTable::AlphaBetta;
   }
