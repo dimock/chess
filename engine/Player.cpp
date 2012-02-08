@@ -373,7 +373,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // first of all try null-move
 #ifdef USE_NULL_MOVE
-  if ( !null_move && betta == alpha+1 )
+  if ( !null_move /*&& betta == alpha+1 */)
   {
     ScoreType nullScore = nullMove(depth, ply, alpha, betta);
 
@@ -1142,38 +1142,115 @@ bool Player::isRealThreat(const Move & move)
   const Figure & cfig = board_.getFigure(cfield.color(), cfield.index());
   THROW_IF( !cfig, "field is occupied but there is no figure in the list in threat detector" );
 
-  // we have to put figure under attack of weaker or equal figure
-  if ( board_.ptAttackedBy(move.to_, pfig) &&
-      (cfig.getType() >= pfig.getType() || cfig.getType() == Figure::TypeKnight && pfig.getType() == Figure::TypeBishop) )
-  {
+  // we have to put figure under attack
+  if ( board_.ptAttackedBy(move.to_, pfig) )
     return true;
-  }
 
+  // put our figure under attack
   int tindex = board_.getAttackedFrom(ocolor, move.to_, prev.from_);
   if ( tindex >= 0 )
-  {
-    const Figure & afig = board_.getFigure(ocolor, tindex);
-
-    // put our figure under attack of weaker of equal figure
-    if ( cfig.getType() >= afig.getType() || cfig.getType() == Figure::TypeKnight && afig.getType() == Figure::TypeBishop )
-      return true;
-  }
-
-  // prev move was attack by equal or stronger, and we should escape from it
-  if ( board_.ptAttackedBy(move.from_, pfig) &&
-      (pfig.getType() >= cfig.getType() || pfig.getType() == Figure::TypeKnight && cfig.getType() == Figure::TypeBishop) )
-  {
     return true;
-  }
 
+  // prev move was attack, and we should escape from it
+  if ( board_.ptAttackedBy(move.from_, pfig) )
+    return true;
+
+  // our figure was attacked from direction, opened by prev movement
   int findex = board_.getAttackedFrom(ocolor, move.from_, prev.from_);
   if ( findex >= 0 )
-  {
-    const Figure & afig = board_.getFigure(ocolor, findex);
+    return true;
 
-    // our figure was attacked by stronger of equal one
-    if ( afig.getType() >= cfig.getType() || afig.getType() == Figure::TypeKnight && cfig.getType() == Figure::TypeBishop )
-      return true;
+  // we have to protect figure from attack of previous one (only if it isn't pawn)
+  if ( pfig.getType() != Figure::TypePawn )
+  {
+    const uint64 & black = board_.fmgr().mask(Figure::ColorBlack);
+    const uint64 & white = board_.fmgr().mask(Figure::ColorWhite);
+    uint64 mask_all_inv = ~(black | white);
+    uint64 amask = g_movesTable->caps(pfig.getType(), prev.to_);
+    for ( ; amask; )
+    {
+      int n = least_bit_number(amask);     
+      const Field & field = board_.getField(n);
+      if ( !field || field.color() != board_.getColor() )
+        continue;
+
+      if ( pfig.getType() != Figure::TypeKnight && pfig.getType() != Figure::TypeKing )
+      {
+        const uint64 & btw_msk = g_betweenMasks->between(prev.to_, n);
+        if ( (btw_msk & mask_all_inv) != btw_msk )
+          continue;
+      }
+
+      // field is attacked by pfig. now test if it is also attacked by cfig
+      Figure cfig_to(cfig);
+      cfig_to.go(move.to_);
+
+      if ( g_figureDir->dir(cfig_to, n) < 0 )
+        continue;
+
+      // may be it was already attacked by this figure
+      if ( g_figureDir->dir(cfig, n) >= 0 )
+        continue;
+
+      if ( cfig.getType() == Figure::TypeKnight || cfig.getType() == Figure::TypePawn || cfig.getType() == Figure::TypeKing )
+        return true;
+
+      // can cfig go to n-field
+      const uint64 & btw_msk_cfig = g_betweenMasks->between(move.to_, n);
+      if ( (btw_msk_cfig & mask_all_inv) == btw_msk_cfig )
+        return true;
+    }
+  }
+
+  // we have to protect from figure, attacked through position, that prev figure left
+  {
+    const uint64 & black = board_.fmgr().mask(Figure::ColorBlack);
+    const uint64 & white = board_.fmgr().mask(Figure::ColorWhite);
+    uint64 mask_all_inv = ~(black | white);
+    uint64 cmask = g_movesTable->caps(cfig.getType(), move.to_);
+    Figure::Color ocolor = Figure::otherColor(board_.getColor());
+    uint64 brq_msk = board_.fmgr().bishop_mask(ocolor) | board_.fmgr().rook_mask(ocolor) | board_.fmgr().queen_mask(ocolor);
+    for ( ; cmask; )
+    {
+      int n = least_bit_number(cmask);
+      const Field & field = board_.getField(n);
+      if ( !field || field.color() != board_.getColor() )
+        continue;
+
+      if ( cfig.getType() != Figure::TypeKing && cfig.getType() != Figure::TypePawn && cfig.getType() != Figure::TypeKnight )
+      {
+        const uint64 & btw_msk = g_betweenMasks->between(move.to_, n);
+        if ( (btw_msk & mask_all_inv) != btw_msk )
+          continue;
+      }
+
+      const uint64 & msk_from = g_betweenMasks->from(n, prev.from_);
+      if ( !msk_from )
+        continue;
+
+      uint64 att_msk = brq_msk & msk_from;
+      for ( ; att_msk; )
+      {
+        int a = least_bit_number(att_msk);
+        const Field & afield = board_.getField(a);
+        if ( !afield )
+          continue;
+
+        THROW_IF( afield.color() != ocolor, "invalid figure color" );
+
+        const Figure & afig = board_.getFigure(afield.color(), afield.index());
+
+        THROW_IF( afig.getColor() != ocolor || (afig.getType() != Figure::TypeBishop && afig.getType() != Figure::TypeQueen && afig.getType() != Figure::TypeRook),
+          "invalid figure color or type" );
+
+        if ( g_figureDir->dir(afig, n) < 0 )
+          continue;
+
+        const uint64 & btw_msk = g_betweenMasks->between(afig.where(), n);
+        if ( (btw_msk & mask_all_inv) == btw_msk )
+          return true;
+      }
+    }
   }
 
   return false;
