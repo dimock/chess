@@ -308,6 +308,9 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
   if ( nullScore <= alpha )
     contexts_[ply].null_move_threat_ = 1;
 
+  if ( nullScore <= -Figure::WeightMat+MaxPly )
+    contexts_[ply].mat_threat_ = 1;
+
   return nullScore;
 }
 
@@ -391,6 +394,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         null_move = true;
       }
     }
+    //else if ( contexts_[ply].mat_threat_ )
+    //  depth++;
   }
 #endif
 
@@ -542,7 +547,8 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     int ext = -1;
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    if ( (haveCheck || Figure::TypeQueen == move.new_type_ /*|| ((ext = need_extension(counter)) > 0)*/ ) && depth > 0 && alpha < Figure::figureWeight_[Figure::TypeQueen] )
+    if ( (haveCheck || Figure::TypeQueen == move.new_type_ || ((ext = need_extension(counter)) > 0)) &&
+          depth > 0 && alpha < Figure::figureWeight_[Figure::TypeQueen] )
     {
       mv_cmd.extended_ = true;
       depth++;
@@ -580,6 +586,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               depth > LMR_DepthLimit &&
               ext < 0 &&
               !move.threat_ &&
+              !move.strong_ &&
               !check_esc &&
               !null_move &&
               !mv_cmd.extended_ &&
@@ -1350,7 +1357,7 @@ int Player::need_extension(int counter)
       attackers++;
 
     if ( attackers > 2 )
-      return 1;
+      return 0;
 
     // bishop
     uint64 amask = b_caps & b_mask & fig_mask_i;
@@ -1366,7 +1373,7 @@ int Player::need_extension(int counter)
 
       attackers++;
       if ( attackers > 2 )
-        return 1;
+        return 0;
     }
 
     // rook
@@ -1383,7 +1390,7 @@ int Player::need_extension(int counter)
 
       attackers++;
       if ( attackers > 2 )
-        return 1;
+        return 0;
     }
 
     // queen
@@ -1400,14 +1407,14 @@ int Player::need_extension(int counter)
 
       attackers++;
       if ( attackers > 2 )
-        return 1;
+        return 0;
     }
   }
 
-  if ( attackers > 2 )
-    return 1;
+  //if ( attackers > 2 )
+  //  return 1;
 
-  if ( attackers > 1 )
+  if ( attackers > 2 )
     return 0;
 
   return -1;

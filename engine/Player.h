@@ -36,12 +36,13 @@ class CapsChecksGenerator;
 
 struct PlyContext
 {
-  PlyContext() : threat_(0), null_move_threat_(0) {}
+  PlyContext() : threat_(0), null_move_threat_(0), mat_threat_(0) {}
 
   Move killer_;
   Move pv_[MaxPly+1];
   uint16 threat_ : 1,
-         null_move_threat_ : 1;
+         null_move_threat_ : 1,
+         mat_threat_ : 1;
 
   void clearPV(int depth)
   {
@@ -54,6 +55,7 @@ struct PlyContext
     pv_[ply].clear();
     threat_ = 0;
     null_move_threat_ = 0;
+    mat_threat_ = 0;
   }
 };
 

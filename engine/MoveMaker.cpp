@@ -108,6 +108,9 @@ Move Board::unpack(const PackedMove & pm) const
   move.to_ = pm.to_;
   move.new_type_ = pm.new_type_;
 
+  // to prevent reduction of this move in LMR
+  move.strong_ = 1;
+
   if ( fto )
     move.rindex_ = fto.index();
   else if ( en_passant_ >= 0 )
