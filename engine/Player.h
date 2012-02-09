@@ -181,7 +181,8 @@ private:
   void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
-    ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1, color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
+    ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1,
+      color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
   }
 
   // we should return alpha if flag is Alpha, or betta if flag is Betta
@@ -304,6 +305,18 @@ private:
     return (curr.eaten_type_ == prev.eaten_type_) ||
            (curr.eaten_type_ == Figure::TypeKnight && prev.eaten_type_ == Figure::TypeBishop) ||
            (curr.eaten_type_ == Figure::TypeBishop && prev.eaten_type_ == Figure::TypeKnight);
+  }
+
+  inline bool pawnTo6(const Move & move) const
+  {
+    const Figure & fig = board_.getFigure(move.to_);
+    if ( fig.getType() == Figure::TypePawn )
+    {
+      // before promotion
+      int8 y = move.to_ >> 3;
+      return 1 == y || 6 == y;
+    }
+    return false;
   }
 
   // is given movement caused by previous. this mean that if we don't do this move we loose

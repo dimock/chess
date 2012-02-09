@@ -330,6 +330,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // if we haven't found best move, we write alpha-flag to hash
   ScoreType savedAlpha = alpha;
+  bool inPvNode = betta > alpha+1;
+  int goodCount = 0;
 
 #ifdef USE_HASH_TABLE_GENERAL
   if ( !use_pv_ ) // use hash table
@@ -435,15 +437,32 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
+    Move firstMove;
+    Move singleMove;
+    singleMove.clear();
+    firstMove.clear();
+
     // first of all try moves, collected from hash
     for (Move * m = hmoves; !stop_ && alpha < betta && *m; ++m)
     {
+      ScoreType alpha0 = alpha;
       // if movement return true we were reduced threat move and need to recalculate it with full depth
-      if ( movement(depth, ply, alpha, betta, *m, counter, null_move) )
+      if ( movement(depth, ply, alpha0, betta, *m, counter, null_move) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
       }
+
+      if ( !firstMove && counter == 1 )
+        firstMove = *m;
+
+      if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
+      {
+        goodCount++;
+        singleMove = *m;
+      }
+
+      alpha = alpha0;
     }
 
     if ( stop_ || alpha >= betta )
@@ -468,11 +487,35 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
 
-      if ( movement(depth, ply, alpha, betta, move, counter, null_move) )
+      ScoreType alpha0 = alpha;
+      if ( movement(depth, ply, alpha0, betta, move, counter, null_move) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
       }
+
+      if ( !firstMove && counter == 1 )
+        firstMove = move;
+
+      if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
+      {
+        goodCount++;
+        singleMove = move;
+      }
+
+      alpha = alpha0;
+    }
+
+    if ( !stop_ && !null_move && inPvNode && (goodCount == 1 || counter == 1) && alpha < betta && ply < depth_+6 )
+    {
+      alpha = savedAlpha;
+      
+      int counter1 = 0;
+      if ( !singleMove )
+        singleMove = firstMove;
+
+      if ( singleMove && movement(depth+1, ply, alpha, betta, singleMove, counter1, null_move) )
+        return betta-1;
     }
   }
 
@@ -544,11 +587,10 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     mv_cmd.extended_ = false;
     History & hist = MovesGenerator::history(move.from_, move.to_);
 
-    int ext = -1;
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    if ( (haveCheck || Figure::TypeQueen == move.new_type_ || ((ext = need_extension(counter)) > 0)) &&
-          depth > 0 && alpha < Figure::WeightMat-MaxPly )
+    if ( depth > 0 && alpha < Figure::WeightMat-MaxPly &&
+         (haveCheck || Figure::TypeQueen == move.new_type_ || pawnTo6(move)) )
     {
       mv_cmd.extended_ = true;
       depth++;
@@ -584,7 +626,6 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         if (  counter > LMR_Counter &&
               depth_ > LMR_MaxDepthLimit &&
               depth > LMR_DepthLimit &&
-              ext < 0 &&
               !move.threat_ &&
               !move.strong_ &&
               !check_esc &&
@@ -700,8 +741,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
   {
-    THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
-    return alpha;
+    //THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
+    return board_.evaluate();
   }
 
   if ( ply < MaxPly )
@@ -1141,7 +1182,7 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !pfig, "field is occupied but there is no figure in the list in threat detector" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) )
+  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) || pawnTo6(prev) )
     return false;
 
   const Field & cfield = board_.getField(move.from_);

@@ -135,7 +135,8 @@ public:
   GeneralHashTable(int size) : HashTable<GeneralHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount, Figure::Color color, Flag flag, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount,
+    Figure::Color color, Flag flag, const PackedMove & move)
   {
     GeneralHItem & hitem = (*this)[hcode];
     //if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )

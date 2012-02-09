@@ -40,7 +40,7 @@ struct Move
 #ifndef NDEBUG
   // make all values invalid
   Move() : from_(-1), to_(-1), rindex_(100), new_type_(10), checkVerified_(1), alreadyDone_(1), flags_(-1),
-    fkiller_(1), checkFlag_(1), threat_(1), srt_score_(0), strong_(0)
+    fkiller_(1), checkFlag_(1), threat_(1), srt_score_(0), strong_(1)
   {}
 #endif
 
