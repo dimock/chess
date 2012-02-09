@@ -312,4 +312,7 @@ private:
 
   // returns number of ply to extent
   int need_extension(int counter);
+
+  // we only do dangerous check after horizont
+  bool isCheckDangerous(const Move &, Figure::Type minimalType);
 };

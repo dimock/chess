@@ -548,7 +548,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
     if ( (haveCheck || Figure::TypeQueen == move.new_type_ || ((ext = need_extension(counter)) > 0)) &&
-          depth > 0 && alpha < Figure::figureWeight_[Figure::TypeQueen] )
+          depth > 0 && alpha < Figure::WeightMat-MaxPly )
     {
       mv_cmd.extended_ = true;
       depth++;
@@ -847,7 +847,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
           testTimer();
 
-        if ( find_move(hcaps, hcapsN, check ) )
+        if ( find_move(hcaps, hcapsN, check ) /*|| !isCheckDangerous(check, minimalType) */)
           continue;
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
@@ -1418,4 +1418,74 @@ int Player::need_extension(int counter)
     return 0;
 
   return -1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+bool Player::isCheckDangerous(const Move & move, Figure::Type minimalType)
+{
+  const Field & field = board_.getField(move.from_);
+  const Figure & fig = board_.getFigure(field.color(), field.index());
+
+  THROW_IF( !fig || fig.getColor() != board_.getColor(), "invalid figure gives check");
+
+  const Figure::Color ocolor = Figure::otherColor(board_.getColor());
+  const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
+  THROW_IF( !oking || oking.getType() != Figure::TypeKing, "no opponents king" );
+
+  // if checking figure is attacked but not protected we skip this move
+  bool attacked = board_.fastAttacked(ocolor, move.to_);
+  bool guarded = board_.fastAttacked(board_.getColor(), move.to_, move.from_);
+  if ( attacked && !guarded )
+    return false;
+
+  if ( move.rindex_ >= 0 || move.new_type_ > 0 || fig.getType() == Figure::TypePawn || fig.getType() == Figure::TypeQueen )
+    return true;
+
+  // opponent's figures
+  const uint64 & omask = board_.fmgr().mask(ocolor);
+  uint64 all_inv = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
+  all_inv ^= (1ULL << move.from_);
+  all_inv = ~all_inv;
+
+  // check with attack
+  uint64 amask = g_movesTable->caps(fig.getType(), move.to_) & omask ^ (1ULL << oking.where());
+  if ( amask )
+  {
+    if ( fig.getType() == Figure::TypeKnight )
+      return true;
+
+    for ( ; amask; )
+    {
+      int n = least_bit_number(amask);
+      const Field & afield = board_.getField(n);
+
+      if ( !afield || afield.type() < minimalType )
+        continue;
+
+      Figure afig = fig;
+      afig.go(move.to_);
+      if ( g_figureDir->dir(afig, n) < 0 )
+        continue;
+
+      // can capture n-position
+      const uint64 & btw_msk = g_betweenMasks->between(move.to_, n);
+      if ( (btw_msk & all_inv) == btw_msk )
+        return true;
+    }
+  }
+
+  // too few available kings movements
+  uint64 k_caps = g_movesTable->caps(Figure::TypeKing, oking.where());
+  uint64 all_mask = ~all_inv | (1ULL << move.to_) ;
+  k_caps &= all_mask;
+
+  int num = 0;
+  for ( ; k_caps; )
+  {
+    int n = least_bit_number(k_caps);
+    if ( !board_.fastAttacked(board_.getColor(), n) )
+      num++;
+  }
+
+  return num < 3;
 }

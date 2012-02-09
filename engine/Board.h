@@ -317,6 +317,16 @@ public:
     return score;
   }
 
+
+  /// is field 'pos' attacked by given color? figure isn't moved
+  bool fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const;
+
+  /// is field 'pos' attacked by given color?
+  bool isAttacked(const Figure::Color c, int pos) const;
+  bool fastAttacked(const Figure::Color c, int8 pos) const;
+
+
+
   /// methods
 private:
 
@@ -415,10 +425,6 @@ private:
     const uint64 & clear_msk /* figure goes from */,
     const uint64 & set_msk /* figure goes to */,
     const uint64 & exclude_msk /* removed figure - can't attack anymore */) const;
-
-  /// is field 'pos' attacked by given color?
-  bool isAttacked(const Figure::Color c, int pos) const;
-  bool fastAttacked(const Figure::Color c, int8 pos) const;
 
   // returns number of checking figures.
   // very slow. used only for initial validation
