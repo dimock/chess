@@ -514,8 +514,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( !singleMove )
         singleMove = firstMove;
 
-      if ( singleMove && movement(depth+1, ply, alpha, betta, singleMove, counter1, null_move) )
-        return betta-1;
+      if ( singleMove )
+        movement(depth+1, ply, alpha, betta, singleMove, counter1, null_move);
     }
   }
 
