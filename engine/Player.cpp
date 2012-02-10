@@ -316,15 +316,19 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
     contexts_[ply].null_move_threat_ = 1;
   }
 
-  //if ( nullScore <= -Figure::WeightMat+MaxPly )
-  //  contexts_[ply].ext_data_.mat_threat_found_++;
+#ifdef MAT_THREAT_EXTENSION
+  if ( nullScore <= -Figure::WeightMat+MaxPly && nullScore > -std::numeric_limits<ScoreType>::max() )
+    contexts_[ply].ext_data_.mat_threats_found_++;
+#endif
 
+#ifdef MARKOFF_BOTVINNIK_EXTENSION
   // Markoff-Botvinnik extension ??? don't completely understand the reason to do it. just an experiment
   if ( ply > 2 && contexts_[ply].ext_data_.mbe_move_ &&
        contexts_[ply-2].ext_data_.mbe_move_ == contexts_[ply].ext_data_.mbe_move_ )
   {
     contexts_[ply].ext_data_.mbe_threat_ = true;
   }
+#endif
 
   return nullScore;
 }
@@ -416,12 +420,15 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       }
     }
     // mat threat extension
-    //else if ( ply > 1 && contexts_[ply].ext_data_.mat_threat_found_ > 1 &&
-    //          contexts_[ply].ext_data_.mat_threat_count_ < MatThreatExtension_Limit )
-    //{
-    //  contexts_[ply].ext_data_.mat_threat_count_++;
-    //  depth++;
-    //}
+#ifdef MAT_THREAT_EXTENSION
+    else if ( ply > 1 && contexts_[ply].ext_data_.mat_threats_found_ > 1 &&
+              contexts_[ply].ext_data_.mat_threat_count_ < MatThreatExtension_Limit )
+    {
+      contexts_[ply].ext_data_.mat_threat_count_++;
+      depth++;
+    }
+#endif
+#ifdef MARKOFF_BOTVINNIK_EXTENSION
     // Markoff-Botvinnic extension
     else if ( ply > 2 && contexts_[ply].ext_data_.mbe_threat_  &&
               contexts_[ply].ext_data_.mbe_count_ < MbeExtension_Limit )
@@ -429,6 +436,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       contexts_[ply].ext_data_.mbe_count_++;
       depth++;
     }
+#endif
   }
 #endif
 
@@ -630,7 +638,11 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
     if ( depth > 0 && alpha < Figure::WeightMat-MaxPly && 
-         (haveCheck || Figure::TypeQueen == move.new_type_ || pawnBeforePromotion(move)) )
+         (haveCheck || Figure::TypeQueen == move.new_type_ || pawnBeforePromotion(move) 
+#ifdef RECAPTURE_EXTENSION
+         || recapture(ply)
+#endif
+         ) )
     {
       mv_cmd.extended_ = true;
       depth++;
