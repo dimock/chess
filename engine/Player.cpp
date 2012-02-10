@@ -1091,12 +1091,15 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.move_ && hitem.hcode_ == board_.hashCode() )
       pv = board_.unpack(hitem.move_);
+
+#ifdef USE_HASH_TABLE_CAPTURE
     else
     {
       CaptureHItem & citem = chash_[board_.hashCode()];
       if ( citem.move_ && citem.hcode_ == board_.hashCode() )
         pv = board_.unpack(citem.move_);
     }
+#endif
   }
 #endif
 
@@ -1166,20 +1169,20 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
 
 #ifdef USE_HASH_TABLE_CAPTURE
 
-  CaptureHItem & hitem = chash_[board_.hashCode()];
-  if ( hitem.hcode_ == board_.hashCode() )
+  CaptureHItem & chitem = chash_[board_.hashCode()];
+  if ( chitem.move_ && chitem.hcode_ == board_.hashCode() )
   {
-    THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "identical hash code but different color in captures" );
-    hmove = board_.unpack(hitem.move_);
+    THROW_IF( (Figure::Color)chitem.color_ != board_.getColor(), "identical hash code but different color in captures" );
+    hmove = board_.unpack(chitem.move_);
   }
 
 #if ((defined USE_GENERAL_HASH_IN_CAPS) && (defined USE_HASH_TABLE_GENERAL))
   if ( !hmove )
   {
-    GeneralHItem & hitem = ghash_[board_.hashCode()];
-    if ( hitem.hcode_ == board_.hashCode() && hitem.move_ )
+    GeneralHItem & ghitem = ghash_[board_.hashCode()];
+    if ( ghitem.move_ && ghitem.hcode_ == board_.hashCode() )
     {
-      hmove = board_.unpack(hitem.move_);
+      hmove = board_.unpack(ghitem.move_);
       if ( hmove.rindex_ < 0 || board_.getFigure(Figure::otherColor(board_.getColor()), hmove.rindex_).getType() < minimalType )
         hmove.clear();
     }

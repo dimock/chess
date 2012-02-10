@@ -257,44 +257,48 @@ private:
       }
 
 #ifdef RETURN_IF_BETTA
-      Move hmove = board_.unpack(hitem.move_);
-      if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hmove && hscore >= betta )
+      if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) &&
+            hscore >= betta && hitem.move_ )
       {
+        Move hmove = board_.unpack(hitem.move_);
+        if ( hmove )
+        {
 #ifndef NDEBUG
-        Board board0 = board_;
+          Board board0 = board_;
 #endif
 
-        bool retBetta = hmove.rindex_ >= 0 || hmove.new_type_;
-        bool checking = false;
+          bool retBetta = hmove.rindex_ >= 0 || hmove.new_type_;
+          bool checking = false;
 
-        if ( !retBetta )
-        {
-          totalNodes_++;
-          nodesCount_++;
-
-          if ( board_.makeMove(hmove) )
+          if ( !retBetta )
           {
-            checking = board_.getState() == Board::UnderCheck;
-            retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
+            totalNodes_++;
+            nodesCount_++;
+
+            if ( board_.makeMove(hmove) )
+            {
+              checking = board_.getState() == Board::UnderCheck;
+              retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
+            }
+
+#ifndef NDEBUG
+            board_.verifyMasks();
+#endif
+
+            board_.unmakeMove();
+
+            THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
+
+#ifndef NDEBUG
+            board_.verifyMasks();
+#endif
           }
 
-#ifndef NDEBUG
-          board_.verifyMasks();
-#endif
-
-          board_.unmakeMove();
-
-          THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-
-#ifndef NDEBUG
-          board_.verifyMasks();
-#endif
-        }
-
-        if ( retBetta )
-        {
-          assemblePV(hmove, checking, ply);
-          return GeneralHashTable::Betta;
+          if ( retBetta )
+          {
+            assemblePV(hmove, checking, ply);
+            return GeneralHashTable::Betta;
+          }
         }
       }
 #endif // RETURN_IF_BETTA

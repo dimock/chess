@@ -53,7 +53,7 @@ typedef int16 ScoreType;
 #define USE_NULL_MOVE
 #define USE_LMR
 #define USE_IID
-#undef EXTENDED_THREAT_DETECTION
+#define EXTENDED_THREAT_DETECTION
 
 #undef  NO_TIME_LIMIT
 
