@@ -71,7 +71,7 @@ typedef int16 ScoreType;
 
 
 static const int HalfnodesCountToOverwrite = 16;
-static const int MaxPly = 48;
+static const int MaxPly = 50;
 static const int LMR_PlyReduce = 2;
 static const int LMR_DepthLimit = 3;
 static const int LMR_MaxDepthLimit = 5;
@@ -79,6 +79,12 @@ static const int LMR_Counter = 3;
 static const int NullMove_PlyReduce = 4;
 static const int NullMove_DepthMin = 1;
 static const int HashedMoves_Size = 8;
+static const int MatThreatExtension_Limit = 1;
+static const int MbeExtension_Limit = 2;
+static const int SingularExtension_Limit = 1;
+static const int RecaptureExtension_Limit = 1;
+static const int ChecksExtension_Limit = 16;
+static const int DoubleChecksExtension_Limit = 8;
 
 #ifndef _M_X64
 class QpfTimer

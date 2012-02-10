@@ -36,13 +36,51 @@ class CapsChecksGenerator;
 
 struct PlyContext
 {
-  PlyContext() : threat_(0), null_move_threat_(0), mat_threat_(0) {}
+  struct ExtData
+  {
+    ExtData() : recapture_count_(0), mat_threat_count_(0), mbe_count_(0), singular_count_(0), checks_count_(0), doublechecks_count_(0), mat_threat_found_(0), mbe_threat_(false)
+    {
+      mbe_move_.clear();
+    }
+
+    void clear()
+    {
+      recapture_count_ = 0;
+      mat_threat_count_ = 0;
+      mbe_count_ = 0;
+      singular_count_ = 0;
+      checks_count_ = 0;
+      doublechecks_count_ = 0;
+      mat_threat_found_ = 0;
+      mbe_threat_ = false;
+      mbe_move_.clear();
+    }
+
+    void copy_counters(const ExtData & e)
+    {
+      recapture_count_ = e.recapture_count_;
+      mat_threat_count_ = e.mat_threat_count_;
+      mbe_count_ = e.mbe_count_;
+      singular_count_ = e.singular_count_;
+      mat_threat_found_ = e.mat_threat_found_;
+      checks_count_ = e.checks_count_;
+      doublechecks_count_ = e.doublechecks_count_;
+    }
+
+    int recapture_count_, mat_threat_count_, mbe_count_, singular_count_, checks_count_, doublechecks_count_;
+    bool mbe_threat_;
+    int mat_threat_found_;
+
+    Move mbe_move_;
+  };
+
+
+  PlyContext() : threat_(0), null_move_threat_(0) {}
 
   Move killer_;
   Move pv_[MaxPly+1];
   uint16 threat_ : 1,
-         null_move_threat_ : 1,
-         mat_threat_ : 1;
+         null_move_threat_ : 1;
 
   void clearPV(int depth)
   {
@@ -55,8 +93,10 @@ struct PlyContext
     pv_[ply].clear();
     threat_ = 0;
     null_move_threat_ = 0;
-    mat_threat_ = 0;
+    ext_data_.clear();
   }
+
+  ExtData ext_data_;
 };
 
 class Player
@@ -129,6 +169,7 @@ private:
   clock_t tstart_, tprev_;
   Move before_, best_;
   bool beforeFound_;
+  ScoreType original_material_balance_;
 
   PlyContext contexts_[MaxPly+1];
   MoveCmd * pv_moves_;
@@ -282,8 +323,13 @@ private:
   void verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int delta);
 #endif
 
-  bool recapture()
+  bool recapture(int ply)
   {
+    if ( ply < 2 || contexts_[ply].ext_data_.recapture_count_ >= RecaptureExtension_Limit /*||
+         contexts_[ply].ext_data_.mbe_count_ > 0 || 
+         contexts_[ply].ext_data_.mat_threat_count_ > 0 */)
+      return false;
+
     if ( board_.halfmovesCount() < 2 )
       return false;
 
@@ -301,10 +347,24 @@ private:
     if ( curr.eaten_type_ == Figure::TypePawn )
       return false;
 
+    // verify material-balance restore
+    ScoreType smat = board_.material();
+    if ( (smat-original_material_balance_) <= -Figure::figureWeight_[Figure::TypePawn] ||
+         (smat-original_material_balance_) >= +Figure::figureWeight_[Figure::TypePawn] )
+    {
+      return false;
+    }
+
     // the same or equivalent type
-    return (curr.eaten_type_ == prev.eaten_type_) ||
-           (curr.eaten_type_ == Figure::TypeKnight && prev.eaten_type_ == Figure::TypeBishop) ||
-           (curr.eaten_type_ == Figure::TypeBishop && prev.eaten_type_ == Figure::TypeKnight);
+    if ( (curr.eaten_type_ == prev.eaten_type_) ||
+         (curr.eaten_type_ == Figure::TypeKnight && prev.eaten_type_ == Figure::TypeBishop) ||
+         (curr.eaten_type_ == Figure::TypeBishop && prev.eaten_type_ == Figure::TypeKnight) )
+    {
+      contexts_[ply].ext_data_.recapture_count_++;
+      return true;
+    }
+
+    return false;
   }
 
   inline bool pawnTo6(const Move & move) const

@@ -29,6 +29,7 @@ inline int nullMove_depth(int depth)
   depth >>= 1;
   if ( depth > depth1 )
     depth = depth1;
+  depth -= NullMove_PlyReduce;
   if ( depth < NullMove_DepthMin )
     depth = NullMove_DepthMin;
   return depth;
@@ -69,6 +70,7 @@ Player::Player() :
   depthMax_(2),
   depth_(0),
   plyMax_(0),
+  original_material_balance_(0),
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_(20),
 #endif
@@ -203,6 +205,9 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   totalNodes_ = 0;
   firstIter_ = true;
   tprev_ = tstart_ = clock();
+  
+  // for recapture extension
+  original_material_balance_ = board_.material();
 
   MovesGenerator::clear_history();
 
@@ -284,7 +289,7 @@ void Player::testTimer()
 ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
   if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() ||
-       (ply < 1) || (depth < 2) || (depth_ < 4) || betta >= Figure::WeightMat-MaxPly ||
+       (ply < 1) || (ply >= MaxPly-1) || (depth < 2) || (depth_ < 4) || betta >= Figure::WeightMat-MaxPly ||
         alpha <= -Figure::WeightMat+MaxPly || board_.getMoveRev(0).rindex_ >= 0 || board_.getMoveRev(0).new_type_ == Figure::TypeQueen )
     return alpha;
 
@@ -306,10 +311,17 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
   // set threat flag in current context if null-move failed
   // we need to verify this position more carefully to prevent reduction of dangerous movement on ply-1
   if ( nullScore <= alpha )
+  {
+    contexts_[ply].ext_data_.mbe_move_ = contexts_[ply+1].pv_[ply+1];
     contexts_[ply].null_move_threat_ = 1;
+  }
 
   if ( nullScore <= -Figure::WeightMat+MaxPly )
-    contexts_[ply].mat_threat_ = 1;
+    contexts_[ply].ext_data_.mat_threat_found_++;
+
+  // Markoff-Botvinnik extension ??? don't completely understand the reason to do it. just an experiment
+  if ( ply > 2 && contexts_[ply].ext_data_.mbe_move_ && contexts_[ply-2].ext_data_.mbe_move_ == contexts_[ply].ext_data_.mbe_move_ )
+    contexts_[ply].ext_data_.mbe_threat_ = true;
 
   return nullScore;
 }
@@ -355,10 +367,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif // USE_HASH_TABLE_GENERAL
 
   // clear context for current ply
+  // copy extensions counters from prev.ply context
   if ( ply < MaxPly-1 )
   {
     contexts_[ply+1].killer_.clear();
     contexts_[ply].clear(ply);
+
+    if ( ply > 0 )
+      contexts_[ply].ext_data_.copy_counters(contexts_[ply-1].ext_data_);
   }
 
 #ifdef VERIFY_ESCAPE_GENERATOR
@@ -378,7 +394,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // first of all try null-move
 #ifdef USE_NULL_MOVE
-  if ( !null_move /*&& betta == alpha+1 */)
+  if ( !null_move )
   {
     ScoreType nullScore = nullMove(depth, ply, alpha, betta);
 
@@ -396,8 +412,20 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         null_move = true;
       }
     }
-    //else if ( contexts_[ply].mat_threat_ )
+    // mat threat extension
+    //else if ( ply > 1 && contexts_[ply].ext_data_.mat_threat_found_ > 1 &&
+    //          contexts_[ply].ext_data_.mat_threat_count_ < MatThreatExtension_Limit )
+    //{
+    //  contexts_[ply].ext_data_.mat_threat_count_++;
     //  depth++;
+    //}
+    // Markoff-Botvinnic extension
+    else if ( ply > 2 && contexts_[ply].ext_data_.mbe_threat_ &&
+              contexts_[ply].ext_data_.mbe_count_ < MbeExtension_Limit )
+    {
+      contexts_[ply].ext_data_.mbe_count_++;
+      depth++;
+    }
   }
 #endif
 
@@ -421,7 +449,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     EscapeGenerator eg(hmoves[0], board_, depth, ply, *this, alpha, betta, counter);
 
     if ( (eg.count() == 1 || board_.getNumOfChecking() == 2)&& alpha < Figure::figureWeight_[Figure::TypeRook] && alpha > -Figure::figureWeight_[Figure::TypeRook] )
+    {
+      contexts_[ply].ext_data_.doublechecks_count_++;
       depth++;
+    }
 
     for ( ; !stop_ && alpha < betta; )
     {
@@ -506,17 +537,23 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       alpha = alpha0;
     }
 
-    if ( !stop_ && !null_move && inPvNode && (goodCount == 1 || counter == 1) && alpha < betta && ply < depth_+6 )
-    {
-      alpha = savedAlpha;
-      
-      int counter1 = 0;
-      if ( !singleMove )
-        singleMove = firstMove;
-
-      if ( singleMove )
-        movement(depth+1, ply, alpha, betta, singleMove, counter1, null_move);
-    }
+//    if ( !stop_ && !null_move && inPvNode && alpha < betta )
+//    {
+///*      if ( goodCount == 1 && contexts_[ply].ext_data_.singular_count_ < SingularExtension_Limit && singleMove )
+//      {
+//        alpha = savedAlpha;
+//        int counter1 = 0;
+//        contexts_[ply].ext_data_.singular_count_++;
+//        movement(depth+1, ply, alpha, betta, singleMove, counter1, null_move);
+//      }
+//      else */if ( counter == 1 && firstMove && contexts_[ply].ext_data_.singular_count_ < SingularExtension_Limit )
+//      {
+//        alpha = savedAlpha;
+//        int counter1 = 0;
+//        contexts_[ply].ext_data_.singular_count_++;
+//        movement(depth+1, ply, alpha, betta, firstMove, counter1, null_move);
+//      }
+//    }
   }
 
   if ( stop_ )
@@ -595,6 +632,9 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
       mv_cmd.extended_ = true;
       depth++;
 
+      if ( haveCheck )
+        contexts_[ply].ext_data_.checks_count_++;
+
       // extend one more ply to be sure that opponent doesn't capture promoted queen (?)
       if ( move.new_type_ == Figure::TypeQueen )
         depth++;
@@ -623,7 +663,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         int R = 1;
 
 #ifdef USE_LMR
-        if (  counter > LMR_Counter &&
+        if (  /*counter > LMR_Counter &&*/
               depth_ > LMR_MaxDepthLimit &&
               depth > LMR_DepthLimit &&
               !move.threat_ &&
@@ -1044,7 +1084,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
     if ( depth > 1 )
       depth--;
 
-    ScoreType score = alphaBetta(depth, ply, alpha, alpha+1, false);
+    ScoreType score = alphaBetta(depth, ply+1, alpha, alpha+1, false);
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.move_ && hitem.hcode_ == board_.hashCode() )
       pv = board_.unpack(hitem.move_);
