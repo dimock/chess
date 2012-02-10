@@ -38,38 +38,39 @@ struct PlyContext
 {
   struct ExtData
   {
-    ExtData() : recapture_count_(0), mat_threat_count_(0), mbe_count_(0), singular_count_(0), checks_count_(0), doublechecks_count_(0), mat_threat_found_(0), mbe_threat_(false)
+    ExtData() : /*recapture_count_(0), mat_threat_count_(0), */mbe_count_(0),
+      /*singular_count_(0), checks_count_(0), doublechecks_count_(0), mat_threat_found_(0), */mbe_threat_(false)
     {
       mbe_move_.clear();
     }
 
     void clear()
     {
-      recapture_count_ = 0;
-      mat_threat_count_ = 0;
+      //recapture_count_ = 0;
+      //mat_threat_count_ = 0;
       mbe_count_ = 0;
-      singular_count_ = 0;
-      checks_count_ = 0;
-      doublechecks_count_ = 0;
-      mat_threat_found_ = 0;
+      //singular_count_ = 0;
+      //checks_count_ = 0;
+      //doublechecks_count_ = 0;
+      //mat_threat_found_ = 0;
       mbe_threat_ = false;
       mbe_move_.clear();
     }
 
     void copy_counters(const ExtData & e)
     {
-      recapture_count_ = e.recapture_count_;
-      mat_threat_count_ = e.mat_threat_count_;
+      //recapture_count_ = e.recapture_count_;
+      //mat_threat_count_ = e.mat_threat_count_;
       mbe_count_ = e.mbe_count_;
-      singular_count_ = e.singular_count_;
-      mat_threat_found_ = e.mat_threat_found_;
-      checks_count_ = e.checks_count_;
-      doublechecks_count_ = e.doublechecks_count_;
+      //singular_count_ = e.singular_count_;
+      //mat_threat_found_ = e.mat_threat_found_;
+      //checks_count_ = e.checks_count_;
+      //doublechecks_count_ = e.doublechecks_count_;
     }
 
-    int recapture_count_, mat_threat_count_, mbe_count_, singular_count_, checks_count_, doublechecks_count_;
+    int /*recapture_count_, mat_threat_count_, */mbe_count_/*, singular_count_, checks_count_, doublechecks_count_*/;
     bool mbe_threat_;
-    int mat_threat_found_;
+    //int mat_threat_found_;
 
     Move mbe_move_;
   };
@@ -323,51 +324,51 @@ private:
   void verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int delta);
 #endif
 
-  bool recapture(int ply)
-  {
-    if ( ply < 2 || contexts_[ply].ext_data_.recapture_count_ >= RecaptureExtension_Limit /*||
-         contexts_[ply].ext_data_.mbe_count_ > 0 || 
-         contexts_[ply].ext_data_.mat_threat_count_ > 0 */)
-      return false;
+  //bool recapture(int ply)
+  //{
+  //  if ( ply < 2 || contexts_[ply].ext_data_.recapture_count_ >= RecaptureExtension_Limit /*||
+  //       contexts_[ply].ext_data_.mbe_count_ > 0 || 
+  //       contexts_[ply].ext_data_.mat_threat_count_ > 0 */)
+  //    return false;
 
-    if ( board_.halfmovesCount() < 2 )
-      return false;
+  //  if ( board_.halfmovesCount() < 2 )
+  //    return false;
 
-    MoveCmd & curr = board_.getMoveRev(0);
-    MoveCmd & prev = board_.getMoveRev(-1);
+  //  MoveCmd & curr = board_.getMoveRev(0);
+  //  MoveCmd & prev = board_.getMoveRev(-1);
 
-    if ( curr.rindex_ < 0 || prev.rindex_ < 0 )
-      return false;
+  //  if ( curr.rindex_ < 0 || prev.rindex_ < 0 )
+  //    return false;
 
-    // on the same field
-    if ( curr.to_ != prev.to_ )
-      return false;
+  //  // on the same field
+  //  if ( curr.to_ != prev.to_ )
+  //    return false;
 
-    // don't extend pawns recaptures
-    if ( curr.eaten_type_ == Figure::TypePawn )
-      return false;
+  //  // don't extend pawns recaptures
+  //  if ( curr.eaten_type_ == Figure::TypePawn )
+  //    return false;
 
-    // verify material-balance restore
-    ScoreType smat = board_.material();
-    if ( (smat-original_material_balance_) <= -Figure::figureWeight_[Figure::TypePawn] ||
-         (smat-original_material_balance_) >= +Figure::figureWeight_[Figure::TypePawn] )
-    {
-      return false;
-    }
+  //  // verify material-balance restore
+  //  ScoreType smat = board_.material();
+  //  if ( (smat-original_material_balance_) <= -Figure::figureWeight_[Figure::TypePawn] ||
+  //       (smat-original_material_balance_) >= +Figure::figureWeight_[Figure::TypePawn] )
+  //  {
+  //    return false;
+  //  }
 
-    // the same or equivalent type
-    if ( (curr.eaten_type_ == prev.eaten_type_) ||
-         (curr.eaten_type_ == Figure::TypeKnight && prev.eaten_type_ == Figure::TypeBishop) ||
-         (curr.eaten_type_ == Figure::TypeBishop && prev.eaten_type_ == Figure::TypeKnight) )
-    {
-      contexts_[ply].ext_data_.recapture_count_++;
-      return true;
-    }
+  //  // the same or equivalent type
+  //  if ( (curr.eaten_type_ == prev.eaten_type_) ||
+  //       (curr.eaten_type_ == Figure::TypeKnight && prev.eaten_type_ == Figure::TypeBishop) ||
+  //       (curr.eaten_type_ == Figure::TypeBishop && prev.eaten_type_ == Figure::TypeKnight) )
+  //  {
+  //    contexts_[ply].ext_data_.recapture_count_++;
+  //    return true;
+  //  }
 
-    return false;
-  }
+  //  return false;
+  //}
 
-  inline bool pawnTo6(const Move & move) const
+  inline bool pawnBeforePromotion(const Move & move) const
   {
     const Figure & fig = board_.getFigure(move.to_);
     if ( fig.getType() == Figure::TypePawn )

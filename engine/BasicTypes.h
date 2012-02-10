@@ -53,6 +53,7 @@ typedef int16 ScoreType;
 #define USE_NULL_MOVE
 #define USE_LMR
 #define USE_IID
+#undef EXTENDED_THREAT_DETECTION
 
 #undef  NO_TIME_LIMIT
 
@@ -74,13 +75,13 @@ static const int HalfnodesCountToOverwrite = 16;
 static const int MaxPly = 50;
 static const int LMR_PlyReduce = 2;
 static const int LMR_DepthLimit = 3;
-static const int LMR_MaxDepthLimit = 5;
+static const int LMR_MinDepthLimit = 5;
 static const int LMR_Counter = 3;
 static const int NullMove_PlyReduce = 4;
 static const int NullMove_DepthMin = 1;
 static const int HashedMoves_Size = 8;
 static const int MatThreatExtension_Limit = 1;
-static const int MbeExtension_Limit = 2;
+static const int MbeExtension_Limit = 1;
 static const int SingularExtension_Limit = 1;
 static const int RecaptureExtension_Limit = 1;
 static const int ChecksExtension_Limit = 16;

@@ -29,7 +29,7 @@ inline int nullMove_depth(int depth)
   depth >>= 1;
   if ( depth > depth1 )
     depth = depth1;
-  depth -= NullMove_PlyReduce;
+  //depth -= NullMove_PlyReduce;
   if ( depth < NullMove_DepthMin )
     depth = NullMove_DepthMin;
   return depth;
@@ -316,12 +316,15 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
     contexts_[ply].null_move_threat_ = 1;
   }
 
-  if ( nullScore <= -Figure::WeightMat+MaxPly )
-    contexts_[ply].ext_data_.mat_threat_found_++;
+  //if ( nullScore <= -Figure::WeightMat+MaxPly )
+  //  contexts_[ply].ext_data_.mat_threat_found_++;
 
   // Markoff-Botvinnik extension ??? don't completely understand the reason to do it. just an experiment
-  if ( ply > 2 && contexts_[ply].ext_data_.mbe_move_ && contexts_[ply-2].ext_data_.mbe_move_ == contexts_[ply].ext_data_.mbe_move_ )
+  if ( ply > 2 && contexts_[ply].ext_data_.mbe_move_ &&
+       contexts_[ply-2].ext_data_.mbe_move_ == contexts_[ply].ext_data_.mbe_move_ )
+  {
     contexts_[ply].ext_data_.mbe_threat_ = true;
+  }
 
   return nullScore;
 }
@@ -420,7 +423,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     //  depth++;
     //}
     // Markoff-Botvinnic extension
-    else if ( ply > 2 && contexts_[ply].ext_data_.mbe_threat_ &&
+    else if ( ply > 2 && contexts_[ply].ext_data_.mbe_threat_  &&
               contexts_[ply].ext_data_.mbe_count_ < MbeExtension_Limit )
     {
       contexts_[ply].ext_data_.mbe_count_++;
@@ -450,7 +453,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     if ( (eg.count() == 1 || board_.getNumOfChecking() == 2)&& alpha < Figure::figureWeight_[Figure::TypeRook] && alpha > -Figure::figureWeight_[Figure::TypeRook] )
     {
-      contexts_[ply].ext_data_.doublechecks_count_++;
+      //contexts_[ply].ext_data_.doublechecks_count_++;
       depth++;
     }
 
@@ -468,32 +471,32 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
-    Move firstMove;
-    Move singleMove;
-    singleMove.clear();
-    firstMove.clear();
+    //Move firstMove;
+    //Move singleMove;
+    //singleMove.clear();
+    //firstMove.clear();
 
     // first of all try moves, collected from hash
     for (Move * m = hmoves; !stop_ && alpha < betta && *m; ++m)
     {
-      ScoreType alpha0 = alpha;
+      //ScoreType alpha0 = alpha;
       // if movement return true we were reduced threat move and need to recalculate it with full depth
-      if ( movement(depth, ply, alpha0, betta, *m, counter, null_move) )
+      if ( movement(depth, ply, alpha, betta, *m, counter, null_move) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
       }
 
-      if ( !firstMove && counter == 1 )
-        firstMove = *m;
+      //if ( !firstMove && counter == 1 )
+      //  firstMove = *m;
 
-      if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
-      {
-        goodCount++;
-        singleMove = *m;
-      }
+      //if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
+      //{
+      //  goodCount++;
+      //  singleMove = *m;
+      //}
 
-      alpha = alpha0;
+      //alpha = alpha0;
     }
 
     if ( stop_ || alpha >= betta )
@@ -518,23 +521,23 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
 
-      ScoreType alpha0 = alpha;
-      if ( movement(depth, ply, alpha0, betta, move, counter, null_move) )
+      //ScoreType alpha0 = alpha;
+      if ( movement(depth, ply, alpha, betta, move, counter, null_move) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
       }
 
-      if ( !firstMove && counter == 1 )
-        firstMove = move;
+      //if ( !firstMove && counter == 1 )
+      //  firstMove = move;
 
-      if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
-      {
-        goodCount++;
-        singleMove = move;
-      }
+      //if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
+      //{
+      //  goodCount++;
+      //  singleMove = move;
+      //}
 
-      alpha = alpha0;
+      //alpha = alpha0;
     }
 
 //    if ( !stop_ && !null_move && inPvNode && alpha < betta )
@@ -626,14 +629,14 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    if ( depth > 0 && alpha < Figure::WeightMat-MaxPly &&
-         (haveCheck || Figure::TypeQueen == move.new_type_ || pawnTo6(move)) )
+    if ( depth > 0 && alpha < Figure::WeightMat-MaxPly && 
+         (haveCheck || Figure::TypeQueen == move.new_type_ || pawnBeforePromotion(move)) )
     {
       mv_cmd.extended_ = true;
       depth++;
 
-      if ( haveCheck )
-        contexts_[ply].ext_data_.checks_count_++;
+      //if ( haveCheck )
+      //  contexts_[ply].ext_data_.checks_count_++;
 
       // extend one more ply to be sure that opponent doesn't capture promoted queen (?)
       if ( move.new_type_ == Figure::TypeQueen )
@@ -663,8 +666,8 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         int R = 1;
 
 #ifdef USE_LMR
-        if (  /*counter > LMR_Counter &&*/
-              depth_ > LMR_MaxDepthLimit &&
+        if (  counter > LMR_Counter &&
+              depth_ > LMR_MinDepthLimit &&
               depth > LMR_DepthLimit &&
               !move.threat_ &&
               !move.strong_ &&
@@ -1222,8 +1225,11 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !pfig, "field is occupied but there is no figure in the list in threat detector" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) || pawnTo6(prev) )
+  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 ||
+       board_.isDangerPawn(prev) || pawnBeforePromotion(prev) )
+  {
     return false;
+  }
 
   const Field & cfield = board_.getField(move.from_);
   THROW_IF( !cfield || cfield.color() != board_.getColor(), "no figure of required color in while detecting threat" );
@@ -1248,6 +1254,7 @@ bool Player::isRealThreat(const Move & move)
   if ( findex >= 0 )
     return true;
 
+#ifdef EXTENDED_THREAT_DETECTION
   // we have to protect figure from attack of previous one (only if it isn't pawn)
   if ( pfig.getType() != Figure::TypePawn )
   {
@@ -1340,6 +1347,7 @@ bool Player::isRealThreat(const Move & move)
       }
     }
   }
+#endif // EXTENDED_THREAT_DETECTION
 
   return false;
 }
