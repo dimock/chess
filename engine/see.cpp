@@ -3,16 +3,25 @@
 // static exchange evaluation
 int Board::see()
 {
-  if ( halfmovesCounter_ < 1 )
+  if ( halfmovesCounter_ < 1 || state_ != Ok )
     return 0;
-
-  THROW_IF( state_ == UnderCheck, "can't use see under check" );
 
   const MoveCmd & move = getMoveRev(0);
   const Field & tfield = getField(move.to_);
   THROW_IF( !tfield || tfield.color() == color_, "no figure on field after movement" );
   Figure::Color ocolor = Figure::otherColor(color_);
   Figure::Type ftype =  tfield.type();
+
+  // calculate recapture result, starting from side to move (color_)
+  // looking from side, that made 'move'
+  int score_gain = move.eaten_type_ > 0 ? Figure::figureWeight_[move.eaten_type_] : 0;
+  if ( move.new_type_ )
+    score_gain += Figure::figureWeight_[move.new_type_]-Figure::figureWeight_[Figure::TypePawn];
+  ScoreType fscore = -Figure::figureWeight_[ftype];
+
+  // we don't need to continue if eaten figure is greater than attacker
+  if ( score_gain + fscore > 0 )
+    return score_gain + fscore;
 
   // collect all attackers for each side
   // lo-byte = type, hi-byte = pos
@@ -82,17 +91,16 @@ int Board::see()
   // if there are both kings they couldn't capture
   if ( king_found[0] && king_found[1] )
   {
+    THROW_IF( figsN[0] < 1 || figsN[1] < 1 , "see: no figures but both kings found?" );
     attackers[0][--figsN[0]] = (uint16)-1;
     attackers[1][--figsN[1]] = (uint16)-1;
   }
 
-  // calculate recapture result, starting from side to move (color_)
-  // looking from side, that made 'move'
-  int score_gain = move.eaten_type_ > 0 ? Figure::figureWeight_[move.eaten_type_] : 0;
-  if ( move.new_type_ )
-    score_gain += Figure::figureWeight_[move.new_type_]-Figure::figureWeight_[Figure::TypePawn];
-  ScoreType fscore = -Figure::figureWeight_[ftype];
+  if ( figsN[color_] < 1 )
+    return score_gain;
 
+
+  // starting calculation
   int col = color_;
   uint64 all_mask_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
   bool promotion = (move.to_ >> 3) == 0 || (move.to_ >> 3) == 7;
