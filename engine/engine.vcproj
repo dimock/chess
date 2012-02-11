@@ -603,6 +603,10 @@
 				RelativePath=".\PlayerVerify.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\see.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

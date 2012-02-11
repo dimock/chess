@@ -314,6 +314,9 @@ public:
   bool fastAttacked(const Figure::Color c, int8 pos) const;
 
 
+  /// static exchange evaluation
+  /// should be called directly after move
+  int see();
 
   /// methods
 private:

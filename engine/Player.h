@@ -337,44 +337,29 @@ private:
 #endif
 
 #ifdef RECAPTURE_EXTENSION
-  bool recapture(int ply)
+  bool recapture()
   {
-    if ( ply < 2 || contexts_[ply].ext_data_.recapture_count_ >= RecaptureExtension_Limit )
-      return false;
-
     if ( board_.halfmovesCount() < 2 )
       return false;
 
-    MoveCmd & curr = board_.getMoveRev(0);
-    MoveCmd & prev = board_.getMoveRev(-1);
-
-    if ( curr.rindex_ < 0 || prev.rindex_ < 0 )
+    const MoveCmd & move = board_.getMoveRev(0);
+    if ( move.rindex_ < 0 )
       return false;
 
-    // on the same field
-    if ( curr.to_ != prev.to_ )
-      return false;
+    //const Field & tfield = board_.getField(move.to_);
+    //if ( move.eaten_type_ > tfield.type() &&
+    //    !(move.eaten_type_ == Figure::TypeKnight && tfield.type() == Figure::TypeBishop || move.eaten_type_ == Figure::TypeBishop && tfield.type() == Figure::TypeKnight) )
+    //{
+    //  return false;
+    //}
 
-    // don't extend pawns recaptures
-    if ( curr.eaten_type_ == Figure::TypePawn )
-      return false;
+    //const MoveCmd & prev = board_.getMoveRev(-1);
+    //if ( prev.to_ != move.to_ || prev.rindex_ < 0 )
+    //  return false;
 
-    // verify material-balance restore
-    ScoreType smat = board_.material();
-    if ( (smat-original_material_balance_) <= -Figure::figureWeight_[Figure::TypePawn] ||
-         (smat-original_material_balance_) >= +Figure::figureWeight_[Figure::TypePawn] )
-    {
-      return false;
-    }
-
-    // the same or equivalent type
-    if ( (curr.eaten_type_ == prev.eaten_type_) ||
-         (curr.eaten_type_ == Figure::TypeKnight && prev.eaten_type_ == Figure::TypeBishop) ||
-         (curr.eaten_type_ == Figure::TypeBishop && prev.eaten_type_ == Figure::TypeKnight) )
-    {
-      contexts_[ply].ext_data_.recapture_count_++;
+    int score_see = board_.see();
+    if ( score_see <= 10 )
       return true;
-    }
 
     return false;
   }

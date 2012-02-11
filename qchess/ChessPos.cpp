@@ -424,6 +424,7 @@ bool ChessPosition::applyMove(const Move & move)
     board.verifyState();
     vboard_ = board;
     vmove_  = move;
+
     return true;
   }
   else

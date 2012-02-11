@@ -640,7 +640,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     if ( depth > 0 && alpha < Figure::WeightMat-MaxPly && 
          (haveCheck || Figure::TypeQueen == move.new_type_ || pawnBeforePromotion(move) 
 #ifdef RECAPTURE_EXTENSION
-         || recapture(ply)
+         || (alpha+1 != betta && recapture())
 #endif
          ) )
     {

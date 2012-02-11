@@ -108,6 +108,12 @@ private:
     {
       const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
       move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4) + 1000000;
+      if ( board_.halfmovesCount() > 1 )
+      {
+        MoveCmd & prev = board_.getMoveRev(-1);
+        if ( prev.to_ == move.to_ )
+          move.srt_score_ += 50;
+      }
     }
     else if ( move.new_type_ > 0 )
     {

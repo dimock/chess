@@ -216,11 +216,11 @@ bool Board::fromFEN(const char * fen)
     {
       ++i;
       char cx = *s++;
-      if ( !*s )
-        return false;
-
       if ( '-' == cx ) // no en-passant pawn
         continue;
+
+      if ( !*s )
+        return false;
 
       char cy = *s++;
       if ( color_ )
