@@ -339,7 +339,7 @@ private:
 #ifdef RECAPTURE_EXTENSION
   bool recapture()
   {
-    if ( board_.halfmovesCount() < 2 )
+    if ( board_.halfmovesCount() < 1 )
       return false;
 
     const MoveCmd & move = board_.getMoveRev(0);
@@ -358,7 +358,7 @@ private:
     //  return false;
 
     int score_see = board_.see();
-    if ( score_see <= 10 )
+    if ( score_see >= 0 )
       return true;
 
     return false;
