@@ -84,11 +84,15 @@ public:
   }
 
   /// used in LMR
-  bool canBeReduced(const Move & move) const
+  bool canBeReduced(const Move & move, int initial_value) const
   {
     // don't reduce  captures and pawn promotions
-    if ( move.rindex_ >= 0 || move.new_type_ > 0 )
+    if ( (move.rindex_ >= 0 || move.new_type_ > 0) /*&& getField(move.to_).type() != Figure::TypePawn */)
+    {
+      //int see_score = see(initial_value);
+      //return see_score < -50;
       return false;
+    }
 
     // don't allow reduction of pawn's movement to pre-last line or pawn's attack
     return !isDangerPawn(move);
@@ -261,6 +265,12 @@ public:
     return g_moves[halfmovesCounter_+i-1];
   }
 
+  const MoveCmd & getMoveRev(int i) const
+  {
+    THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
+    return g_moves[halfmovesCounter_+i-1];
+  }
+
   /// returns current move color
   Figure::Color getColor() const { return color_; }
 
@@ -316,13 +326,13 @@ public:
 
   /// static exchange evaluation
   /// should be called directly after move
-  int see();
+  int see(int initial_value) const;
 
   /// methods
 private:
 
   // detect discovered check to king of 'oc' color
-  bool see_check(Figure::Color kc, uint16 attc, int8 to, const uint64 & all_mask_inv, const uint64 & a_brq_mask);
+  bool see_check(Figure::Color kc, uint16 attc, int8 to, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const;
 
   /// clear board. remove all figures. reset all fields, number of moves etc...
   void clear();

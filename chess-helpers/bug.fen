@@ -147,8 +147,12 @@ k2r3q/2p4p/ppn2b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1
 8/8/3kpK2/3P4/8/7b/8/8 w - - 0 1 
 8/2K5/4pk2/3P1b2/8/8/8/5R2 w - - 0 1 
 6b1/2K5/4pk2/3P1b2/8/1Q6/B7/5R2 w - - 0 1 
+6b1/2K5/4nk2/3B1b2/8/1Q6/B7/5R2 w - - 0 1 
+6b1/2K5/4bk2/2N2b2/8/1Q6/B7/5R2 w - - 0 1 
+6k1/1Q6/8/6n1/4B2r/3P4/K7/8 b - - 0 1 
 
 recapture tests:
 k2rn2q/ppp4p/5b1b/4p3/1B6/PP1N2P1/2P1R1BP/K3Q3 w - - 0 1 
 k2rn2q/pppn3p/7b/4p3/1B6/PP1N2P1/2P1R1BP/K3Q3 w - - 0 1 
 k2rn2q/pppn3p/7b/4p3/8/PP1N2P1/2P1R1BP/K3Q1N1 w - - 0 1 
+r3r1bk/pp4pp/n1p5/Q2pNP2/P2P2Pq/8/1P5P/2R1RB1K w - - 3 31 

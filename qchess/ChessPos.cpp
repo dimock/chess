@@ -417,6 +417,7 @@ bool ChessPosition::findMove(SearchResult & sres)
 bool ChessPosition::applyMove(const Move & move)
 {
   Board & board = player_.getBoard();
+  int initial_value = board.fmgr().weight();
 
   if ( board.makeMove(move) )
   {
@@ -425,7 +426,7 @@ bool ChessPosition::applyMove(const Move & move)
     vboard_ = board;
     vmove_  = move;
 
-    int score = board.see();
+    //int score = board.see(initial_value);
 
     return true;
   }

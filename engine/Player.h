@@ -178,7 +178,9 @@ private:
   clock_t tstart_, tprev_;
   Move before_, best_;
   bool beforeFound_;
-  ScoreType original_material_balance_;
+
+  // mat-balance at the root node (before starting calculation)
+  int initial_material_balance_;
 
   PlyContext contexts_[MaxPly+1];
   MoveCmd * pv_moves_;
@@ -346,18 +348,10 @@ private:
     if ( move.rindex_ < 0 )
       return false;
 
-    //const Field & tfield = board_.getField(move.to_);
-    //if ( move.eaten_type_ > tfield.type() &&
-    //    !(move.eaten_type_ == Figure::TypeKnight && tfield.type() == Figure::TypeBishop || move.eaten_type_ == Figure::TypeBishop && tfield.type() == Figure::TypeKnight) )
-    //{
-    //  return false;
-    //}
+    if ( move.eaten_type_ == Figure::TypePawn && board_.getField(move.to_).type() == Figure::TypePawn )
+      return false;
 
-    //const MoveCmd & prev = board_.getMoveRev(-1);
-    //if ( prev.to_ != move.to_ || prev.rindex_ < 0 )
-    //  return false;
-
-    int score_see = board_.see();
+    int score_see = board_.see(initial_material_balance_);
     if ( score_see >= 0 )
       return true;
 

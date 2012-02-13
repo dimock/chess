@@ -70,7 +70,7 @@ Player::Player() :
   depthMax_(2),
   depth_(0),
   plyMax_(0),
-  original_material_balance_(0),
+  initial_material_balance_(0),
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_(20),
 #endif
@@ -207,7 +207,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
   tprev_ = tstart_ = clock();
   
   // for recapture extension
-  original_material_balance_ = board_.material();
+  initial_material_balance_ = board_.fmgr().weight();
 
   MovesGenerator::clear_history();
 
@@ -688,7 +688,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               !mv_cmd.extended_ &&
               alpha > -Figure::WeightMat+MaxPly &&
               ((hist.good_count_<<1) <= hist.bad_count_) &&
-              board_.canBeReduced(move) )
+              board_.canBeReduced(move, initial_material_balance_) )
         {
           R = LMR_PlyReduce;
           mv_cmd.reduced_ = true;

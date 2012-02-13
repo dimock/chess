@@ -1,7 +1,7 @@
 #include "Board.h"
 
 // static exchange evaluation
-int Board::see()
+int Board::see(int initial_value) const
 {
   if ( halfmovesCounter_ < 1 || state_ != Ok )
     return 0;
@@ -12,15 +12,22 @@ int Board::see()
   Figure::Color ocolor = Figure::otherColor(color_);
   Figure::Type ftype =  tfield.type();
 
+
+  // we look from side, that moved recently. we should adjust sing of initial mat-balance
+  if ( color_ )
+    initial_value = -initial_value;
+
   // calculate recapture result, starting from side to move (color_)
-  // looking from side, that made 'move'
-  int score_gain = move.eaten_type_ > 0 ? Figure::figureWeight_[move.eaten_type_] : 0;
-  if ( move.new_type_ )
-    score_gain += Figure::figureWeight_[move.new_type_]-Figure::figureWeight_[Figure::TypePawn];
+  // looking from side, that made 'move' recently
+  int current_value = fmgr_.weight();
+  if ( color_ )
+    current_value = -current_value;
+
+  int score_gain = current_value - initial_value;
   ScoreType fscore = -Figure::figureWeight_[ftype];
 
   // we don't need to continue if eaten figure is greater than attacker
-  if ( score_gain + fscore > 0 )
+  if ( score_gain > -fscore )
     return score_gain + fscore;
 
   // collect all attackers for each side
@@ -80,7 +87,7 @@ int Board::see()
     uint64 kmask = fmgr_.king_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeKing, move.to_);
     if ( kmask )
     {
-      Figure & king = getFigure((Figure::Color)c, KingIndex);
+      const Figure & king = getFigure((Figure::Color)c, KingIndex);
       attackers[c][num++] = Figure::TypeKing | (king.where() << 8);
       king_found[c] = true;
     }
@@ -221,12 +228,12 @@ int Board::see()
 }
 
 // could we move this figure
-bool Board::see_check(Figure::Color kc, uint16 attc, int8 to, const uint64 & all_mask_inv, const uint64 & a_brq_mask)
+bool Board::see_check(Figure::Color kc, uint16 attc, int8 to, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const
 {
   Figure::Type t =  (Figure::Type)(attc & 255);
   uint8 pos = (attc >> 8) & 255;
 
-  Figure & king = getFigure((Figure::Color)kc, KingIndex);
+  const Figure & king = getFigure((Figure::Color)kc, KingIndex);
 
   // are king and field we move from on the same line
   Figure queen(king);
