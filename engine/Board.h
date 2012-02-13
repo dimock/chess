@@ -86,13 +86,19 @@ public:
   /// used in LMR
   bool canBeReduced(const Move & move, int initial_value) const
   {
-    // don't reduce  captures and pawn promotions
-    if ( (move.rindex_ >= 0 || move.new_type_ > 0) /*&& getField(move.to_).type() != Figure::TypePawn */)
+#ifdef REDUCE_WEAK_CAPTURES
+    // don't reduce strong captures and pawn promotions
+    if ( (move.rindex_ >= 0 || move.new_type_ > 0) && getField(move.to_).type() != Figure::TypePawn )
     {
-      //int see_score = see(initial_value);
-      //return see_score < -50;
-      return false;
+      Move next;
+      int see_score = see(initial_value, next);
+      return see_score < -50;
     }
+#else
+    // don't reduce captures
+    if ( (move.rindex_ >= 0 || move.new_type_ > 0) )
+      return false;
+#endif
 
     // don't allow reduction of pawn's movement to pre-last line or pawn's attack
     return !isDangerPawn(move);
@@ -326,7 +332,7 @@ public:
 
   /// static exchange evaluation
   /// should be called directly after move
-  int see(int initial_value) const;
+  int see(int initial_value, Move & next) const;
 
   /// methods
 private:

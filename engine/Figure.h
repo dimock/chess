@@ -77,6 +77,22 @@ Figure::Type toFtype(char c);
 char fromFtype(Figure::Type t);
 
 
+inline bool typeLEQ(Figure::Type type1, Figure::Type type2)
+{
+  if ( type1 == type2 ||
+       type1 == Figure::TypeKnight && type2 == Figure::TypeBishop ||
+       type1 == Figure::TypeBishop && type2 == Figure::TypeKnight )
+  {
+    return true;
+  }
+
+  if ( type1 < type2 )
+    return true;
+
+  return false;
+}
+
+
 __declspec (align(1)) class FiguresCounter
 {
   static  int8 s_whiteColors_[64];

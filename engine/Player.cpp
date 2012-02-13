@@ -640,7 +640,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     if ( depth > 0 && alpha < Figure::WeightMat-MaxPly && 
          (haveCheck || Figure::TypeQueen == move.new_type_ || pawnBeforePromotion(move) 
 #ifdef RECAPTURE_EXTENSION
-         || (alpha+1 != betta && recapture())
+         || (betta > alpha+1 && recapture(ply))
 #endif
          ) )
     {
@@ -1252,22 +1252,30 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !cfig, "field is occupied but there is no figure in the list in threat detector" );
 
   // we have to put figure under attack
-  if ( board_.ptAttackedBy(move.to_, pfig) )
+  if ( board_.ptAttackedBy(move.to_, pfig) /*&& typeLEQ(pfig.getType(), cfig.getType())*/ )
     return true;
 
   // put our figure under attack
   int tindex = board_.getAttackedFrom(ocolor, move.to_, prev.from_);
   if ( tindex >= 0 )
-    return true;
+  {
+    //const Figure & afig = board_.getFigure(ocolor, tindex);
+    //if ( typeLEQ(afig.getType(), cfig.getType()))
+      return true;
+  }
 
   // prev move was attack, and we should escape from it
-  if ( board_.ptAttackedBy(move.from_, pfig) )
+  if ( board_.ptAttackedBy(move.from_, pfig) /*&& typeLEQ(cfig.getType(), pfig.getType())*/ )
     return true;
 
   // our figure was attacked from direction, opened by prev movement
   int findex = board_.getAttackedFrom(ocolor, move.from_, prev.from_);
   if ( findex >= 0 )
-    return true;
+  {
+    //const Figure & afig = board_.getFigure(ocolor, findex);
+    //if ( typeLEQ(cfig.getType(), afig.getType()))
+      return true;
+  }
 
 #ifdef EXTENDED_THREAT_DETECTION
   // we have to protect figure from attack of previous one (only if it isn't pawn)

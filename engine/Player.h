@@ -47,6 +47,8 @@ struct PlyContext
       /*singular_count_(0), checks_count_(0), doublechecks_count_(0),*/ 
     {
       mbe_move_.clear();
+      recap_curr_.clear();
+      recap_next_.clear();
     }
 
     void clear()
@@ -57,6 +59,8 @@ struct PlyContext
       mat_threats_found_ = 0;
       mbe_threat_ = false;
       mbe_move_.clear();
+      recap_curr_.clear();
+      recap_next_.clear();
       //singular_count_ = 0;
       //checks_count_ = 0;
       //doublechecks_count_ = 0;
@@ -80,6 +84,7 @@ struct PlyContext
     int mat_threats_found_;
     /*, singular_count_, checks_count_, doublechecks_count_*/
 
+    Move recap_curr_, recap_next_;
     Move mbe_move_;
   };
 
@@ -339,7 +344,7 @@ private:
 #endif
 
 #ifdef RECAPTURE_EXTENSION
-  bool recapture()
+  bool recapture(int ply)
   {
     if ( board_.halfmovesCount() < 1 )
       return false;
@@ -348,12 +353,42 @@ private:
     if ( move.rindex_ < 0 )
       return false;
 
-    if ( move.eaten_type_ == Figure::TypePawn && board_.getField(move.to_).type() == Figure::TypePawn )
-      return false;
+    // don't extend pawn's recapture
+    //if ( move.eaten_type_ == Figure::TypePawn && board_.getField(move.to_).type() == Figure::TypePawn )
+    //  return false;
 
-    int score_see = board_.see(initial_material_balance_);
+    // this is not a recapture (?) but capture of strong figure by weaker one.
+    // it usually means that previous move was stupid )
+    if ( board_.halfmovesCount() > 1 )
+    {
+      const MoveCmd & prev = board_.getMoveRev(-1);
+      if ( prev.rindex_ < 0 &&
+           !typeLEQ( (Figure::Type)board_.getField(move.to_).type(), (Figure::Type)move.eaten_type_) )
+      {
+        //char fen[256];
+        //board_.toFEN(fen);
+        return false;
+      }
+    }
+
+    //if ( contexts_[ply].ext_data_.recapture_count_ >= RecaptureExtension_Limit )
+    //  return false;
+
+    Move next;
+    int score_see = board_.see(initial_material_balance_, next);
     if ( score_see >= 0 )
+    {
+      contexts_[ply].ext_data_.recap_curr_ = move;
+      contexts_[ply].ext_data_.recap_next_ = next;
+      //contexts_[ply].ext_data_.recapture_count_++;
       return true;
+    }
+    else if ( ply > 1 )
+    {
+      const MoveCmd & prev = board_.getMoveRev(-1);
+      if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
+        return true;
+    }
 
     return false;
   }

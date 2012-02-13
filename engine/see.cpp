@@ -1,8 +1,10 @@
 #include "Board.h"
 
 // static exchange evaluation
-int Board::see(int initial_value) const
+int Board::see(int initial_value, Move & next) const
 {
+  next.clear();
+
   if ( halfmovesCounter_ < 1 || state_ != Ok )
     return 0;
 
@@ -193,6 +195,15 @@ int Board::see(int initial_value) const
 
     Figure::Type t =  (Figure::Type)(attc & 255);
     uint8 pos = (attc >> 8) & 255;
+
+    if ( !next && col == color_ ) // save answer to current move
+    {
+      next.from_ = pos;
+      next.to_ = move.to_;
+      next.rindex_ = tfield.index();
+      if ( promotion && t == Figure::TypePawn )
+        next.new_type_ = Figure::TypeQueen;
+    }
 
     score_gain += fscore;
     if ( t == Figure::TypePawn && promotion )
