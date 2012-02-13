@@ -15,10 +15,6 @@ int Board::see(int initial_value, Move & next) const
   Figure::Type ftype =  tfield.type();
 
 
-  // we look from side, that moved recently. we should adjust sing of initial mat-balance
-  if ( color_ )
-    initial_value = -initial_value;
-
   // calculate recapture result, starting from side to move (color_)
   // looking from side, that made 'move' recently
   int current_value = fmgr_.weight();

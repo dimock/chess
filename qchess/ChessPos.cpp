@@ -426,7 +426,8 @@ bool ChessPosition::applyMove(const Move & move)
     vboard_ = board;
     vmove_  = move;
 
-    //int score = board.see(initial_value);
+    //Move next;
+    //int score = board.see(initial_value, next);
 
     return true;
   }

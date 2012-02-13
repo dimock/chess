@@ -344,7 +344,7 @@ private:
 #endif
 
 #ifdef RECAPTURE_EXTENSION
-  bool recapture(int ply)
+  bool recapture(int ply, int initial_value)
   {
     if ( board_.halfmovesCount() < 1 )
       return false;
@@ -375,7 +375,7 @@ private:
     //  return false;
 
     Move next;
-    int score_see = board_.see(initial_material_balance_, next);
+    int score_see = board_.see(initial_value, next);
     if ( score_see >= 0 )
     {
       contexts_[ply].ext_data_.recap_curr_ = move;
@@ -383,7 +383,7 @@ private:
       //contexts_[ply].ext_data_.recapture_count_++;
       return true;
     }
-    else if ( ply > 1 )
+    else if ( ply > 0 )
     {
       const MoveCmd & prev = board_.getMoveRev(-1);
       if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
@@ -394,7 +394,7 @@ private:
   }
 #endif //RECAPTURE_EXTENSION
 
-  inline bool pawnBeforePromotion(const Move & move) const
+  inline bool pawnBeforePromotion(const MoveCmd & move) const
   {
     const Figure & fig = board_.getFigure(move.to_);
     if ( fig.getType() == Figure::TypePawn )
@@ -405,6 +405,8 @@ private:
     }
     return false;
   }
+
+  bool do_extension(int depth, int ply, ScoreType alpha, ScoreType betta);
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from

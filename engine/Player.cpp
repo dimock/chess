@@ -637,12 +637,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    if ( depth > 0 && alpha < Figure::WeightMat-MaxPly && 
-         (haveCheck || Figure::TypeQueen == move.new_type_ || pawnBeforePromotion(move) 
-#ifdef RECAPTURE_EXTENSION
-         || (betta > alpha+1 && recapture(ply))
-#endif
-         ) )
+    if ( do_extension(depth, ply, alpha, betta) )
     {
       mv_cmd.extended_ = true;
       depth++;
@@ -651,8 +646,8 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
       //  contexts_[ply].ext_data_.checks_count_++;
 
       // extend one more ply to be sure that opponent doesn't capture promoted queen (?)
-      if ( move.new_type_ == Figure::TypeQueen )
-        depth++;
+      //if ( move.new_type_ == Figure::TypeQueen )
+      //  depth++;
     }
 
     counter++;
@@ -1374,6 +1369,45 @@ bool Player::isRealThreat(const Move & move)
 
   return false;
 }
+//////////////////////////////////////////////////////////////////////////
+bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
+{
+  if ( depth <= 0 && alpha >= Figure::WeightMat-MaxPly || board_.halfmovesCount() < 1 )
+    return false;
+
+  if ( board_.getState() == Board::UnderCheck )
+    return true;
+
+  int initial_balance = 0;
+  if ( alpha > -Figure::figureWeight_[Figure::TypeQueen] )
+    initial_balance = alpha;
+  else
+  {
+    // we look from side, that moved recently. we should adjust sing of initial mat-balance
+    int initial_balance = initial_material_balance_;
+    if ( board_.getColor() )
+      initial_balance = -initial_balance;
+  }
+
+  const MoveCmd & move = board_.getMoveRev(0);
+  if ( move.new_type_ == Figure::TypeQueen || pawnBeforePromotion(move) )
+  {
+#ifdef USE_SEE_IN_EXTENSION
+    Move next;
+    int score_see = board_.see(initial_balance, next);
+    if ( score_see > 0 )
+      return true;
+#endif
+  }
+#ifdef RECAPTURE_EXTENSION
+  else if ( move.rindex_ && betta > alpha+1 && recapture(ply, initial_balance) )
+    return true;
+#endif
+
+  return false;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 // do we need extent move if there is great pressure on king
 int Player::need_extension(int counter)
