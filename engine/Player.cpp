@@ -459,6 +459,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     EscapeGenerator eg(hmoves[0], board_, depth, ply, *this, alpha, betta, counter);
 
+    // additional check extension
     int depth_ext = extend_check(depth, ply, eg, alpha, betta);
     depth += depth_ext;
 
@@ -1369,31 +1370,27 @@ bool Player::isRealThreat(const Move & move)
 //////////////////////////////////////////////////////////////////////////
 bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  if ( depth <= 0 && alpha >= Figure::WeightMat-MaxPly || board_.halfmovesCount() < 1 )
+  if ( depth <= 0 || alpha >= Figure::WeightMat-MaxPly || board_.halfmovesCount() < 1 )
     return false;
 
   const MoveCmd & move = board_.getMoveRev(0);
 
-  // check will be extended further
   if ( board_.getState() == Board::UnderCheck )
   {
-    //// if double, capture or discovered
-    //if ( move.checkingNum_ == 2 || move.rindex_ >= 0 || board_.getField(move.to_).index() != move.checking_[0] )
+    // if there is great alpha extend only dangerous checks, otherwise extend always
+    if ( alpha <= Figure::figureWeight_[Figure::TypeQueen] )
+      return true;
+
+    if ( move.checkingNum_ == 2 || move.rindex_ >= 0 || board_.getField(move.to_).index() != move.checking_[0] )
       return true;
   }
 
-  int initial_balance = 0;
-  if ( alpha > -Figure::figureWeight_[Figure::TypeQueen] )
-    initial_balance = alpha;
-  else
-  {
-    // we look from side, that moved recently. we should adjust sing of initial mat-balance
-    int initial_balance = initial_material_balance_;
-    if ( board_.getColor() )
-      initial_balance = -initial_balance;
-  }
+  // we look from side, that moved recently. we should adjust sing of initial mat-balance
+  int initial_balance = initial_material_balance_;
+  if ( board_.getColor() )
+    initial_balance = -initial_balance;
 
-  if ( move.new_type_ == Figure::TypeQueen || pawnBeforePromotion(move) /*|| board_.getState() == Board::UnderCheck*/ )
+  if ( move.new_type_ == Figure::TypeQueen || pawnBeforePromotion(move) || board_.getState() == Board::UnderCheck )
   {
 #ifdef USE_SEE_IN_EXTENSION
     Move next;
@@ -1417,23 +1414,23 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
 {
   THROW_IF(board_.getState() != Board::UnderCheck, "try to extend check but there is no one");
 
-  if ( board_.halfmovesCount() < 1 || alpha >= Figure::WeightMat-MaxPly || betta <= -Figure::WeightMat+MaxPly || eg.count() < 1 )
+  if ( board_.halfmovesCount() < 1 ||
+       eg.count() < 1 ||
+       alpha > Figure::figureWeight_[Figure::TypeRook] ||
+       alpha < -Figure::figureWeight_[Figure::TypeRook] )
+  {
     return 0;
+  }
 
   const Move & first = eg[0];
   MoveCmd & move = board_.getMoveRev(0);
 
-  // don't extend if we can capture
-  if ( first.rindex_ >= 0 )
-    return 0;
-
-  if ( move.checkingNum_ == 2 || eg.count() == 1 )
+  // one reply - always extend
+  if ( eg.count() == 1 )
     return 1;
 
-  // first moving figure is king, it means that there only kings movements are legal
-  // extend only if escaping side has enough material
-  const Field & ffrom = board_.getField(first.from_);
-  if ( ffrom.type() == Figure::TypeKing && eg.count() == 2 && board_.fmgr().weight(board_.getColor()) > Figure::figureWeight_[Figure::TypeQueen] )
+  // double check and first move isn't capture of checking figure
+  if ( move.checkingNum_ == 2 && first.rindex_ != move.checking_[0] && first.rindex_ != move.checking_[1] )
     return 1;
 
   return 0;
