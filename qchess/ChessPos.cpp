@@ -417,7 +417,6 @@ bool ChessPosition::findMove(SearchResult & sres)
 bool ChessPosition::applyMove(const Move & move)
 {
   Board & board = player_.getBoard();
-  int initial_value = board.fmgr().weight();
 
   if ( board.makeMove(move) )
   {
@@ -426,8 +425,27 @@ bool ChessPosition::applyMove(const Move & move)
     vboard_ = board;
     vmove_  = move;
 
+    //int initial_value = board.fmgr().weight();
+    //if ( board.getColor() )
+    //  initial_value = -initial_value;
+
     //Move next;
     //int score = board.see(initial_value, next);
+
+    //if ( board.getState() == Board::UnderCheck )
+    //{
+    //  int depth = 1;
+    //  int counter = 0;
+    //  Move hmove;
+    //  hmove.clear();
+    //  ScoreType alpha = initial_value;
+    //  ScoreType betta = +std::numeric_limits<ScoreType>::max();
+
+    //  EscapeGenerator eg(hmove, board, depth, 1, player_, alpha, betta, counter);
+
+    //  int d_ext = player_.extend_check(depth, 1, eg, alpha, betta);
+    //  depth += d_ext;
+    //}
 
     return true;
   }

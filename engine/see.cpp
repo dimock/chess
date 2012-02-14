@@ -5,7 +5,7 @@ int Board::see(int initial_value, Move & next) const
 {
   next.clear();
 
-  if ( halfmovesCounter_ < 1 || state_ != Ok )
+  if ( halfmovesCounter_ < 1 || (state_ != Ok && state_ != UnderCheck) )
     return 0;
 
   const MoveCmd & move = getMoveRev(0);

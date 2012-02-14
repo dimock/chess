@@ -539,10 +539,19 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter)
 {
   Figure::Color & color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
 
+  Move prev;
+  prev.clear();
+  if ( board_.halfmovesCount() > 0 )
+    prev = board_.getMoveRev(0);
+  
   const Figure & king = board_.getFigure(color, Board::KingIndex);
 
   const int8 * table = board_.g_movesTable->king(king.where());
+
+  Move kingMoves[16];
+  int num = 0;
 
   for (; *table >= 0; ++table)
   {
@@ -556,7 +565,42 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
       rindex = field.index();
     }
 
-	add_escape(m, king.where(), *table, rindex, 0);
+    Move & move = kingMoves[num];
+    move.set(king.where(), *table, rindex, 0, 0);
+    if ( move == pv_ || !board_.isMoveValidUnderCheck(move) )
+      continue;
+
+    move.srt_score_ = 0;
+    if ( move.rindex_ > 0 )
+    {
+      move.srt_score_ = Figure::figureWeight_[board_.getFigure(ocolor, move.rindex_).getType()];
+      if ( prev && move.rindex_ == board_.getField(prev.to_).index() )
+        move.srt_score_ += 50;
+    }
+
+    move.checkVerified_ = 1;
+    num++;
+  }
+
+  for (int i = 0; i < num; ++i)
+  {
+    Move & move = escapes_[m++];
+    move.srt_score_ = 0; 
+    int index = -1;
+    for (int j = 0; j < num; ++j)
+    {
+      if ( !kingMoves[j] )
+        continue;
+
+      if ( kingMoves[j].srt_score_ >= move.srt_score_ )
+      {
+        move = kingMoves[j];
+        index = j;
+      }
+    }
+    if ( index < 0 )
+      break;
+    kingMoves[index].clear();
   }
 
   return m;

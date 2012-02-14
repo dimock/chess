@@ -247,6 +247,12 @@ public:
     return numOfMoves_ > 0;
   }
 
+  const Move & operator [] (int i) const
+  {
+    THROW_IF( i >= count(), "move index gt. than number of moves" );
+    return escapes_[i];
+  }
+
   int count() const
   {
     return numOfMoves_;
