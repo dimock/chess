@@ -29,7 +29,6 @@ inline int nullMove_depth(int depth)
   depth >>= 1;
   if ( depth > depth1 )
     depth = depth1;
-  //depth -= NullMove_PlyReduce;
   if ( depth < NullMove_DepthMin )
     depth = NullMove_DepthMin;
   return depth;
@@ -407,7 +406,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     if ( nullScore >= betta )
     {
-      if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeQueen] + Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeKnight] )
+      if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn]
+      /*+ Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeKnight] */)
       {
         depth--;
         if ( depth < NullMove_DepthMin )
