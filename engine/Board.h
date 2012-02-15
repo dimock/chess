@@ -87,12 +87,15 @@ public:
   bool canBeReduced(const Move & move, int initial_value) const
   {
 #ifdef REDUCE_WEAK_CAPTURES
-    // don't reduce strong captures and pawn promotions
+    // don't reduce only strong captures and pawn promotions
     if ( (move.rindex_ >= 0 || move.new_type_ > 0) && getField(move.to_).type() != Figure::TypePawn )
     {
+      if ( color_ )
+        initial_value = -initial_value;
+
       Move next;
       int see_score = see(initial_value, next);
-      return see_score < -50;
+      return see_score < 0;
     }
 #else
     // don't reduce captures

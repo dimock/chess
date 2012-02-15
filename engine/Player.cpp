@@ -1377,12 +1377,15 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
 
   if ( board_.getState() == Board::UnderCheck )
   {
-    // if there is great alpha extend only dangerous checks, otherwise extend always
-    if ( alpha <= Figure::figureWeight_[Figure::TypeQueen] )
-      return true;
-
+#ifdef EXTEND_ONLY_STRONG_CHECKS
+    // extend only double, discovered and winning capture checks
     if ( move.checkingNum_ == 2 || move.rindex_ >= 0 || board_.getField(move.to_).index() != move.checking_[0] )
       return true;
+#else
+    // if there is great alpha extend only dangerous checks, otherwise extend always
+    if ( alpha <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] )
+      return true;
+#endif
   }
 
   // we look from side, that moved recently. we should adjust sing of initial mat-balance
