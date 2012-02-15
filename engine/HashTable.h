@@ -158,8 +158,11 @@ public:
       hitem.threat_ = 0;
       hitem.move_ = PackedMove();
       hitem.tmove_ = PackedMove();
+
+#ifdef USE_HASH_MOVE_EX
       hitem.move_ex_[0] = PackedMove();
       hitem.move_ex_[1] = PackedMove();
+#endif
     }
 
     hitem.hcode_ = hcode;

@@ -29,8 +29,18 @@ inline int nullMove_depth(int depth)
   depth >>= 1;
   if ( depth > depth1 )
     depth = depth1;
+
+  //static int depth_reduce[] = { 0, 0, 0, 1, 1, 2, 3, 4 };
+  //static const int Sz = sizeof(depth_reduce)/sizeof(*depth_reduce);
+  //
+  //if ( (size_t)depth >= Sz )
+  //  depth -= depth_reduce[Sz-1];
+  //else
+  //  depth -= depth_reduce[depth];
+
   if ( depth < NullMove_DepthMin )
     depth = NullMove_DepthMin;
+
   return depth;
 }
 
@@ -228,7 +238,7 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false);
+    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, false);
 
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
@@ -287,9 +297,17 @@ void Player::testTimer()
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  if ( (board_.getState() == Board::UnderCheck) || !board_.allowNullMove() ||
-       (ply < 1) || (ply >= MaxPly-1) || (depth < 2) || (depth_ < 4) || betta >= Figure::WeightMat-MaxPly ||
-        alpha <= -Figure::WeightMat+MaxPly || board_.getMoveRev(0).rindex_ >= 0 || board_.getMoveRev(0).new_type_ == Figure::TypeQueen )
+  if ( (board_.getState() == Board::UnderCheck) ||
+        !board_.allowNullMove() ||
+        (ply < 1) ||
+        (ply >= MaxPly-1) ||
+        (depth < NullMove_DepthMin+1) ||
+        (depth_ < NullMove_DepthStart) ||
+        betta >= Figure::WeightMat-MaxPly ||
+        alpha <= -Figure::WeightMat+MaxPly ||
+        alpha >= +Figure::WeightMat-MaxPly ||
+        board_.getMoveRev(0).rindex_ >= 0 ||
+        board_.getMoveRev(0).new_type_ == Figure::TypeQueen )
     return alpha;
 
 #ifndef NDEBUG
@@ -301,7 +319,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 
   depth = nullMove_depth(depth);
 
-  ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */);
+  ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */, true);
 
   board_.unmakeNullMove(move);
 
@@ -333,7 +351,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move)
+ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, bool null_move_probe)
 {
 	if ( ply > plyMax_ )
 		plyMax_ = ply;
@@ -406,8 +424,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     if ( nullScore >= betta )
     {
-      if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn]
-      /*+ Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeKnight] */)
+      if ( board_.material(board_.getColor()) <= /*Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn]*/
+        Figure::figureWeight_[Figure::TypeQueen] + Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeKnight])
       {
         depth--;
         if ( depth < NullMove_DepthMin )
@@ -416,9 +434,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       else
       {
         depth = nullMove_depth(depth);
-        null_move = true;
       }
-    }
+      null_move = true;
+   }
     // mat threat extension
 #ifdef MAT_THREAT_EXTENSION
     else if ( ply > 1 && contexts_[ply].ext_data_.mat_threats_found_ > 1 &&
@@ -478,7 +496,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
         testTimer();
 
-      movement(depth, ply, alpha, betta, move, counter, null_move);
+      movement(depth, ply, alpha, betta, move, counter, null_move, null_move_probe);
     }
   }
   else
@@ -493,7 +511,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     {
       //ScoreType alpha0 = alpha;
       // if movement return true we were reduced threat move and need to recalculate it with full depth
-      if ( movement(depth, ply, alpha, betta, *m, counter, null_move) )
+      if ( movement(depth, ply, alpha, betta, *m, counter, null_move, null_move_probe) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
@@ -534,7 +552,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         break;
 
       //ScoreType alpha0 = alpha;
-      if ( movement(depth, ply, alpha, betta, move, counter, null_move) )
+      if ( movement(depth, ply, alpha, betta, move, counter, null_move, null_move_probe) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
@@ -615,7 +633,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   return alpha;
 }
 //////////////////////////////////////////////////////////////////////////
-bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move)
+bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move, bool null_move_probe)
 {
   totalNodes_++;
   nodesCount_++;
@@ -641,7 +659,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    if ( do_extension(depth, ply, alpha, betta) )
+    if ( do_extension(depth, ply, alpha, betta, (betta > alpha+1 || !counter && null_move_probe)) )
     {
       mv_cmd.extended_ = true;
       depth++;
@@ -688,7 +706,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         }
 #endif
 
-        score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move);
+        score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, null_move_probe);
 
         THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
         mv_cmd.reduced_ = false;
@@ -696,7 +714,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 #ifdef USE_LMR
 
         if ( !stop_ && score > alpha && R > 1 ) // was LMR
-          score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move);
+          score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, null_move_probe);
 
         THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
 #endif
@@ -704,7 +722,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
       if ( !stop_ && counter < 2  || (score > alpha && score < betta) )
 #endif
-        score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move);
+        score = -alphaBetta(depth-1, ply+1, -betta, -score, null_move, null_move_probe);
 
       THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
     }
@@ -740,11 +758,12 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         killer = move;
 #endif
       }
+#ifdef USE_HASH_TABLE_GENERAL
       else if ( contexts_[ply].threat_ )
       {
         ghash_[hcode].tmove_ = board_.pack(move);
       }
-
+#endif
       if ( move.rindex_ < 0 && !move.new_type_ )
       {
         if ( alpha >= betta )
@@ -773,8 +792,11 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     contexts_[ply-1].threat_ = true;
     if ( reduced )
       return true;
+
+#ifdef USE_HASH_TABLE_GENERAL
     else if ( ghash_[board_.hashCode()].hcode_ == board_.hashCode() )
       ghash_[board_.hashCode()].threat_ = 1;
+#endif
   }
 
   return false;
@@ -1092,7 +1114,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
     if ( depth > 1 )
       depth--;
 
-    ScoreType score = alphaBetta(depth, ply+1, alpha, alpha+1, false);
+    ScoreType score = alphaBetta(depth, ply+1, alpha, alpha+1, false, false);
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.move_ && hitem.hcode_ == board_.hashCode() )
       pv = board_.unpack(hitem.move_);
@@ -1368,7 +1390,7 @@ bool Player::isRealThreat(const Move & move)
   return false;
 }
 //////////////////////////////////////////////////////////////////////////
-bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
+bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv_node)
 {
   if ( depth <= 0 || alpha >= Figure::WeightMat-MaxPly || board_.halfmovesCount() < 1 )
     return false;
@@ -1405,7 +1427,7 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
 #endif
   }
 #ifdef RECAPTURE_EXTENSION
-  else if ( move.rindex_ && betta > alpha+1 && recapture(ply, initial_balance) )
+  else if ( move.rindex_ && pv_node && recapture(ply, initial_balance) )
     return true;
 #endif
 

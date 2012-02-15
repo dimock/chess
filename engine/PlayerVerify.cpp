@@ -13,10 +13,15 @@ void Player::saveHash(const char * fname) const
   sprintf(cfname, "%s_c.hash", fname);
   sprintf(bfname, "%s_b.hash", fname);
   sprintf(hfname, "%s_h.hash", fname);
+
+#ifdef USE_HASH_TABLE_GENERAL
   ghash_.save(gfname);
+#endif
+
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_.save(cfname);
 #endif
+
   board_.save(bfname);
   MovesGenerator::save_history(hfname);
 }
@@ -28,10 +33,15 @@ void Player::loadHash(const char * fname)
   sprintf(cfname, "%s_c.hash", fname);
   sprintf(bfname, "%s_b.hash", fname);
   sprintf(hfname, "%s_h.hash", fname);
+
+#ifdef USE_HASH_TABLE_GENERAL
   ghash_.load(gfname);
+#endif
+
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_.load(cfname);
 #endif
+
   board_.load(bfname);
   MovesGenerator::load_history(hfname);
 }
