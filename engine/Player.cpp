@@ -1402,7 +1402,7 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
       return true;
 #else
     // if there is great alpha extend only dangerous checks, otherwise extend always
-    if ( alpha <= Figure::figureWeight_[Figure::TypeQueen] )
+    if ( alpha <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] )
       return true;
 #endif
   }
