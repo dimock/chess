@@ -168,7 +168,7 @@ private:
   void printPV(Board & pv_board, SearchResult & sres, std::ostream * out);
 
   ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
-  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, bool null_move_probe);
+  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
   ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks);
 
   void testTimer();
@@ -211,7 +211,7 @@ private:
 
   //////////////////////////////////////////////////////////////////////////
   // return true if we have to return betta-1 to recalculate with full depth
-  bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move, bool null_move_probe);
+  bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move);
 
   void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks);
   int collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha, ScoreType betta, Move (&moves)[HashedMoves_Size]);
@@ -406,7 +406,7 @@ private:
     return false;
   }
 
-  bool do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv_node);
+  bool do_extension(int depth, int ply, ScoreType alpha, ScoreType betta);
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
