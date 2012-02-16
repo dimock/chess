@@ -178,3 +178,6 @@ null move tests:
 
 null move failed at 6 ply:
 3r1rk1/1p1n3p/p1bRppp1/2p1P3/2P2P2/1P3NPP/P6R/3B2K1 w - - 0 30
+
+endgame:
+4r2k/1Q5p/6p1/4q3/8/8/6PP/3R1B1K b - - 2 55 
