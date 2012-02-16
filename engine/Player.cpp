@@ -419,12 +419,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeRook]+
                                                  Figure::figureWeight_[Figure::TypePawn] )
         depth--;
-      else if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeQueen]+
-                                                      Figure::figureWeight_[Figure::TypeKnight] )
-      {
-        depth -= 2;
-        null_move = true;
-      }
+      //else if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeQueen]+
+      //                                                Figure::figureWeight_[Figure::TypeKnight] )
+      //{
+      //  depth -= 2;
+      //  null_move = true;
+      //}
       else
       {
         depth = nullMove_depth(depth);
