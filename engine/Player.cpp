@@ -420,15 +420,19 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
                                                  Figure::figureWeight_[Figure::TypePawn] )
         depth--;
       else if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeQueen]+
-                                                      Figure::figureWeight_[Figure::TypeRook]+
                                                       Figure::figureWeight_[Figure::TypeKnight] )
+      {
         depth -= 2;
+        null_move = true;
+      }
       else
+      {
         depth = nullMove_depth(depth);
+        null_move = true;
+      }
 
       if ( depth < NullMove_DepthMin )
         depth = NullMove_DepthMin;
-      null_move = true;
    }
     // mat threat extension
 #ifdef MAT_THREAT_EXTENSION
