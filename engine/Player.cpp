@@ -410,7 +410,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // first of all try null-move
 #ifdef USE_NULL_MOVE
-  if ( !null_move )
+  if ( !null_move && betta > alpha+1 )
   {
     ScoreType nullScore = nullMove(depth, ply, alpha, betta);
 
@@ -784,7 +784,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 #endif
 
   // force to recalculate again with full depth
-  if ( alpha >= betta && contexts_[ply].null_move_threat_ && ply > 0 && isRealThreat(move) )
+  if ( alpha >= betta && ply > 0 && isRealThreat(move, contexts_[ply].null_move_threat_) )
   {
     contexts_[ply-1].threat_ = true;
     if ( reduced )
@@ -1237,7 +1237,7 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
 // is given movement caused by previous? this mean that if we don't do this move we loose
 // we actually check if moved figure was/willbe attacked by previously moved one or from direction it was moved from
 //////////////////////////////////////////////////////////////////////////
-bool Player::isRealThreat(const Move & move)
+bool Player::isRealThreat(const Move & move, bool threat_flag)
 {
   // don't need to forbid if our answer is capture or check ???
   if ( move.rindex_ >= 0 || move.checkFlag_ )
@@ -1262,6 +1262,16 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !cfield || cfield.color() != board_.getColor(), "no figure of required color in while detecting threat" );
   const Figure & cfig = board_.getFigure(cfield.color(), cfield.index());
   THROW_IF( !cfig, "field is occupied but there is no figure in the list in threat detector" );
+
+  // we have to move king having a lot of material
+  // even if threat wasn't detected by null-move
+  if ( cfig.getType() == Figure::TypeKing && board_.fmgr().weight(board_.getColor()) >=
+        Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] &&
+        board_.fmgr().pawns(board_.getColor()) > 2 )
+    return true;
+
+  if ( !threat_flag )
+    return false;
 
   // we have to put figure under attack
   if ( board_.ptAttackedBy(move.to_, pfig) /*&& typeLEQ(pfig.getType(), cfig.getType())*/ )
