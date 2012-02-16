@@ -25,18 +25,10 @@ inline Figure::Type delta2type(int delta)
 
 inline int nullMove_depth(int depth)
 {
-  //int depth1 = depth - NullMove_PlyReduce;
-  //depth >>= 1;
-  //if ( depth > depth1 )
-  //  depth = depth1;
-
-  static int depth_reduce[] = { 0, 0, 0, 1, 1, 2, 3, 4 };
-  static const int Sz = sizeof(depth_reduce)/sizeof(*depth_reduce);
-  
-  if ( (size_t)depth >= Sz )
-    depth -= depth_reduce[Sz-1];
-  else
-    depth -= depth_reduce[depth];
+  int depth1 = depth - NullMove_PlyReduce;
+  depth >>= 1;
+  if ( depth > depth1 )
+    depth = depth1;
 
   if ( depth < NullMove_DepthMin )
     depth = NullMove_DepthMin;
@@ -424,17 +416,18 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     if ( nullScore >= betta )
     {
-      if ( board_.material(board_.getColor()) <= /*Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn]*/
-        Figure::figureWeight_[Figure::TypeQueen] + Figure::figureWeight_[Figure::TypeRook] + Figure::figureWeight_[Figure::TypeKnight])
-      {
+      if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeRook]+
+                                                 Figure::figureWeight_[Figure::TypePawn] )
         depth--;
-        if ( depth < NullMove_DepthMin )
-          depth = NullMove_DepthMin;
-      }
+      else if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeQueen]+
+                                                      Figure::figureWeight_[Figure::TypeRook]+
+                                                      Figure::figureWeight_[Figure::TypeKnight] )
+        depth -= 2;
       else
-      {
         depth = nullMove_depth(depth);
-      }
+
+      if ( depth < NullMove_DepthMin )
+        depth = NullMove_DepthMin;
       null_move = true;
    }
     // mat threat extension
