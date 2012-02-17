@@ -410,7 +410,7 @@ private:
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
-  bool isRealThreat(const Move & move, bool threat_flag);
+  bool isRealThreat(const Move & move);
 
 public:
 
