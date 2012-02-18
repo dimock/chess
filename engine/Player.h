@@ -383,12 +383,12 @@ private:
       //contexts_[ply].ext_data_.recapture_count_++;
       return true;
     }
-    else if ( ply > 0 )
-    {
-      const MoveCmd & prev = board_.getMoveRev(-1);
-      if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
-        return true;
-    }
+    //else if ( ply > 0 )
+    //{
+    //  const MoveCmd & prev = board_.getMoveRev(-1);
+    //  if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
+    //    return true;
+    //}
 
     return false;
   }
