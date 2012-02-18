@@ -297,9 +297,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
         (depth_ < NullMove_DepthStart) ||
         betta >= Figure::WeightMat-MaxPly ||
         alpha <= -Figure::WeightMat+MaxPly ||
-        alpha >= +Figure::WeightMat-MaxPly ||
-        board_.getMoveRev(0).rindex_ >= 0 ||
-        board_.getMoveRev(0).new_type_ == Figure::TypeQueen )
+        alpha >= +Figure::WeightMat-MaxPly )
     return alpha;
 
 #ifndef NDEBUG
@@ -410,7 +408,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // first of all try null-move
 #ifdef USE_NULL_MOVE
-  if ( !null_move && betta > alpha+1 )
+  if ( !null_move && betta == alpha+1 )
   {
     ScoreType nullScore = nullMove(depth, ply, alpha, betta);
 
@@ -418,13 +416,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     {
       if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeRook]+
                                                  Figure::figureWeight_[Figure::TypePawn] )
+      {
         depth--;
-      //else if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeQueen]+
-      //                                                Figure::figureWeight_[Figure::TypeKnight] )
-      //{
-      //  depth -= 2;
-      //  null_move = true;
-      //}
+      }
       else
       {
         depth = nullMove_depth(depth);
@@ -478,12 +472,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     int depth_ext = extend_check(depth, ply, eg, alpha, betta);
     depth += depth_ext;
 
-    //if ( (eg.count() == 1 || board_.getNumOfChecking() == 2)&& alpha < Figure::figureWeight_[Figure::TypeRook] && alpha > -Figure::figureWeight_[Figure::TypeRook] )
-    //{
-    //  //contexts_[ply].ext_data_.doublechecks_count_++;
-    //  depth++;
-    //}
-
     for ( ; !stop_ && alpha < betta; )
     {
       Move & move = eg.escape();
@@ -498,32 +486,15 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
-    //Move firstMove;
-    //Move singleMove;
-    //singleMove.clear();
-    //firstMove.clear();
-
     // first of all try moves, collected from hash
     for (Move * m = hmoves; !stop_ && alpha < betta && *m; ++m)
     {
-      //ScoreType alpha0 = alpha;
       // if movement return true we were reduced threat move and need to recalculate it with full depth
       if ( movement(depth, ply, alpha, betta, *m, counter, null_move) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
       }
-
-      //if ( !firstMove && counter == 1 )
-      //  firstMove = *m;
-
-      //if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
-      //{
-      //  goodCount++;
-      //  singleMove = *m;
-      //}
-
-      //alpha = alpha0;
     }
 
     if ( stop_ || alpha >= betta )
@@ -548,42 +519,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( stop_ )
         break;
 
-      //ScoreType alpha0 = alpha;
       if ( movement(depth, ply, alpha, betta, move, counter, null_move) )
       {
         THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
         return betta - 1;
       }
-
-      //if ( !firstMove && counter == 1 )
-      //  firstMove = move;
-
-      //if ( alpha0 > alpha+50 && alpha > -Figure::WeightMat+MaxPly )
-      //{
-      //  goodCount++;
-      //  singleMove = move;
-      //}
-
-      //alpha = alpha0;
     }
-
-//    if ( !stop_ && !null_move && inPvNode && alpha < betta )
-//    {
-///*      if ( goodCount == 1 && contexts_[ply].ext_data_.singular_count_ < SingularExtension_Limit && singleMove )
-//      {
-//        alpha = savedAlpha;
-//        int counter1 = 0;
-//        contexts_[ply].ext_data_.singular_count_++;
-//        movement(depth+1, ply, alpha, betta, singleMove, counter1, null_move);
-//      }
-//      else */if ( counter == 1 && firstMove && contexts_[ply].ext_data_.singular_count_ < SingularExtension_Limit )
-//      {
-//        alpha = savedAlpha;
-//        int counter1 = 0;
-//        contexts_[ply].ext_data_.singular_count_++;
-//        movement(depth+1, ply, alpha, betta, firstMove, counter1, null_move);
-//      }
-//    }
   }
 
   if ( stop_ )
@@ -1263,12 +1204,6 @@ bool Player::isRealThreat(const Move & move)
   const Figure & cfig = board_.getFigure(cfield.color(), cfield.index());
   THROW_IF( !cfig, "field is occupied but there is no figure in the list in threat detector" );
 
-  //// we have to move king having a lot of material
-  //if ( cfig.getType() == Figure::TypeKing && board_.fmgr().weight(board_.getColor()) >=
-  //      Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] &&
-  //      board_.fmgr().pawns(board_.getColor()) > 2 )
-  //  return true;
-
   // we have to put figure under attack
   if ( board_.ptAttackedBy(move.to_, pfig) /*&& typeLEQ(pfig.getType(), cfig.getType())*/ )
     return true;
@@ -1294,101 +1229,6 @@ bool Player::isRealThreat(const Move & move)
     //if ( typeLEQ(cfig.getType(), afig.getType()))
       return true;
   }
-
-#ifdef EXTENDED_THREAT_DETECTION
-  // we have to protect figure from attack of previous one (only if it isn't pawn)
-  if ( pfig.getType() != Figure::TypePawn )
-  {
-    const uint64 & black = board_.fmgr().mask(Figure::ColorBlack);
-    const uint64 & white = board_.fmgr().mask(Figure::ColorWhite);
-    uint64 mask_all_inv = ~(black | white);
-    uint64 amask = g_movesTable->caps(pfig.getType(), prev.to_);
-    for ( ; amask; )
-    {
-      int n = least_bit_number(amask);     
-      const Field & field = board_.getField(n);
-      if ( !field || field.color() != board_.getColor() )
-        continue;
-
-      if ( pfig.getType() != Figure::TypeKnight && pfig.getType() != Figure::TypeKing )
-      {
-        const uint64 & btw_msk = g_betweenMasks->between(prev.to_, n);
-        if ( (btw_msk & mask_all_inv) != btw_msk )
-          continue;
-      }
-
-      // field is attacked by pfig. now test if it is also attacked by cfig
-      Figure cfig_to(cfig);
-      cfig_to.go(move.to_);
-
-      if ( g_figureDir->dir(cfig_to, n) < 0 )
-        continue;
-
-      // may be it was already attacked by this figure
-      if ( g_figureDir->dir(cfig, n) >= 0 )
-        continue;
-
-      if ( cfig.getType() == Figure::TypeKnight || cfig.getType() == Figure::TypePawn || cfig.getType() == Figure::TypeKing )
-        return true;
-
-      // can cfig go to n-field
-      const uint64 & btw_msk_cfig = g_betweenMasks->between(move.to_, n);
-      if ( (btw_msk_cfig & mask_all_inv) == btw_msk_cfig )
-        return true;
-    }
-  }
-
-  // we have to protect from figure, attacked through position, that prev figure left
-  {
-    const uint64 & black = board_.fmgr().mask(Figure::ColorBlack);
-    const uint64 & white = board_.fmgr().mask(Figure::ColorWhite);
-    uint64 mask_all_inv = ~(black | white);
-    uint64 cmask = g_movesTable->caps(cfig.getType(), move.to_);
-    Figure::Color ocolor = Figure::otherColor(board_.getColor());
-    uint64 brq_msk = board_.fmgr().bishop_mask(ocolor) | board_.fmgr().rook_mask(ocolor) | board_.fmgr().queen_mask(ocolor);
-    for ( ; cmask; )
-    {
-      int n = least_bit_number(cmask);
-      const Field & field = board_.getField(n);
-      if ( !field || field.color() != board_.getColor() )
-        continue;
-
-      if ( cfig.getType() != Figure::TypeKing && cfig.getType() != Figure::TypePawn && cfig.getType() != Figure::TypeKnight )
-      {
-        const uint64 & btw_msk = g_betweenMasks->between(move.to_, n);
-        if ( (btw_msk & mask_all_inv) != btw_msk )
-          continue;
-      }
-
-      const uint64 & msk_from = g_betweenMasks->from(n, prev.from_);
-      if ( !msk_from )
-        continue;
-
-      uint64 att_msk = brq_msk & msk_from;
-      for ( ; att_msk; )
-      {
-        int a = least_bit_number(att_msk);
-        const Field & afield = board_.getField(a);
-        if ( !afield )
-          continue;
-
-        THROW_IF( afield.color() != ocolor, "invalid figure color" );
-
-        const Figure & afig = board_.getFigure(afield.color(), afield.index());
-
-        THROW_IF( afig.getColor() != ocolor || (afig.getType() != Figure::TypeBishop && afig.getType() != Figure::TypeQueen && afig.getType() != Figure::TypeRook),
-          "invalid figure color or type" );
-
-        if ( g_figureDir->dir(afig, n) < 0 )
-          continue;
-
-        const uint64 & btw_msk = g_betweenMasks->between(afig.where(), n);
-        if ( (btw_msk & mask_all_inv) == btw_msk )
-          return true;
-      }
-    }
-  }
-#endif // EXTENDED_THREAT_DETECTION
 
   return false;
 }
