@@ -746,11 +746,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 	if ( ply > plyMax_ )
 		plyMax_ = ply;
 
-  if ( board_.getState() == Board::UnderCheck )
-  {
-    int ttt = 0;
-  }
-
   if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
     return board_.evaluate();
 
