@@ -120,12 +120,31 @@ public:
     if ( p_caps & o_mask )
       return true;
 
-    // becomes passed
-    const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
+    return false;
+    //// becomes passed
+    //const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
+    //Figure::Color ocolor = Figure::otherColor(color_);
+    //const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
+    //const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
+    //const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
+
+    //return !(opmsk & passmsk) && !(pmsk & blckmsk);
+  }
+
+  // becomes passed
+  bool pawnPassed(const MoveCmd & move) const
+  {
+    const Field & fto = getField(move.to_);
+    if ( fto.type() != Figure::TypePawn )
+      return false;
+
+    THROW_IF( color_ == fto.color(), "invalid color of passed pawn" );
+
     Figure::Color ocolor = Figure::otherColor(color_);
-    const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
-    const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
-    const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
+    const uint64 & pmsk = fmgr_.pawn_mask_t(ocolor);
+    const uint64 & opmsk = fmgr_.pawn_mask_t(color_);
+    const uint64 & passmsk = g_pawnMasks->mask_passed(ocolor, move.to_);
+    const uint64 & blckmsk = g_pawnMasks->mask_blocked(ocolor, move.to_);
 
     return !(opmsk & passmsk) && !(pmsk & blckmsk);
   }
@@ -334,8 +353,12 @@ public:
 
 
   /// static exchange evaluation
+
   /// should be called directly after move
   int see(int initial_value, Move & next) const;
+
+  // we try to do 'move'
+  int see_before(int initial_value, const Move & move) const;
 
   /// methods
 private:

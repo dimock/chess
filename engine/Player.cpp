@@ -889,7 +889,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       for ( ; !stop_ && alpha < betta ; )
       {
-        const Move & check = ckg.check();
+        Move & check = ckg.check();
         if ( !check || stop_ )
           break;
 
@@ -900,6 +900,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
           continue;
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
+
+        if ( depth < 1 && !do_check(check) )
+          continue;
 
         capture(depth, ply, alpha, betta, check, counter, extend_check);
       }
@@ -1269,10 +1272,26 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
     return board_.getState() == Board::UnderCheck;
 #endif
   }
+  else if ( betta > alpha+1 )
+  {
+#ifdef EXTEND_PASSED_PAWN
+    if ( board_.pawnPassed(move) )
+    {
+      Move next;
+      int score_see = board_.see(initial_balance, next);
+      if ( score_see >= 0 )
+        return true;
+    }
 #ifdef RECAPTURE_EXTENSION
-  else if ( move.rindex_ && betta > alpha+1 && recapture(ply, initial_balance) )
-    return true;
+    else 
 #endif
+#endif
+
+#ifdef RECAPTURE_EXTENSION
+    if ( move.rindex_ && recapture(ply, initial_balance) )
+      return true;
+#endif
+  }
 
   return false;
 }

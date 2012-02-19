@@ -383,12 +383,12 @@ private:
       //contexts_[ply].ext_data_.recapture_count_++;
       return true;
     }
-    //else if ( ply > 0 )
-    //{
-    //  const MoveCmd & prev = board_.getMoveRev(-1);
-    //  if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
-    //    return true;
-    //}
+    else if ( ply > 0 )
+    {
+      const MoveCmd & prev = board_.getMoveRev(-1);
+      if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
+        return true;
+    }
 
     return false;
   }
@@ -412,9 +412,26 @@ private:
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
   bool isRealThreat(const Move & move);
 
-public:
-
   // do we need additional check extension
   int extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alpha, ScoreType betta);
+
+  bool do_check(const Move & move) const
+  {
+    // certainly discovered check
+    if ( move.discoveredCheck_ )
+      return true;
+
+    // we look from side, that goes to move. we should adjust sing of initial mat-balance
+    int initial_balance = initial_material_balance_;
+    if ( !board_.getColor() )
+      initial_balance = -initial_balance;
+
+    // do winning-capture check
+    int score_see = board_.see_before(initial_balance, move);
+    if ( score_see >= 0 )
+      return true;
+
+    return false;
+  }
 
 };

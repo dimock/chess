@@ -323,7 +323,7 @@ public:
 
 private:
 
-  inline bool maybeCheck(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
+  inline bool discoveredCheck(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
   {
     bool checking = false;
     uint64 from_msk_inv = ~(1ULL << pt);
@@ -351,10 +351,11 @@ private:
 
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
-  void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type)
+  void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
   {
 	  Move & move = checks_[m];
 	  move.set(from, to, rindex, new_type, 0);
+    move.discoveredCheck_ = discovered;
     
     if ( rindex >= 0 && cg_ && cg_->find(move) )
       return;

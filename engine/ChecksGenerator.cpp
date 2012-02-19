@@ -40,14 +40,14 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     if ( !fig )
       continue;
 
-    // may be figure opens line between attacker and king
-    bool checking = maybeCheck(fig.where(), mask_all, brq_mask, oking);
+    // figure opens line between attacker and king
+    bool discovered = discoveredCheck(fig.where(), mask_all, brq_mask, oking);
 
     switch ( fig.getType() )
     {
     case Figure::TypeKing:
       {
-        if ( checking )
+        if ( discovered )
         {
           const int8 * table = board_.g_movesTable->king(fig.where());
 
@@ -57,7 +57,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
             if ( field && (field.color() == color || field.type() >= minimalType_) )
               continue;
 
-            add_check(m, fig.where(), *table, field ? field.index() : -1, Figure::TypeNone);
+            add_check(m, fig.where(), *table, field ? field.index() : -1, Figure::TypeNone, discovered);
           }
         }
 
@@ -71,7 +71,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           rook.go(rook.where()-2);
           uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
           if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
-            add_check(m, fig.where(), fig.where()+2, -1, Figure::TypeNone);
+            add_check(m, fig.where(), fig.where()+2, -1, Figure::TypeNone, discovered);
         }
 
         if ( board_.castling(board_.color_, 1) && !board_.getField(fig.where()-2) ) // long
@@ -82,7 +82,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           rook.go(rook.where()+3);
           uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
           if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
-            add_check(m, fig.where(), fig.where()-2, -1, Figure::TypeNone);
+            add_check(m, fig.where(), fig.where()-2, -1, Figure::TypeNone, discovered);
         }
       }
       break;
@@ -91,7 +91,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     case Figure::TypeRook:
     case Figure::TypeQueen:
       {
-        if ( checking )
+        if ( discovered )
         {
           const uint16 * table = board_.g_movesTable->move(fig.getType()-Figure::TypeBishop, fig.where());
 
@@ -110,7 +110,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               if ( field && (field.color() == color || field.type() >= minimalType_) )
                 break;
 
-              add_check(m, fig.where(), p, field ? field.index() : -1, Figure::TypeNone);
+              add_check(m, fig.where(), p, field ? field.index() : -1, Figure::TypeNone, discovered);
 
               if ( field )
                 break;
@@ -139,7 +139,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
             if ( (btw_msk_f & mask_all_inv_ex) != btw_msk_f )
               continue;
 
-            add_check(m, fig.where(), to, field ? field.index() : -1, Figure::TypeNone);
+            add_check(m, fig.where(), to, field ? field.index() : -1, Figure::TypeNone, discovered);
           }
         }
       }
@@ -147,7 +147,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
     case Figure::TypeKnight:
       {
-        if ( checking )
+        if ( discovered )
         {
           const int8 * table = board_.g_movesTable->knight(fig.where());
 
@@ -157,7 +157,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
             if ( field && (field.color() == color || field.type() >= minimalType_) )
               continue;
 
-            add_check(m, fig.where(), *table, field ? field.index() : -1, Figure::TypeNone);
+            add_check(m, fig.where(), *table, field ? field.index() : -1, Figure::TypeNone, discovered);
           }
         }
         else
@@ -171,7 +171,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
             if ( field && (field.color() == color || field.type() >= minimalType_))
               continue;
 
-            add_check(m, fig.where(), to, field ? field.index() : -1, Figure::TypeNone);
+            add_check(m, fig.where(), to, field ? field.index() : -1, Figure::TypeNone, discovered);
           }
         }
       }
@@ -204,7 +204,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
                 uint64 pw_msk_to = 1ULL << *table;
                 uint64 pw_msk_from = 1ULL << fig.where();
                 uint64 mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
-                ep_checking = maybeCheck(rfig.where(), mask_all_pw, brq_mask, oking);
+                ep_checking = discoveredCheck(rfig.where(), mask_all_pw, brq_mask, oking);
               }
             }
 
@@ -222,13 +222,13 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           uint64 pw_msk_to = 1ULL << *table;
           bool promotion = *table > 55 || *table < 8;
 
-          if ( checking  || ep_checking|| (pw_msk_to & pw_check_mask) )
-            add_check(m, fig.where(), *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone);
+          if ( discovered  || ep_checking|| (pw_msk_to & pw_check_mask) )
+            add_check(m, fig.where(), *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone, discovered);
           // if it's not check, it could be promotion to knight
           else if ( promotion )
           {
             if ( knight_check_mask & pw_msk_to )
-              add_check(m, fig.where(), *table, rindex, Figure::TypeKnight);
+              add_check(m, fig.where(), *table, rindex, Figure::TypeKnight, discovered);
             // may be we haven't generated promotion to checking queen yet
             else if ( minimalType_ > Figure::TypeQueen )
             {
@@ -236,7 +236,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               uint64 mask_all_inv_ex = ~(mask_all & ~(1ULL << fig.where()));
               const uint64 & btw_msk = board_.g_betweenMasks->between(*table, oking.where());
               if ( (btw_msk & mask_all_inv_ex) == btw_msk )
-                add_check(m, fig.where(), *table, rindex, Figure::TypeQueen);
+                add_check(m, fig.where(), *table, rindex, Figure::TypeQueen, discovered);
             }
           }
         }
