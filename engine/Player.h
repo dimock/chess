@@ -169,7 +169,7 @@ private:
 
   ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
-  ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks);
+  ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta);
 
   void testTimer();
 
@@ -213,7 +213,7 @@ private:
   // return true if we have to return betta-1 to recalculate with full depth
   bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move);
 
-  void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks);
+  void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter);
   int collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha, ScoreType betta, Move (&moves)[HashedMoves_Size]);
   int collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[HashedMoves_Size]);
 

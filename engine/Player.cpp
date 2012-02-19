@@ -456,7 +456,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     ScoreType score = board_.evaluate();
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
     if ( delta > 0 )
-      return captures(1, ply, alpha, betta, delta, true);
+      return captures(1, ply, alpha, betta, delta);
   }
 #endif
 
@@ -469,8 +469,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     EscapeGenerator eg(hmoves[0], board_, depth, ply, *this, alpha, betta, counter);
 
     // additional check extension
-    int depth_ext = extend_check(depth, ply, eg, alpha, betta);
-    depth += depth_ext;
+    depth += extend_check(depth, ply, eg, alpha, betta);
 
     for ( ; !stop_ && alpha < betta; )
     {
@@ -614,7 +613,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
       if ( haveCheck || score > alpha )
       {
         ScoreType betta1 = score < betta && !haveCheck ? score : betta;
-        score = -captures(depth-1, ply+1, -betta1, -alpha, delta, true);
+        score = -captures(depth-1, ply+1, -betta1, -alpha, delta);
         THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
       }
     }
@@ -742,21 +741,21 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta, bool do_checks)
+ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta)
 {
 	if ( ply > plyMax_ )
 		plyMax_ = ply;
 
-  if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
+  if ( board_.getState() == Board::UnderCheck )
   {
-    //THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
-    return board_.evaluate();
+    int ttt = 0;
   }
+
+  if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
+    return board_.evaluate();
 
   if ( ply < MaxPly )
     contexts_[ply+1].killer_.clear();
-
-  bool extend_check = (board_.getState() == Board::UnderCheck && depth >= 0) || depth > 0;
 
 #ifdef VERIFY_CAPS_GENERATOR
   if ( board_.getState() != Board::UnderCheck )
@@ -804,9 +803,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   int hcapsN = collectHashCaps(ply, minimalType, hcaps);
 
   for (Move * c = hcaps; alpha < betta && !stop_ && *c; ++c)
-  {
-    capture(depth, ply, alpha, betta, *c, counter, extend_check);
-  }
+    capture(depth, ply, alpha, betta, *c, counter);
 
   if ( stop_ || alpha >= betta )
   {
@@ -817,6 +814,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( board_.getState() == Board::UnderCheck )
   {
     EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+    depth +=extend_check(depth, ply, eg, alpha, betta);
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -835,7 +833,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       THROW_IF( !board_.validMove(move), "move validation failed" );
 
-      capture(depth, ply, alpha, betta, move, counter, extend_check);
+      capture(depth, ply, alpha, betta, move, counter);
     }
 
     if ( !counter )
@@ -878,12 +876,12 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-      capture(depth, ply, alpha, betta, cap, counter, extend_check);
+      capture(depth, ply, alpha, betta, cap, counter);
     }
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( alpha < Figure::figureWeight_[Figure::TypeRook] && do_checks && !stop_ && alpha < betta )
+    if ( alpha < Figure::figureWeight_[Figure::TypeRook] && depth >= 0 && !stop_ && alpha < betta )
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
@@ -901,10 +899,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
-        if ( depth < 1 && !do_check(check) )
-          continue;
-
-        capture(depth, ply, alpha, betta, check, counter, extend_check);
+        capture(depth, ply, alpha, betta, check, counter);
       }
     }
 #endif // PERFORM_CHECKS_IN_CAPTURES
@@ -923,7 +918,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 }
 
 //////////////////////////////////////////////////////////////////////////
-void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter, bool do_checks)
+void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter)
 {
   totalNodes_++;
   nodesCount_++;
@@ -940,6 +935,8 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
     History & hist = MovesGenerator::history(cap.from_, cap.to_);
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
+    if ( haveCheck )
+      depth++;
 
     counter++;
     ScoreType s = alpha;
@@ -950,10 +947,10 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
       s = -board_.evaluate();
       int delta = s - betta - Figure::positionGain_;
       bool b = s <= alpha;
-      if ( haveCheck || (s > alpha && (delta < Figure::figureWeight_[Figure::TypeQueen] || do_checks)) )
+      if ( haveCheck || (s > alpha && (delta <= Figure::figureWeight_[Figure::TypeQueen] || depth >= 0)) )
       {
         ScoreType betta1 = s < betta && !haveCheck ? s : betta;
-        s = -captures(depth-1, ply+1, -betta1, -alpha, delta, do_checks);
+        s = -captures(depth-1, ply+1, -betta1, -alpha, delta);
         THROW_IF( !stop_ && (s < -32760 || s > 32760), "invalid score" );
       }
     }
@@ -1303,8 +1300,7 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
 
   if ( board_.halfmovesCount() < 1 ||
        eg.count() < 1 ||
-       alpha > Figure::figureWeight_[Figure::TypeRook] ||
-       alpha < -Figure::figureWeight_[Figure::TypeRook] )
+       alpha > Figure::figureWeight_[Figure::TypeRook] )
   {
     return 0;
   }
