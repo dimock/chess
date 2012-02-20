@@ -857,7 +857,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   {
     // generate only suitable captures
     CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
-    for ( ; !stop_ && alpha < betta ; )
+    for ( ; !stop_ && alpha < betta; )
     {
       const Move & cap = cg.capture();
       if ( !cap || stop_ )
@@ -889,12 +889,12 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         if ( timeLimitMS_ > 0 && totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
           testTimer();
 
-        if ( find_move(hcaps, hcapsN, check ) /*|| !isCheckDangerous(check, minimalType) */)
+        if ( find_move(hcaps, hcapsN, check ) )
           continue;
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
-        if ( depth < 1 && !do_check(check) )
+        if ( depth < 1 && !see_check(check) )
           continue;
 
         capture(depth, ply, alpha, betta, check, counter);
