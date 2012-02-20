@@ -415,7 +415,7 @@ private:
   // do we need additional check extension
   int extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alpha, ScoreType betta);
 
-  bool do_check(const Move & move) const
+  bool see_check(const Move & move) const
   {
     // certainly discovered check
     if ( move.discoveredCheck_ )
