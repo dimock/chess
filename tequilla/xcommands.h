@@ -32,6 +32,7 @@ public:
 		xOtime,
 		xLevel,
 		xLeaveEdit,
+    xGoNow,
 		xChgColor,
 		xClearBoard,
 		xSetFigure,

@@ -6,6 +6,19 @@
 
 using namespace std;
 
+static xBoardMgr * g_xboard_mgr_ = 0;
+
+void player_callback()
+{
+  if ( !g_xboard_mgr_ )
+    return;
+
+  if ( !g_xboard_mgr_->peekInput() )
+    return;
+
+  g_xboard_mgr_->do_cmd();
+}
+
 xBoardMgr::xBoardMgr() :
   os_(cout)
 {
@@ -17,7 +30,47 @@ xBoardMgr::xBoardMgr() :
   stop_ = false;
   force_ = false;
   fenOk_ = true;
+
+  g_xboard_mgr_ = this;
+
+  hinput_ = GetStdHandle(STD_INPUT_HANDLE);
+  if ( hinput_ )
+  {
+    DWORD mode = 0;
+    in_pipe_ = !GetConsoleMode(hinput_, &mode);
+    if ( !in_pipe_ )
+    {
+      SetConsoleMode(hinput_, mode & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
+      FlushConsoleInputBuffer(hinput_);
+    }
+  }
+
+  thk_.setPlayerCallback(player_callback);
 }
+
+  
+bool xBoardMgr::peekInput()
+{
+  if ( !hinput_ )
+    return false;
+
+  if ( in_pipe_ )
+  {
+    DWORD avaliable = 0;
+    if ( !PeekNamedPipe(hinput_, 0, 0, 0, &avaliable, NULL) )
+      return false;
+
+    return avaliable != 0;
+  }
+  else
+  {
+    DWORD num = 0;
+    if ( GetNumberOfConsoleInputEvents(hinput_, &num) )
+      return num > 0;
+    return false;
+  }
+}
+
 
 void xBoardMgr::out_state(ostream & os, Board::State state, bool white)
 {
@@ -168,6 +221,10 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
   case xCmd::xAnalyze:
     thk_.analyze();
+    break;
+
+  case xCmd::xGoNow:
+    thk_.stop();
     break;
 
   case xCmd::xExit:

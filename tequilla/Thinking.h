@@ -33,14 +33,11 @@ public:
   void analyze();
   void stop();
 
+  void setPlayerCallback(PLAYER_CALLBACK );
+
 private:
 
-  static DWORD WINAPI analyze_proc(void *);
-
-  bool is_analyzing() const
-  {
-    return analyze_thread_ != INVALID_HANDLE_VALUE;
-  }
+  bool is_thinking() const { return thinking_; }
 
   void performAnalyze();
   void updateTiming();
@@ -53,5 +50,5 @@ private:
   int maxDepth_;
   int timePerMoveMS_;
   bool post_;
-  HANDLE analyze_thread_;
+  bool thinking_;
 };

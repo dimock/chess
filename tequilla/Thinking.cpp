@@ -9,7 +9,7 @@ using namespace std;
 Thinking::Thinking() :
 	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
   xtimeMS_(0), movesLeft_(0), timePerMoveMS_(0), maxDepth_(-1),
-  post_(false), analyze_thread_(INVALID_HANDLE_VALUE)
+  post_(false), thinking_(false)
 {
 }
 
@@ -17,9 +17,14 @@ Thinking::~Thinking()
 {
 }
 
+void Thinking::setPlayerCallback(PLAYER_CALLBACK cbk)
+{
+  player_.setCallback(cbk);
+}
+
 void Thinking::setPost(bool p)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   post_ = p;
@@ -27,7 +32,7 @@ void Thinking::setPost(bool p)
 
 void Thinking::setDepth(int depth)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   xtimeMS_ = 0;
@@ -42,7 +47,7 @@ void Thinking::setDepth(int depth)
 
 void Thinking::setTimePerMove(int ms)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   maxDepth_ = -1;
@@ -57,7 +62,7 @@ void Thinking::setTimePerMove(int ms)
 
 void Thinking::setXtime(int ms)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   maxDepth_ = -1;
@@ -70,7 +75,7 @@ void Thinking::setXtime(int ms)
 
 void Thinking::setMovesLeft(int mleft)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   maxDepth_ = -1;
@@ -85,8 +90,11 @@ void Thinking::enableBook(int v)
 
 void Thinking::undo()
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
+  {
+    player_.postUndo();
     return;
+  }
 
   Board & board = player_.getBoard();
   if ( board.halfmovesCount() > 0 )
@@ -95,7 +103,7 @@ void Thinking::undo()
 
 void Thinking::setMemory(int mb)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   player_.setMemory(mb);
@@ -103,56 +111,39 @@ void Thinking::setMemory(int mb)
 
 bool Thinking::init()
 {
-  if ( is_analyzing() )
-    return false;
+  if ( is_thinking() )
+  {
+    player_.postNew();
+    return true;
+  }
 
   return player_.fromFEN(0);
 }
 
-DWORD WINAPI Thinking::analyze_proc(void * p)
+void Thinking::analyze()
 {
-  if ( p )
-    ((Thinking*)p)->performAnalyze();
-
-  return 0;
-}
-
-void Thinking::performAnalyze()
-{
+  thinking_ = true;
   player_.setTimeLimit(0);
   player_.setMaxDepth(32);
 
   SearchResult sres;
+  player_.setAnalyzeMode(true);
   player_.findMove(sres, post_ ? &cout : 0);
+  player_.setAnalyzeMode(false);
 
   player_.setTimeLimit(timePerMoveMS_);
   player_.setMaxDepth(maxDepth_ < 0 ? DEPTH_MAXIMUM : maxDepth_);
-}
-
-void Thinking::analyze()
-{
-  if ( is_analyzing() )
-    return;
-
-  DWORD threadID;
-  analyze_thread_ = CreateThread(0, 0, &Thinking::analyze_proc, this, 0, &threadID);
+  thinking_ = false;
 }
 
 void Thinking::stop()
 {
   player_.pleaseStop();
-
-  if ( analyze_thread_ != INVALID_HANDLE_VALUE )
-  {
-    WaitForSingleObject(analyze_thread_, INFINITE);
-    CloseHandle(analyze_thread_);
-  }
-  analyze_thread_ = INVALID_HANDLE_VALUE;
 }
 
 bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return false;
 
   updateTiming();
@@ -165,6 +156,9 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
     return true;
 
 	SearchResult sres;
+
+  player_.setAnalyzeMode(false);
+  thinking_ = true;
   if ( player_.findMove(sres, post_ ? &cout : 0) )
   {
     if ( board.makeMove(sres.best_) )
@@ -172,9 +166,10 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
     else
     {
       board.unmakeMove();
-      return false;
+      sres.best_.clear();
     }
   }
+  thinking_ = false;
 
   state = board.getState();
 
@@ -186,7 +181,7 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 
 bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return false;
 
 	if ( moveCmd.type() != xCmd::xMove )
@@ -221,7 +216,7 @@ bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 
 void Thinking::save()
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
 	ofstream ofs("game_001.pgn");
@@ -231,7 +226,7 @@ void Thinking::save()
 
 void Thinking::fen2file(const char * fname)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   if ( !fname )
@@ -245,7 +240,7 @@ void Thinking::fen2file(const char * fname)
 
 void Thinking::hash2file(const char * fname)
 {
-  if ( is_analyzing() || !fname )
+  if ( is_thinking() || !fname )
     return;
 
   player_.saveHash(fname);
@@ -254,9 +249,6 @@ void Thinking::hash2file(const char * fname)
 //////////////////////////////////////////////////////////////////////////
 bool Thinking::fromFEN(xCmd & cmd)
 {
-  if ( is_analyzing() )
-    return false;
-
   if ( !cmd.paramsNum() )
     return false;
 
@@ -265,6 +257,13 @@ bool Thinking::fromFEN(xCmd & cmd)
     return false;
 
   const char * fen = str.c_str();
+
+  if ( is_thinking() )
+  {
+    player_.postFEN(fen);
+    return true;
+  }
+
   return player_.fromFEN(fen);
 }
 
@@ -273,8 +272,13 @@ bool Thinking::fromFEN(xCmd & cmd)
 //////////////////////////////////////////////////////////////////////////
 void Thinking::editCmd(xCmd & cmd)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
+  {
+    if ( cmd.type() == xCmd::xLeaveEdit ) // command '.'
+      player_.postStatus();
+
     return;
+  }
 
 	switch ( cmd.type() )
 	{
@@ -303,7 +307,7 @@ void Thinking::editCmd(xCmd & cmd)
 
 void Thinking::setFigure(xCmd & cmd)
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
 	if ( !cmd.str() || strlen(cmd.str()) < 3 )
@@ -374,7 +378,7 @@ void Thinking::setFigure(xCmd & cmd)
 //////////////////////////////////////////////////////////////////////////
 void Thinking::updateTiming()
 {
-  if ( is_analyzing() )
+  if ( is_thinking() )
     return;
 
   if ( maxDepth_ > 0 )

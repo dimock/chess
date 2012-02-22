@@ -14,6 +14,8 @@ public:
   bool do_cmd();
   void write_error(const std::exception * e = 0);
 
+  bool peekInput();
+
 #ifdef WRITE_LOG_FILE_
   std::ostream & get_log()
   {
@@ -43,5 +45,8 @@ private:
 #ifdef WRITE_LOG_FILE_
   std::ofstream ofs_log_;
 #endif
+
+  HANDLE hinput_;
+  bool   in_pipe_;
 
 };

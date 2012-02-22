@@ -58,6 +58,7 @@ xCmd xParser::parse(char * str)
     { "#", xCmd::xClearBoard },
     { "c", xCmd::xChgColor },
     { ".", xCmd::xLeaveEdit }, 
+    { "?", xCmd::xGoNow },
     { "protover", xCmd::xProtover },
     { "setboard", xCmd::xSetboardFEN },
     { "quit",xCmd::xQuit }

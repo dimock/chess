@@ -34,6 +34,8 @@ class EscapeGenerator;
 class ChecksGenerator;
 class CapsChecksGenerator;
 
+typedef void (* PLAYER_CALLBACK)();
+
 struct PlyContext
 {
   struct ExtData
@@ -121,6 +123,17 @@ class Player
   friend class ChecksGenerator;
   friend class CapsChecksGenerator;
 
+
+  // analyze move support
+  enum PostedCommand { Posted_NONE, Posted_UNDO, Posted_UPDATE, Posted_HINT, Posted_NEW, Posted_FEN };
+  PostedCommand posted_command_;
+  char posted_fen_[256];
+  PLAYER_CALLBACK callback_;
+  std::ostream * out_;
+  int counter_, numOfMoves_;
+  Board pv_board_;
+  bool analyze_mode_;
+
 public:
 
   // initialize global arrays, tables, masks, etc. write them to it's board_
@@ -128,6 +141,14 @@ public:
   ~Player();
 
   void setMemory(int mb);
+  void setCallback(PLAYER_CALLBACK);
+  void setAnalyzeMode(bool);
+
+  void postUndo();
+  void postNew();
+  void postFEN(const char *);
+  void postStatus();
+  void postHint();
 
   bool fromFEN(const char * fen);
   bool toFEN(char * fen) const;
@@ -165,7 +186,22 @@ public:
 
 private:
 
-  void printPV(Board & pv_board, SearchResult & sres, std::ostream * out);
+  void checkForStop()
+  {
+    if ( totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
+    {
+      if ( timeLimitMS_ > 0 )
+        testTimer();
+      else
+        testInput();
+    }
+  }
+
+  void testInput();
+  void processPosted(int t);
+  void printPV(Board & pv_board, SearchResult & sres);
+
+  bool search(SearchResult & , std::ostream * out = 0);
 
   ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
