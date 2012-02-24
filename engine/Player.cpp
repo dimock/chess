@@ -1055,7 +1055,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( alpha < Figure::figureWeight_[Figure::TypeRook] && depth >= 0 && !stop_ && alpha < betta )
+    if ( /*(alpha < Figure::figureWeight_[Figure::TypeRook] || depth > 0) &&*/ depth >= 0 && !stop_ && alpha < betta )
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 

@@ -122,6 +122,9 @@ bool Thinking::init()
 
 void Thinking::analyze()
 {
+  if ( is_thinking() )
+    return;
+
   thinking_ = true;
   player_.setTimeLimit(0);
   player_.setMaxDepth(32);
