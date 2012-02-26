@@ -39,6 +39,21 @@ void MovesGenerator::clear_history()
   History::history_max_ = 0;
 }
 
+void MovesGenerator::normalize_history(int n)
+{
+  History::history_max_ = 0;
+  for (int i = 0; i < 64; ++i)
+  {
+    for (int j = 0; j < 64; ++j)
+    {
+      History & hist = history_[i][j];
+      hist.normalize(n);
+      if ( hist.score_ > History::history_max_ )
+        History::history_max_ = hist.score_;
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////
 bool MovesGenerator::find(const Move & m) const
 {

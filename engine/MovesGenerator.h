@@ -21,6 +21,13 @@ struct History
     return mul_div(score_, good_count_, bad_count_);
   }
 
+  void normalize(int n)
+  {
+    score_ >>= n;
+    good_count_ >>= n;
+    bad_count_ >>= n;
+  }
+
   unsigned score_;
   unsigned good_count_, bad_count_;
   static unsigned history_max_;
@@ -45,6 +52,7 @@ public:
   }
 
   static void clear_history();
+  static void normalize_history(int n);
 
   static void save_history(const char * fname);
   static void load_history(const char * fname);
