@@ -286,7 +286,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
   // for recapture extension
   initial_material_balance_ = board_.fmgr().weight();
 
-  MovesGenerator::normalize_history(5);
+  MovesGenerator::clear_history();
 
   before_.clear();
   contexts_[0].killer_.clear();
@@ -304,9 +304,6 @@ bool Player::search(SearchResult & sres, std::ostream * out)
 	  plyMax_ = 0;
     numOfMoves_ = 0;
     counter_ = 0;
-
-    //if ( !(depth_ & 7) )
-    //  MovesGenerator::normalize_history(1);
 
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
