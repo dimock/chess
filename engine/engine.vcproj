@@ -560,10 +560,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\debut.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Evaluation.cpp"
 				>
 			</File>

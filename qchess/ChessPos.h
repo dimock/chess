@@ -20,7 +20,7 @@ public:
   void pleaseStop();
   void setMaxDepth(int d);
   void setTimeLimit(int ms);
-  bool initialize(bool enableBook, int depthMax);
+  bool initialize(int depthMax);
   void setUpLeft(const QPoint & upleft) const { upleft_ = upleft; }
 	void draw(QWidget * view, const QPoint & cursorPt) const;
   bool makeMovement(const QPoint & pt);

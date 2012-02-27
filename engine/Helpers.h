@@ -7,32 +7,6 @@ class Board;
 
 unsigned long xorshf96();
 
-class DebutsTable
-{
-public:
-
-  DebutsTable();
-
-  void inc() { current_++; }
-
-  bool readTable(const char * fname);
-
-  //StepId findStep(const std::vector<StepId> & steps, Board * board);
-  //StepId findStep2(const std::vector<StepId> & steps, Board * board);
-
-private:
-
-  void initStatic();
-
-  typedef std::vector<std::string> StepsList;
-  typedef std::vector<StepsList> TableLines;
-
-  TableLines tlines_;
-  int current_;
-  static const int N = 55;
-  static const int M = 13;
-  static const char * s_table_[N][M];
-};
 
 #ifndef _M_X64
 // return least significant bit index, clear it

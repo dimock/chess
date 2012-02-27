@@ -31,7 +31,7 @@ ChessWidget::ChessWidget(QWidget * parent) :
   QMainWindow(parent), upleft_(30, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
   moves_base_(0), dt_(0),
   thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), computerAnswers_(true), timelimit_(1000),
-  depthMax_(2), enableBook_(true), ticksAll_(0)
+  depthMax_(2), ticksAll_(0)
 {
   QSettings settings(tr("Dimock"), tr("qchess"));
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
@@ -136,7 +136,7 @@ void ChessWidget::onNew()
   if ( !okToReset() )
     return;
 
-  if ( !cpos_.initialize(enableBook_, depthMax_) )
+  if ( !cpos_.initialize(depthMax_) )
     return;
 
   cpos_.setTimeLimit(timelimit_);

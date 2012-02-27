@@ -32,12 +32,11 @@ void ChessPosition::setMaxDepth(int d)
   player_.setMaxDepth(d);
 }
 
-bool ChessPosition::initialize(bool /*enableBook*/, int depthMax)
+bool ChessPosition::initialize(int depthMax)
 {
   if ( working_)
     return false;
 
-  //alg_.enableBook(enableBook);
   player_.setMaxDepth(depthMax);
 
   return fromFEN(0);
