@@ -208,6 +208,8 @@ bool Player::fromFEN(const char * fen)
   if ( !tboard.fromFEN(fen) )
     return false;
 
+  MovesGenerator::clear_history();
+
   return board_.fromFEN(fen);
 }
 
