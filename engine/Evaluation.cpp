@@ -4,6 +4,17 @@
 // TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
 ScoreType Figure::figureWeight_[7] = { 0, 100, 320, 330, 500, 950, 0 };
 
+enum {
+  A1, B1, C1, D1, E1, F1, G1, H1,
+  A2, B2, C2, D2, E2, F2, G2, H2,
+  A3, B3, C3, D3, E3, F3, G3, H3,
+  A4, B4, C4, D4, E4, F4, G4, H4,
+  A5, B5, C5, D5, E5, F5, G5, H5,
+  A6, B6, C6, D6, E6, F6, G6, H6,
+  A7, B7, C7, D7, E7, F7, G7, H7,
+  A8, B8, C8, D8, E8, F8, G8, H8,
+};
+
 ScoreType Figure::positionEvaluations_[2][8][64] = {
   // begin
   {
@@ -13,73 +24,73 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
       // pawn
     {
        0,   0,   0,   0,   0,   0,   0,   0,
-      20,  20,  20,  20,  20,  20,  20,  20,
-       4,   4,   8,  12,  12,   8,   4,   4,
-       2,   2,   4,  10,  10,   4,   2,   2,
-       0,   0,   0,   8,   8,   0,   0,   0,
-       2,  -2,  -4,   0,   0,  -4,  -2,   2,
-       2,   4,   4,  -8,  -8,   4,   4,   2,
+       0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   1,   2,   2,   1,   0,   0,
+       0,   0,   2,   2,   2,   2,   0,   0,
+       0,   0,   2,  10,  10,   2,   0,   0,
+       0,   0,   1,   2,   2,   1,   0,   0,
+       2,   0,   2,  -8,  -8,   2,   0,   2,
        0,   0,   0,   0,   0,   0,   0,   0
     },
 
     // knight
     {
-     -12, -12, -12, -12, -12, -12, -12, -12,
-     -12,  -8,   0,   0,   0,   0,  -8, -12,
-     -12,   0,   4,   6,   6,   4,   0, -12,
-     -12,   2,   6,   8,   8,   6,   2, -12,
-     -12,   0,   6,   8,   8,   6,   0, -12,
-     -12,   2,   4,   6,   6,   4,   2, -12,
-     -12,  -8,   0,   2,   2,   0,  -8, -12,
-     -12, -16, -12, -12, -12, -12, -12, -12
+     -4,  -4,  -4,  -4,  -4,  -4,  -4, -4,
+     -4,   0,   0,   0,   0,   0,   4, -4,
+     -4,   0,   4,   6,   6,   4,   0, -4,
+     -4,   2,   6,   8,   8,   6,   2, -4,
+     -4,   0,   6,   8,   8,   6,   0, -4,
+     -4,   2,   4,   6,   6,   4,   2, -4,
+     -4,  -8,   0,   2,   2,   0,  -8, -4,
+     -4, -12,  -4,  -4,  -4,  -4, -12, -4
     },
 
     // bishop
     {
-      -8,  -4,  -4,  -4,  -4,  -4,  -4,  -8,
+      -4,  -4,  -4,  -4,  -4,  -4,  -4,  -4,
       -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   2,   8,   8,   2,   0,  -2,
-      -2,   2,   2,   8,   8,   2,   2,  -2,
-      -2,   0,   8,   8,   8,   8,   0,  -2,
-      -2,   8,   8,   8,   8,   8,   8,  -2,
+      -2,   0,   2,   4,   4,   2,   0,  -2,
+      -2,   2,   2,   4,   4,   2,   2,  -2,
+      -2,   0,   4,   4,   4,   4,   0,  -2,
+      -2,   0,   4,   4,   4,   4,   0,  -2,
       -2,   2,   0,   0,   0,   0,   2,  -2,
-      -8,  -4,  -4,  -4,  -4,  -4,  -4,  -8
+      -4,  -4, -12,  -4,  -4, -12,  -4,  -4
     },
 
     // rook
     {
-       0,   0,   0,   0,   0,   0,   0,   0,
-       7,   7,   7,   7,   7,   7,   7,   7,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -5,  -5,   3,   3,   3,   3,  -5,  -5
+       2,   2,   2,   2,   2,   2,   2,   2,
+       8,   8,   8,   8,   8,   8,   8,   8,
+      -4,   0,   0,   0,   0,   0,   0,  -4,
+      -4,   0,   0,   0,   0,   0,   0,  -4,
+      -4,   0,   0,   0,   0,   0,   0,  -4,
+      -4,   0,   0,   0,   0,   0,   0,  -4,
+      -4,   0,   0,   0,   0,   0,   0,  -4,
+      -8,  -4,   0,   2,   2,   0,  -4,  -8
     },
 
     // queen
     {
-      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -4,   0,   2,   2,   2,   2,   0,  -4,
-      -2,   0,   2,   2,   2,   2,   0,  -2,
-       0,   0,   2,   2,   2,   2,   0,  -2,
-      -4,   2,   2,   2,   2,   2,   0,  -4,
-      -4,   0,   2,   0,   0,   0,   0,  -4,
-      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8
+       0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   1,   2,   2,   1,   0,   0,
+       0,   0,   2,   2,   2,   2,   0,   0,
+       0,   0,   2,   2,   2,   2,   0,   0,
+       0,   1,   2,   2,   2,   2,   1,   0,
+       0,   0,   2,   1,   1,   2,   0,  -4,
+      -4,  -4,  -4,  -4,  -4,  -4,  -4,  -4
     },
 
     // king
     {
-     -12, -16, -16, -20, -20, -16, -16, -12,
-     -12, -16, -16, -20, -20, -16, -16, -12,
-     -12, -16, -16, -20, -20, -16, -16, -12,
-     -12, -16, -16, -20, -20, -16, -16, -12,
-      -8, -12, -12, -16, -16, -12, -12,  -8,
-      -4,  -8,  -8,  -8,  -8,  -8,  -8,  -4,
-       8,   8,   0,   0,   0,   0,   8,   8,
-      12,  12,   6,   0,   0,   0,  16,  16
+     -20, -20, -20, -20, -20, -20, -20, -20,
+     -20, -20, -20, -20, -20, -20, -20, -20,
+     -20, -20, -20, -20, -20, -20, -20, -20,
+     -20, -20, -20, -20, -20, -20, -20, -20,
+     -20, -20, -20, -20, -20, -20, -20, -20,
+     -20, -20, -20, -20, -20, -20, -20, -20,
+     -12, -12, -12, -12, -12, -12, -12, -12,
+       0,  12,  16, -10,   0, -10,  20,  16
     },
 
     {}
@@ -90,16 +101,8 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
     // empty
     {},
 
-      // pawn
+    // pawn
     {
-       0,   0,   0,   0,   0,   0,   0,   0,
-      20,  20,  20,  20,  20,  20,  20,  20,
-      16,  16,  16,  16,  16,  16,  16,  16,
-      12,  12,  12,  12,  12,  12,  12,  12,
-       8,   8,   8,   8,   8,   8,   8,   8,
-       4,   4,   4,   4,   4,   4,   4,   4,
-       0,   0,   0,   0,   0,   0,   0,   0,
-       0,   0,   0,   0,   0,   0,   0,   0
     },
 
     // knight
@@ -130,115 +133,21 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
   }
 };
 
-ScoreType Figure::pawnGuarded_  =  8;
-ScoreType Figure::pawnDoubled_  = -8;
-ScoreType Figure::pawnIsolated_ = -8;
-ScoreType Figure::pawnBackward_ = -8;
-ScoreType Figure::openRook_     =  8;
-ScoreType Figure::assistantBishop_ = 5;
-ScoreType Figure::onlineRooks_ = 8;
-
-//ScoreType Figure::pawnPassed_[2][8] = {
-//  { 0, 40, 25, 20, 15, 10, 5, 0 },
-//  { 0, 5, 10, 15, 20, 25, 40, 0 }
-//};
-
-#define PAWN_PROMOTION_MAX_ 60
+ScoreType Figure::pawnGuarded_  =   8;
+ScoreType Figure::pawnDoubled_  = -10;
+ScoreType Figure::pawnIsolated_ = -10;
+ScoreType Figure::pawnBackward_ =  -8;
+ScoreType Figure::openRook_     =   4;
+ScoreType Figure::semiopenRook_ =   4;
+ScoreType Figure::winloseBonus_ =  50;
+ScoreType Figure::kingpawnsBonus_[4] = {12, 4, -8, -8};
+ScoreType Figure::fianchettoBonus_ = 4;
+ScoreType Figure::fakecastlePenalty_ = 8;
 
 ScoreType Figure::pawnPassed_[2][8] = {
-	{ 0, PAWN_PROMOTION_MAX_, 40, 25, 15, 10, 5, 0 },
-	{ 0, 5, 10, 15, 25, 40, PAWN_PROMOTION_MAX_, 0 }
+	{ 0, 80, 60, 40, 30, 10, 5, 0 },
+	{ 0, 5, 10,  30, 40, 60, 80, 0 }
 };
-
-#define FAST_ROOK_PAWN_EVAL
-
-//////////////////////////////////////////////////////////////////////////
-#define EVALUATE_OPEN_ROOKS(clr, score)\
-{\
-  uint64 rook_mask = fmgr_.rook_mask(clr);\
-  Figure::Color oclr = Figure::otherColor(clr);\
-  uint64 pmsk  = fmgr_.pawn_mask_t(clr) | fmgr_.pawn_mask_t(oclr);\
-  int8 rfields[64] = {-1, -1};\
-  int num = 0;\
-  for ( ; rook_mask; )\
-  {\
-    int n = least_bit_number(rook_mask);\
-    rfields[num++] = n;\
-    THROW_IF( (unsigned)n > 63, "invalid rook index" );\
-    THROW_IF( getField(n).color() != clr || getField(n).type() != Figure::TypeRook, "there should be rook on given field" );\
-    int x = n & 7;\
-    int16 column = ((uint8*)&pmsk)[x];\
-    int16 col_msk = (column-1) >> 15;\
-    score += Figure::openRook_ & col_msk;\
-  }\
-  /*if ( num > 1 )\
-  {\
-    THROW_IF( rfields[0] < 0 || rfields[1] < 0, "invalid rook fields" );\
-    const Field & field = getField(rfields[0]);\
-    const Figure & rook0 = getFigure(clr, field.index());\
-    int dir = g_figureDir->dir(rook0, rfields[1]);\
-    if ( dir >= 0 )\
-    {\
-      const uint64 & btw_msk = g_betweenMasks->between(rfields[0], rfields[1]);\
-      const uint64 & black = fmgr_.mask(Figure::ColorBlack);\
-      const uint64 & white = fmgr_.mask(Figure::ColorWhite);\
-      uint64 all_msk_inv = ~(black | white);\
-      if ( (btw_msk & all_msk_inv) == btw_msk )\
-        score += Figure::onlineRooks_;\
-    }\
-  }*/\
-}
-
-//////////////////////////////////////////////////////////////////////////
-#define EVALUATE_PAWN_COLUMN(wght, color, icol)\
-{\
-  const Figure & pawn = getFigure(color, (icol));\
-  if ( pawn.getType() == Figure::TypePawn )\
-  {\
-    const uint64 & passmsk = g_pawnMasks->mask_passed(color, pawn.where());\
-    const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, pawn.where());\
-    if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )\
-    {\
-      int y = pawn.where() >> 3;\
-      wght += Figure::pawnPassed_[color][y];\
-      const uint64 & guardmsk = g_pawnMasks->mask_guarded(color, pawn.where());\
-      if ( pmsk & guardmsk )\
-        wght += Figure::pawnGuarded_;\
-      Figure::Color dst_color = (Figure::Color)g_pawnMasks->pawn_dst_color(color, pawn.where());\
-      int16 bnum = fmgr_.bishops_c(color, dst_color);\
-      ScoreType bsp_msk = ~((bnum-1) >> 15);\
-      wght += Figure::assistantBishop_ & bsp_msk;\
-      int obnum = fmgr_.bishops_c(ocolor, dst_color);\
-      ScoreType obsp_msk = ~((obnum-1) >> 15);\
-      wght -= Figure::assistantBishop_ * obsp_msk;\
-    }\
-    const uint64 & isomask = g_pawnMasks->mask_isolated(pawn.where() & 7);\
-    const uint64 & bkwmask = g_pawnMasks->mask_backward(pawn.where());\
-    if ( !(pmsk & isomask) )\
-      wght += Figure::pawnIsolated_;\
-    else if ( !(pmsk & bkwmask) )\
-      wght += Figure::pawnBackward_;\
-  }\
-  uint8 column = ((uint8*)&pmsk)[(icol)];\
-  int dblNum = BitsCounter::numBitsInByte(column);\
-  ScoreType dblMask = ~((dblNum-1) >> 31);\
-  wght -= ((dblNum-1) << 3) & dblMask;\
-}
-
-#define EVALUATE_PAWNS(wght, color)\
-{\
-  const uint64 & pmsk = fmgr_.pawn_mask_t(color);\
-  Figure::Color ocolor = Figure::otherColor(color);\
-  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);\
-  EVALUATE_PAWN_COLUMN(wght, color, 0);\
-  EVALUATE_PAWN_COLUMN(wght, color, 1);\
-  EVALUATE_PAWN_COLUMN(wght, color, 2);\
-  EVALUATE_PAWN_COLUMN(wght, color, 3);\
-  EVALUATE_PAWN_COLUMN(wght, color, 4);\
-  EVALUATE_PAWN_COLUMN(wght, color, 5);\
-  EVALUATE_PAWN_COLUMN(wght, color, 6);\
-  EVALUATE_PAWN_COLUMN(wght, color, 7);\
-}
 
 //////////////////////////////////////////////////////////////////////////
 ScoreType Board::evaluate() const
@@ -258,158 +167,217 @@ ScoreType Board::evaluate() const
     score = -score;
 
   THROW_IF( score < -32760 || score > 32760, "invalid score" );
-    
 
   return score;
 }
 
-ScoreType Board::expressEval() const
-{
-	if ( ChessMat == state_ )
-		return -Figure::WeightMat;
-	else if ( drawState() )
-		return Figure::WeightDraw;
-
-  ScoreType score = -std::numeric_limits<ScoreType>::max();
-	if ( can_win_[0] != can_win_[1] )
-		score = evaluateWinnerLoser();
-  else
-  {
-	  score = fmgr_.weight();
-	  score -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
-	  score += fmgr_.eval(Figure::ColorWhite, stages_[1]);
-  }
-
-  if ( Figure::ColorBlack  == color_ )
-		score = -score;
-
-	return score;
-}
-
 ScoreType Board::calculateEval() const
 {
-  ScoreType weight = fmgr_.weight();
+  ScoreType score = fmgr_.weight();
 
-  ScoreType kingEval[2] = { 0, 0 };
-  for (int color = 0; color < 2; ++color)
-  {
-    Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
+  // 1 means endgame
+  // if there is lack of opponent's material
+  int stages[2] = {0, 0};
 
-    if ( stages_[color] > 0 )
-    {
-      if ( fmgr_.pawns(ocolor) )
-        kingEval[color] = evalPawnsEndgame((Figure::Color)color);
+  // endgame for black
+  if ( fmgr_.weight(Figure::ColorWhite) < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] )
+    stages[0] = 1;
 
-      continue;
-    }
+  // endgame for white
+  if ( fmgr_.weight(Figure::ColorBlack) < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] )
+    stages[1] = 1;
 
-    const Figure & queen = getFigure((Figure::Color)color, QueenIndex);
-    const Figure & king = getFigure((Figure::Color)color, KingIndex);
-    if ( queen )
-    {
-      const Figure & oking = getFigure(ocolor, KingIndex);
-      int dist  = g_distanceCounter->getDistance(queen.where(), king.where());
-      int odist = g_distanceCounter->getDistance(queen.where(), oking.where());
-      kingEval[color] += (7 - odist);
-      kingEval[color] += (7 - dist);
-    }
+  score -= fmgr_.eval(Figure::ColorBlack, stages[0]);
+  score += fmgr_.eval(Figure::ColorWhite, stages[1]);
 
-    static int8 castle_mask[8] = { 2,2,2, 0,0, 1,1,1 }; // 1 - short (K); 2 - long (Q)
-    int8 castle = castle_mask[king.where() & 7]; // determine by king's x-position
-    int8 ky = king.where() >> 3;
-    if ( !castle || (ky > 1 && color) || (ky < 6 && !color) )
-      continue;
+  if ( stages[0] == 0 )
+    score -= evaluateKing(Figure::ColorBlack);
 
-    castle--;
+  if ( stages[1] == 0 )
+    score += evaluateKing(Figure::ColorWhite);
 
-    static int8 pawns_x[2][4] = { {5, 6, 7, -1}, {2, 1, 0, -1} };// for left/right castle
-    static uint8 pmask_king[2] = { 96, 6 };
-    static uint8 opmask_king[2] = { 48, 6 };
-    static uint8 shifts[2] = { 5, 1 };
-    static uint8 oshifts[2] = { 4, 2 };
-    static ScoreType king_penalties[2][4] = { {10, 3, 0, 0}, {10, 0, 3, 0} };
-    static ScoreType king_o_penalties[2][4] = { {0, 3, 8, 8}, {0, 8, 3, 8} };
+  if ( fmgr_.pawns(Figure::ColorBlack) > 0 )
+    score -= evaluatePawns(Figure::ColorBlack);
 
-    const uint8 * pmsk = (const uint8*)&fmgr_.pawn_mask_t((Figure::Color)color);
-    const uint8 * opmsk = (const uint8*)&fmgr_.pawn_mask_t(ocolor);
+  if ( fmgr_.pawns(Figure::ColorWhite) > 0 )
+    score += evaluatePawns(Figure::ColorWhite);
 
-    for (int i = 0; i < 3; ++i)
-    {
-      // my pawns shield
-      int x = pawns_x[castle][i];
-      int m = ((pmsk[x] & pmask_king[color]) >> shifts[color]) & 3;
-      kingEval[color] -= king_penalties[color][m];
+  if ( fmgr_.rooks(Figure::ColorBlack) > 0 )
+	  score -= evaluateRooks(Figure::ColorBlack);
 
-      // attacker pawns
-      int o = ((opmsk[x] & opmask_king[color]) >> oshifts[color]) & 3;
-      kingEval[color] -= king_o_penalties[color][o];
-    }
-  }
+  if ( fmgr_.rooks(Figure::ColorWhite) > 0 )
+	  score += evaluateRooks(Figure::ColorWhite);
 
-  weight -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
-  weight += fmgr_.eval(Figure::ColorWhite, stages_[1]);
-
-  weight -= kingEval[0];
-  weight += kingEval[1];
-
-#ifdef FAST_ROOK_PAWN_EVAL
-  if ( fmgr_.pawns(Figure::ColorBlack) )
-  {
-    ScoreType pweight0 = 0;
-    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
-    weight -= pweight0;
-  }
-
-  if ( fmgr_.pawns(Figure::ColorWhite) )
-  {
-    ScoreType pweight1 = 0;
-    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
-    weight += pweight1;
-  }
-
-  if ( fmgr_.rooks(Figure::ColorBlack) )
-  {
-    ScoreType score0 = 0;
-    EVALUATE_OPEN_ROOKS(Figure::ColorBlack, score0);
-    weight -= score0;
-  }
-
-  if ( fmgr_.rooks(Figure::ColorWhite) )
-  {
-    ScoreType score1 = 0;
-    EVALUATE_OPEN_ROOKS(Figure::ColorWhite, score1);
-    weight += score1;
-  }
-#else
-  if ( fmgr_.pawns() > 0 )
-  {
-    weight -= evaluatePawns(Figure::ColorBlack);
-    weight += evaluatePawns(Figure::ColorWhite);
-  }
-
-  {
-	  weight -= evaluateRooks(Figure::ColorBlack);
-	  weight += evaluateRooks(Figure::ColorWhite);
-  }
-#endif
-
-  return weight;
+  return score;
 }
 
-ScoreType Board::evalPawnsEndgame(Figure::Color color) const
+ScoreType Board::evaluateKing(Figure::Color color) const
 {
-  Figure::Color ocolor = Figure::otherColor(color);
   const Figure & king = getFigure(color, KingIndex);
-  ScoreType score = 0;
-  for (int i = 0; i < 8; ++i)
-  {
-    const Figure & pawn = getFigure(ocolor, i);
-    if ( Figure::TypePawn != pawn.getType() )
-      continue;
 
-    int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
-    score += (7 - dist);
+  int kx = king.where() & 7;
+  int ky = king.where() >>3;
+
+  if ( (color && ky > 1) || (!color && ky < 6) )
+    return 0;
+
+  ScoreType score = 0;
+
+  const uint8 * pw_mask = (const uint8*)&fmgr_.pawn_mask_t(color);
+
+  int iA2,iA3, iB2,iB3, iC2,iC3, iF2,iF3, iG2,iG3, iH2,iH3;
+  int iA1,iB1, iG1,iH1;
+  if ( color )
+  {
+    iA2 = A2;
+    iA3 = A3;
+    iB2 = B2;
+    iB3 = B3;
+    iC2 = C2;
+    iC3 = C3;
+    iF2 = F2;
+    iF3 = F3;
+    iG2 = G2;
+    iG3 = G3;
+    iH2 = H2;
+    iH3 = H3;
+    iA1 = A1;
+    iB1 = B1;
+    iG1 = G1;
+    iH1 = H1;
   }
+  else
+  {
+    iA2 = A7;
+    iA3 = A6;
+    iB2 = B7;
+    iB3 = B6;
+    iC2 = C7;
+    iC3 = C6;
+    iF2 = F7;
+    iF3 = F6;
+    iG2 = G7;
+    iG3 = G6;
+    iH2 = H7;
+    iH3 = H6;
+    iA1 = A8;
+    iB1 = B8;
+    iG1 = G8;
+    iH1 = H8;
+  }
+
+  // queen side castle
+  if ( kx < 3 )
+  {
+    const Field & fa2 = getField(iA2);
+    const Field & fa3 = getField(iA3);
+
+    const Field & fb2 = getField(iB2);
+    const Field & fb3 = getField(iB3);
+
+    const Field & fc2 = getField(iC2);
+    const Field & fc3 = getField(iC3);
+
+    if ( fa2.color() == color && fa2.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[0];
+    else if ( fa3.color() == color && fa3.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[1];
+    else if ( !pw_mask[0] )
+      score += Figure::kingpawnsBonus_[2]<<1;
+
+    // opponent's pawn near
+    if ( (fa2.type() == Figure::TypePawn && fa2.color() != color) || (fa3.type() == Figure::TypePawn && fa3.color() != color) )
+      score += Figure::kingpawnsBonus_[3];
+
+    if ( fb2.color() == color && fb2.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[0];
+    else if ( fb3.color() == color && fb3.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[1];
+    else if ( !pw_mask[1] )
+      score += Figure::kingpawnsBonus_[2]<<1;
+
+    if ( (fb2.type() == Figure::TypePawn && fb2.color() != color) || (fb3.type() == Figure::TypePawn && fb3.color() != color) )
+      score += Figure::kingpawnsBonus_[3];
+
+    if ( fc2.color() == color && fc2.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[0];
+    else if ( fc3.color() == color && fc3.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[1];
+    else if ( !pw_mask[2] )
+      score += Figure::kingpawnsBonus_[2];
+
+    if ( (fc2.type() == Figure::TypePawn && fc2.color() != color) || (fc3.type() == Figure::TypePawn && fc3.color() != color) )
+      score += Figure::kingpawnsBonus_[3];
+
+    // fianchetto
+    if ( fb3.color() == color && fb3.type() == Figure::TypePawn )
+    {
+      if ( fb2.color() == color && fb2.type() == Figure::TypeBishop )
+        score += Figure::fianchettoBonus_;
+    }
+
+    // fake castle
+    const Field & fa1 = getField(iA1);
+    const Field & fb1 = getField(iB1);
+    if ( fa1.type() == Figure::TypeRook || fb1.type() == Figure::TypeRook )
+      score -= Figure::fakecastlePenalty_;
+  }
+  // king side castle
+  else if ( kx > 4 )
+  {
+    const Field & ff2 = getField(iF2);
+    const Field & ff3 = getField(iF3);
+
+    const Field & fg2 = getField(iG2);
+    const Field & fg3 = getField(iG3);
+
+    const Field & fh2 = getField(iH2);
+    const Field & fh3 = getField(iH3);
+
+    if ( ff2.color() == color && ff2.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[0];
+    else if ( ff3.color() == color && ff3.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[1];
+    else if ( !pw_mask[5] )
+      score += Figure::kingpawnsBonus_[2];
+
+    if ( (ff2.type() == Figure::TypePawn && ff2.color() != color) || (ff3.type() == Figure::TypePawn && ff3.color() != color) )
+      score += Figure::kingpawnsBonus_[3];
+
+    if ( fg2.color() == color && fg2.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[0];
+    else if ( fg3.color() == color && fg3.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[1];
+    else if ( !pw_mask[6] )
+      score += Figure::kingpawnsBonus_[2]<<1;
+
+    if ( (fg2.type() == Figure::TypePawn && fg2.color() != color) || (fg3.type() == Figure::TypePawn && fg3.color() != color) )
+      score += Figure::kingpawnsBonus_[3];
+
+    if ( fh2.color() == color && fh2.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[0];
+    else if ( fh3.color() == color && fh3.type() == Figure::TypePawn )
+      score += Figure::kingpawnsBonus_[1];
+    else if ( !pw_mask[7] )
+      score += Figure::kingpawnsBonus_[2]<<1;
+
+    if ( (fh2.type() == Figure::TypePawn && fh2.color() != color) || (fh3.type() == Figure::TypePawn && fh3.color() != color) )
+      score += Figure::kingpawnsBonus_[3];
+
+    // fianchetto
+    if ( fg3.color() == color && fg3.type() == Figure::TypePawn )
+    {
+      if ( fg2.color() == color && fg2.type() == Figure::TypeBishop )
+        score += Figure::fianchettoBonus_;
+    }
+
+    // fake castle
+    const Field & fg1 = getField(iG1);
+    const Field & fh1 = getField(iH1);
+    if ( fg1.type() == Figure::TypeRook || fh1.type() == Figure::TypeRook )
+      score -= Figure::fakecastlePenalty_;
+  }
+
   return score;
 }
 
@@ -420,7 +388,8 @@ ScoreType Board::evaluateRooks(Figure::Color color) const
 		return 0;
 
 	Figure::Color ocolor = Figure::otherColor(color);
-	uint64 pmsk  = fmgr_.pawn_mask_t(color) | fmgr_.pawn_mask_t(ocolor);
+	const uint8 * pmsk  = (const uint8*)&fmgr_.pawn_mask_t(color);
+  const uint8 * opmsk = (const uint8*)&fmgr_.pawn_mask_t(ocolor);
 
 	ScoreType score = 0;
   int8 rfields[64] = {-1, -1};
@@ -437,28 +406,13 @@ ScoreType Board::evaluateRooks(Figure::Color color) const
 
 		int x = n & 7;
 
-		int16 column = ((uint8*)&pmsk)[x];
-    int16 col_msk = (column-1) >> 15;
-    score += Figure::openRook_ & col_msk;
-	}
-
-  // do they see each other?
-  if ( num > 1 )
-  {
-    THROW_IF( rfields[0] < 0 || rfields[1] < 0, "invalid rook fields" );
-    const Field & field = getField(rfields[0]);
-    const Figure & rook0 = getFigure(color, field.index());
-    int dir = g_figureDir->dir(rook0, rfields[1]);
-    if ( dir >= 0 )
+    if ( !opmsk[x] )
     {
-      const uint64 & btw_msk = g_betweenMasks->between(rfields[0], rfields[1]);
-      const uint64 & black = fmgr_.mask(Figure::ColorBlack);
-      const uint64 & white = fmgr_.mask(Figure::ColorWhite);
-      uint64 all_msk_inv = ~(black | white);
-      if ( (btw_msk & all_msk_inv) == btw_msk )
-        score += Figure::onlineRooks_;
+      score += Figure::semiopenRook_;
+      if ( !pmsk[x] )
+        score += Figure::openRook_;
     }
-  }
+	}
 
 	return score;
 }
@@ -488,21 +442,10 @@ ScoreType Board::evaluatePawns(Figure::Color color) const
         int y = pawn.where() >> 3;
         weight += Figure::pawnPassed_[color][y];
 
-        // guarded by neighbour pawn
+        // guarded by neighbor pawn
         const uint64 & guardmsk = g_pawnMasks->mask_guarded(color, pawn.where());
         if ( pmsk & guardmsk )
           weight += Figure::pawnGuarded_;
-
-        // have bishop with the same field's color as pawn's destination field
-        Figure::Color dst_color = (Figure::Color)g_pawnMasks->pawn_dst_color(color, pawn.where());
-        int16 bnum = fmgr_.bishops_c(color, dst_color);
-        ScoreType bsp_msk = ~((bnum-1) >> 15);
-        weight += Figure::assistantBishop_ & bsp_msk;
-
-        // have enemy's bishop
-        int obnum = fmgr_.bishops_c(ocolor, dst_color);
-        ScoreType obsp_msk = ~((obnum-1) >> 15);
-        weight -= Figure::assistantBishop_ * obsp_msk;
       }
 
       const uint64 & isomask = g_pawnMasks->mask_isolated(pawn.where() & 7);
@@ -536,39 +479,22 @@ ScoreType Board::evaluateWinnerLoser() const
   const Figure & king_w = getFigure(win_color, KingIndex);
   const Figure & king_l = getFigure(lose_color, KingIndex);
 
-  ScoreType kingEval = 0;
-  bool kingsDist = true;
-
-  if ( fmgr_.pawns(win_color) > 0 )
+  if ( fmgr_.pawns(win_color) == 1 )
   {
-    if ( fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeRook] )
-    {
-      int yw = king_w.where() >> 3;
-      int yl = king_l.where() >> 3;
+    // king should be as far as possible from my pawn
+    uint64 msk = fmgr_.pawn_mask_o(win_color);
+    int pp = least_bit_number(msk);
+    THROW_IF( (unsigned)pp > 63, "no pawn found" );
 
-      if ( win_color ) // white
-      {
-        kingEval = (yw + (7-yl)) << 3;
-      }
-      else // black
-      {
-        kingEval = ((7-yw) + yl) << 3;
-      }
-
-      kingsDist = false;
-    }
-
-    kingEval -= evalPawnsEndgame(lose_color);
+    int dist = g_distanceCounter->getDistance(king_l.where(), pp);
+    weight -= (7-dist) << 3;
   }
-  
-  if ( kingsDist )
+  else
   {
     int dist  = g_distanceCounter->getDistance(king_w.where(), king_l.where());
-    kingEval -= dist << 3;
-    kingEval -= Figure::positionEvaluation(1, lose_color, Figure::TypeKing, king_l.where());
+    weight -= dist << 3;
+    weight -= Figure::positionEvaluation(1, lose_color, Figure::TypeKing, king_l.where());
   }
-
-  weight += kingEval;
 
   if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 )
   {
@@ -578,60 +504,17 @@ ScoreType Board::evaluateWinnerLoser() const
   else
     weight -= fmgr_.weight(lose_color);
 
- // weight += fmgr_.pawns() << 6;
+  // add small bonus for winner-loser state
+  weight += Figure::winloseBonus_;
 
   if ( win_color == Figure::ColorBlack )
     weight = -weight;
 
-  //if ( fmgr_.pawns() > 0 )
-  //{
-  //  weight -= evaluatePawns(Figure::ColorBlack, 1);
-  //  weight += evaluatePawns(Figure::ColorWhite, 1);
-  //}
+  if ( fmgr_.pawns(Figure::ColorBlack) > 0 )
+    weight -= evaluatePawns(Figure::ColorBlack);
 
-  weight += fmgr_.pawns(win_color) * PAWN_PROMOTION_MAX_;
-
-  if ( fmgr_.pawns(Figure::ColorBlack) )
-  {
-    ScoreType pweight0 = 0;
-    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
-    weight -= pweight0;
-  }
-
-  if ( fmgr_.pawns(Figure::ColorWhite) )
-  {
-    ScoreType pweight1 = 0;
-    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
-    weight += pweight1;
-  }
+  if ( fmgr_.pawns(Figure::ColorWhite) > 0 )
+    weight += evaluatePawns(Figure::ColorWhite);
 
   return weight;
 }
-
-////////////////////////////////////////////////////////////////////////////
-//// DEBUG ONLY
-////////////////////////////////////////////////////////////////////////////
-//
-//#ifndef NDEBUG
-//ScoreType Board::calculatePositionEval(int stage)
-//{
-//  ScoreType weight = 0;
-//  for (int color = 0; color < 2; ++color)
-//  {
-//    for (int i = 0; i < NumOfFigures; ++i)
-//    {
-//      const Figure & fig = getFigure((Figure::Color)color, i);
-//      if ( !fig )
-//        continue;
-//
-//      ScoreType w = Figure::positionEvaluation(stage, color, fig.getType(), fig.where());
-//
-//      if ( !color )
-//        w = -w;
-//
-//      weight += w;
-//    }
-//  }
-//  return weight;
-//}
-//#endif

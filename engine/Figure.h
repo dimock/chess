@@ -18,7 +18,10 @@ public:
 public:
 
   static ScoreType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-  static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, assistantBishop_, onlineRooks_;
+  static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_, pawnBackward_, semiopenRook_, openRook_, winloseBonus_;
+  static ScoreType kingpawnsBonus_[4];
+  static ScoreType fianchettoBonus_;
+  static ScoreType fakecastlePenalty_;
   static ScoreType pawnPassed_[2][8];
   static const ScoreType positionGain_ = 70;
   static const uint64 pawnCutoffMasks_[2];

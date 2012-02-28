@@ -201,9 +201,6 @@ public:
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
 
-  /// fast evaluation. gives approximate result
-  ScoreType expressEval() const;
-
   /// add new figure. firstly find empty slot (index). try to put pawn to slots 0-7, knight to slots 8-9 etc...
   bool addFigure(const Figure &);
 
@@ -373,9 +370,10 @@ private:
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
 
+  ScoreType evaluateKing(Figure::Color color) const;
   ScoreType evaluatePawns(Figure::Color color) const;
   ScoreType evaluateRooks(Figure::Color color) const;
-  ScoreType evalPawnsEndgame(Figure::Color color) const;
+
   ScoreType evaluateWinnerLoser() const;
 
   /// do move. fill undo info, don't validate
@@ -469,9 +467,6 @@ private:
 
   /// for chess draw detector
   bool can_win_[2];
-
-  /// game stage - opening, middle-game, etc...
-  uint8 stages_[2];
 
   /// number of checking figures
   int8 checkingNum_;
