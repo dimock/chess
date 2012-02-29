@@ -78,11 +78,12 @@ Player::Player() :
   depth_(0),
   plyMax_(0),
   initial_material_balance_(0),
+  ehash_(20),
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_(20),
 #endif
 #ifdef USE_HASH_TABLE_GENERAL
-  ghash_(20),
+  ghash_(19),
   use_pv_(false)
 #else
   use_pv_(true)
@@ -184,7 +185,7 @@ void Player::setMemory(int mb)
     return;
 
 #ifdef USE_HASH_TABLE_GENERAL
-  ghash_.resize(hsize);
+  ghash_.resize(hsize-1);
   use_pv_ = false;
 #endif
 
@@ -192,6 +193,8 @@ void Player::setMemory(int mb)
   chash_.resize(hsize);
   use_pv_ = false;
 #endif
+
+  ehash_.resize(hsize);
 
 }
 
@@ -209,6 +212,16 @@ bool Player::fromFEN(const char * fen)
     return false;
 
   MovesGenerator::clear_history();
+
+#ifdef USE_HASH_TABLE_GENERAL
+  ghash_.clear();
+#endif
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  chash_.clear();
+#endif
+
+  ehash_.clear();
 
   return board_.fromFEN(fen);
 }
@@ -629,7 +642,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly &&
        depth == 1 && ply > 1 )
   {
-    ScoreType score = board_.evaluate();
+    ScoreType score = evaluate();
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
     if ( delta > 0 )
       return captures(1, ply, alpha, betta, delta);
@@ -715,7 +728,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( 0 == counter )
   {
     board_.setNoMoves();
-    ScoreType s = board_.evaluate();
+    ScoreType s = evaluate();
     if ( Board::ChessMat == board_.getState() )
       s += ply;
 
@@ -791,7 +804,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
       score = 0;
     else if ( depth <= 1 )
     {
-      score = -board_.evaluate();
+      score = -evaluate();
       int delta = (int)score - (int)betta - (int)Figure::positionGain_;
       if ( haveCheck || score > alpha )
       {
@@ -930,7 +943,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 		plyMax_ = ply;
 
   if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
-    return board_.evaluate();
+    return evaluate();
 
   if ( ply < MaxPly )
     contexts_[ply+1].killer_.clear();
@@ -1016,7 +1029,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     if ( !counter )
     {
       board_.setNoMoves();
-      ScoreType s = board_.evaluate();
+      ScoreType s = evaluate();
       if ( Board::ChessMat == board_.getState() )
         s += ply;
 
@@ -1028,7 +1041,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         flag = CapturesHashTable::Betta;
       else
         flag = CapturesHashTable::AlphaBetta;
-      chash_.push(board_.hashCode(), s, board_.getColor(), flag, depth, ply, board_.halfmovesCount(), PackedMove());
+      chash_.push(board_.hashCode(), s, board_.getColor(), flag, depth, ply, PackedMove());
 #endif
 
       THROW_IF( !stop_ && (s < -32760 || s > 32760), "invalid score" );
@@ -1087,7 +1100,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #ifdef USE_HASH_TABLE_CAPTURE
   if ( alpha == saveAlpha )
   {
-    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, depth, ply, board_.halfmovesCount(), PackedMove());
+    chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, depth, ply, PackedMove());
   }
 #endif
 
@@ -1122,7 +1135,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
       s = 0;
     else
     {
-      s = -board_.evaluate();
+      s = -evaluate();
       int delta = s - betta - Figure::positionGain_;
       bool b = s <= alpha;
       if ( haveCheck || (s > alpha && (delta <= Figure::figureWeight_[Figure::TypeQueen] || depth >= 0)) )
@@ -1497,3 +1510,31 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
   return 0;
 }
 
+ScoreType Player::evaluate()
+{
+  if ( board_.drawState() || board_.getState() == Board::ChessMat )
+    return board_.evaluate();
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  CaptureHItem & citem = chash_[board_.hashCode()];
+  if ( citem.hcode_ == board_.hashCode() && citem.eval_ > -Figure::WeightMat+MaxPly )
+    return citem.eval_;
+#endif
+
+  EvalHItem & eitem = ehash_[board_.hashCode()];
+  if ( eitem.hcode_ == board_.hashCode() && eitem.eval_ > -Figure::WeightMat+MaxPly )
+    return eitem.eval_;
+
+  ScoreType e = board_.evaluate();
+
+#ifdef USE_HASH_TABLE_CAPTURE
+  if ( citem.hcode_ == board_.hashCode() )
+  {
+    citem.eval_ = e;
+    return e;
+  }
+#endif
+
+  ehash_.push(board_.hashCode(), e);
+  return e;
+}

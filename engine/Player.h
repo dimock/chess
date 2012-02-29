@@ -243,7 +243,11 @@ private:
   CapturesHashTable chash_;
 #endif
 
+  EvalHashTable ehash_;
+
   bool use_pv_;
+
+  ScoreType evaluate();
 
   //////////////////////////////////////////////////////////////////////////
   // return true if we have to return betta-1 to recalculate with full depth
@@ -363,7 +367,7 @@ private:
   void updateCaptureHash(int depth, int ply, const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
-    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, depth, ply, board_.halfmovesCount(), pm);
+    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, depth, ply, pm);
   }
 #endif // USE_HASH_TABLE_CAPTURE
 

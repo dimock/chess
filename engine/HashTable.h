@@ -31,7 +31,7 @@ __declspec (align(16)) struct GeneralHItem
 
 __declspec (align(16)) struct CaptureHItem
 {
-  CaptureHItem() : hcode_(0), score_(0), color_(0), flag_(0), depth_(0), ply_(0), halfmovesCount_(0)
+  CaptureHItem() : hcode_(0), score_(0), color_(0), flag_(0), depth_(0), ply_(0), eval_(-std::numeric_limits<ScoreType>::max())
   {}
 
   operator bool () const { return hcode_ != 0; }
@@ -43,11 +43,20 @@ __declspec (align(16)) struct CaptureHItem
              ply_ : 7,
              depth_ : 6;
 
-  uint8      halfmovesCount_;
-
+  ScoreType  eval_;
   PackedMove move_;
 };
 
+__declspec (align(16)) struct EvalHItem
+{
+  EvalHItem() : eval_(-std::numeric_limits<ScoreType>::max()), hcode_(0)
+  {}
+
+  operator bool () const { return hcode_ != 0; }
+
+  uint64    hcode_;
+  ScoreType eval_;
+};
 
 template <class ITEM>
 class HashTable
@@ -65,6 +74,12 @@ public:
   ~HashTable()
   {
     delete [] buffer_;
+  }
+
+  void clear()
+  {
+    if ( size_ > 0 )
+      resize(size_);
   }
 
   void resize(int size)
@@ -199,18 +214,15 @@ public:
   CapturesHashTable(int size) : HashTable<CaptureHItem>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, int depth, int ply, int halfmovesCount, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, int depth, int ply, const PackedMove & move)
   {
     CaptureHItem & hitem = operator [] (hcode);
 
     if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
-    {
-      // if we are going to return, check if we could overwrite this item
-      //bool overwrite = hitem.halfmovesCount_ < halfmovesCount-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
+      return;
 
-      //if ( !overwrite )
-        return;
-    }
+    if ( hitem.hcode_ != hcode )
+      hitem.eval_ = -std::numeric_limits<ScoreType>::max();
 
     hitem.hcode_ = hcode;
     hitem.score_ = s;
@@ -218,9 +230,23 @@ public:
     hitem.flag_  = flag;
     hitem.depth_ = depth;
     hitem.ply_   = ply;
-    hitem.halfmovesCount_ = halfmovesCount;
 
     if ( Alpha != flag )
       hitem.move_ = move;
+  }
+};
+
+class EvalHashTable : public HashTable<EvalHItem>
+{
+public:
+
+  EvalHashTable(int size) : HashTable<EvalHItem>(size)
+  {}
+
+  void push(const uint64 & hcode, ScoreType e)
+  {
+    EvalHItem & eitem = operator [] (hcode);
+    eitem.hcode_ = hcode;
+    eitem.eval_ = e;
   }
 };

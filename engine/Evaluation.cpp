@@ -25,7 +25,7 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
     {
        0,   0,   0,   0,   0,   0,   0,   0,
        0,   0,   0,   0,   0,   0,   0,   0,
-       0,   0,   1,   2,   2,   1,   0,   0,
+       1,   1,   1,   2,   2,   1,   1,   1,
        0,   0,   2,   2,   2,   2,   0,   0,
        0,   0,   2,  10,  10,   2,   0,   0,
        0,   0,   1,   2,   2,   1,   0,   0,
@@ -103,6 +103,14 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
     // pawn
     {
+      0,   0,   0,   0,   0,   0,   0,   0,
+     12,  12,  12,  12,  12,  12,  12,  12,
+      8,   8,   8,   8,   8,   8,   8,   8,
+      4,   4,   4,   4,   4,   4,   4,   4,
+      2,   2,   2,   2,   2,   2,   2,   2,
+      2,   1,   1,   1,   1,   1,   1,   1,
+      2,   0,   0,   0,   0,   0,   0,   2,
+      0,   0,   0,   0,   0,   0,   0,   0
     },
 
     // knight
@@ -133,22 +141,22 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
   }
 };
 
-ScoreType Figure::pawnGuarded_  =   8;
-ScoreType Figure::pawnDoubled_  = -10;
-ScoreType Figure::pawnIsolated_ = -10;
-ScoreType Figure::pawnBackward_ =  -8;
-ScoreType Figure::openRook_     =   4;
-ScoreType Figure::semiopenRook_ =   4;
+ScoreType Figure::pawnGuarded_  =  10;
+ScoreType Figure::pawnDoubled_  = -12;
+ScoreType Figure::pawnIsolated_ = -12;
+ScoreType Figure::pawnBackward_ = -10;
+ScoreType Figure::openRook_     =   5;
+ScoreType Figure::semiopenRook_ =   5;
 ScoreType Figure::winloseBonus_ =  50;
-ScoreType Figure::kingpawnsBonus_[4] = {12, 4, -8, -8};
-ScoreType Figure::fianchettoBonus_ = 4;
+ScoreType Figure::kingpawnsBonus_[4] = {12, 4, -12, -12};
+ScoreType Figure::fianchettoBonus_ = 5;
 ScoreType Figure::queenMobilityBonus_[32] = { -30/* blocked */, -5/* immobile */, 0 };
-ScoreType Figure::knightMobilityBonus_[10] = { -20 /* blocked */, -5 /* immobile */, 0 };
+ScoreType Figure::knightMobilityBonus_[10] = { -20 /* blocked */, -5 /* immobile */, 5, 10, 10, 10, 10, 10, 10 };
 ScoreType Figure::bishopMobilityBonus_[16] = { -10 /* blocked */, -4 /* immobile */, 0 };
 ScoreType Figure::rookMobilityBonus_[16] = { -10 /* blocked */, -1 /* immobile */, 0};
-ScoreType Figure::knightDistBonus_[8] = { 0, 4, 10, 4, 2, 0, 0, 0 };
+ScoreType Figure::knightDistBonus_[8] = { 0, 4, 10, 6, 2, 0, 0, 0 };
 ScoreType Figure::bishopDistBonus_[8] = { 0, 4, 4, 2, 2, 1, 0, 0 };
-ScoreType Figure::rookDistBonus_[8] = {  0, 0, 6, 4, 2, 1, 0, 0 };
+ScoreType Figure::rookDistBonus_[8] = {  0, 0, 8, 4, 2, 1, 0, 0 };
 ScoreType Figure::queenDistBonus_[8] = {  0, 0, 16, 10, 4, 1, 0, 0 };
 ScoreType Figure::queen2MeDistBonus_[8] = {  0, 3, 2, 1, 0, 0, 0, 0 };
 ScoreType Figure::fakecastlePenalty_ = 8;
@@ -197,11 +205,13 @@ ScoreType Board::calculateEval() const
   ScoreType fweight_w = fmgr_.weight(Figure::ColorWhite) - fmgr_.pawns(Figure::ColorWhite)*Figure::figureWeight_[Figure::TypePawn];
 
   // endgame for black
-  if ( fweight_w < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] )
+  if ( (fweight_w < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] && !fmgr_.queens(Figure::ColorWhite)) ||
+       (fweight_w < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeKnight]) )
     stages[0] = 1;
 
   // endgame for white
-  if ( fweight_b < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] )
+  if ( (fweight_b < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] && !fmgr_.queens(Figure::ColorBlack)) ||
+       (fweight_b < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeKnight]) )
     stages[1] = 1;
 
   score -= fmgr_.eval(Figure::ColorBlack, stages[0]);
@@ -247,6 +257,7 @@ ScoreType Board::calculateEval() const
 
 ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility & fmob /* opponent's color */) const
 {
+  Figure::Color ocolor = Figure::otherColor(color);
   const Figure & king = getFigure(color, KingIndex);
 
   int kx = king.where() & 7;
@@ -348,6 +359,11 @@ ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility & fmob 
     {
       if ( fb2.color() == color && fb2.type() == Figure::TypeBishop )
         score += Figure::fianchettoBonus_;
+      else
+      {
+        if ( (color && fmgr_.bishops_b(ocolor)) || (!color && fmgr_.bishops_w(ocolor)) )
+          score -= Figure::fianchettoBonus_;
+      }
     }
 
     // fake castle
@@ -403,6 +419,11 @@ ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility & fmob 
     {
       if ( fg2.color() == color && fg2.type() == Figure::TypeBishop )
         score += Figure::fianchettoBonus_;
+      else
+      {
+        if ( (color && fmgr_.bishops_w(ocolor)) || (!color && fmgr_.bishops_b(ocolor)) )
+          score -= Figure::fianchettoBonus_;
+      }
     }
 
     // fake castle
@@ -588,6 +609,11 @@ void Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) const
   uint64 o_brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
   uint64 occupied_msk = opw_eat_msk | black | white;
 
+  //uint64 occupied_msk = opw_eat_msk | fmgr_.mask(color);
+  //int initial_balance = fmgr_.weight();
+  //if ( !color )
+  //  initial_balance = -initial_balance;
+
   for (int i = 0; i < KingIndex; ++i)
   {
     const Figure & fig = getFigure(color, i);
@@ -595,8 +621,8 @@ void Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) const
       continue;
 
     bool blocked = false;
-    //if ( fig.getType() != Figure::TypeQueen && see_check(color, fig.where(), all_mask_inv, o_brq_mask) )
-    //  blocked = true;
+    if ( fig.getType() != Figure::TypeQueen && fig.getType() != Figure::TypeRook && see_check(color, fig.where(), all_mask_inv, o_brq_mask) )
+      blocked = true;
 
     int dist = g_distanceCounter->getDistance(fig.where(), oking.where());
     int dist2me = g_distanceCounter->getDistance(fig.where(), king.where());
@@ -611,6 +637,19 @@ void Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) const
           const uint64 & kn_caps = g_movesTable->caps(Figure::TypeKnight, fig.where());
           uint64 kn_go_msk = ~occupied_msk & kn_caps;
           movesN = pop_count( kn_go_msk );
+          //for ( ; movesN < 2 && kn_go_msk; )
+          //{
+          //  int n = least_bit_number(kn_go_msk);
+          //  const Field & tfield = getField(n);
+          //  Move move;
+          //  move.from_ = fig.where();
+          //  move.to_ = n;
+          //  if ( tfield && tfield.color() == ocolor )
+          //    move.rindex_ = tfield.index();
+          //  int gain = see_before(initial_balance, move);
+          //  if ( gain >= 0 )
+          //    movesN++;
+          //}
 
           THROW_IF(movesN > 8, "invalid number of knight moves");
         }
@@ -639,14 +678,27 @@ void Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) const
             {
               p += delta;
 
-              if ( getField(p) )
+              const Field & field = getField(p);
+              if ( field /*&& field.color() == color*/ )
                 break;
 
               // field is attacked by opponent's pawn | knight
               if ( (1ULL << p) & eat_msk )
                 continue;
 
+              //// can we go here
+              //Move move;
+              //move.from_ = fig.where();
+              //move.to_ = p;
+              //move.rindex_ = field.index();
+              //int gain = see_before(initial_balance, move);
+              //if ( gain >= 0 )
+              //  movesN++;
+
               movesN++;
+
+              //if ( field )
+              //  break;
             }
           }
         }
