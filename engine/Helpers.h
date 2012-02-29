@@ -8,6 +8,15 @@ class Board;
 unsigned long xorshf96();
 
 
+inline int pop_count(uint64 n)
+{
+  n -= ((n>>1) & 0x5555555555555555ULL);
+  n = ((n>>2) & 0x3333333333333333ULL) + (n & 0x3333333333333333ULL);
+  n = ((n>>4) + n) & 0x0F0F0F0F0F0F0F0FULL;
+  n *= 0x0101010101010101ULL;
+  return int(n >> 56);
+}
+
 #ifndef _M_X64
 // return least significant bit index, clear it
 inline int least_bit_number(uint64 & mask)
