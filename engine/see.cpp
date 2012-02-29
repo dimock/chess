@@ -129,7 +129,7 @@ int Board::see(int initial_value, Move & next) const
       case Figure::TypePawn:
       case Figure::TypeKnight:
         {
-          if ( !see_check((Figure::Color)col, attackers[col][i], move.to_, all_mask_inv, brq_masks[(col+1)&1]) )
+          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
@@ -147,7 +147,7 @@ int Board::see(int initial_value, Move & next) const
           if ( (btw_mask & all_mask_inv) != btw_mask )
             continue;
 
-          if ( !see_check((Figure::Color)col, attackers[col][i], move.to_, all_mask_inv, brq_masks[(col+1)&1]) )
+          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
@@ -218,7 +218,7 @@ int Board::see(int initial_value, Move & next) const
       break;
 
     // if we give check we don't need to continue
-    if ( see_check( (Figure::Color)((col+1)&1), attc, move.to_, all_mask_inv, brq_masks[col]) )
+    if ( see_check( (Figure::Color)((col+1)&1), (attc >> 8) & 255, all_mask_inv, brq_masks[col]) )
       break;
 
     // remove from (inverted) mask
@@ -242,9 +242,9 @@ int Board::see_before(int initial_value, const Move & move) const
 
   const Field & ffield = getField(move.from_);
   const Field & tfield = getField(move.to_);
-  THROW_IF( !ffield || ffield.color() != color_, "no figure or invalid color in see_before()" );
-  THROW_IF( tfield && tfield.color() == color_, "invalid move given to see_before()" );
-  Figure::Color ocolor = Figure::otherColor(color_);
+
+  Figure::Color color = ffield.color();
+  Figure::Color ocolor = Figure::otherColor(color);
   Figure::Type ftype =  ffield.type();
 
   // king
@@ -256,7 +256,7 @@ int Board::see_before(int initial_value, const Move & move) const
     return 0;
 
   int current_value = fmgr_.weight();
-  if ( !color_ )
+  if ( !color )
     current_value = -current_value;
 
   ScoreType fscore = 0;
@@ -274,7 +274,7 @@ int Board::see_before(int initial_value, const Move & move) const
 
   // pawn's movement without capture
   if ( move.rindex_ < 0 && ffield.type() == Figure::TypePawn )
-    attackers[color_][figsN[color_]++] = Figure::TypePawn | (move.from_ << 8);
+    attackers[color][figsN[color]++] = Figure::TypePawn | (move.from_ << 8);
 
   for (int c = 0; c < 2; ++c)
   {
@@ -342,21 +342,21 @@ int Board::see_before(int initial_value, const Move & move) const
     attackers[1][--figsN[1]] = (uint16)-1;
   }
 
-  if ( figsN[color_] < 1 )
+  if ( figsN[color] < 1 )
     return score_gain;
 
   // find 'move' and put it to the 1st position
   bool found = false;
-  for (int i = 0; i < figsN[color_]; ++i)
+  for (int i = 0; i < figsN[color]; ++i)
   {
-    Figure::Type t =  (Figure::Type)(attackers[color_][i] & 255);
-    uint8 pos = (attackers[color_][i] >> 8) & 255;
+    Figure::Type t =  (Figure::Type)(attackers[color][i] & 255);
+    uint8 pos = (attackers[color][i] >> 8) & 255;
     if ( pos == move.from_ )
     {
-      uint16 attc0 = attackers[color_][i];
+      uint16 attc0 = attackers[color][i];
       for (int j = i; j > 0; --j)
-        attackers[color_][j] = attackers[color_][j-1];
-      attackers[color_][0] = attc0;
+        attackers[color][j] = attackers[color][j-1];
+      attackers[color][0] = attc0;
       found = true;
       break;
     }
@@ -365,7 +365,7 @@ int Board::see_before(int initial_value, const Move & move) const
   THROW_IF( !found, "move wasn't found in list of moves" );
 
   // starting calculation
-  int col = color_;
+  int col = color;
   uint64 all_mask_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
   bool promotion = (move.to_ >> 3) == 0 || (move.to_ >> 3) == 7;
 
@@ -386,13 +386,13 @@ int Board::see_before(int initial_value, const Move & move) const
       case Figure::TypePawn:
       case Figure::TypeKnight:
         {
-          if ( !see_check((Figure::Color)col, attackers[col][i], move.to_, all_mask_inv, brq_masks[(col+1)&1]) )
+          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
           }
           // illegal move
-          else if ( col == color_ && 0 == i )
+          else if ( col == color && 0 == i )
             return -1;
         }
         break;
@@ -407,13 +407,13 @@ int Board::see_before(int initial_value, const Move & move) const
           if ( (btw_mask & all_mask_inv) != btw_mask )
             continue;
 
-          if ( !see_check((Figure::Color)col, attackers[col][i], move.to_, all_mask_inv, brq_masks[(col+1)&1]) )
+          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
           }
           // illegal move
-          else if ( col == color_ && 0 == i )
+          else if ( col == color && 0 == i )
             return -1;
         }
         break;
@@ -459,20 +459,20 @@ int Board::see_before(int initial_value, const Move & move) const
     if ( t == Figure::TypePawn && promotion )
     {
       int dscore = Figure::figureWeight_[Figure::TypeQueen]-Figure::figureWeight_[Figure::TypePawn];
-      if ( col != color_ )
+      if ( col != color )
         dscore = -dscore;
       score_gain += dscore;
-      fscore = (col != color_) ? Figure::figureWeight_[Figure::TypeQueen] : -Figure::figureWeight_[Figure::TypeQueen];
+      fscore = (col != color) ? Figure::figureWeight_[Figure::TypeQueen] : -Figure::figureWeight_[Figure::TypeQueen];
     }
     else
-      fscore = (col != color_) ? Figure::figureWeight_[t] : -Figure::figureWeight_[t];
+      fscore = (col != color) ? Figure::figureWeight_[t] : -Figure::figureWeight_[t];
 
     // don't need to continue if we haven't won material after capture
-    if ( score_gain > 0 && col != color_ || score_gain < 0 && col == color_ )
+    if ( score_gain > 0 && col != color || score_gain < 0 && col == color )
       break;
 
     // if we give check we don't need to continue
-    if ( see_check( (Figure::Color)((col+1)&1), attc, move.to_, all_mask_inv, brq_masks[col]) )
+    if ( see_check( (Figure::Color)((col+1)&1), pos, all_mask_inv, brq_masks[col]) )
       break;
 
     // remove from (inverted) mask
@@ -492,27 +492,27 @@ int Board::see_before(int initial_value, const Move & move) const
 }
 
 // could we move this figure
-bool Board::see_check(Figure::Color kc, uint16 attc, int8 to, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const
+bool Board::see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const
 {
-  Figure::Type t =  (Figure::Type)(attc & 255);
-  uint8 pos = (attc >> 8) & 255;
+//  Figure::Type t =  (Figure::Type)(attc & 255);
+//  uint8 pos = (attc >> 8) & 255;
 
   const Figure & king = getFigure((Figure::Color)kc, KingIndex);
 
   // are king and field we move from on the same line
   Figure queen(king);
   queen.setType(Figure::TypeQueen);
-  if ( g_figureDir->dir(queen, pos) < 0 )
+  if ( g_figureDir->dir(queen, from) < 0 )
     return false;
 
   // is there some figure between king and field that we move from
-  const uint64 & btw_king_msk = g_betweenMasks->between(king.where(), pos);
-  uint64 all_mask_inv2 = (all_mask_inv | (1ULL << pos));
+  const uint64 & btw_king_msk = g_betweenMasks->between(king.where(), from);
+  uint64 all_mask_inv2 = (all_mask_inv | (1ULL << from));
   if ( (btw_king_msk & all_mask_inv2) != btw_king_msk )
     return false;
 
   // then we need to check if there is some attacker on line to king
-  uint64 from_msk = g_betweenMasks->from(king.where(), pos) & a_brq_mask;
+  uint64 from_msk = g_betweenMasks->from(king.where(), from) & a_brq_mask;
   for ( ; from_msk; )
   {
     int n = least_bit_number(from_msk);
