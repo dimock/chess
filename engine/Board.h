@@ -195,6 +195,11 @@ public:
     return ok;
   }
 
+  inline bool shortNullMoveReduction() const
+  {
+    return fmgr_.weight(color_) <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn];
+  }
+
 
   /// really make move. perform validation
   bool makeMove(const Move & );

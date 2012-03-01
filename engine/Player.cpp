@@ -598,11 +598,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     if ( nullScore >= betta )
     {
-      if ( board_.material(board_.getColor()) <= Figure::figureWeight_[Figure::TypeRook]+
-                                                 Figure::figureWeight_[Figure::TypePawn] )
-      {
+      if ( board_.shortNullMoveReduction() )
         depth--;
-      }
       else
       {
         depth = nullMove_depth(depth);
