@@ -25,7 +25,7 @@ public:
   static ScoreType fianchettoBonus_;
   static ScoreType fakecastlePenalty_;
   static ScoreType pawnPassed_[2][8];
-  static const ScoreType positionGain_ = 100;
+  static const ScoreType positionGain_ = 70;
   static const uint64 pawnCutoffMasks_[2];
 
   enum Weights { WeightDraw = 0, WeightMat = 32000 };

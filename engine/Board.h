@@ -389,6 +389,7 @@ private:
   inline ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob, int stage) const;
   inline ScoreType evaluateFianchetto() const;
   ScoreType evaluatePawns(Figure::Color color) const;
+  ScoreType evalPawnsEndgame(Figure::Color color) const;
   ScoreType evaluateRooks(Figure::Color color) const;
   ScoreType evaluateMobility(Figure::Color color, FiguresMobility & fmob) const;
   ScoreType evaluateWinnerLoser() const;

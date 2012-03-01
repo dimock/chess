@@ -188,3 +188,7 @@ null move failed at 6 ply:
 
 endgame:
 4r2k/1Q5p/6p1/4q3/8/8/6PP/3R1B1K b - - 2 55 
+
+can't find best move:
+6r1/1p6/pPbRP3/8/3Bk3/8/5K2/8 b - - 2 48 (Rf8+)
+8/1p6/pPbRP1r1/8/3Bk3/8/5K2/8 w - - 3 49 (Rxc6 +3.00 !!!)

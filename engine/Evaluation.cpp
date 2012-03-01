@@ -356,13 +356,13 @@ inline ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility 
   ScoreType kingEval = 0;
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
 
-  //if ( stages_[color] > 0 )
-  //{
-  //  if ( fmgr_.pawns(ocolor) )
-  //    kingEval = evalPawnsEndgame((Figure::Color)color);
+  if ( stage > 0 )
+  {
+    if ( fmgr_.pawns(ocolor) )
+      kingEval = evalPawnsEndgame((Figure::Color)color);
 
-  //  continue;
-  //}
+    return kingEval;
+  }
 
   const Figure & queen = getFigure((Figure::Color)color, QueenIndex);
   const Figure & king = getFigure((Figure::Color)color, KingIndex);
@@ -553,6 +553,24 @@ ScoreType Board::evaluatePawns(Figure::Color color) const
 
   return weight;
 }
+
+ScoreType Board::evalPawnsEndgame(Figure::Color color) const
+{
+  Figure::Color ocolor = Figure::otherColor(color);
+  const Figure & king = getFigure(color, KingIndex);
+  ScoreType score = 0;
+  for (int i = 0; i < 8; ++i)
+  {
+    const Figure & pawn = getFigure(ocolor, i);
+    if ( Figure::TypePawn != pawn.getType() )
+      continue;
+
+    int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
+    score += (7 - dist);
+  }
+  return score;
+}
+
 
 ScoreType Board::evaluateWinnerLoser() const
 {
