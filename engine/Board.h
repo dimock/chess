@@ -19,10 +19,12 @@ class Player;
 struct FiguresMobility
 {
   FiguresMobility() :
-    knightMob_(0), bishopMob_(0), rookMob_(0), queenMob_(0), knightDist_(0), bishopDist_(0), rookDist_(0), queenDist_(0), queen2MeDist_(0)
+    knightMob_(0), bishopMob_(0), rookMob_(0), queenMob_(0),
+    knightDist_(0), bishopDist_(0), rookDist_(0), queenDist_(0)
   {}
 
-  int knightMob_, bishopMob_, rookMob_, queenMob_, knightDist_, bishopDist_, rookDist_, queenDist_, queen2MeDist_;
+  int knightMob_, bishopMob_, rookMob_, queenMob_;
+  int knightDist_, bishopDist_, rookDist_, queenDist_;
 };
 
 /*! board representation
@@ -379,10 +381,11 @@ private:
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
 
-  ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob) const;
+  inline ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob, int stage) const;
+  inline ScoreType evaluateFianchetto() const;
   ScoreType evaluatePawns(Figure::Color color) const;
   ScoreType evaluateRooks(Figure::Color color) const;
-  void evaluateMobility(Figure::Color color, FiguresMobility & fmob) const;
+  ScoreType evaluateMobility(Figure::Color color, FiguresMobility & fmob) const;
   ScoreType evaluateWinnerLoser() const;
 
   /// do move. fill undo info, don't validate

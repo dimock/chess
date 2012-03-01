@@ -21,7 +21,7 @@ public:
   static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_, pawnBackward_, semiopenRook_, openRook_, winloseBonus_;
   static ScoreType kingpawnsBonus_[4];
   static ScoreType knightMobilityBonus_[10], bishopMobilityBonus_[16], rookMobilityBonus_[16], queenMobilityBonus_[32];
-  static ScoreType knightDistBonus_[8], bishopDistBonus_[8], rookDistBonus_[8], queenDistBonus_[8], queen2MeDistBonus_[8];
+  static ScoreType knightDistBonus_[8], bishopDistBonus_[8], rookDistBonus_[8], queenDistBonus_[8];
   static ScoreType fianchettoBonus_;
   static ScoreType fakecastlePenalty_;
   static ScoreType pawnPassed_[2][8];

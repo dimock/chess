@@ -243,11 +243,7 @@ private:
   CapturesHashTable chash_;
 #endif
 
-  EvalHashTable ehash_;
-
   bool use_pv_;
-
-  ScoreType evaluate();
 
   //////////////////////////////////////////////////////////////////////////
   // return true if we have to return betta-1 to recalculate with full depth
@@ -473,5 +469,4 @@ private:
 
     return false;
   }
-
 };
