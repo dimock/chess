@@ -548,7 +548,7 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
     return 0;
 
   const Figure & king = getFigure(color, KingIndex);
-  const uint64 & pmsk = fmgr_.pawn_mask_t(color);
+  //const uint64 & pmsk = fmgr_.pawn_mask_t(color);
   ScoreType score = 0;
   for (int i = 0; i < 8; ++i)
   {
@@ -556,9 +556,9 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
     if ( Figure::TypePawn != pawn.getType() )
       continue;
 
-    const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
-    const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
-    if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
+    //const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
+    //const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
+//    if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
     {
       int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
       score += (7 - dist);
