@@ -269,38 +269,32 @@ ScoreType Board::calculateEval() const
 {
   ScoreType score = fmgr_.weight();
 
-  // 1 means endgame
-  // if there is lack of opponent's material
-  int stages[2] = {0, 0};
-
   static const ScoreType fweight_max = Figure::figureWeight_[Figure::TypeQueen] + 2*Figure::figureWeight_[Figure::TypeRook] + 2*Figure::figureWeight_[Figure::TypeBishop] + 2*Figure::figureWeight_[Figure::TypeKnight];
 
   ScoreType fweight_b = fmgr_.weight(Figure::ColorBlack) - fmgr_.pawns(Figure::ColorBlack)*Figure::figureWeight_[Figure::TypePawn];
   ScoreType fweight_w = fmgr_.weight(Figure::ColorWhite) - fmgr_.pawns(Figure::ColorWhite)*Figure::figureWeight_[Figure::TypePawn];
 
-  // endgame for black
-  if ( (fweight_w < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] && !fmgr_.queens(Figure::ColorWhite)) ||
-       (fweight_w < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeKnight]) )
-    stages[0] = 1;
-
-  // endgame for white
-  if ( (fweight_b < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] && !fmgr_.queens(Figure::ColorBlack)) ||
-       (fweight_b < Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeKnight]) )
-    stages[1] = 1;
-
-  score -= fmgr_.eval(Figure::ColorBlack, stages[0]);
-  score += fmgr_.eval(Figure::ColorWhite, stages[1]);
+  score -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
+  score += fmgr_.eval(Figure::ColorWhite, stages_[1]);
 
   FiguresMobility fmob_b, fmob_w;
   //score -= evaluateMobility(Figure::ColorBlack, fmob_b);
   //score += evaluateMobility(Figure::ColorWhite, fmob_w);
 
   // king's safety
-  if ( !stages[0] )
-    score -= evaluateKing(Figure::ColorBlack, fmob_w, stages[0])*fweight_w/fweight_max;
+  if ( !stages_[Figure::ColorBlack] )
+    score -= evaluateKing(Figure::ColorBlack, fmob_w)*fweight_w/fweight_max;
 
-  if ( !stages[1] )
-    score += evaluateKing(Figure::ColorWhite, fmob_b, stages[1])*fweight_b/fweight_max;
+  if ( !stages_[Figure::ColorWhite] )
+    score += evaluateKing(Figure::ColorWhite, fmob_b)*fweight_b/fweight_max;
+
+  // king to pawns in endgame
+  if ( stages_[Figure::ColorBlack] )
+    score -= evalPawnsEndgame(Figure::ColorBlack);
+
+  if ( stages_[Figure::ColorWhite] )
+    score += evalPawnsEndgame(Figure::ColorWhite);
+
 
   // fianchetto
   score += evaluateFianchetto();
@@ -351,18 +345,10 @@ ScoreType Board::calculateEval() const
   return score;
 }
 
-inline ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility & fmob /* opponent's color */, int stage) const
+inline ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility & fmob /* opponent's color */) const
 {
   ScoreType kingEval = 0;
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
-
-  if ( stage > 0 )
-  {
-    if ( fmgr_.pawns(ocolor) )
-      kingEval = evalPawnsEndgame((Figure::Color)color);
-
-    return kingEval;
-  }
 
   const Figure & queen = getFigure((Figure::Color)color, QueenIndex);
   const Figure & king = getFigure((Figure::Color)color, KingIndex);
@@ -557,7 +543,12 @@ ScoreType Board::evaluatePawns(Figure::Color color) const
 ScoreType Board::evalPawnsEndgame(Figure::Color color) const
 {
   Figure::Color ocolor = Figure::otherColor(color);
+  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
+  if ( !opmsk )
+    return 0;
+
   const Figure & king = getFigure(color, KingIndex);
+  const uint64 & pmsk = fmgr_.pawn_mask_t(color);
   ScoreType score = 0;
   for (int i = 0; i < 8; ++i)
   {
@@ -565,8 +556,13 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
     if ( Figure::TypePawn != pawn.getType() )
       continue;
 
-    int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
-    score += (7 - dist);
+    const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
+    const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
+    if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
+    {
+      int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
+      score += (7 - dist);
+    }
   }
   return score;
 }

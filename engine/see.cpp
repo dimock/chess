@@ -22,6 +22,10 @@ int Board::see(int initial_value, Move & next) const
     current_value = -current_value;
 
   int score_gain = current_value - initial_value;
+  //if ( move.eaten_type_ )
+  //  score_gain = Figure::figureWeight_[move.eaten_type_];
+  //if ( move.new_type_ )
+  //  score_gain += Figure::figureWeight_[move.new_type_]-Figure::figureWeight_[Figure::TypePawn];
   ScoreType fscore = -Figure::figureWeight_[ftype];
 
   // we don't need to continue if eaten figure is greater than attacker

@@ -211,6 +211,9 @@ struct MoveCmd : public Move
   /// previous checking figures indices
   uint8 old_checking_[2];
 
+  /// save stage of current color
+  uint8 stage_;
+
   /// weight for sorting moves for alpha-betta
   ScoreType weight_;
 

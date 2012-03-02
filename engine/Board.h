@@ -386,7 +386,7 @@ private:
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
 
-  inline ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob, int stage) const;
+  inline ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob) const;
   inline ScoreType evaluateFianchetto() const;
   ScoreType evaluatePawns(Figure::Color color) const;
   ScoreType evalPawnsEndgame(Figure::Color color) const;
@@ -485,6 +485,9 @@ private:
 
   /// for chess draw detector
   bool can_win_[2];
+
+  /// game stage - opening, middle-game, etc...
+  uint8 stages_[2];
 
   /// number of checking figures
   int8 checkingNum_;

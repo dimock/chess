@@ -414,7 +414,15 @@ bool Board::makeMove(const Move & mv)
   move.state_ = state_;
   move.need_unmake_ = true;
 
+  move.stage_ = stages_[color_];
+
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color_);
+
+  // we need to go to endgame if there is capture and most of material is lost
+  stages_[color_] |= ( (move.rindex_ >= 0 && 0 == stages_[color_]) &&
+    ( !((fmgr_.queens(ocolor) > 0 && fmgr_.rooks(ocolor)+fmgr_.knights(ocolor)+fmgr_.bishops(ocolor) > 0) ||
+    (fmgr_.rooks (ocolor) > 1 && fmgr_.bishops(ocolor)+fmgr_.knights(ocolor) > 1) ||
+    (fmgr_.rooks (ocolor) > 0 && ((fmgr_.bishops_w(ocolor) > 0 && fmgr_.bishops_b(ocolor) > 0) || (fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 2)))) ) ) & 1;
 
   move.old_checkingNum_ = checkingNum_;
   move.old_checking_[0] = checking_[0];
@@ -447,6 +455,8 @@ void Board::unmakeMove()
     checkingNum_ = move.old_checkingNum_;
     checking_[0] = move.old_checking_[0];
     checking_[1] = move.old_checking_[1];
+
+    stages_[color_] = move.stage_;
 
     can_win_[0] = move.can_win_[0];
     can_win_[1] = move.can_win_[1];
