@@ -59,14 +59,14 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
     // rook
     {
-       2,   2,   2,   2,   2,   2,   2,   2,
-       8,   8,   8,   8,   8,   8,   8,   8,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -8,  -4,   0,   2,   2,   0,  -4,  -8
+       0,   0,   0,   0,   0,   0,   0,   0,
+       7,   7,   7,   7,   7,   7,   7,   7,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -5,  -5,   3,   3,   3,   3,  -5,  -5
     },
 
     // queen
@@ -83,14 +83,14 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
     // king
     {
-     -20, -20, -20, -20, -20, -20, -20, -20,
-     -20, -20, -20, -20, -20, -20, -20, -20,
-     -20, -20, -20, -20, -20, -20, -20, -20,
-     -20, -20, -20, -20, -20, -20, -20, -20,
-     -20, -20, -20, -20, -20, -20, -20, -20,
-     -20, -20, -20, -20, -20, -20, -20, -20,
-     -12, -12, -12, -12, -12, -12, -12, -12,
-       0,  12,  16, -10,   0, -10,  20,  16
+     -12, -16, -16, -20, -20, -16, -16, -12,
+     -12, -16, -16, -20, -20, -16, -16, -12,
+     -12, -16, -16, -20, -20, -16, -16, -12,
+     -12, -16, -16, -20, -20, -16, -16, -12,
+      -8, -12, -12, -16, -16, -12, -12,  -8,
+      -4,  -8,  -8,  -8,  -8,  -8,  -8,  -4,
+       8,   8,   0,   0,   0,   0,   8,   8,
+      12,  12,   6,   0,   0,   0,  16,  16
     },
 
     {}
@@ -142,12 +142,12 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 };
 
 ScoreType Figure::pawnGuarded_  =  10;
-ScoreType Figure::pawnDoubled_  = -12;
-ScoreType Figure::pawnIsolated_ = -12;
+ScoreType Figure::pawnDoubled_  = -10;
+ScoreType Figure::pawnIsolated_ = -10;
 ScoreType Figure::pawnBackward_ = -10;
-ScoreType Figure::openRook_     =   5;
-ScoreType Figure::semiopenRook_ =   5;
-ScoreType Figure::winloseBonus_ =  50;
+ScoreType Figure::openRook_     =  4;
+ScoreType Figure::semiopenRook_ =  4;
+ScoreType Figure::winloseBonus_ =  20;
 ScoreType Figure::kingpawnsBonus_[4] = {12, 4, -12, -12};
 ScoreType Figure::fianchettoBonus_ = 4;
 ScoreType Figure::queenMobilityBonus_[32] = { -10/* blocked */, -6/* immobile */, 0 };
@@ -182,9 +182,7 @@ ScoreType Figure::pawnPassed_[2][8] = {
     int x = n & 7;\
     int16 column = (int16)(pmsk[x]);\
     int16 ocolumn = (int16)(opmsk[x]);\
-    int16 col_msk = (column-1) >> 15;\
-    int16 ocol_msk = (ocolumn-1) >> 15;\
-    score += Figure::semiopenRook_ & ocol_msk;\
+    int16 col_msk = ((column|ocolumn)-1) >> 15;\
     score += Figure::openRook_ & col_msk;\
   }\
 }
@@ -376,7 +374,7 @@ inline ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility 
   static uint8 shifts[2] = { 5, 1 };
   static uint8 oshifts[2] = { 4, 2 };
   static ScoreType king_penalties[2][4] = { {10, 3, 0, 0}, {10, 0, 3, 0} };
-  static ScoreType king_o_penalties[2][4] = { {0, 3, 10, 12}, {0, 10, 3, 12} };
+    static ScoreType king_o_penalties[2][4] = { {0, 3, 8, 8}, {0, 8, 3, 8} };
 
   const uint8 * pmsk  = (const uint8*)&fmgr_.pawn_mask_t((Figure::Color)color);
   const uint8 * opmsk = (const uint8*)&fmgr_.pawn_mask_t(ocolor);
@@ -548,7 +546,7 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
     return 0;
 
   const Figure & king = getFigure(color, KingIndex);
-  //const uint64 & pmsk = fmgr_.pawn_mask_t(color);
+  const uint64 & pmsk = fmgr_.pawn_mask_t(color);
   ScoreType score = 0;
   for (int i = 0; i < 8; ++i)
   {
@@ -556,9 +554,9 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
     if ( Figure::TypePawn != pawn.getType() )
       continue;
 
-    //const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
-    //const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
-//    if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
+    const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
+    const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
+    if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
     {
       int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
       score += (7 - dist);
@@ -604,7 +602,7 @@ ScoreType Board::evaluateWinnerLoser() const
     weight -= fmgr_.weight(lose_color);
 
   // add small bonus for winner-loser state
-  weight += Figure::winloseBonus_;
+  weight += Figure::winloseBonus_*(fmgr_.pawns(win_color)+1);
 
   if ( win_color == Figure::ColorBlack )
     weight = -weight;
