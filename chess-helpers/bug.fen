@@ -192,3 +192,15 @@ endgame:
 can't find best move:
 6r1/1p6/pPbRP3/8/3Bk3/8/5K2/8 b - - 2 48 (Rf8+)
 8/1p6/pPbRP1r1/8/3Bk3/8/5K2/8 w - - 3 49 (Rxc6 +3.00 !!!)
+
+endgame cases:
+ BPB:
+ 8/6P1/8/4k3/8/1b4K1/8/8 w - - 0 1 
+ 8/8/6P1/4k3/8/1b4K1/8/8 w - - 0 1 
+ 
+ NPN
+ 8/8/3N2P1/4k3/8/2n3K1/8/8 w - - 0 1
+
+ KPK
+ 8/4k3/8/4P3/5K2/8/8/8 w - - 0 1  
+ 8/8/8/4P3/2k2K2/8/8/8 w - - 0 1 

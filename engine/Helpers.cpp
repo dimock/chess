@@ -102,6 +102,32 @@ PawnMasks::PawnMasks()
       {
         ppmask[x+1] = pm;
       }
+
+      uint64 & kpk_mask = pmask_kpk_[color][i];
+      int x0 = x > 0 ? x-1 : 0;
+      int x1 = x < 7 ? x+1 : 7;
+      if ( color )
+      {
+        for (int j = y+1; j < 8; ++j)
+        {
+          for (int l = x0; l <= x1; ++l)
+          {
+            int kp = l | (j<<3);
+            kpk_mask |= 1ULL << kp;
+          }
+        }
+      }
+      else
+      {
+        for (int j = y-1; j >= 0; --j)
+        {
+          for (int l = x0; l <= x1; ++l)
+          {
+            int kp = l | (j<<3);
+            kpk_mask |= 1ULL << kp;
+          }
+        }
+      }
     }
   }
 
@@ -163,6 +189,7 @@ void PawnMasks::clearAll(int pos)
     pmasks_guarded_[color][pos] = 0;
     pmasks_passed_[color][pos] = 0;
     pmasks_blocked_[color][pos] = 0;
+    pmask_kpk_[color][pos] = 0;
   }
   pmasks_backward_[pos] = 0;
 }

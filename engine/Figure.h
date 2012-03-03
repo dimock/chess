@@ -100,10 +100,9 @@ inline bool typeLEQ(Figure::Type type1, Figure::Type type2)
 
 __declspec (align(1)) class FiguresCounter
 {
-  static  int8 s_whiteColors_[64];
-
 public:
 
+  static  int8 s_whiteColors_[64];
   static uint8 s_transposeIndex_[64];
 
   FiguresCounter()

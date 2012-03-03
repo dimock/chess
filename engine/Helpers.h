@@ -167,6 +167,12 @@ public:
     return pawn_dst_color_[color][pos];
   }
 
+  inline const uint64 & mask_kpk(int color, int p) const
+  {
+    THROW_IF( (unsigned)color > 1 || (unsigned)p > 63, "invalid pawn pos or color" );
+    return pmask_kpk_[color][p];
+  }
+
 private:
 
   void clearAll(int);
@@ -176,6 +182,7 @@ private:
   uint64 pmasks_blocked_[2][64];
   uint64 pmasks_backward_[64];
   uint64 pmask_isolated_[8];
+  uint64 pmask_kpk_[2][64];
   int8   pawn_dst_color_[2][64];
 };
 
