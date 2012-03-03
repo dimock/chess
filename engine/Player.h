@@ -281,6 +281,9 @@ private:
   // we should return alpha if flag is Alpha, or betta if flag is Betta
   GeneralHashTable::Flag getGeneralHashFlag(int depth, int ply, ScoreType alpha, ScoreType betta)
   {
+    if ( betta > alpha+1 )
+      return GeneralHashTable::AlphaBetta;
+
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.hcode_ != board_.hashCode() )
       return GeneralHashTable::None;
