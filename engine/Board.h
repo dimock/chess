@@ -19,12 +19,12 @@ class Player;
 struct FiguresMobility
 {
   FiguresMobility() :
-    knightMob_(0), bishopMob_(0), rookMob_(0), queenMob_(0),
-    knightDist_(0), bishopDist_(0), rookDist_(0), queenDist_(0)
+    knightMob_(0), bishopMob_(0), queenMob_(0),
+    knightDist_(0), bishopDist_(0)
   {}
 
-  int knightMob_, bishopMob_, rookMob_, queenMob_;
-  int knightDist_, bishopDist_, rookDist_, queenDist_;
+  int knightMob_, bishopMob_, queenMob_;
+  int knightDist_, bishopDist_;
 };
 
 /*! board representation

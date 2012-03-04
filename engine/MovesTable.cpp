@@ -62,6 +62,8 @@ void MovesTable::resetAllTables(int pos)
 
   for (int type = 0; type < 8; ++type)
     s_otherCaps_[type][pos] = 0;
+
+  s_bishopMob_[pos] = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -161,6 +163,9 @@ void MovesTable::initBishops(int pos)
       continue;
 
     s_tableOther_[Figure::TypeBishop-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
+
+    int poffset = (p + d).index();
+    s_bishopMob_[pos] |= 1ULL << poffset;
   }
 }
 

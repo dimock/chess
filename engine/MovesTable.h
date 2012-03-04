@@ -16,6 +16,9 @@ class MovesTable
   uint64 s_pawnPromotions_t_[2];
   uint64 s_pawnPromotions_o_[2];
 
+  // mobility mask
+  uint64 s_bishopMob_[64];
+
   void resetAllTables(int);
 
   void initPawns(int);
@@ -84,5 +87,11 @@ public:
   {
     THROW_IF((unsigned)type > 6 || (unsigned)pos > 63, "try to get figure move for invalid position or type");
     return s_otherCaps_[type][pos];
+  }
+
+  inline const uint64 & bishop_mobility(int pos) const
+  {
+    THROW_IF((unsigned)pos > 63, "invalid bishop pos");
+    return s_bishopMob_[pos];
   }
 };
