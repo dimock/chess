@@ -156,9 +156,11 @@ ScoreType Figure::knightDistBonus_[8] = { 0, 2, 4, 3, 1, 0, 0, 0 };
 ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 4, 2, 1, 0, 0, 0 };
 ScoreType Figure::fakecastlePenalty_ = 10;
 
+#define MAX_PASSED_SCORE 60
+
 ScoreType Figure::pawnPassed_[2][8] = {
-  { 0, 60, 40, 25, 15, 10, 5, 0 },
-  { 0, 5, 10, 15, 25, 40, 60, 0 }
+  { 0, MAX_PASSED_SCORE, 40, 25, 15, 10, 5, 0 },
+  { 0, 5, 10, 15, 25, 40, MAX_PASSED_SCORE, 0 }
 };
 
 #define FAST_ROOK_PAWN_EVAL
@@ -609,30 +611,42 @@ ScoreType Board::evaluateWinnerLoser() const
   const Figure & king_w = getFigure(win_color, KingIndex);
   const Figure & king_l = getFigure(lose_color, KingIndex);
 
+  bool eval_pawns = true;
+
   if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) > 0 )
   {
-    int num_figs = fmgr_.knights(lose_color) + fmgr_.bishops(lose_color);
-    weight -= (num_figs<<3);
+    int num_lose_figs = fmgr_.knights(lose_color) + fmgr_.bishops(lose_color);
+    ScoreType weight_lose_fig = 10;
+
+    // if winner has more pawns than loser and also has some figure he must exchange all loser figures to pawns
+    if ( fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0  &&
+         fmgr_.knights(win_color)+fmgr_.bishops(win_color) > 0 &&
+         fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) < fmgr_.pawns(win_color) )
+    {
+      weight_lose_fig = Figure::figureWeight_[Figure::TypePawn] + (MAX_PASSED_SCORE);
+      eval_pawns = false;
+    }
+
+    weight -= num_lose_figs * weight_lose_fig;
   }
   else
     weight -= fmgr_.weight(lose_color);
 
   // add small bonus for winner-loser state
-  weight += Figure::winloseBonus_*(fmgr_.pawns(win_color)+1);
+  weight += Figure::winloseBonus_;
 
   // some special almost-draw cases
-  bool eval_pawns = true;
   if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) == 0 &&
-    fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeBishop]+Figure::figureWeight_[Figure::TypeKnight] )
+       fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeBishop]+Figure::figureWeight_[Figure::TypeKnight] )
   {
     weight = 10;
   }
   else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) == 1 &&
-    fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
+            fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
   {
     if ( fmgr_.knights(win_color)+fmgr_.bishops(win_color) <= fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) )
     {
-      weight = 60;
+      weight = (MAX_PASSED_SCORE);
       uint64 pwmask = fmgr_.pawn_mask_o(win_color);
       int pp = least_bit_number(pwmask);
       int x = pp & 7;
@@ -653,8 +667,8 @@ ScoreType Board::evaluateWinnerLoser() const
     }
   }
   else if ( fmgr_.queens(win_color) == 0 && fmgr_.bishops(win_color) == 0 &&
-    fmgr_.knights(win_color) == 0 && fmgr_.pawns(win_color) == 0 && fmgr_.rooks(win_color) == 1 &&
-    fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
+            fmgr_.knights(win_color) == 0 && fmgr_.pawns(win_color) == 0 && fmgr_.rooks(win_color) == 1 &&
+            fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
   {
     weight = 15;
   }
@@ -682,7 +696,7 @@ ScoreType Board::evaluateWinnerLoser() const
     int ldist = g_distanceCounter->getDistance(king_l.where(), pp);
 
     // special case KPK
-    if ( fmgr_.weight(win_color) == Figure::figureWeight_[Figure::TypePawn] && fmgr_.weight(lose_color) == 0 )
+    if ( (fmgr_.weight(win_color) == Figure::figureWeight_[Figure::TypePawn] && fmgr_.weight(lose_color) == 0) )
     {
       const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
       if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
@@ -691,9 +705,25 @@ ScoreType Board::evaluateWinnerLoser() const
         weight = 20 + (y<<1);
       }
     }
-
+    else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) == 1 && (x == 0 || x == 7) )
+    {
+      const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
+      if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
+           (lk_pr_dist <= wk_pr_dist) )
+      {
+        if ( y == 6 )
+          weight = 20;
+        if ( y == 5 )
+          weight = 30;
+        else
+          weight -= 50;
+      }
+    }
     // opponent's king should be as far as possible from my pawn
     weight -= (7-ldist) << 1;
+
+    // my king should be as near as possible to my pawn
+    weight -= wdist << 1;
   }
   else
   {

@@ -4,6 +4,10 @@ bad move, best is g5
 bad move. best is Nxd5
 3r1rk1/pb1qbppp/1pnp1n2/3Np3/2P5/BP3NP1/P2QPPBP/R2R2K1 b - - 5 14 
 
+wrong KPK case detection (bishop + 1 pawn):
+8/6k1/P5B1/7P/3b1K2/8/8/8 w - - 31 122
+8/6k1/P5B1/7P/3b1K2/8/8/8 w - - 31 122 
+
 mat with BN:
 8/8/8/2k5/6NK/6B1/8/8 w - - 0 1
 

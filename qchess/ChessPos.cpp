@@ -60,6 +60,8 @@ bool ChessPosition::fromFEN(const char * fen)
   vboard_ = player_.getBoard();
 #endif
 
+  ScoreType s = vboard_.evaluate();
+
   return true;
 }
 
