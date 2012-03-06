@@ -7,14 +7,13 @@ class Board;
 
 unsigned long xorshf96();
 
-
 inline int pop_count(uint64 n)
 {
-  n -= ((n>>1) & 0x5555555555555555ULL);
-  n = ((n>>2) & 0x3333333333333333ULL) + (n & 0x3333333333333333ULL);
-  n = ((n>>4) + n) & 0x0F0F0F0F0F0F0F0FULL;
-  n *= 0x0101010101010101ULL;
-  return int(n >> 56);
+  n =  n - ((n >> 1)  & 0x5555555555555555ULL);
+  n = (n & 0x3333333333333333ULL) + ((n >> 2) & 0x3333333333333333ULL);
+  n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
+  n = (n * 0x0101010101010101ULL) >> 56;
+  return (int)n;
 }
 
 #ifndef _M_X64

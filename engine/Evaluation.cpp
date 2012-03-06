@@ -24,10 +24,10 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
       // pawn
     {
        0,   0,   0,   0,   0,   0,   0,   0,
-      20,  20,  20,  20,  20,  20,  20,  20,
-       4,   4,   8,  12,  12,   8,   4,   4,
-       2,   2,   4,  10,  10,   4,   2,   2,
-       0,   0,   0,   8,   8,   0,   0,   0,
+      10,  10,  10,  10,  10,  10,  10,  10,
+       4,   4,   6,   8,   8,   6,   4,   4,
+       2,   2,   4,   6,   6,   4,   2,   2,
+       0,   0,   0,   4,   4,   0,   0,   0,
        2,  -2,  -4,   0,   0,  -4,  -2,   2,
        2,   4,   4,  -8,  -8,   4,   4,   2,
        0,   0,   0,   0,   0,   0,   0,   0
@@ -35,14 +35,14 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
     // knight
     {
-     -12, -12, -12, -12, -12, -12, -12, -12,
-     -12,  -8,   0,   0,   0,   0,  -8, -12,
-     -12,   0,   4,   6,   6,   4,   0, -12,
-     -12,   2,   6,   8,   8,   6,   2, -12,
-     -12,   0,   6,   8,   8,   6,   0, -12,
-     -12,   2,   4,   6,   6,   4,   2, -12,
-     -12,  -8,   0,   2,   2,   0,  -8, -12,
-     -12, -16, -12, -12, -12, -12, -12, -12
+     -10, -10, -10, -10, -10, -10, -10, -10,
+     -10,  -8,   0,   0,   0,   0,  -8, -10,
+     -10,   0,   4,   6,   6,   4,   0, -10,
+     -10,   2,   6,   8,   8,   6,   2, -10,
+     -10,   0,   6,   8,   8,   6,   0, -10,
+     -10,   2,   4,   6,   6,   4,   2, -10,
+     -10,  -8,   0,   2,   2,   0,  -8, -10,
+     -10, -12, -10, -10, -10, -10, -12, -10
     },
 
     // bishop
@@ -54,7 +54,7 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
       -2,   0,   8,   8,   8,   8,   0,  -2,
       -2,   8,   8,   8,   8,   8,   8,  -2,
       -2,   2,   0,   0,   0,   0,   2,  -2,
-      -8,  -4,  -4,  -4,  -4,  -4,  -4,  -8
+      -8,  -4,  -8,  -4,  -4,  -8,  -4,  -8
     },
 
     // rook
@@ -89,8 +89,8 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
      -12, -16, -16, -20, -20, -16, -16, -12,
       -8, -12, -12, -16, -16, -12, -12,  -8,
       -4,  -8,  -8,  -8,  -8,  -8,  -8,  -4,
-       8,   8,   0,   0,   0,   0,   8,   8,
-      12,  12,   6,   0,   0,   0,  16,  16
+       5,   5,   0,   0,   0,   0,   5,   5,
+      10,  12,   6,   0,   0,   0,  16,  14
     },
 
     {}
@@ -104,11 +104,11 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
     // pawn
     {
       0,   0,   0,   0,   0,   0,   0,   0,
-      20,  20,  20,  20,  20,  20,  20,  20,
-      16,  16,  16,  16,  16,  16,  16,  16,
-      12,  12,  12,  12,  12,  12,  12,  12,
-      8,   8,   8,   8,   8,   8,   8,   8,
-      4,   4,   4,   4,   4,   4,   4,   4,
+      14,  16,  16,  18, 18,  16,  16,  14,
+      10,  10,  12,  12, 12,  12,  10,  10,
+      7,   7,   8,   8,   8,   8,   7,   7,
+      5,   5,   6,   6,   6,   6,   5,   5,
+      3,   3,   4,   4,   4,   4,   3,   3,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0
     },
@@ -127,14 +127,14 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
     // king
     {
-     -16, -12, -10, -10, -10, -10, -12, -16,
+     -14, -12, -10, -10, -10, -10, -12, -14,
      -12,  -8,   0,   0,   0,   0,  -8, -12,
+     -10,  -4,   6,   8,   8,   6,  -4, -10,
      -10,  -4,   8,  10,  10,   8,  -4, -10,
-     -10,  -4,  10,  12,  12,  10,  -4, -10,
-     -10,  -4,  10,  12,  12,  10,  -4, -10,
      -10,  -4,   8,  10,  10,   8,  -4, -10,
+     -10,  -4,   6,   8,   8,   6,  -4, -10,
      -12,  -8,   0,   0,   0,   0,  -8, -12,
-     -16, -12, -10, -10, -10, -10, -12, -16
+     -14, -12, -10, -10, -10, -10, -12, -14
     },
 
     {}
@@ -150,7 +150,7 @@ ScoreType Figure::winloseBonus_ =  20;
 ScoreType Figure::kingbishopPressure_ = 8;
 ScoreType Figure::fianchettoBonus_ = 4;
 ScoreType Figure::queenMobilityBonus_[32] = { -8/* blocked */, -4/* immobile */, -2, 0, 1, 2, 3, 4, 5 };
-ScoreType Figure::knightMobilityBonus_[10] = { -6 /* blocked */, -3 /* immobile */, 2, 3, 3, 4, 4, 4, 4 };
+ScoreType Figure::knightMobilityBonus_[16] = { -6 /* blocked */, -3 /* immobile */, 2, 3, 3, 4, 4, 4, 4 };
 ScoreType Figure::bishopMobilityBonus_[16] = { -4 /* blocked */, -1 /* immobile */, 1, 2 };
 ScoreType Figure::knightDistBonus_[8] = { 0, 2, 4, 3, 1, 0, 0, 0 };
 ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 4, 2, 1, 0, 0, 0 };
@@ -744,7 +744,7 @@ ScoreType Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) c
     uint64 kn_go_msk = occupied_msk & kn_caps;
     movesN = pop_count( kn_go_msk );
     THROW_IF(movesN > 8, "invalid number of knight moves");
-    fmob.knightMob_ += Figure::knightMobilityBonus_[movesN];
+    fmob.knightMob_ += Figure::knightMobilityBonus_[movesN & 15];
     fmob.knightDist_ += Figure::knightDistBonus_[dist];
   }
 
@@ -757,7 +757,7 @@ ScoreType Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) c
     uint64 kn_go_msk = occupied_msk & kn_caps;
     movesN = pop_count( kn_go_msk );
     THROW_IF(movesN > 8, "invalid number of knight moves");
-    fmob.knightMob_ += Figure::knightMobilityBonus_[movesN];
+    fmob.knightMob_ += Figure::knightMobilityBonus_[movesN & 15];
     fmob.knightDist_ += Figure::knightDistBonus_[dist];
   }
 
@@ -770,7 +770,7 @@ ScoreType Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) c
     uint64 bishop_go_msk = occupied_msk & bishop_mob;
     movesN = pop_count( bishop_go_msk );
     THROW_IF(movesN > 8, "invalid number of bishop moves");
-    fmob.bishopMob_ += Figure::bishopMobilityBonus_[movesN];
+    fmob.bishopMob_ += Figure::bishopMobilityBonus_[movesN & 15];
     fmob.bishopDist_ += Figure::bishopDistBonus_[dist];
   }
 
@@ -783,7 +783,7 @@ ScoreType Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) c
     uint64 bishop_go_msk = occupied_msk & bishop_mob;
     movesN = pop_count( bishop_go_msk );
     THROW_IF(movesN > 8, "invalid number of bishop moves");
-    fmob.bishopMob_ += Figure::bishopMobilityBonus_[movesN];
+    fmob.bishopMob_ += Figure::bishopMobilityBonus_[movesN & 15];
     fmob.bishopDist_ += Figure::bishopDistBonus_[dist];
   }
 
@@ -797,7 +797,7 @@ ScoreType Board::evaluateMobility(Figure::Color color, FiguresMobility & fmob) c
     uint64 queen_go_msk = occupied_msk & queen_mob;
     movesN = pop_count( queen_go_msk );
     THROW_IF(movesN > 8, "invalid number of bishop moves");
-    fmob.queenMob_ += Figure::queenMobilityBonus_[movesN];
+    fmob.queenMob_ += Figure::queenMobilityBonus_[movesN & 31];
   }
 
   return fmob.knightMob_ + fmob.bishopMob_ + fmob.queenMob_;

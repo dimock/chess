@@ -19,7 +19,7 @@ public:
 
   static ScoreType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
   static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, winloseBonus_;
-  static ScoreType knightMobilityBonus_[10], bishopMobilityBonus_[16], queenMobilityBonus_[32];
+  static ScoreType knightMobilityBonus_[16], bishopMobilityBonus_[16], queenMobilityBonus_[32];
   static ScoreType knightDistBonus_[8], bishopDistBonus_[8];
   static ScoreType fianchettoBonus_;
   static ScoreType fakecastlePenalty_;

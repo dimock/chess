@@ -385,7 +385,6 @@ private:
 
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
-
   inline ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob) const;
   inline ScoreType evaluateFianchetto() const;
   ScoreType evaluatePawns(Figure::Color color) const;
