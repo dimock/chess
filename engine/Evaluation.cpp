@@ -146,7 +146,7 @@ ScoreType Figure::pawnDoubled_  = -8;
 ScoreType Figure::pawnIsolated_ = -8;
 ScoreType Figure::pawnBackward_ = -8;
 ScoreType Figure::openRook_     =  8;
-ScoreType Figure::winloseBonus_ =  0;
+ScoreType Figure::winloseBonus_ =  20;
 ScoreType Figure::kingbishopPressure_ = 8;
 ScoreType Figure::fianchettoBonus_ = 4;
 ScoreType Figure::queenMobilityBonus_[32] = { -8/* blocked */, -4/* immobile */, -2, 0, 1, 2, 3, 4, 5 };
@@ -155,7 +155,6 @@ ScoreType Figure::bishopMobilityBonus_[16] = { -4 /* blocked */, -1 /* immobile 
 ScoreType Figure::knightDistBonus_[8] = { 0, 2, 4, 3, 1, 0, 0, 0 };
 ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 4, 2, 1, 0, 0, 0 };
 ScoreType Figure::fakecastlePenalty_ = 10;
-ScoreType Figure::promoToKingPenalty_[8] = {10, 8, 7, 5, 3, 1, 0, 0};
 
 #define MAX_PASSED_SCORE 60
 
@@ -575,9 +574,7 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
   if ( !opmsk )
     return 0;
 
-  static ScoreType pwd_scores[8] = {6, 4, 2, 1, 0, 0, 0, 0};
   const Figure & king = getFigure(color, KingIndex);
-  const Figure & oking = getFigure(ocolor, KingIndex);
   const uint64 & pmsk = fmgr_.pawn_mask_t(color);
   ScoreType score = 0;
   for (int i = 0; i < 8; ++i)
@@ -587,23 +584,17 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
       continue;
 
     int y = pawn.where() >> 3;
-    int x = pawn.where() & 7;
     if ( !ocolor )
       y = 7 -y;
 
-    int pr_pos = x | (ocolor ? A8 : A1);
-    int pr_dist = g_distanceCounter->getDistance(king.where(), pr_pos);
-    int opr_dist = g_distanceCounter->getDistance(oking.where(), pr_pos);
-    int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
-    int odist = g_distanceCounter->getDistance(oking.where(), pawn.where());
+    y |= 1;
+
     const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
     const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
     if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
     {
-      score += Figure::promoToKingPenalty_[pr_dist & 7];
-      score -= Figure::promoToKingPenalty_[opr_dist & 7];
-      score += pwd_scores[dist & 7];
-      score -= pwd_scores[odist & 7];
+      int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
+      score += (7 - dist)*y;
     }
   }
   return score;
@@ -632,7 +623,7 @@ ScoreType Board::evaluateWinnerLoser() const
          fmgr_.knights(win_color)+fmgr_.bishops(win_color) > 0 &&
          fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) < fmgr_.pawns(win_color) )
     {
-      weight_lose_fig = Figure::figureWeight_[Figure::TypePawn] + (MAX_PASSED_SCORE) + 10;
+      weight_lose_fig = Figure::figureWeight_[Figure::TypePawn] + (MAX_PASSED_SCORE);
       eval_pawns = false;
     }
 
@@ -727,55 +718,12 @@ ScoreType Board::evaluateWinnerLoser() const
         weight = 50;
       }
     }
-    // opponent's king should be as far as possible from my pawn promo-field
-    weight -= Figure::promoToKingPenalty_[lk_pr_dist & 7];
 
-    // my king should be as near as possible to my pawn promo-field
-    weight += Figure::promoToKingPenalty_[wk_pr_dist & 7];
+    // opponent's king should be as far as possible from my pawn
+    weight -= (7-ldist) << 1;
 
-    int yw = king_w.where() >> 3;
-    int yl = king_l.where() >> 3;
-    if ( !color_ )
-    {
-      yw = 7-yw;
-      yl = 7-yl;
-    }
-    weight -= yl << 1;
-    weight += yw << 1;
-  }
-  else if ( fmgr_.pawns(win_color) )
-  {
-    int yw = king_w.where() >> 3;
-    int yl = king_l.where() >> 3;
-    if ( !color_ )
-    {
-      yw = 7-yw;
-      yl = 7-yl;
-    }
-    weight -= yl << 1;
-    weight += yw << 1;
-
-    uint64 pwmsk = fmgr_.pawn_mask_o(win_color);
-    for (; pwmsk;)
-    {
-      int pp = least_bit_number(pwmsk);
-
-      int x = pp & 7;
-      int y = pp >> 3;
-      if ( !win_color )
-        y = 7-y;
-
-      int pr_pos = x | (win_color ? A8 : A1);
-
-      int wk_pr_dist = g_distanceCounter->getDistance(king_w.where(), pr_pos);
-      int lk_pr_dist = g_distanceCounter->getDistance(king_l.where(), pr_pos);
-
-      // opponent's king should be as far as possible from my pawn promo-field
-      weight -= Figure::promoToKingPenalty_[lk_pr_dist & 7];
-
-      // my king should be as near as possible to my pawn promo-field
-      weight += Figure::promoToKingPenalty_[wk_pr_dist & 7];
-    }
+    // my king should be as near as possible to my pawn
+    weight -= wdist << 1;
   }
   else
   {
