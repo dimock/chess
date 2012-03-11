@@ -464,7 +464,7 @@ private:
       return true;
 
     // we look from side, that goes to move. we should adjust sing of initial mat-balance
-    int initial_balance = initial_material_balance_;
+    int initial_balance = board_.fmgr().weight();//initial_material_balance_;
     if ( !board_.getColor() )
       initial_balance = -initial_balance;
 
