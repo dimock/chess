@@ -34,6 +34,8 @@ public:
   void stop();
 
   void setPlayerCallback(PLAYER_CALLBACK );
+  
+  int giveMoreTime();
 
 private:
 
@@ -51,4 +53,5 @@ private:
   int timePerMoveMS_;
   bool post_;
   bool thinking_;
+  unsigned int givetimeCounter_;
 };

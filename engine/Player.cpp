@@ -68,6 +68,7 @@ Player::Player() :
   numOfMoves_(0),
   out_(0),
   callback_(0),
+  givetime_(0),
   posted_command_(Posted_NONE),
   stop_(false),
   timeLimitMS_(0),
@@ -290,6 +291,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
   totalNodes_ = 0;
   firstIter_ = true;
   tprev_ = tstart_ = clock();
+  numOfMoves_ = 0;
   
   // for recapture extension
   initial_material_balance_ = board_.fmgr().weight();
@@ -301,6 +303,23 @@ bool Player::search(SearchResult & sres, std::ostream * out)
 
   contexts_[0].clearPV(depthMax_);
 
+  {
+    ScoreType alpha = -std::numeric_limits<ScoreType>::max();
+    ScoreType betta = +std::numeric_limits<ScoreType>::max();
+    int counter = 0;
+    MovesGenerator mg(board_, 1, 0, this, alpha, betta, counter);
+    for ( ;; )
+    {
+      const Move & move = mg.move();
+      if ( !move )
+        break;
+      if ( board_.makeMove(move) )
+        numOfMoves_++;
+      board_.unmakeMove();
+    }
+  }
+
+
   for (depth_ = 1; !stop_ && depth_ <= depthMax_; ++depth_)
   {
     pv_board_ = board_;
@@ -310,31 +329,30 @@ bool Player::search(SearchResult & sres, std::ostream * out)
     beforeFound_ = false;
     nodesCount_ = 0;
 	  plyMax_ = 0;
-    numOfMoves_ = 0;
     counter_ = 0;
 
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    if ( analyze_mode_ )
-    {
-      int counter = 0;
-      MovesGenerator mg(board_, depth_, 0, this, alpha, betta, counter);
-      for ( ;; )
-      {
-        const Move & move = mg.move();
-        if ( !move )
-          break;
-        if ( board_.makeMove(move) )
-          numOfMoves_++;
-        board_.unmakeMove();
-      }
-    }
-
     ScoreType score = alphaBetta(depth_, 0, alpha, betta, false);
 
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
+      if ( stop_ && depth_ > 2 &&
+        abs(score-sres.score_) >= Figure::figureWeight_[Figure::TypePawn]/2 &&
+        givetime_ )
+      {
+        int t_add = (givetime_)();
+        if ( t_add > 0 )
+        {
+          stop_ = false;
+          timeLimitMS_ += t_add;
+          if ( counter_ < numOfMoves_ )
+            depth_--;
+          continue;
+        }
+      }
+
       clock_t t  = clock();
       clock_t dt = (t - tstart_) / 10;
       tprev_ = t;
@@ -380,6 +398,11 @@ bool Player::search(SearchResult & sres, std::ostream * out)
 void Player::setCallback(PLAYER_CALLBACK cbk)
 {
   callback_ = cbk;
+}
+
+void Player::setGiveTimeCbk(GIVE_MORE_TIME gvt)
+{
+  givetime_ = gvt;
 }
 
 void Player::setAnalyzeMode(bool analyze)
@@ -592,11 +615,19 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // first of all try null-move
 #ifdef USE_NULL_MOVE
-  if ( !null_move && betta == alpha+1 )
+  if ( !null_move 
+#ifndef MAT_THREAT_EXTENSION
+    && betta == alpha+1
+#endif
+    )
   {
     ScoreType nullScore = nullMove(depth, ply, alpha, betta);
 
-    if ( nullScore >= betta )
+    if ( nullScore >= betta
+#ifdef MAT_THREAT_EXTENSION
+      && betta == alpha+1
+#endif
+      )
     {
       if ( board_.shortNullMoveReduction() )
         depth--;
@@ -608,10 +639,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
       if ( depth < NullMove_DepthMin )
         depth = NullMove_DepthMin;
-   }
+    }
     // mat threat extension
 #ifdef MAT_THREAT_EXTENSION
-    else if ( ply > 1 && contexts_[ply].ext_data_.mat_threats_found_ > 1 &&
+    else if ( betta > alpha+1 && ply > 1 && contexts_[ply].ext_data_.mat_threats_found_ > 1 &&
               contexts_[ply].ext_data_.mat_threat_count_ < MatThreatExtension_Limit )
     {
       contexts_[ply].ext_data_.mat_threat_count_++;
@@ -818,6 +849,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               depth > LMR_DepthLimit &&
               !move.threat_ &&
               !move.strong_ &&
+               mv_cmd.castle_ == 0 &&
               !haveCheck &&
               !check_esc &&
               !null_move &&

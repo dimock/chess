@@ -48,6 +48,10 @@ xBoardMgr::xBoardMgr() :
   thk_.setPlayerCallback(player_callback);
 }
 
+xBoardMgr::~xBoardMgr()
+{
+  thk_.setPlayerCallback(0);
+}
   
 bool xBoardMgr::peekInput()
 {

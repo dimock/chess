@@ -10,6 +10,7 @@ class xBoardMgr
 public:
 
   xBoardMgr();
+  ~xBoardMgr();
 
   bool do_cmd();
   void write_error(const std::exception * e = 0);

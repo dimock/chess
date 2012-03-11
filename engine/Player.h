@@ -35,6 +35,7 @@ class ChecksGenerator;
 class CapsChecksGenerator;
 
 typedef void (* PLAYER_CALLBACK)();
+typedef int (*GIVE_MORE_TIME)();
 
 struct PlyContext
 {
@@ -129,6 +130,7 @@ class Player
   PostedCommand posted_command_;
   char posted_fen_[256];
   PLAYER_CALLBACK callback_;
+  GIVE_MORE_TIME givetime_;
   std::ostream * out_;
   int counter_, numOfMoves_;
   Board pv_board_;
@@ -142,6 +144,7 @@ public:
 
   void setMemory(int mb);
   void setCallback(PLAYER_CALLBACK);
+  void setGiveTimeCbk(GIVE_MORE_TIME);
   void setAnalyzeMode(bool);
 
   void postUndo();

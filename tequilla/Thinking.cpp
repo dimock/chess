@@ -2,6 +2,17 @@
 #include <iostream>
 #include <fstream>
 
+static Thinking * g_thinking_ = 0;
+
+// returns time in ms
+int give_more_time()
+{
+  if ( !g_thinking_ )
+    return 0;
+
+  return g_thinking_->giveMoreTime();
+}
+
 using namespace std;
 
 #define DEPTH_MAXIMUM 20
@@ -9,12 +20,14 @@ using namespace std;
 Thinking::Thinking() :
 	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
   xtimeMS_(0), movesLeft_(0), timePerMoveMS_(0), maxDepth_(-1),
-  post_(false), thinking_(false)
+  post_(false), thinking_(false), givetimeCounter_(0)
 {
+  g_thinking_ = this;
 }
 
 Thinking::~Thinking()
 {
+  g_thinking_ = 0;
 }
 
 void Thinking::setPlayerCallback(PLAYER_CALLBACK cbk)
@@ -84,6 +97,29 @@ void Thinking::setMovesLeft(int mleft)
   player_.setMaxDepth(DEPTH_MAXIMUM);
 }
 
+
+int Thinking::giveMoreTime()
+{
+  if ( timePerMoveMS_ > 0 || xtimeMS_ <= 0 || givetimeCounter_ > 0 )
+    return 0;
+
+  givetimeCounter_++;
+  if ( movesLeft_ <= 0 && xtimeMS_ > 30 )
+    return xtimeMS_/40;
+
+  if ( movesLeft_ > 0 )
+  {
+    int mcount = player_.getBoard().movesCount();
+    mcount = movesLeft_ - (mcount-1) % movesLeft_;
+    if ( mcount > movesLeft_/2 )
+      return xtimeMS_/mcount;
+    else if ( mcount > movesLeft_/3 )
+      return (xtimeMS_/mcount)/2;
+  }
+  return 0;
+}
+
+
 void Thinking::enableBook(int v)
 {
 }
@@ -131,6 +167,7 @@ void Thinking::analyze()
 
   SearchResult sres;
   player_.setAnalyzeMode(true);
+  player_.setGiveTimeCbk(0);
   player_.findMove(sres, post_ ? &cout : 0);
   player_.setAnalyzeMode(false);
 
@@ -161,7 +198,9 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 	SearchResult sres;
 
   player_.setAnalyzeMode(false);
+  player_.setGiveTimeCbk(give_more_time);
   thinking_ = true;
+  givetimeCounter_ = 0;
   if ( player_.findMove(sres, post_ ? &cout : 0) )
   {
     if ( board.makeMove(sres.best_) )
@@ -173,6 +212,7 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
     }
   }
   thinking_ = false;
+  player_.setGiveTimeCbk(0);
 
   state = board.getState();
 
