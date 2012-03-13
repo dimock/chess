@@ -847,6 +847,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         if (  counter > LMR_Counter &&
               depth_ > LMR_MinDepthLimit &&
               depth > LMR_DepthLimit &&
+              board_.canBeReduced(move) &&
               !move.threat_ &&
               !move.strong_ &&
                mv_cmd.castle_ == 0 &&
@@ -855,8 +856,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               !null_move &&
               !mv_cmd.extended_ &&
               alpha > -Figure::WeightMat+MaxPly &&
-              ((hist.good_count_<<1) <= hist.bad_count_) &&
-              board_.canBeReduced(move) )
+              ((hist.good_count_<<1) <= hist.bad_count_) )
         {
           R = LMR_PlyReduce;
           mv_cmd.reduced_ = true;
@@ -1094,7 +1094,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( alpha < Figure::figureWeight_[Figure::TypeRook] && depth >= 0 && !stop_ && alpha < betta && (depth > 0 || alpha+1 < betta ) )
+    if ( alpha < Figure::figureWeight_[Figure::TypeRook] && depth >= 0 && !stop_ /*&& alpha < betta && (depth > 0 || alpha+1 < betta ) */)
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 

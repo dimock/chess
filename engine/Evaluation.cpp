@@ -141,6 +141,19 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
   }
 };
 
+// king position eval for BN-mat
+ScoreType Figure::bishopKnightMat_[64] =
+{
+  16,   10,  6,  1, -2, -5,  -12,  -16,
+  10,   12,  5, -1, -3, -6,  -14,  -12,
+   5,    5,  4, -2, -4, -8,   -8,  -10,
+  -1,   -1, -2, -6, -6, -6,   -5,   -4,
+  -4,   -5, -6, -6, -6, -2,   -1,   -1,
+  -10,  -8, -8, -4, -2,  4,    5,    5,
+  -12, -14, -6, -3, -1,  5,   12,   10,
+  -16, -12, -5, -2,  1,  6,   10,   16
+};
+
 ScoreType Figure::pawnGuarded_  =  8;
 ScoreType Figure::pawnDoubled_  = -8;
 ScoreType Figure::pawnIsolated_ = -8;
@@ -635,101 +648,129 @@ ScoreType Board::evaluateWinnerLoser() const
   // add small bonus for winner-loser state
   weight += Figure::winloseBonus_;
 
-  // some special almost-draw cases
-  if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) == 0 &&
-       fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeBishop]+Figure::figureWeight_[Figure::TypeKnight] )
+  // BN-mat case
+  if ( fmgr_.weight(lose_color) == 0 && fmgr_.knights(win_color) == 1 && fmgr_.bishops(win_color) == 1 &&
+       fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) == 0 )
   {
-    weight = 10;
-  }
-  else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) == 1 &&
-            fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
-  {
-    if ( fmgr_.knights(win_color)+fmgr_.bishops(win_color) <= fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) )
+    int dist  = g_distanceCounter->getDistance(king_w.where(), king_l.where());
+    weight -= dist;
+
+    int kp = king_l.where();
+    if ( fmgr_.bishops_w(win_color) )
     {
-      weight = (MAX_PASSED_SCORE);
-      uint64 pwmask = fmgr_.pawn_mask_o(win_color);
-      int pp = least_bit_number(pwmask);
+      int kx = kp & 7;
+      int ky = kp >>3;
+      kp = ((7-ky)<<3)| kx;
+    }
+    weight += Figure::bishopKnightMat_[kp];
+
+    uint64 n_mask = fmgr_.knight_mask(win_color);
+    int np = least_bit_number(n_mask);
+    THROW_IF( (unsigned)np > 63, "no knigt found" );
+    int ndist = g_distanceCounter->getDistance(np, king_l.where());
+    weight -= ndist >> 1;
+
+    // add more bonus to be sure that we go to this state
+    weight += Figure::winloseBonus_;
+  }
+  else
+  {
+    // some special almost-draw cases
+    if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) == 0 &&
+         fmgr_.weight(win_color)-fmgr_.weight(lose_color) < Figure::figureWeight_[Figure::TypeBishop]+Figure::figureWeight_[Figure::TypeKnight] )
+    {
+      weight = 10;
+    }
+    else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.pawns(win_color) == 1 &&
+              fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
+    {
+      if ( fmgr_.knights(win_color)+fmgr_.bishops(win_color) <= fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) )
+      {
+        weight = (MAX_PASSED_SCORE);
+        uint64 pwmask = fmgr_.pawn_mask_o(win_color);
+        int pp = least_bit_number(pwmask);
+        int x = pp & 7;
+        int y = pp >> 3;
+        if ( !win_color )
+          y = 7-y;
+        if ( y < 6 )
+        {
+          int ep = x | (win_color ? 7 : 0);
+          int8 pwhite = FiguresCounter::s_whiteColors_[ep];
+          if ( pwhite && fmgr_.bishops_w(lose_color) || !pwhite && fmgr_.bishops_b(lose_color) > 0 || y < 5 )
+            weight = 10;
+        }
+        else if ( color_ == win_color )
+          weight = Figure::figureWeight_[Figure::TypePawn];
+        weight += y << 1;
+        eval_pawns = false;
+      }
+    }
+    else if ( fmgr_.queens(win_color) == 0 && fmgr_.bishops(win_color) == 0 &&
+              fmgr_.knights(win_color) == 0 && fmgr_.pawns(win_color) == 0 && fmgr_.rooks(win_color) == 1 &&
+              fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
+    {
+      weight = 15;
+    }
+
+    if ( fmgr_.pawns(win_color) == 1 )
+    {
+      uint64 pwmsk = fmgr_.pawn_mask_o(win_color);
+      int pp = least_bit_number(pwmsk);
+      THROW_IF( (unsigned)pp > 63, "no pawn found" );
+
       int x = pp & 7;
       int y = pp >> 3;
       if ( !win_color )
         y = 7-y;
-      if ( y < 6 )
+
+      int pr_pos = x | (win_color ? A8 : A1);
+      Figure::Color pr_color = (Figure::Color)FiguresCounter::s_whiteColors_[pr_pos];
+
+      int pr_moves = 7-y;
+      if ( win_color == color_ )
+        pr_moves--;
+
+      int wk_pr_dist = g_distanceCounter->getDistance(king_w.where(), pr_pos);
+      int lk_pr_dist = g_distanceCounter->getDistance(king_l.where(), pr_pos);
+
+      int wdist = g_distanceCounter->getDistance(king_w.where(), pp);
+      int ldist = g_distanceCounter->getDistance(king_l.where(), pp);
+
+      // special case KPK
+      if ( (fmgr_.weight(win_color) == Figure::figureWeight_[Figure::TypePawn] && fmgr_.weight(lose_color) == 0) )
       {
-        int ep = x | (win_color ? 7 : 0);
-        int8 pwhite = FiguresCounter::s_whiteColors_[ep];
-        if ( pwhite && fmgr_.bishops_w(lose_color) || !pwhite && fmgr_.bishops_b(lose_color) > 0 || y < 5 )
-          weight = 10;
+        const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
+        if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
+             (pr_moves <= lk_pr_dist && pr_moves > wk_pr_dist) )
+        {
+          weight = 20 + (y<<1);
+        }
       }
-      else if ( color_ == win_color )
-        weight = Figure::figureWeight_[Figure::TypePawn];
-      weight += y << 1;
-      eval_pawns = false;
+      // KPBK. bishop color differs from promotion field color
+      else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) == 1 && (x == 0 || x == 7) &&
+                (fmgr_.bishops_b(win_color) && pr_color || fmgr_.bishops_w(win_color) && !pr_color) )
+      {
+        const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
+        if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
+             (pr_moves <= lk_pr_dist && pr_moves > wk_pr_dist) )
+        {
+          weight = 50;
+        }
+      }
+
+      // opponent's king should be as far as possible from my pawn
+      weight -= (7-ldist) << 1;
+
+      // my king should be as near as possible to my pawn
+      weight -= wdist << 1;
     }
-  }
-  else if ( fmgr_.queens(win_color) == 0 && fmgr_.bishops(win_color) == 0 &&
-            fmgr_.knights(win_color) == 0 && fmgr_.pawns(win_color) == 0 && fmgr_.rooks(win_color) == 1 &&
-            fmgr_.knights(lose_color)+fmgr_.bishops(lose_color) > 0 )
-  {
-    weight = 15;
-  }
-
-  if ( fmgr_.pawns(win_color) == 1 )
-  {
-    uint64 pwmsk = fmgr_.pawn_mask_o(win_color);
-    int pp = least_bit_number(pwmsk);
-    THROW_IF( (unsigned)pp > 63, "no pawn found" );
-
-    int x = pp & 7;
-    int y = pp >> 3;
-    if ( !win_color )
-      y = 7-y;
-
-    int pr_pos = x | (win_color ? A8 : A1);
-    Figure::Color pr_color = (Figure::Color)FiguresCounter::s_whiteColors_[pr_pos];
-
-    int pr_moves = 7-y;
-    if ( win_color == color_ )
-      pr_moves--;
-
-    int wk_pr_dist = g_distanceCounter->getDistance(king_w.where(), pr_pos);
-    int lk_pr_dist = g_distanceCounter->getDistance(king_l.where(), pr_pos);
-
-    int wdist = g_distanceCounter->getDistance(king_w.where(), pp);
-    int ldist = g_distanceCounter->getDistance(king_l.where(), pp);
-
-    // special case KPK
-    if ( (fmgr_.weight(win_color) == Figure::figureWeight_[Figure::TypePawn] && fmgr_.weight(lose_color) == 0) )
+    else
     {
-      const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
-      if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
-           (pr_moves <= lk_pr_dist && pr_moves > wk_pr_dist) )
-      {
-        weight = 20 + (y<<1);
-      }
+      int dist  = g_distanceCounter->getDistance(king_w.where(), king_l.where());
+      weight -= dist << 1;
+      weight -= Figure::positionEvaluation(1, lose_color, Figure::TypeKing, king_l.where());
     }
-    // KPBK. bishop color differs from promotion field color
-    else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) == 1 && (x == 0 || x == 7) &&
-              (fmgr_.bishops_b(win_color) && pr_color || fmgr_.bishops_w(win_color) && !pr_color) )
-    {
-      const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
-      if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
-           (pr_moves <= lk_pr_dist && pr_moves > wk_pr_dist) )
-      {
-        weight = 50;
-      }
-    }
-
-    // opponent's king should be as far as possible from my pawn
-    weight -= (7-ldist) << 1;
-
-    // my king should be as near as possible to my pawn
-    weight -= wdist << 1;
-  }
-  else
-  {
-    int dist  = g_distanceCounter->getDistance(king_w.where(), king_l.where());
-    weight -= dist << 1;
-    weight -= Figure::positionEvaluation(1, lose_color, Figure::TypeKing, king_l.where());
   }
 
   if ( win_color == Figure::ColorBlack )
