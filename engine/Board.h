@@ -205,6 +205,11 @@ public:
     return !can_win_[0] || !can_win_[1];
   }
 
+  Figure::Color getWinnerColor() const
+  {
+    return can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
+  }
+
   /// really make move. perform validation
   bool makeMove(const Move & );
 

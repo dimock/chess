@@ -448,7 +448,8 @@ private:
     return false;
   }
 
-  bool do_extension(int depth, int ply, ScoreType alpha, ScoreType betta);
+  /// returns numer of ply to extend
+  int do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser);
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from

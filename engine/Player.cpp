@@ -806,6 +806,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
   // previous move was reduced
   bool reduced = board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_;
+  bool was_winnerloser = board_.isWinnerLoser();
 
   if ( board_.makeMove(move) )
   {
@@ -815,10 +816,11 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    if ( do_extension(depth, ply, alpha, betta) )
+    int ext_ply = do_extension(depth, ply, alpha, betta, was_winnerloser);
+    if ( ext_ply )
     {
       mv_cmd.extended_ = true;
-      depth++;
+      depth += ext_ply;
     }
 
     counter++;
@@ -1463,10 +1465,10 @@ bool Player::isRealThreat(const Move & move)
   return false;
 }
 //////////////////////////////////////////////////////////////////////////
-bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
+int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser)
 {
   if ( depth <= 0 || alpha >= Figure::WeightMat-MaxPly || board_.halfmovesCount() < 1 )
-    return false;
+    return 0;
 
   const MoveCmd & move = board_.getMoveRev(0);
 
@@ -1475,11 +1477,11 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
 #ifdef EXTEND_ONLY_STRONG_CHECKS
     // extend only double, discovered and winning capture checks
     if ( move.checkingNum_ == 2 || move.rindex_ >= 0 || board_.getField(move.to_).index() != move.checking_[0] )
-      return true;
+      return 1;
 #else
     // if there is great alpha extend only dangerous checks, otherwise extend always
     if ( alpha <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] )
-      return true;
+      return 1;
 #endif
   }
 
@@ -1494,7 +1496,7 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
     Move next;
     int score_see = board_.see(initial_balance, next);
     if ( score_see >= 0 )
-      return true;
+      return 1;
 #else
     return board_.getState() == Board::UnderCheck;
 #endif
@@ -1507,7 +1509,7 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
       Move next;
       int score_see = board_.see(initial_balance, next);
       if ( score_see >= 0 )
-        return true;
+        return 1;
     }
 #ifdef RECAPTURE_EXTENSION
     else 
@@ -1516,11 +1518,23 @@ bool Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta)
 
 #ifdef RECAPTURE_EXTENSION
     if ( move.rindex_ && recapture(ply, initial_balance) )
-      return true;
+      return 1;
 #endif
   }
 
-  return false;
+  // go to winner-loser state without RQ
+  if (  betta > alpha+1 && depth < 3 &&
+       !was_winnerloser && board_.isWinnerLoser() &&
+       !board_.fmgr().queens(board_.getWinnerColor()) &&
+       !board_.fmgr().rooks(board_.getWinnerColor()) )
+  {
+    if ( depth == 2 )
+      return 1;
+    else
+      return 2;
+  }
+
+  return 0;
 }
 
 // additional check extension

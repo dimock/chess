@@ -779,39 +779,68 @@ ScoreType Board::evaluateWinnerLoser() const
       int pp = least_bit_number(pwmsk);
       THROW_IF( (unsigned)pp > 63, "no pawn found" );
 
+      int ykl = king_l.where() >> 7;
+      int ykw = king_w.where() >> 7;
+
       int x = pp & 7;
       int y = pp >> 3;
+      int y_under = y;
+      if ( win_color )
+        y_under++;
+      else
+        y_under--;
+      int pp_under = (x | (y_under << 3)) & 63;
+
       if ( !win_color )
+      {
         y = 7-y;
+        ykl = 7-ykl;
+        ykw = 7-ykw;
+      }
 
       int pr_pos = x | (win_color ? A8 : A1);
       Figure::Color pr_color = (Figure::Color)FiguresCounter::s_whiteColors_[pr_pos];
 
       int pr_moves = 7-y;
+      if ( y == 1 )
+        pr_moves--;
+
+
       int wk_pr_dist = g_distanceCounter->getDistance(king_w.where(), pr_pos);
       int lk_pr_dist = g_distanceCounter->getDistance(king_l.where(), pr_pos);
 
       int wdist = g_distanceCounter->getDistance(king_w.where(), pp);
       int ldist = g_distanceCounter->getDistance(king_l.where(), pp);
 
+      int wudist = g_distanceCounter->getDistance(king_w.where(), pp_under);
+      int ludist = g_distanceCounter->getDistance(king_l.where(), pp_under);
+
       // special case KPK
       if ( (fmgr_.weight(win_color) == Figure::figureWeight_[Figure::TypePawn] && fmgr_.weight(lose_color) == 0) )
       {
-        const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
-        if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
-             (pr_moves >= lk_pr_dist && wk_pr_dist > lk_pr_dist) )
+        bool almost_draw = false;
+        if ( x == 0 || x == 7 )
+        {
+          if ( (lk_pr_dist + ludist <= wk_pr_dist + wudist) || (pr_moves >= lk_pr_dist && lk_pr_dist <= wk_pr_dist+1) )
+            almost_draw = true;
+        }
+        else
+        {
+          if ( wudist >= ludist+1 && pr_moves >= lk_pr_dist )
+            almost_draw = true;
+        }
+
+        if ( almost_draw )
         {
           weight = 30 + (y<<1);
           eval_pawns = false;
         }
       }
       // KPBK. bishop color differs from promotion field color
-      else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) && (x == 0 || x == 7) &&
-                (!fmgr_.bishops_w(win_color) && pr_color || !fmgr_.bishops_b(win_color) && !pr_color) )
+      else if ( ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) && (x == 0 || x == 7) &&
+                 (!fmgr_.bishops_w(win_color) && pr_color || !fmgr_.bishops_b(win_color) && !pr_color) ) )
       {
-        const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
-        if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
-             (pr_moves >= lk_pr_dist && wk_pr_dist > lk_pr_dist) )
+        if ( (pr_moves > lk_pr_dist && lk_pr_dist <= wk_pr_dist) || (lk_pr_dist < 2) )
         {
           weight = 30 + (y<<1);
           eval_pawns = false;
