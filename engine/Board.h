@@ -200,6 +200,10 @@ public:
     return fmgr_.weight(color_) <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn];
   }
 
+  inline bool isWinnerLoser() const
+  {
+    return !can_win_[0] || !can_win_[1];
+  }
 
   /// really make move. perform validation
   bool makeMove(const Move & );

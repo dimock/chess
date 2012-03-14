@@ -828,6 +828,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     else if ( depth <= 1 )
     {
       score = -board_.evaluate();
+      ScoreType sc0 = score;
       int delta = (int)score - (int)betta - (int)Figure::positionGain_;
       if ( haveCheck || score > alpha )
       {
@@ -1013,6 +1014,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #endif //USE_HASH_TABLE_CAPTURE
 
   Figure::Type minimalType = delta2type(delta);
+  if ( board_.isWinnerLoser() )
+    minimalType = Figure::TypePawn;
 
   Move hcaps[HashedMoves_Size];
   int hcapsN = collectHashCaps(ply, minimalType, hcaps);

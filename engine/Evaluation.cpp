@@ -788,9 +788,6 @@ ScoreType Board::evaluateWinnerLoser() const
       Figure::Color pr_color = (Figure::Color)FiguresCounter::s_whiteColors_[pr_pos];
 
       int pr_moves = 7-y;
-      if ( win_color == color_ )
-        pr_moves--;
-
       int wk_pr_dist = g_distanceCounter->getDistance(king_w.where(), pr_pos);
       int lk_pr_dist = g_distanceCounter->getDistance(king_l.where(), pr_pos);
 
@@ -802,28 +799,30 @@ ScoreType Board::evaluateWinnerLoser() const
       {
         const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
         if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
-             (pr_moves <= lk_pr_dist && pr_moves > wk_pr_dist) )
+             (pr_moves >= lk_pr_dist && wk_pr_dist > lk_pr_dist) )
         {
-          weight = 20 + (y<<1);
+          weight = 30 + (y<<1);
+          eval_pawns = false;
         }
       }
       // KPBK. bishop color differs from promotion field color
-      else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) == 1 && (x == 0 || x == 7) &&
-                (fmgr_.bishops_b(win_color) && pr_color || fmgr_.bishops_w(win_color) && !pr_color) )
+      else if ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) && (x == 0 || x == 7) &&
+                (!fmgr_.bishops_w(win_color) && pr_color || !fmgr_.bishops_b(win_color) && !pr_color) )
       {
         const uint64 & pass_mask = g_pawnMasks->mask_kpk(win_color, pp);
         if ( (pass_mask & (1ULL << king_l.where())) && !(pass_mask & (1ULL << king_w.where())) ||
-             (pr_moves <= lk_pr_dist && pr_moves > wk_pr_dist) )
+             (pr_moves >= lk_pr_dist && wk_pr_dist > lk_pr_dist) )
         {
-          weight = 50;
+          weight = 30 + (y<<1);
+          eval_pawns = false;
         }
       }
 
       // opponent's king should be as far as possible from my pawn
-      weight -= (7-ldist) << 1;
+      weight -= (7-ldist);
 
       // my king should be as near as possible to my pawn
-      weight -= wdist << 1;
+      weight -= wdist;
     }
     else
     {

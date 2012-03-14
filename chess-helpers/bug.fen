@@ -11,6 +11,9 @@ wrong KPK case detection (bishop + 1 pawn):
 8/6k1/P5B1/7P/3b1K2/8/8/8 w - - 31 102 
 8/6k1/8/P5B1/5K1P/3b4/8/8 w - - 31 102 
 
+KBPK endgame
+8/6kP/8/6K1/8/8/2B5/8 b - - 8 1 
+
 endgame:
 8/4kp2/4p3/8/1P2r3/PR6/8/1K6 b - - 1 63  
 
