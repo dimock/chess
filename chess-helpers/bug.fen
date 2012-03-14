@@ -40,7 +40,7 @@ bug - don't detect mat in captures-search
 bug - can't find move
 8/QP6/5k2/7P/8/8/3KB3/8 b - - 0 65 
 
-can't mat
+can't mat with KRPPKR
 1r6/5k2/8/4R1K1/6PP/8/8/8 w - - 3 49
 1r6/4k3/8/5RK1/6PP/8/8/8 w - - 1 48
 

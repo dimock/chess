@@ -270,6 +270,8 @@ ScoreType Board::evaluate() const
 
   THROW_IF( score < -32760 || score > 32760, "invalid score" );
 
+  if ( repsCount() > 1 )
+    score >>= 1;
 
   return score;
 }
@@ -325,14 +327,14 @@ ScoreType Board::calculateEval() const
   }
   score += pws_score;
 
-  if ( fmgr_.rooks(Figure::ColorBlack) )
+  if ( !stages_[Figure::ColorWhite] && fmgr_.rooks(Figure::ColorBlack) )
   {
     ScoreType score0 = 0;
     EVALUATE_OPEN_ROOKS(Figure::ColorBlack, score0);
     score -= score0;
   }
 
-  if ( fmgr_.rooks(Figure::ColorWhite) )
+  if ( !stages_[Figure::ColorBlack] && fmgr_.rooks(Figure::ColorWhite) )
   {
     ScoreType score1 = 0;
     EVALUATE_OPEN_ROOKS(Figure::ColorWhite, score1);
@@ -346,8 +348,11 @@ ScoreType Board::calculateEval() const
   }
 
   {
-	  score -= evaluateRooks(Figure::ColorBlack);
-	  score += evaluateRooks(Figure::ColorWhite);
+    if ( !stages_[Figure::ColorWhite] )
+	    score -= evaluateRooks(Figure::ColorBlack);
+
+    if ( !stages_[Figure::ColorBlack] )
+	    score += evaluateRooks(Figure::ColorWhite);
   }
 #endif
 
@@ -582,34 +587,89 @@ ScoreType Board::evaluatePawns(Figure::Color color) const
 
 ScoreType Board::evalPawnsEndgame(Figure::Color color) const
 {
+  ScoreType score = 0;
   Figure::Color ocolor = Figure::otherColor(color);
-  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
-  if ( !opmsk )
-    return 0;
-
   const Figure & king = getFigure(color, KingIndex);
   const uint64 & pmsk = fmgr_.pawn_mask_t(color);
-  ScoreType score = 0;
-  for (int i = 0; i < 8; ++i)
+  int kx = king.where() & 7;
+  int ky = king.where() >> 3;
+  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
+
+  // opponent has pawns
+  if ( opmsk )
   {
-    const Figure & pawn = getFigure(ocolor, i);
-    if ( Figure::TypePawn != pawn.getType() )
-      continue;
-
-    int y = pawn.where() >> 3;
-    if ( !ocolor )
-      y = 7 -y;
-
-    y |= 1;
-
-    const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
-    const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
-    if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
+    for (int i = 0; i < 8; ++i)
     {
-      int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
-      score += (7 - dist)*y;
+      const Figure & pawn = getFigure(ocolor, i);
+      if ( Figure::TypePawn != pawn.getType() )
+        continue;
+
+      int py = pawn.where() >> 3;
+      int y = py;
+      if ( !ocolor )
+        y = 7 -y;
+
+      y |= 1;
+
+      const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, pawn.where());
+      const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, pawn.where());
+      if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
+      {
+        int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
+
+        int px = pawn.where() & 7;
+        int xdist = kx - px;
+        if ( xdist < 0 )
+          xdist = -xdist;
+
+        ScoreType s = 0;
+
+        if ( ocolor && py < ky || !ocolor && py > ky )
+        {
+          s += 2*((7 - xdist)*y)/3;
+          s += ((7 - dist)*y) >> 2;
+        }
+        else
+          s += ((7 - dist)*y);
+
+        score += s;
+      }
     }
   }
+  // i have pawns
+  else if ( pmsk )
+  {
+    for (int i = 0; i < 8; ++i)
+    {
+      const Figure & pawn = getFigure(color, i);
+      if ( Figure::TypePawn != pawn.getType() )
+        continue;
+
+      int py = pawn.where() >> 3;
+      int y = py;
+      if ( !color )
+        y = 7 -y;
+
+      y |= 1;
+
+      const uint64 & passmsk = g_pawnMasks->mask_passed(color, pawn.where());
+      const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, pawn.where());
+      if ( !(pmsk & passmsk) )
+      {
+        int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
+        score += ((7 - dist)*y) >> 1;
+
+        int px = pawn.where() & 7;
+        int xdist = kx - px;
+        if ( xdist < 0 )
+          xdist = -xdist;
+
+        if ( color && py < ky || !color && py > ky )
+          score += (7 - xdist);
+      }
+    }
+  }
+
   return score;
 }
 
@@ -695,7 +755,7 @@ ScoreType Board::evaluateWinnerLoser() const
           y = 7-y;
         if ( y < 6 )
         {
-          int ep = x | (win_color ? 7 : 0);
+          int ep = x | (win_color ? A8 : A1);
           int8 pwhite = FiguresCounter::s_whiteColors_[ep];
           if ( pwhite && fmgr_.bishops_w(lose_color) || !pwhite && fmgr_.bishops_b(lose_color) > 0 || y < 5 )
             weight = 10;
