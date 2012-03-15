@@ -1,4 +1,4 @@
-r3k2r/p3b1pp/1np2p2/3qpb2/2p5/N1P5/PP1PQPPP/R1BRN1K1 w kq - 0 15 bm Nac2; "dimock.001"
+r3k2r/p3b1pp/1np2p2/3qpb2/2p5/N1P5/PP1PQPPP/R1BRN1K1 w kq - 0 15 bm Nac2 Nec2; "dimock.001"
 8/8/1kp4p/1pNb3P/1P4P1/4Kp2/8/8 w - - 1 66 bm g5; "dimock.002"
 3r1rk1/pb1qbppp/1pnp1n2/3Np3/2P5/BP3NP1/P2QPPBP/R2R2K1 b - - 5 14 bm Nxd5; "dimock.003"
 6rk/3R2p1/8/5P1p/8/6PP/8/1q1Q2K1 b - - 15 64 bm Qxd1+ Qb6+; "dimock.004"
@@ -7,3 +7,4 @@ r4rk1/1p4pp/1q1p3n/p2Pp3/4B3/1PB3Pb/P3QP1P/R4RK1 w - - 0 22 bm Bg2 Rfc1; "dimock
 k2rn2q/pppn3p/7b/4p3/8/PP1N2P1/2P1R1BP/K3Q1N1 w - - 0 1 bm Ka2; "dimock.007"
 3r1rk1/1p1n3p/p1bRppp1/2p1P3/2P2P2/1P3NPP/P6R/3B2K1 w - - 0 30 bm Rhd2; "dimock.008"
 r4rk1/1p4pp/1q1p3n/p2Pp3/4B3/1PB3Pb/P3QP1P/R3R1K1 b - - 1 22 bm Ng4; "dimock.009"
+2k2br1/p1p1r2p/2p1pp1N/2Pp2pQ/3Pn3/4P2P/PPq2PP1/R1B2RK1 b - - 5 18 bm Bxh6; "dimock.010"
