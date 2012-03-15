@@ -253,7 +253,7 @@ int Board::see_before(int initial_value, const Move & move) const
 
   // king
   if ( ffield.type() == Figure::TypeKing )
-    return -1;
+    return -Figure::WeightMat;
 
   // en-passant
   if ( !tfield && ffield.type() == Figure::TypePawn && move.rindex_ >= 0 )
@@ -397,7 +397,7 @@ int Board::see_before(int initial_value, const Move & move) const
           }
           // illegal move
           else if ( col == color && 0 == i )
-            return -1;
+            return -Figure::WeightMat;
         }
         break;
 
@@ -418,7 +418,7 @@ int Board::see_before(int initial_value, const Move & move) const
           }
           // illegal move
           else if ( col == color && 0 == i )
-            return -1;
+            return -Figure::WeightMat;
         }
         break;
 

@@ -663,7 +663,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef USE_FUTILITY_PRUNING
   if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly &&
-       depth == 1 && ply > 1 )
+       depth == 1 && ply > 1 && !board_.isWinnerLoser() )
   {
     ScoreType score = board_.evaluate();
     int delta = (int)alpha - (int)score - (int)Figure::positionGain_;
@@ -1116,7 +1116,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
-        if ( !see_check(check) )
+        if ( depth < 1 && !see_check(check) )
           continue;
 
         capture(depth, ply, alpha, betta, check, counter);
@@ -1524,9 +1524,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
 
   // go to winner-loser state without RQ
   if (  betta > alpha+1 && depth < 3 &&
-       !was_winnerloser && board_.isWinnerLoser() &&
-       !board_.fmgr().queens(board_.getWinnerColor()) &&
-       !board_.fmgr().rooks(board_.getWinnerColor()) )
+       !was_winnerloser && board_.isWinnerLoser() )
   {
     if ( depth == 2 )
       return 1;

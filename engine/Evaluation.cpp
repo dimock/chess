@@ -779,8 +779,11 @@ ScoreType Board::evaluateWinnerLoser() const
       int pp = least_bit_number(pwmsk);
       THROW_IF( (unsigned)pp > 63, "no pawn found" );
 
-      int ykl = king_l.where() >> 7;
-      int ykw = king_w.where() >> 7;
+      int ykl = king_l.where() >> 3;
+      int ykw = king_w.where() >> 3;
+
+      int xkl = king_l.where() & 7;
+      int xkw = king_w.where() & 7;
 
       int x = pp & 7;
       int y = pp >> 3;
@@ -802,9 +805,6 @@ ScoreType Board::evaluateWinnerLoser() const
       Figure::Color pr_color = (Figure::Color)FiguresCounter::s_whiteColors_[pr_pos];
 
       int pr_moves = 7-y;
-      if ( y == 1 )
-        pr_moves--;
-
 
       int wk_pr_dist = g_distanceCounter->getDistance(king_w.where(), pr_pos);
       int lk_pr_dist = g_distanceCounter->getDistance(king_l.where(), pr_pos);
@@ -815,18 +815,23 @@ ScoreType Board::evaluateWinnerLoser() const
       int wudist = g_distanceCounter->getDistance(king_w.where(), pp_under);
       int ludist = g_distanceCounter->getDistance(king_l.where(), pp_under);
 
+      int xwdist = xkw > x ? xkw-x : x-xkw;
+      int xldist = xkl > x ? xkl-x : x-xkl;
+
       // special case KPK
       if ( (fmgr_.weight(win_color) == Figure::figureWeight_[Figure::TypePawn] && fmgr_.weight(lose_color) == 0) )
       {
         bool almost_draw = false;
         if ( x == 0 || x == 7 )
         {
-          if ( (lk_pr_dist + ludist <= wk_pr_dist + wudist) || (pr_moves >= lk_pr_dist && lk_pr_dist <= wk_pr_dist+1) )
+          if ( (lk_pr_dist + ludist <= wk_pr_dist + wudist) ||
+               ((pr_moves >= lk_pr_dist && y > 1 || pr_moves > lk_pr_dist && y == 1) && wudist >= ludist) )
             almost_draw = true;
         }
         else
         {
-          if ( wudist >= ludist+1 && pr_moves >= lk_pr_dist )
+          if ( (pr_moves >= lk_pr_dist && y > 1 || pr_moves > lk_pr_dist && y == 1) &&
+               ((wudist > ludist || wudist == ludist && lose_color == color_) && y >= ykw || (wudist > ludist+1 && y < ykw)) )
             almost_draw = true;
         }
 
@@ -840,7 +845,7 @@ ScoreType Board::evaluateWinnerLoser() const
       else if ( ( fmgr_.rooks(win_color) == 0 && fmgr_.queens(win_color) == 0 && fmgr_.knights(win_color) == 0 && fmgr_.bishops(win_color) && (x == 0 || x == 7) &&
                  (!fmgr_.bishops_w(win_color) && pr_color || !fmgr_.bishops_b(win_color) && !pr_color) ) )
       {
-        if ( (pr_moves > lk_pr_dist && lk_pr_dist <= wk_pr_dist) || (lk_pr_dist < 2) )
+        if ( (pr_moves > lk_pr_dist && lk_pr_dist <= wk_pr_dist) || (lk_pr_dist < 2 && pr_moves > 0) )
         {
           weight = 30 + (y<<1);
           eval_pawns = false;
