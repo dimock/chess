@@ -1522,15 +1522,9 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
 #endif
   }
 
-  // go to winner-loser state without RQ
-  if (  betta > alpha+1 && depth < 3 &&
-       !was_winnerloser && board_.isWinnerLoser() )
-  {
-    if ( depth == 2 )
-      return 1;
-    else
-      return 2;
-  }
+  // go to winner-loser state. extend to be sure that loser has at least 1 movement
+  if (  betta > alpha+1 && depth <= 1 && !was_winnerloser && board_.isWinnerLoser() )
+    return 1;
 
   return 0;
 }

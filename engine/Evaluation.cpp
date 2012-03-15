@@ -285,6 +285,48 @@ ScoreType Board::calculateEval() const
   ScoreType fweight_b = fmgr_.weight(Figure::ColorBlack) - fmgr_.pawns(Figure::ColorBlack)*Figure::figureWeight_[Figure::TypePawn];
   ScoreType fweight_w = fmgr_.weight(Figure::ColorWhite) - fmgr_.pawns(Figure::ColorWhite)*Figure::figureWeight_[Figure::TypePawn];
 
+
+  // special case KRNKR || KRBKR - really almost draw case
+  if ( !fmgr_.pawns(Figure::ColorWhite) && !fmgr_.pawns(Figure::ColorBlack) &&
+       !fmgr_.queens(Figure::ColorWhite) && !fmgr_.queens(Figure::ColorBlack) &&
+        fmgr_.rooks(Figure::ColorWhite) == 1 && fmgr_.rooks(Figure::ColorBlack) == 1 )
+  {
+    ScoreType wdiff = fweight_w - fweight_b;
+    Figure::Color win_color  = wdiff > 0 ? Figure::ColorWhite : Figure::ColorBlack;
+    Figure::Color lose_color = wdiff > 0 ? Figure::ColorBlack : Figure::ColorWhite;
+
+    if ( (fmgr_.knights(Figure::ColorWhite)+fmgr_.bishops(Figure::ColorWhite) == 1 && fmgr_.knights(Figure::ColorBlack)+fmgr_.bishops(Figure::ColorBlack) == 0) ||
+         (fmgr_.knights(Figure::ColorWhite)+fmgr_.bishops(Figure::ColorWhite) == 0 && fmgr_.knights(Figure::ColorBlack)+fmgr_.bishops(Figure::ColorBlack) == 1) )
+    {
+      const Figure & king_l = getFigure(lose_color, KingIndex);
+
+      int kx = king_l.where() & 7;
+      int ky = king_l.where() >>3;
+
+      int dist = g_distanceCounter->getDistance(getFigure(Figure::ColorWhite, KingIndex).where(), getFigure(Figure::ColorBlack, KingIndex).where());
+      if ( win_color )
+        dist = -dist;
+
+      if ( kx == 0 || kx == 7 || ky == 0 || ky == 7 )
+      {
+        score = wdiff >> 1;
+        score += dist << 2;
+        ScoreType kscore = Figure::positionEvaluation( 1, lose_color, Figure::TypeKing, king_l.where() );
+        score += lose_color ? kscore : -kscore;
+      }
+      else
+      {
+        score = wdiff >> 2;
+        score += dist;
+        score += Figure::positionEvaluation( 1, Figure::ColorWhite, Figure::TypeKing, getFigure(Figure::ColorWhite, KingIndex).where() );
+        score -= Figure::positionEvaluation( 1, Figure::ColorBlack, Figure::TypeKing, getFigure(Figure::ColorBlack, KingIndex).where() );
+      }
+
+      return score;
+    }
+  }
+
+
   score -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
   score += fmgr_.eval(Figure::ColorWhite, stages_[1]);
 
@@ -305,7 +347,6 @@ ScoreType Board::calculateEval() const
 
   if ( stages_[Figure::ColorWhite] )
     score += evalPawnsEndgame(Figure::ColorWhite);
-
 
   // fianchetto
   score += evaluateFianchetto();
