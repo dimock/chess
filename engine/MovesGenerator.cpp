@@ -254,6 +254,97 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   return m;
 }
 
+void MovesGenerator::calculateWeight(Move & move)
+{
+  const Field & ffield = board_.getField(move.from_);
+  THROW_IF( !ffield, "no figure on field we move from" );
+
+  const History & hist = history_[move.from_][move.to_];
+  move.srt_score_ = hist.score_ + 10000;
+
+  if ( move.srt_score_ > history_max_ )
+    history_max_ = move.srt_score_;
+
+  if ( (move.rindex_ >= 0 || move.new_type_ > 0) )
+  {
+    bool do_see = true;
+    Figure::Type vtype = Figure::TypeNone;
+    Figure::Type atype = board_.getField(move.from_).type();
+
+    // victim >= attacker
+    if ( move.rindex_ >= 0 )
+    {
+      vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+      if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype]/*|| atype == Figure::TypeKing*/ )
+      {
+        do_see = false;
+        move.srt_score_ = Figure::figureWeightSEE_[vtype] /*- Figure::figureWeightSEE_[atype]*/ + 1000000;
+      }
+    }
+
+    if ( do_see )
+    {
+      // we look from side, that goes to move. we should adjust sing of initial mat-balance
+      int initial_balance = board_.fmgr().weight();
+      if ( !board_.getColor() )
+        initial_balance = -initial_balance;
+
+      int score_see = board_.see_before(initial_balance, move);
+      if ( score_see >= 0 )
+      {
+        if ( move.rindex_ >= 0 )
+          move.srt_score_ = (unsigned)score_see + 1000000;
+        //Figure::figureWeightSEE_[vtype]*2 - Figure::figureWeightSEE_[atype] + 1000000;//
+        else
+          move.srt_score_ = (unsigned)score_see + 500000;
+      }
+      else
+        move.srt_score_ = (unsigned)(score_see + 1000);
+    }
+
+    if ( move.srt_score_ >= 1000000 && board_.halfmovesCount() > 1 )
+    {
+      MoveCmd & prev = board_.getMoveRev(-1);
+      if ( prev.to_ == move.to_ )
+        move.srt_score_ += vtype * 10;
+    }
+  }
+  //if ( move.rindex_ >= 0 )
+  //{
+  //  //move.srt_score_ = 10;
+  //  const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
+  //  move.srt_score_ = (rfig.getType()) * 6 - (ffield.type()) + 5;
+  //  //move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4) + 1000000;
+  //  if ( board_.halfmovesCount() > 1 )
+  //  {
+  //    MoveCmd & prev = board_.getMoveRev(-1);
+  //    if ( prev.to_ == move.to_ )
+  //      move.srt_score_++;
+  //  }
+  //  move.srt_score_ += 1000000;
+  //}
+  //else if ( move.new_type_ > 0 )
+  //{
+  //  //move.srt_score_ = (int)Figure::figureWeight_[move.new_type_] - (int)Figure::figureWeight_[Figure::TypePawn] + 800000;
+  //  move.srt_score_ = (move.new_type_) - 5;
+  //  move.srt_score_ += 1000000;
+  //  //move.srt_score_ = 5;
+  //}
+#ifdef USE_KILLER
+  else if ( move == killer_ )
+  {
+    move.srt_score_ = 300000;
+    move.fkiller_ = 1;
+  }
+#endif
+
+  //if ( (move.rindex_ >= 0 || move.new_type_ > 0) && player_ && !player_->see_cc(move) )
+  //{
+  //  move.srt_score_ = 0;
+  //}
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), pv_(pv)
@@ -261,6 +352,8 @@ EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int 
   numOfMoves_ = push_pv();
   numOfMoves_ = generate(alpha, betta, counter);
   escapes_[numOfMoves_].clear();
+
+  //sort();
 }
 
 EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
@@ -287,6 +380,55 @@ int EscapeGenerator::push_pv()
     pv_.clear();
 
   return m;
+}
+
+void EscapeGenerator::sort()
+{
+  for (int i = 0; i < numOfMoves_; ++i)
+  {
+    Move & move = escapes_[i];
+    move.srt_score_ = 0;
+    if ( move == pv_ )
+      move.srt_score_ = 100000000;
+    if ( move.rindex_ >= 0 )
+    {
+      Figure::Type atype = board_.getField(move.from_).type();
+      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+      if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype] || atype == Figure::TypeKing )
+        move.srt_score_ = Figure::figureWeightSEE_[vtype] /*- Figure::figureWeightSEE_[atype]*/ + 1000000;
+      else
+      {
+        int initial_balance = board_.fmgr().weight();
+        if ( !board_.getColor() )
+          initial_balance = -initial_balance;
+
+        int score_see = board_.see_before(initial_balance, move);
+        if ( score_see >= 0 )
+          move.srt_score_ = (unsigned)score_see + 1000000;
+        //Figure::figureWeightSEE_[vtype]*2 - Figure::figureWeightSEE_[atype] + 1000000;
+      }
+    }
+    else
+    {
+      const History & hist = MovesGenerator::history(move.from_, move.to_);
+      move.srt_score_ = hist.score_;
+    }
+  }
+
+  for (int i = 0; i < numOfMoves_; ++i)
+  {
+    Move & move_i = escapes_[i];
+    for (int j = i+1; j < numOfMoves_; ++j)
+    {
+      Move & move_j = escapes_[j];
+      if ( move_j.srt_score_ > move_i.srt_score_ )
+      {
+        Move t = move_j;
+        move_j = move_i;
+        move_i = t;
+      }
+    }
+  }
 }
 
 int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
@@ -565,8 +707,8 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
 
   const int8 * table = board_.g_movesTable->king(king.where());
 
-  Move kingMoves[16];
-  int num = 0;
+  //Move kingMoves[16];
+  //int num = 0;
 
   for (; *table >= 0; ++table)
   {
@@ -580,43 +722,46 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
       rindex = field.index();
     }
 
-    Move & move = kingMoves[num];
+    Move move;//kingMoves[num];
     move.set(king.where(), *table, rindex, 0, 0);
     if ( move == pv_ || !board_.isMoveValidUnderCheck(move) )
       continue;
 
-    move.srt_score_ = 0;
-    if ( move.rindex_ > 0 )
-    {
-      move.srt_score_ = Figure::figureWeight_[board_.getFigure(ocolor, move.rindex_).getType()];
-      if ( prev && move.rindex_ == board_.getField(prev.to_).index() )
-        move.srt_score_ += 50;
-    }
+    escapes_[m] = move;
+    m++;
+
+    //move.srt_score_ = 0;
+    //if ( move.rindex_ > 0 )
+    //{
+    //  move.srt_score_ = Figure::figureWeight_[board_.getFigure(ocolor, move.rindex_).getType()];
+    //  if ( prev && move.rindex_ == board_.getField(prev.to_).index() )
+    //    move.srt_score_ += 50;
+    //}
 
     move.checkVerified_ = 1;
-    num++;
+    //num++;
   }
 
-  for (int i = 0; i < num; ++i)
-  {
-    Move & move = escapes_[m++];
-    move.srt_score_ = 0; 
-    int index = -1;
-    for (int j = 0; j < num; ++j)
-    {
-      if ( !kingMoves[j] )
-        continue;
+  //for (int i = 0; i < num; ++i)
+  //{
+  //  Move & move = escapes_[m++];
+  //  move.srt_score_ = 0; 
+  //  int index = -1;
+  //  for (int j = 0; j < num; ++j)
+  //  {
+  //    if ( !kingMoves[j] )
+  //      continue;
 
-      if ( kingMoves[j].srt_score_ >= move.srt_score_ )
-      {
-        move = kingMoves[j];
-        index = j;
-      }
-    }
-    if ( index < 0 )
-      break;
-    kingMoves[index].clear();
-  }
+  //    if ( kingMoves[j].srt_score_ >= move.srt_score_ )
+  //    {
+  //      move = kingMoves[j];
+  //      index = j;
+  //    }
+  //  }
+  //  if ( index < 0 )
+  //    break;
+  //  kingMoves[index].clear();
+  //}
 
   return m;
 }

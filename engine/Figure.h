@@ -18,7 +18,7 @@ public:
 public:
 
   static ScoreType bishopKnightMat_[64];
-  static ScoreType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
+  static ScoreType figureWeight_[7], figureWeightSEE_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
   static ScoreType pawnGuarded_, pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, winloseBonus_;
   static ScoreType knightMobilityBonus_[16], bishopMobilityBonus_[16], queenMobilityBonus_[32];
   static ScoreType knightDistBonus_[8], bishopDistBonus_[8];

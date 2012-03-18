@@ -386,54 +386,7 @@ private:
 #endif
 
 #ifdef RECAPTURE_EXTENSION
-  bool recapture(int ply, int initial_value)
-  {
-    if ( board_.halfmovesCount() < 1 )
-      return false;
-
-    const MoveCmd & move = board_.getMoveRev(0);
-    if ( move.rindex_ < 0 )
-      return false;
-
-    // don't extend pawn's recapture
-    //if ( move.eaten_type_ == Figure::TypePawn && board_.getField(move.to_).type() == Figure::TypePawn )
-    //  return false;
-
-    // this is not a recapture (?) but capture of strong figure by weaker one.
-    // it usually means that previous move was stupid )
-    if ( board_.halfmovesCount() > 1 )
-    {
-      const MoveCmd & prev = board_.getMoveRev(-1);
-      if ( prev.rindex_ < 0 &&
-           !typeLEQ( (Figure::Type)board_.getField(move.to_).type(), (Figure::Type)move.eaten_type_) )
-      {
-        //char fen[256];
-        //board_.toFEN(fen);
-        return false;
-      }
-    }
-
-    //if ( contexts_[ply].ext_data_.recapture_count_ >= RecaptureExtension_Limit )
-    //  return false;
-
-    Move next;
-    int score_see = board_.see(initial_value, next);
-    if ( score_see >= 0 )
-    {
-      contexts_[ply].ext_data_.recap_curr_ = move;
-      contexts_[ply].ext_data_.recap_next_ = next;
-      //contexts_[ply].ext_data_.recapture_count_++;
-      return true;
-    }
-    else if ( ply > 0 )
-    {
-      const MoveCmd & prev = board_.getMoveRev(-1);
-      if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
-        return true;
-    }
-
-    return false;
-  }
+  bool recapture(int ply, int depth, int initial_balance);
 #endif //RECAPTURE_EXTENSION
 
   inline bool pawnBeforePromotion(const MoveCmd & move) const
@@ -449,7 +402,7 @@ private:
   }
 
   /// returns numer of ply to extend
-  int do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser);
+  int do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser, int initial_balance);
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
@@ -458,22 +411,6 @@ private:
   // do we need additional check extension
   int extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alpha, ScoreType betta);
 
-  bool see_check(const Move & move) const
-  {
-    // certainly discovered check
-    if ( move.discoveredCheck_ )
-      return true;
-
-    // we look from side, that goes to move. we should adjust sing of initial mat-balance
-    int initial_balance = board_.fmgr().weight();//initial_material_balance_;
-    if ( !board_.getColor() )
-      initial_balance = -initial_balance;
-
-    // do winning-capture check
-    int score_see = board_.see_before(initial_balance, move);
-    if ( score_see >= 0 )
-      return true;
-
-    return false;
-  }
+  public:
+  bool see_cc(const Move & move) const;
 };

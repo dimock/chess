@@ -101,40 +101,7 @@ private:
     calculateWeight(move);
   }
 
-  inline void calculateWeight(Move & move)
-  {
-    const Field & ffield = board_.getField(move.from_);
-    THROW_IF( !ffield, "no figure on field we move from" );
-
-    const History & hist = history_[move.from_][move.to_];
-    move.srt_score_ = hist.score();
-
-    if ( move.srt_score_ > history_max_ )
-      history_max_ = move.srt_score_;
-
-    if ( move.rindex_ >= 0 )
-    {
-      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4) + 1000000;
-      if ( board_.halfmovesCount() > 1 )
-      {
-        MoveCmd & prev = board_.getMoveRev(-1);
-        if ( prev.to_ == move.to_ )
-          move.srt_score_ += 50;
-      }
-    }
-    else if ( move.new_type_ > 0 )
-    {
-      move.srt_score_ = (int)Figure::figureWeight_[move.new_type_] - (int)Figure::figureWeight_[Figure::TypePawn] + 800000;
-    }
-#ifdef USE_KILLER
-    else if ( move == killer_ )
-    {
-      move.srt_score_ = 500000;
-      move.fkiller_ = 1;
-    }
-#endif
-  }
+  void calculateWeight(Move & move);
 
   int current_;
   int numOfMoves_;
@@ -213,16 +180,19 @@ private:
     THROW_IF( !ffield, "no figure on field we move from" );
 	
 	  const History & hist = MovesGenerator::history(move.from_, move.to_);
-    move.srt_score_ = hist.score();
+    move.srt_score_ = 0;//hist.score();
 
     if ( move.rindex_ >= 0 )
     {
       const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      move.srt_score_ += (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4) + 1000000;
+      move.srt_score_ = Figure::figureWeight_[rfig.getType()] /*- (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4) */+ 1000000;
+//      move.srt_score_ = (rfig.getType())*6 - (ffield.type()) + 5;
+//      move.srt_score_ = 10;
     }
     else if ( move.new_type_ > 0 )
     {
-      move.srt_score_ += Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 500000;
+      move.srt_score_ = 500000;//Figure::figureWeight_[move.new_type_] - Figure::figureWeight_[Figure::TypePawn] + 500000;
+      //move.srt_score_ = (move.new_type_) - 5;
     }
   }
 
@@ -292,6 +262,8 @@ private:
 
     return true;
   }
+
+  void sort();
 
 
   int current_;
@@ -369,18 +341,18 @@ private:
       return;
 
 	  const History & hist = MovesGenerator::history(move.from_, move.to_);
-    move.srt_score_ = hist.score();
+    move.srt_score_ = hist.score_;
 
     if ( move.rindex_ >= 0 )
     {
       const Field & ffield = board_.getField(move.from_);
       THROW_IF( !ffield, "no figure on field we move from" );
       const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4) + 1000000;
+      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] /*- (int)Figure::figureWeight_[ffield.type()] + ((int)rfig.getType()<<4)*/ + 1000000;
     }
     else if ( move.new_type_ > 0 )
     {
-      move.srt_score_ = (int)Figure::figureWeight_[move.new_type_] - (int)Figure::figureWeight_[Figure::TypePawn] + 800000;
+      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 500000;//(int)Figure::figureWeight_[move.new_type_] - (int)Figure::figureWeight_[Figure::TypePawn] + 800000;
     }
 
     ++m;

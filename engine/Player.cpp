@@ -587,10 +587,28 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 #endif // USE_HASH_TABLE_GENERAL
 
+  Move pv;
+  pv.clear();
+
   // clear context for current ply
   // copy extensions counters from prev.ply context
   if ( ply < MaxPly-1 )
   {
+    if ( use_pv_ )
+    {
+      // we use PV only up to max-depth
+      if ( ply < depthMax_ )
+      {
+        pv = contexts_[0].pv_[ply];
+        pv.checkVerified_ = 0;
+
+        if ( !board_.validMove(pv) )
+          pv.clear();
+
+        THROW_IF( pv.rindex_ == 100, "invalid pv move" );
+      }
+    }
+
     contexts_[ply+1].killer_.clear();
     contexts_[ply].clear(ply);
 
@@ -674,7 +692,18 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // collect all hashed moves together
   Move hmoves[HashedMoves_Size];
-  int hmovesN = collectHashMoves(depth, ply, null_move, alpha, betta, hmoves);
+  int hmovesN = 0;
+  
+  if ( !use_pv_ )
+    hmovesN = collectHashMoves(depth, ply, null_move, alpha, betta, hmoves);
+  else if ( pv )
+  {
+    hmoves[0] = pv;
+    hmoves[1].clear();
+    hmovesN = 1;
+  }
+  else
+    hmoves[0].clear();
 
   if ( Board::UnderCheck == board_.getState() )
   {
@@ -807,6 +836,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
   // previous move was reduced
   bool reduced = board_.halfmovesCount() > 0 && board_.getMoveRev(0).reduced_;
   bool was_winnerloser = board_.isWinnerLoser();
+  int initial_balance = board_.fmgr().weight();
 
   if ( board_.makeMove(move) )
   {
@@ -816,7 +846,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
     bool haveCheck = board_.getState() == Board::UnderCheck;
     move.checkFlag_ = haveCheck;
-    int ext_ply = do_extension(depth, ply, alpha, betta, was_winnerloser);
+    int ext_ply = do_extension(depth, ply, alpha, betta, was_winnerloser, initial_balance);
     if ( ext_ply )
     {
       mv_cmd.extended_ = true;
@@ -1034,7 +1064,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( board_.getState() == Board::UnderCheck )
   {
     EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
-    depth +=extend_check(depth, ply, eg, alpha, betta);
+    //depth +=extend_check(depth, ply, eg, alpha, betta);
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -1094,6 +1124,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
+      if ( !see_cc(cap) )
+        continue;
+
       capture(depth, ply, alpha, betta, cap, counter);
     }
 
@@ -1116,7 +1149,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
-        if ( !see_check(check) )
+        if ( !see_cc(check) )
           continue;
 
         capture(depth, ply, alpha, betta, check, counter);
@@ -1231,22 +1264,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
   Move pv;
   pv.clear();
 
-  if ( use_pv_ )
-  {
-    // we use PV only up to max-depth
-    if ( ply < depthMax_ )
-    {
-      pv = contexts_[0].pv_[ply];
-      pv.checkVerified_ = 0;
-
-      if ( !board_.validMove(pv) )
-        pv.clear();
-
-      THROW_IF( pv.rindex_ == 100, "invalid pv move" );
-    }
-  }
 #ifdef USE_HASH_TABLE_GENERAL
-  else
   {
     GeneralHItem & hgitem = ghash_[board_.hashCode()];
     if ( hgitem.move_ && hgitem.hcode_ == board_.hashCode() )
@@ -1465,7 +1483,7 @@ bool Player::isRealThreat(const Move & move)
   return false;
 }
 //////////////////////////////////////////////////////////////////////////
-int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser)
+int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser, int initial_balance)
 {
   if ( depth <= 0 || alpha >= Figure::WeightMat-MaxPly || board_.halfmovesCount() < 1 )
     return 0;
@@ -1473,58 +1491,38 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
   const MoveCmd & move = board_.getMoveRev(0);
 
   if ( board_.getState() == Board::UnderCheck )
-  {
-#ifdef EXTEND_ONLY_STRONG_CHECKS
-    // extend only double, discovered and winning capture checks
-    if ( move.checkingNum_ == 2 || move.rindex_ >= 0 || board_.getField(move.to_).index() != move.checking_[0] )
       return 1;
-#else
-    // if there is great alpha extend only dangerous checks, otherwise extend always
-    if ( alpha <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] )
-      return 1;
-#endif
-  }
+
+  // other extensions will be done only in PV
+  if ( betta == alpha+1 )
+    return 0;
 
   // we look from side, that moved recently. we should adjust sing of initial mat-balance
-  int initial_balance = initial_material_balance_;
+  initial_balance = initial_material_balance_;
   if ( board_.getColor() )
     initial_balance = -initial_balance;
 
-  if ( move.new_type_ == Figure::TypeQueen || pawnBeforePromotion(move) || board_.getState() == Board::UnderCheck )
+#ifdef EXTEND_PROMOTION
+  if ( pawnBeforePromotion(move) )
   {
-#ifdef USE_SEE_IN_EXTENSION
     Move next;
-    int score_see = board_.see(initial_balance, next);
-    if ( score_see >= 0 )
-      return 1;
-#else
-    return board_.getState() == Board::UnderCheck;
-#endif
-  }
-  else if ( betta > alpha+1 )
-  {
-#ifdef EXTEND_PASSED_PAWN
-    if ( board_.pawnPassed(move) )
-    {
-      Move next;
-      int score_see = board_.see(initial_balance, next);
-      if ( score_see >= 0 )
+    int rdepth = 0;
+    int score_see = board_.see(initial_balance, next, rdepth);
+    if ( score_see >= 0 /*&& rdepth >= depth-1*/ )
         return 1;
     }
-#ifdef RECAPTURE_EXTENSION
-    else 
-#endif
 #endif
 
 #ifdef RECAPTURE_EXTENSION
-    if ( move.rindex_ && recapture(ply, initial_balance) )
+  if ( alpha < Figure::figureWeight_[Figure::TypeKnight] && recapture(ply, depth, initial_balance) )
       return 1;
 #endif
-  }
 
   // go to winner-loser state. extend to be sure that loser has at least 1 movement
+#ifdef EXTEND_WINNER_LOSER
   if (  betta > alpha+1 && depth <= 1 && !was_winnerloser && board_.isWinnerLoser() )
     return 1;
+#endif
 
   return 0;
 }
@@ -1536,7 +1534,8 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
 
   if ( board_.halfmovesCount() < 1 ||
        eg.count() < 1 ||
-       alpha > Figure::figureWeight_[Figure::TypeRook] )
+       alpha > Figure::figureWeight_[Figure::TypeRook] ||
+       alpha+1 == betta )
   {
     return 0;
   }
@@ -1554,3 +1553,78 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
 
   return 0;
 }
+
+bool Player::see_cc(const Move & move) const
+{
+  // certainly discovered check
+  if ( move.discoveredCheck_ )
+    return true;
+
+  // victim >= attacker
+  if ( move.rindex_ >= 0 )
+  {
+    Figure::Type atype = board_.getField(move.from_).type();
+    Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+    if ( typeLEQ(atype, vtype) )
+      return true;
+  }
+
+  // we look from side, that goes to move. we should adjust sing of initial mat-balance
+  int initial_balance = board_.fmgr().weight();//initial_material_balance_;
+  if ( !board_.getColor() )
+    initial_balance = -initial_balance;
+
+  // do winning capture/check
+  int score_see = board_.see_before(initial_balance, move);
+  if ( score_see >= 0 )
+    return true;
+
+  return false;
+}
+
+#ifdef RECAPTURE_EXTENSION
+bool Player::recapture(int ply, int depth, int initial_balance)
+{
+  if ( board_.halfmovesCount() < 1 )
+    return false;
+
+  const MoveCmd & move = board_.getMoveRev(0);
+  if ( move.rindex_ < 0 )
+    return false;
+
+  // this is not a recapture (?) but capture of strong figure by weaker one.
+  // it usually means that previous move was stupid )
+  if ( board_.halfmovesCount() > 1 )
+  {
+    const MoveCmd & prev = board_.getMoveRev(-1);
+    if ( prev.rindex_ < 0 &&
+      !typeLEQ( (Figure::Type)board_.getField(move.to_).type(), (Figure::Type)move.eaten_type_) )
+    {
+      //char fen[256];
+      //board_.toFEN(fen);
+      return false;
+    }
+  }
+
+  Move next;
+  int rdepth = 0;
+  int score_see = board_.see(initial_balance, next, rdepth);
+
+  if ( score_see >= 0 )
+  {
+    contexts_[ply].ext_data_.recap_curr_ = move;
+    contexts_[ply].ext_data_.recap_next_ = next;
+
+    // do recapture only for node, that goes under horizon
+    return depth-rdepth <= 1;
+  }
+  else if ( ply > 0 )
+  {
+    const MoveCmd & prev = board_.getMoveRev(-1);
+    if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
+      return depth-rdepth <= 1;
+  }
+
+  return false;
+}
+#endif //RECAPTURE_EXTENSION

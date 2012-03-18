@@ -1,8 +1,9 @@
 #include "Board.h"
 
 // static exchange evaluation
-int Board::see(int initial_value, Move & next) const
+int Board::see(int initial_value, Move & next, int & rdepth) const
 {
+  rdepth = 0;
   next.clear();
 
   if ( halfmovesCounter_ < 1 || (state_ != Ok && state_ != UnderCheck) )
@@ -205,6 +206,7 @@ int Board::see(int initial_value, Move & next) const
         next.new_type_ = Figure::TypeQueen;
     }
 
+    rdepth++;
     score_gain += fscore;
     if ( t == Figure::TypePawn && promotion )
     {

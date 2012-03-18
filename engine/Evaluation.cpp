@@ -3,6 +3,7 @@
 
 // TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
 ScoreType Figure::figureWeight_[7] = { 0, 100, 320, 330, 500, 950, 0 };
+ScoreType Figure::figureWeightSEE_[7]  = { 0, 100, 325, 325, 500, 950, 0 };
 
 enum {
   A1, B1, C1, D1, E1, F1, G1, H1,

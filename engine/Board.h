@@ -364,7 +364,7 @@ public:
   /// static exchange evaluation
 
   /// should be called directly after move
-  int see(int initial_value, Move & next) const;
+  int see(int initial_value, Move & next, int & /*recapture depth*/) const;
 
   // we try to do 'move'
   int see_before(int initial_value, const Move & move) const;
