@@ -269,7 +269,7 @@ int Board::see_before(int initial_value, const Move & move) const
   int score_gain = current_value - initial_value;
 
   if ( tfield )
-    fscore = Figure::figureWeight_[tfield.type()];
+    fscore = Figure::figureWeightSEE_[tfield.type()];
 
   // collect all attackers for each side
   // lo-byte = type, hi-byte = pos
@@ -464,14 +464,14 @@ int Board::see_before(int initial_value, const Move & move) const
     score_gain += fscore;
     if ( t == Figure::TypePawn && promotion )
     {
-      int dscore = Figure::figureWeight_[Figure::TypeQueen]-Figure::figureWeight_[Figure::TypePawn];
+      int dscore = Figure::figureWeightSEE_[Figure::TypeQueen]-Figure::figureWeightSEE_[Figure::TypePawn];
       if ( col != color )
         dscore = -dscore;
       score_gain += dscore;
-      fscore = (col != color) ? Figure::figureWeight_[Figure::TypeQueen] : -Figure::figureWeight_[Figure::TypeQueen];
+      fscore = (col != color) ? Figure::figureWeightSEE_[Figure::TypeQueen] : -Figure::figureWeightSEE_[Figure::TypeQueen];
     }
     else
-      fscore = (col != color) ? Figure::figureWeight_[t] : -Figure::figureWeight_[t];
+      fscore = (col != color) ? Figure::figureWeightSEE_[t] : -Figure::figureWeightSEE_[t];
 
     // don't need to continue if we haven't won material after capture
     if ( score_gain > 0 && col != color || score_gain < 0 && col == color )
