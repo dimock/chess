@@ -89,7 +89,7 @@ private:
   }
 
   void calculateWeight(Move & move);
-  bool see(Move & );
+  bool see(Move & , int &);
 
   int current_;
   int numOfMoves_;
@@ -109,20 +109,7 @@ public:
 
   CapsGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
 
-  Move & capture()
-  {
-    Move * move = captures_ + numOfMoves_;
-    Move * mv = captures_;
-    for ( ; *mv; ++mv)
-    {
-      if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
-        continue;
-
-      move = mv;
-    }
-    move->alreadyDone_ = 1;
-    return *move;
-  }
+  Move & capture();
 
   operator bool () const
   {
@@ -151,6 +138,8 @@ public:
 
 private:
 
+  bool see(Move & move, int & see_gain);
+
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
   bool capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
@@ -173,7 +162,14 @@ private:
     if ( move.rindex_ >= 0 )
     {
       const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      move.srt_score_ = Figure::figureWeight_[rfig.getType()] + 1000000;
+      Figure::Type atype = board_.getField(move.from_).type();
+      move.srt_score_ = Figure::figureWeight_[rfig.getType()] - (Figure::figureWeight_[atype] >> 2) + 1000000;
+      if ( board_.halfmovesCount() > 1 )
+      {
+        MoveCmd & prev = board_.getMoveRev(-1);
+        if ( prev.to_ == move.to_ )
+          move.srt_score_ += Figure::figureWeight_[rfig.getType()] >> 2;
+      }
     }
     else if ( move.new_type_ > 0 )
     {

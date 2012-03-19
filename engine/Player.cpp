@@ -1124,15 +1124,12 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
-      if ( !see_cc(cap) )
-        continue;
-
       capture(depth, ply, alpha, betta, cap, counter);
     }
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( alpha < Figure::figureWeight_[Figure::TypeRook] && depth >= 0 && !stop_ && alpha < betta )
+    if ( alpha < (Figure::figureWeight_[Figure::TypeBishop]<<1) && depth >= 0 && !stop_ && alpha < betta )
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
@@ -1319,10 +1316,11 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
   }
 
 
-#if ((defined USE_HASH_MOVE_EX) && (defined USE_HASH_TABLE_GENERAL))
+#ifdef USE_HASH_TABLE_GENERAL
   GeneralHItem & hitem = ghash_[board_.hashCode()];
   if ( hitem.hcode_ == board_.hashCode() )
   {
+#ifdef USE_HASH_MOVE_EX
   // extra moves from hash
     for (int i = 0; i < 2; ++i)
     {
@@ -1332,7 +1330,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
 
       moves[num++] = hmove_ex;
     }
-
+#endif
     // threat move, if we have one
     Move htmove = board_.unpack(hitem.tmove_);
     if ( htmove && !find_move(moves, num, htmove) )

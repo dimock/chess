@@ -306,16 +306,15 @@ Move & MovesGenerator::move()
     if ( !*move )
       return *move;
 
-    if ( (move->rindex_ >= 0 || move->new_type_ > 0) && !move->seen_ && !see(*move) )
+    int see_gain = 0;
+    if ( (move->rindex_ >= 0 || move->new_type_ > 0) && !move->seen_ && !see(*move, see_gain) )
     {
       move->seen_ = 1;
       if ( move->rindex_ >= 0 )
-      {
-        Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move->rindex_).getType();
-        move->srt_score_ = Figure::figureWeight_[vtype] + 10000;
-      }
+        move->srt_score_ = see_gain + 10000;
       else
-        move->srt_score_ = Figure::figureWeight_[move->new_type_]; + 5000;
+        move->srt_score_ = see_gain + 5000;
+
       continue;
     }
 
@@ -325,7 +324,7 @@ Move & MovesGenerator::move()
 }
 
 
-bool MovesGenerator::see(Move & move)
+bool MovesGenerator::see(Move & move, int & see_gain)
 {
   THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
 
@@ -343,8 +342,8 @@ bool MovesGenerator::see(Move & move)
   if ( !board_.getColor() )
     initial_balance = -initial_balance;
 
-  int score_see = board_.see_before(initial_balance, move);
-  return score_see >= 0;
+  see_gain = board_.see_before(initial_balance, move);
+  return see_gain >= 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
