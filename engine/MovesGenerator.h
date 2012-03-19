@@ -57,20 +57,7 @@ public:
   static void save_history(const char * fname);
   static void load_history(const char * fname);
 
-  Move & move()
-  {
-    Move * move = moves_ + numOfMoves_;
-    Move * mv = moves_;
-    for ( ; *mv; ++mv)
-    {
-      if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
-        continue;
-
-      move = mv;
-    }
-    move->alreadyDone_ = 1;
-    return *move;
-  }
+  Move & move();
 
   int hist_max() const
   {
@@ -102,6 +89,7 @@ private:
   }
 
   void calculateWeight(Move & move);
+  bool see(Move & );
 
   int current_;
   int numOfMoves_;

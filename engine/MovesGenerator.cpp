@@ -260,63 +260,92 @@ void MovesGenerator::calculateWeight(Move & move)
   THROW_IF( !ffield, "no figure on field we move from" );
 
   const History & hist = history_[move.from_][move.to_];
-  move.srt_score_ = hist.score_ + 10000;
+  move.srt_score_ = hist.score_ + 100000;
 
   if ( move.srt_score_ > history_max_ )
     history_max_ = move.srt_score_;
 
-  if ( (move.rindex_ >= 0 || move.new_type_ > 0) )
+  if ( move.rindex_ >= 0 )
   {
-    bool do_see = true;
-    Figure::Type vtype = Figure::TypeNone;
     Figure::Type atype = board_.getField(move.from_).type();
-
-    // victim >= attacker
-    if ( move.rindex_ >= 0 )
-    {
-      vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-      if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype] )
-      {
-        do_see = false;
-        move.srt_score_ = Figure::figureWeightSEE_[vtype] + 1000000;
-      }
-    }
-
-    if ( do_see )
-    {
-      // we look from side, that goes to move. we should adjust sing of initial mat-balance
-      int initial_balance = board_.fmgr().weight();
-      if ( !board_.getColor() )
-        initial_balance = -initial_balance;
-
-      int score_see = board_.see_before(initial_balance, move);
-      if ( score_see >= 0 )
-      {
-        if ( move.rindex_ >= 0 )
-          move.srt_score_ = (unsigned)score_see + 1000000;
-        else
-          move.srt_score_ = (unsigned)score_see + 500000;
-      }
-      else
-        move.srt_score_ = (unsigned)(score_see + 1000);
-    }
-
-    if ( move.srt_score_ >= 1000000 && board_.halfmovesCount() > 1 )
+    Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+    move.srt_score_ = Figure::figureWeight_[vtype] - (Figure::figureWeight_[atype] >> 2) + 10000000;
+    if ( board_.halfmovesCount() > 1 )
     {
       MoveCmd & prev = board_.getMoveRev(-1);
       if ( prev.to_ == move.to_ )
-        move.srt_score_ += vtype * 10;
+        move.srt_score_ += Figure::figureWeight_[vtype] >> 2;
     }
+  }
+  else if ( move.new_type_ > 0 )
+  {
+    move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
   }
 #ifdef USE_KILLER
   else if ( move == killer_ )
   {
-    move.srt_score_ = 300000;
+    move.srt_score_ = 4000000;
     move.fkiller_ = 1;
   }
 #endif
 }
 
+Move & MovesGenerator::move()
+{
+  for ( ;; )
+  {
+    Move * move = moves_ + numOfMoves_;
+    Move * mv = moves_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+        continue;
+
+      move = mv;
+    }
+    if ( !*move )
+      return *move;
+
+    if ( (move->rindex_ >= 0 || move->new_type_ > 0) && !move->seen_ && !see(*move) )
+    {
+      move->seen_ = 1;
+      if ( move->rindex_ >= 0 )
+      {
+        Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move->rindex_).getType();
+        move->srt_score_ = Figure::figureWeight_[vtype] + 10000;
+      }
+      else
+        move->srt_score_ = Figure::figureWeight_[move->new_type_]; + 5000;
+      continue;
+    }
+
+    move->alreadyDone_ = 1;
+    return *move;
+  }
+}
+
+
+bool MovesGenerator::see(Move & move)
+{
+  THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
+
+  if ( move.rindex_ >= 0 )
+  {
+    // victim >= attacker
+    Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+    Figure::Type atype = board_.getField(move.from_).type();
+    if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype] )
+      return true;
+  }
+
+  // we look from side, that goes to move. we should adjust sing of initial mat-balance
+  int initial_balance = board_.fmgr().weight();
+  if ( !board_.getColor() )
+    initial_balance = -initial_balance;
+
+  int score_see = board_.see_before(initial_balance, move);
+  return score_see >= 0;
+}
 
 //////////////////////////////////////////////////////////////////////////
 EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
