@@ -30,15 +30,17 @@ Move & CapsGenerator::capture()
     if ( !move->seen_ && !see(*move, see_gain) )
     {
       move->seen_ = 1;
-      move->alreadyDone_ = 1;
-      continue;
-
-      //if ( move->rindex_ >= 0 )
-      //  move->srt_score_ = see_gain + 10000;
-      //else
-      //  move->srt_score_ = see_gain + 5000;
-
+      //move->alreadyDone_ = 1;
       //continue;
+
+      if ( move->rindex_ >= 0 )
+        move->srt_score_ = see_gain + 10000;
+      else// if ( see_gain >= -Figure::figureWeightSEE_[Figure::TypePawn] )
+        move->srt_score_ = see_gain + 5000;
+      //else
+      //  move->alreadyDone_ = 1;
+
+      continue;
     }
 
     move->alreadyDone_ = 1;

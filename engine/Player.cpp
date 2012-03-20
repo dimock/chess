@@ -1283,9 +1283,9 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
   // if we don't have move in hashes, let's try to calculate to reduced depth to find some appropriate move
   if ( ply > 0 && depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha && alpha > -Figure::WeightMat+MaxPly )
   {
-    depth--;
-    if ( depth > 1 )
-      depth--;
+    depth -= 3;
+    if ( depth < 1 )
+      depth = 1;
 
     ScoreType score = alphaBetta(depth, ply+1, alpha, alpha+1, false);
     GeneralHItem & hitem = ghash_[board_.hashCode()];

@@ -168,7 +168,7 @@ private:
       {
         MoveCmd & prev = board_.getMoveRev(-1);
         if ( prev.to_ == move.to_ )
-          move.srt_score_ += Figure::figureWeight_[rfig.getType()] >> 2;
+          move.srt_score_ += Figure::figureWeight_[rfig.getType()] >> 1;
       }
     }
     else if ( move.new_type_ > 0 )

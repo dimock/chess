@@ -52,7 +52,7 @@ typedef int16 ScoreType;
 #define RETURN_IF_BETTA
 #define USE_NULL_MOVE
 #define USE_LMR
-#undef USE_IID
+#define USE_IID
 
 #define EXTEND_PROMOTION
 #define RECAPTURE_EXTENSION
