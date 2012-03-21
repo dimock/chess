@@ -43,6 +43,8 @@ typedef int16 ScoreType;
 #undef USE_KILLER_ADV
 #undef USE_KILLER_CAPS
 #define USE_FUTILITY_PRUNING
+#undef USE_SEE_PRUNING
+#undef SORT_ESCAPE_MOVES
 #define USE_DELTA_PRUNING_
 #define USE_HASH_TABLE_GENERAL
 #define USE_HASH_MOVE_EX

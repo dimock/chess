@@ -354,7 +354,9 @@ EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int 
   numOfMoves_ = generate(alpha, betta, counter);
   escapes_[numOfMoves_].clear();
 
+#ifdef SORT_ESCAPE_MOVES
   sort();
+#endif
 }
 
 EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
