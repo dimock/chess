@@ -649,6 +649,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     {
       if ( board_.shortNullMoveReduction() )
         depth--;
+      else if ( board_.limitedNullMoveReduction() )
+      {
+        depth -= 4;
+        null_move = true;
+      }
       else
       {
         depth = nullMove_depth(depth);
@@ -1129,7 +1134,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( alpha < (Figure::figureWeight_[Figure::TypeBishop]<<1) && depth >= 0 && !stop_ && alpha < betta )
+    if ( /*(alpha < Figure::figureWeight_[Figure::TypeQueen] || depth == 1) &&*/ depth >= 0 && !stop_ && alpha < betta )
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 

@@ -200,6 +200,11 @@ public:
     return fmgr_.weight(color_) <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn];
   }
 
+  inline bool limitedNullMoveReduction() const
+  {
+    return fmgr_.weight(color_)- fmgr_.pawns()*Figure::figureWeight_[Figure::TypePawn] <= Figure::figureWeight_[Figure::TypeQueen];
+  }
+
   inline bool isWinnerLoser() const
   {
     return !can_win_[0] || !can_win_[1];

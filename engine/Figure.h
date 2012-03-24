@@ -22,11 +22,13 @@ public:
   static ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
   static ScoreType knightMobilityBonus_[16], bishopMobilityBonus_[16], queenMobilityBonus_[32], rookMobilityBonus_[16];
   static ScoreType knightDistBonus_[8], bishopDistBonus_[8], rookDistBonus_[8], queenDistBonus_[8];
+  static ScoreType queenToMyKingDistPenalty_[8];
   static ScoreType fianchettoBonus_;
-  static ScoreType fakecastlePenalty_;
+  static ScoreType fakecastlePenalty_, castleImpossiblePenalty_;
   static ScoreType kingbishopPressure_;
   static ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
   static const ScoreType positionGain_ = 80;
+  static const ScoreType tempoBonus_ = 5;
   static const uint64 pawnCutoffMasks_[2];
 
   enum Weights { WeightDraw = 0, WeightMat = 32000 };

@@ -2,8 +2,8 @@
 #include "Board.h"
 
 // TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-ScoreType Figure::figureWeight_[7] = { 0, 100, 320, 330, 500, 950, 0 };
-ScoreType Figure::figureWeightSEE_[7]  = { 0, 100, 325, 325, 500, 950, 0 };
+ScoreType Figure::figureWeight_[7] = { 0, 100, 325, 335, 505, 975, 0 };
+ScoreType Figure::figureWeightSEE_[7]  = { 0, 100, 330, 330, 505, 975, 0 };
 
 enum {
   A1, B1, C1, D1, E1, F1, G1, H1,
@@ -163,15 +163,17 @@ ScoreType Figure::semiopenRook_ =  4;
 ScoreType Figure::winloseBonus_ =  20;
 ScoreType Figure::kingbishopPressure_ = 10;
 ScoreType Figure::fianchettoBonus_ = 4;
-ScoreType Figure::queenMobilityBonus_[32] = { -18/* blocked */, -8/* immobile */, -2, 0, 1, 2, 3, 4, 5 };
-ScoreType Figure::knightMobilityBonus_[16] = { -10 /* blocked */, -5 /* immobile */, 2, 3, 3, 4, 4, 4, 4 };
-ScoreType Figure::bishopMobilityBonus_[16] = { -8 /* blocked */, -3 /* immobile */, 1, 2 };
-ScoreType Figure::rookMobilityBonus_[16] = { -4, 0, 2, 3, 4 };
-ScoreType Figure::knightDistBonus_[8] = { 0, 2, 6, 4, 2, 1, 0, 0 };
-ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 6, 3, 2, 1, 0, 0 };
-ScoreType Figure::rookDistBonus_[8] = { 0, 8, 6, 4, 2, 1, 0, 0 };
-ScoreType Figure::queenDistBonus_[8] = { 0, 16, 16, 12, 8, 3, 1, 0 };
+ScoreType Figure::queenMobilityBonus_[32] = { -20/* blocked */, -12/* immobile */, -6, 0, 1, 2, 3, 4, 5 };
+ScoreType Figure::knightMobilityBonus_[16] = { -16 /* blocked */, -8 /* immobile */, 0, 2, 3, 4, 5, 6, 7 };
+ScoreType Figure::bishopMobilityBonus_[16] = { -16 /* blocked */, -8 /* immobile */, 0, 2 };
+ScoreType Figure::rookMobilityBonus_[16] = { -8, 0, 2, 3, 4 };
+ScoreType Figure::knightDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
+ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
+ScoreType Figure::rookDistBonus_[8] = { 0, 10, 8, 6, 2, 1, 0, 0 };
+ScoreType Figure::queenDistBonus_[8] = { 0, 24, 18, 16, 12, 4, 1, 0 };
+ScoreType Figure::queenToMyKingDistPenalty_[8] = { 0, 0, 0, 1, 2, 3, 4, 5 };
 ScoreType Figure::fakecastlePenalty_ = 20;
+ScoreType Figure::castleImpossiblePenalty_ = 10;
 
 #define MAX_PASSED_SCORE 70
 
@@ -413,6 +415,11 @@ ScoreType Board::calculateEval() const
   }
 #endif
 
+  if ( color_ )
+    score += Figure::tempoBonus_;
+  else
+    score -= Figure::tempoBonus_;
+
   return score;
 }
 
@@ -421,23 +428,25 @@ inline ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility 
   ScoreType kingEval = 0;
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
 
-  //const Figure & queen = getFigure((Figure::Color)color, QueenIndex);
+  const Figure & queen = getFigure((Figure::Color)color, QueenIndex);
   const Figure & king = getFigure((Figure::Color)color, KingIndex);
-  //if ( queen )
-  //{
-  //  const Figure & oking = getFigure(ocolor, KingIndex);
-  //  int dist  = g_distanceCounter->getDistance(queen.where(), king.where());
-  //  int odist = g_distanceCounter->getDistance(queen.where(), oking.where());
-  //  kingEval += (7 - odist) << 1;
-  //  kingEval += (7 - dist);
-  //}
+  if ( queen )
+  {
+    int dist  = g_distanceCounter->getDistance(queen.where(), king.where());
+    kingEval -= Figure::queenToMyKingDistPenalty_[dist];
+  }
 
   static int8 castle_mask[8] = { 2,2,2, 0,0, 1,1,1 }; // 1 - short (K); 2 - long (Q)
   int8 castle = castle_mask[king.where() & 7]; // determine by king's x-position
   int8 ky = king.where() >> 3;
   bool bCastle = castle && !(ky > 1 && color) && !(ky < 6 && !color);
   if ( !bCastle )
+  {
+    if ( !castling(color, 0) && !castling(color, 1) )
+      kingEval -= Figure::castleImpossiblePenalty_;
+
     return kingEval;
+  }
 
   castle--;
 
