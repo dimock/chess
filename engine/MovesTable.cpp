@@ -64,6 +64,7 @@ void MovesTable::resetAllTables(int pos)
     s_otherCaps_[type][pos] = 0;
 
   s_bishopMob_[pos] = 0;
+  s_rookMob_[pos] = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -187,7 +188,11 @@ void MovesTable::initRooks(int pos)
     
     if ( !n )
       continue;
+
     s_tableOther_[Figure::TypeRook-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
+
+    int poffset = (p + d).index();
+    s_rookMob_[pos] |= 1ULL << poffset;
   }
 }
 
