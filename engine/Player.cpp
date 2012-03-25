@@ -339,7 +339,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
       if ( stop_ && depth_ > 2 &&
-        abs(score-sres.score_) >= Figure::figureWeight_[Figure::TypePawn]/2 &&
+        (abs(score-sres.score_) >= Figure::figureWeight_[Figure::TypePawn]/2 || best_ != sres.best_ && abs(score-sres.score_) >= 5)&&
         givetime_ )
       {
         int t_add = (givetime_)();
