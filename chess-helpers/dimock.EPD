@@ -16,3 +16,5 @@ r3kb1r/1p2qppp/p2p1nb1/2pPn3/4PP2/2N3PN/PP2B2P/R1BQK2R b KQkq - 0 12 bm Nxe4; "d
 r2qk2r/pp2n1bp/2Pp2pn/4pb2/2P5/2N1B1N1/PP2BPPP/R2QK2R b KQkq - 0 11 bm bxc6; "dimock.016"
 r2qk2r/ppp1n1bp/3p2pn/3Ppb2/2P5/2N1B1N1/PP2BPPP/R2QK2R b KQkq - 4 10 ; "dimock.017"
 2r1r2k/1p1n1pp1/pq1p1b1p/2pP1B2/2P2B2/P2Q3P/1P2RPP1/1R4K1 b - - 3 25 bm Qc7; "dimock.018"
+r4r2/pb3pkp/1pn1pp2/8/3PBQ2/q4N2/P4PPP/R3R1K1 b - - 3 17 bm Rfc8; "dimock.019"
+2r2r2/pb3pkp/1pn1pp2/8/3PBQ2/q4N2/P4PPP/R3R1K1 w - - 4 18 bm Qg3+ Qg4+; "dimock.020"
