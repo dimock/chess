@@ -894,7 +894,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               !null_move &&
               !mv_cmd.extended_ &&
               alpha > -Figure::WeightMat+MaxPly &&
-              ((hist.good_count_<<1) <= hist.bad_count_) )
+              ((hist.good_count_<<4) <= hist.bad_count_) )
         {
           R = LMR_PlyReduce;
           mv_cmd.reduced_ = true;

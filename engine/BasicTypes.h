@@ -53,7 +53,7 @@ typedef int16 ScoreType;
 #define USE_GENERAL_HASH_IN_CAPS
 #define RETURN_IF_BETTA
 #define USE_NULL_MOVE
-#undef USE_LMR
+#define USE_LMR
 #define USE_IID
 
 #define EXTEND_PROMOTION
