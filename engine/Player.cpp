@@ -502,9 +502,8 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
         (ply >= MaxPly-1) ||
         (depth < NullMove_DepthMin+1) ||
         (depth_ < NullMove_DepthStart) ||
-        betta >= Figure::WeightMat-MaxPly ||
-        alpha <= -Figure::WeightMat+MaxPly ||
-        alpha >= +Figure::WeightMat-MaxPly )
+        betta >= Figure::WeightMat+MaxPly ||
+        alpha <= -Figure::WeightMat-MaxPly  )
     return alpha;
 
 #ifndef NDEBUG
@@ -685,7 +684,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() && alpha > -Figure::WeightMat+MaxPly && alpha < Figure::WeightMat-MaxPly &&
+  if ( Board::UnderCheck != board_.getState() &&
+       alpha > -Figure::WeightMat+MaxPly &&
+       alpha < Figure::WeightMat-MaxPly &&
        depth == 1 && ply > 1 && !board_.isWinnerLoser() )
   {
     ScoreType score = board_.evaluate();
@@ -1003,8 +1004,15 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 	if ( ply > plyMax_ )
 		plyMax_ = ply;
 
-  if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
-    return board_.evaluate();
+  if ( stop_ || ply >= MaxPly )
+  {
+    if ( alpha < -Figure::WeightMat-MaxPly )
+      return board_.evaluate();
+    else
+      return alpha;
+  }
+  else if ( alpha >= Figure::WeightMat-ply )
+    return alpha;
 
   if ( ply < MaxPly )
     contexts_[ply+1].killer_.clear();
@@ -1537,7 +1545,7 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
 
   if ( board_.halfmovesCount() < 1 ||
        eg.count() < 1 ||
-       alpha > Figure::figureWeight_[Figure::TypeRook] /*|| alpha+1 == betta*/ )
+       alpha > Figure::figureWeight_[Figure::TypeRook] )
   {
     return 0;
   }
