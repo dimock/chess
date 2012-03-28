@@ -311,9 +311,9 @@ Move & MovesGenerator::move()
     {
       move->seen_ = 1;
       if ( move->rindex_ >= 0 )
-        move->srt_score_ = see_gain + 3000000;
+        move->srt_score_ = see_gain + 3000;//000;
       else
-        move->srt_score_ = see_gain + 2000000;
+        move->srt_score_ = see_gain + 2000;//000;
 
       continue;
     }

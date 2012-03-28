@@ -21,7 +21,9 @@ __declspec (align(16)) struct GeneralHItem
 
   PackedMove move_;
 
+#ifdef USE_THREAT_MOVE
   PackedMove tmove_;
+#endif
 
 #ifdef USE_HASH_MOVE_EX
   PackedMove move_ex_[2];
@@ -172,7 +174,10 @@ public:
     {
       hitem.threat_ = 0;
       hitem.move_ = PackedMove();
+
+#ifdef USE_THREAT_MOVE
       hitem.tmove_ = PackedMove();
+#endif
 
 #ifdef USE_HASH_MOVE_EX
       hitem.move_ex_[0] = PackedMove();

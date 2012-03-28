@@ -723,7 +723,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( !move || stop_ )
         break;
 
-
       movement(depth, ply, alpha, betta, move, counter, null_move);
 
       if ( ply == 0 )
@@ -953,7 +952,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         killer = move;
 #endif
       }
-#ifdef USE_HASH_TABLE_GENERAL
+#if ((defined USE_HASH_TABLE_GENERAL) && (defined USE_THREAT_MOVE))
       else if ( contexts_[ply].threat_ )
       {
         ghash_[hcode].tmove_ = board_.pack(move);
@@ -1028,7 +1027,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   int counter = 0;
   ScoreType saveAlpha = alpha;
 
-#ifdef USE_HASH_TABLE_CAPTURE
+#if ((defined USE_HASH_TABLE_CAPTURE) && (defined RETURN_IF_ALPHA_BETTA_CAPTURES))
   CaptureHItem & hitem = chash_[board_.hashCode()];
   if ( hitem.hcode_ == board_.hashCode() )
   {
@@ -1054,22 +1053,11 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( board_.isWinnerLoser() )
     minimalType = Figure::TypePawn;
 
-  Move hcaps[HashedMoves_Size];
-  int hcapsN = collectHashCaps(ply, minimalType, hcaps);
-
-  for (Move * c = hcaps; alpha < betta && !stop_ && *c; ++c)
-    capture(depth, ply, alpha, betta, *c, counter);
-
-  if ( stop_ || alpha >= betta )
-  {
-    THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
-    return alpha;
-  }
-
   if ( board_.getState() == Board::UnderCheck )
   {
     EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
-    //depth +=extend_check(depth, ply, eg, alpha, betta);
+
+    depth +=extend_check(depth, ply, eg, alpha, betta);
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -1081,9 +1069,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       if ( stop_ )
         break;
-
-      if ( find_move(hcaps, hcapsN, move) )
-        continue;
 
       THROW_IF( !board_.validMove(move), "move validation failed" );
 
@@ -1114,6 +1099,18 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
   else
   {
+    Move hcaps[HashedMoves_Size];
+    int hcapsN = collectHashCaps(ply, minimalType, hcaps);
+
+    for (Move * c = hcaps; alpha < betta && !stop_ && *c; ++c)
+      capture(depth, ply, alpha, betta, *c, counter);
+
+    if ( stop_ || alpha >= betta )
+    {
+      THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
+      return alpha;
+    }
+
     // generate only suitable captures
     CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta; )
@@ -1336,6 +1333,8 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
       moves[num++] = hmove_ex;
     }
 #endif
+
+#ifdef USE_THREAT_MOVE
     // threat move, if we have one
     Move htmove = board_.unpack(hitem.tmove_);
     if ( htmove && !find_move(moves, num, htmove) )
@@ -1343,6 +1342,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
       htmove.threat_ = 1;
       moves[num++] = htmove;
     }
+#endif
   }
 #endif
 
@@ -1537,8 +1537,7 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
 
   if ( board_.halfmovesCount() < 1 ||
        eg.count() < 1 ||
-       alpha > Figure::figureWeight_[Figure::TypeRook] ||
-       alpha+1 == betta )
+       alpha > Figure::figureWeight_[Figure::TypeRook] /*|| alpha+1 == betta*/ )
   {
     return 0;
   }
