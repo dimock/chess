@@ -461,27 +461,26 @@ void Player::processPosted(int t)
       char outstr[1024];
       sprintf(outstr, "stat01: %d %d %d %d %d", t/10, totalNodes_, depth_-1, numOfMoves_-counter_, numOfMoves_);
 
-      if ( best_ )
+      Move mv = best_;
+      if ( !mv )
+        mv = before_;
+      mv.clearFlags();
+      
+      if ( mv && pv_board_.validMove(mv) )
       {
-        Move mv = best_;
-        mv.clearFlags();
-
-        if ( pv_board_.validMove(mv) )
-        {
-          if ( !pv_board_.makeMove(mv) )
-            mv.clear();
-
-          pv_board_.unmakeMove();
-        }
-        else
+        if ( !pv_board_.makeMove(mv) )
           mv.clear();
 
-        char str[64];
-        if ( mv && printSAN(pv_board_, mv, str) )
-        {
-          strcat(outstr, " ");
-          strcat(outstr, str);
-        }
+        pv_board_.unmakeMove();
+      }
+      else
+        mv.clear();
+
+      char str[64];
+      if ( mv && printSAN(pv_board_, mv, str) )
+      {
+        strcat(outstr, " ");
+        strcat(outstr, str);
       }
 
       *out_ << outstr << std::endl;
@@ -805,7 +804,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return s;
   }
 
-  if ( 0 == ply && counter == 1 )
+  if ( 0 == ply && counter == 1 && !analyze_mode_ )
   {
     beforeFound_ = true;
     stop_ = true;
@@ -1514,7 +1513,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
     initial_balance = -initial_balance;
 
 #ifdef EXTEND_PROMOTION
-  if ( pawnBeforePromotion(move) )
+  if ( pawnBeforePromotion(move) || move.new_type_ == Figure::TypeQueen )
   {
     Move next;
     int rdepth = 0;

@@ -163,15 +163,15 @@ ScoreType Figure::semiopenRook_ =  4;
 ScoreType Figure::winloseBonus_ =  20;
 ScoreType Figure::kingbishopPressure_ = 10;
 ScoreType Figure::fianchettoBonus_ = 4;
-ScoreType Figure::queenMobilityBonus_[32] = { -16/* blocked */, -7/* immobile */, 0, 0, 1, 2, 3, 4, 5 };
-ScoreType Figure::knightMobilityBonus_[16] = { -12 /* blocked */, -7 /* immobile */, 0, 2, 3, 4, 5, 6, 7 };
-ScoreType Figure::bishopMobilityBonus_[16] = { -12 /* blocked */, -7 /* immobile */, 0, 2 };
-ScoreType Figure::rookMobilityBonus_[16] = { -8, 0, 2, 3, 4 };
+ScoreType Figure::queenMobilityBonus_[32] = { -15/* blocked */, -6/* immobile */, 0, 0, 1, 2, 2, 2, 3 };
+ScoreType Figure::knightMobilityBonus_[16] = { -12 /* blocked */, -5 /* immobile */, 1, 1, 2, 3, 4, 4, 5 };
+ScoreType Figure::bishopMobilityBonus_[16] = { -8 /* blocked */, -4 /* immobile */, 1, 2 };
+ScoreType Figure::rookMobilityBonus_[16] = { -5, 0, 1, 2, 3 };
 ScoreType Figure::knightDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
 ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
 ScoreType Figure::rookDistBonus_[8] = { 0, 10, 8, 6, 2, 1, 0, 0 };
 ScoreType Figure::queenDistBonus_[8] = { 0, 24, 18, 16, 12, 4, 1, 0 };
-ScoreType Figure::queenToMyKingDistPenalty_[8] = { 0, 0, 0, 1, 2, 3, 4, 5 };
+ScoreType Figure::queenToMyKingDistPenalty_[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 ScoreType Figure::fakecastlePenalty_ = 20;
 ScoreType Figure::castleImpossiblePenalty_ = 10;
 
@@ -704,8 +704,8 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
 
         if ( ocolor && py < ky || !ocolor && py > ky )
         {
-          s += 2*((7 - xdist)*y)/3;
-          s += ((7 - dist)*y) >> 2;
+          s += ((7 - xdist)*y) >> 1;
+          s += ((7 - dist)*y) >> 1;
         }
         else
           s += ((7 - dist)*y);
@@ -735,7 +735,7 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
       if ( !(pmsk & passmsk) )
       {
         int dist = g_distanceCounter->getDistance(king.where(), pawn.where());
-        score += ((7 - dist)*y) >> 1;
+        score += ((7 - dist)*y);
 
         int px = pawn.where() & 7;
         int xdist = kx - px;
@@ -743,7 +743,7 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
           xdist = -xdist;
 
         if ( color && py < ky || !color && py > ky )
-          score += (7 - xdist);
+          score += ((7 - xdist)*y) >> 1;
       }
     }
   }
