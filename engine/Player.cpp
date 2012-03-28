@@ -1139,7 +1139,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #ifdef PERFORM_CHECKS_IN_CAPTURES
     // generate check only on 1st iteration under horizon
-    if ( /*(alpha < Figure::figureWeight_[Figure::TypeQueen] || depth == 1) &&*/ depth >= 0 && !stop_ && alpha < betta )
+    if ( depth >= 0 && !stop_ && alpha < betta )
     {
       ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
@@ -1519,7 +1519,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
     Move next;
     int rdepth = 0;
     int score_see = board_.see(initial_balance, next, rdepth);
-    if ( score_see >= 0 /*&& rdepth >= depth-1*/ )
+    if ( score_see >= 0 )
         return 1;
     }
 #endif
@@ -1543,9 +1543,7 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
 {
   THROW_IF(board_.getState() != Board::UnderCheck, "try to extend check but there is no one");
 
-  if ( board_.halfmovesCount() < 1 ||
-       eg.count() < 1 ||
-       alpha > Figure::figureWeight_[Figure::TypeRook] )
+  if ( board_.halfmovesCount() < 1 || eg.count() < 1 )
   {
     return 0;
   }
