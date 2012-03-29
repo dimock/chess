@@ -1106,6 +1106,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
   else
   {
+#ifdef USE_HASH_TABLE_CAPTURE
     Move hcaps[HashedMoves_Size];
     int hcapsN = collectHashCaps(ply, minimalType, hcaps);
 
@@ -1117,6 +1118,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
       return alpha;
     }
+#endif
 
     // generate only suitable captures
     CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
@@ -1128,8 +1130,10 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       checkForStop();
 
+#ifdef USE_HASH_TABLE_CAPTURE
       if ( find_move(hcaps, hcapsN, cap) )
         continue;
+#endif
 
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
@@ -1150,9 +1154,10 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
         checkForStop();
 
+#ifdef USE_HASH_TABLE_CAPTURE
         if ( find_move(hcaps, hcapsN, check ) )
           continue;
-
+#endif
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
         if ( !see_cc(check) )
