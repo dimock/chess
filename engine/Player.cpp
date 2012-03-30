@@ -720,7 +720,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     for ( ; !stop_ && alpha < betta; )
     {
       Move & move = eg.escape();
-      if ( !move || stop_ )
+      if ( !move )
+        break;
+
+      checkForStop();
+
+      if ( stop_ )
         break;
 
       movement(depth, ply, alpha, betta, move, counter, null_move);
@@ -743,6 +748,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
       if ( ply == 0 )
         counter_ = counter;
+
+      checkForStop();
     }
 
     if ( stop_ || alpha >= betta )
@@ -756,7 +763,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     for ( ; !stop_ && alpha < betta ; )
     {
       Move & move = mg.move();
-      if ( !move || stop_ )
+      if ( !move )
         break;
 
       if ( find_move(hmoves, hmovesN, move) )
@@ -804,7 +811,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return s;
   }
 
-  if ( 0 == ply && counter == 1 && !analyze_mode_ )
+  if ( 0 == ply && counter == 1 && !analyze_mode_ && !stop_ )
   {
     beforeFound_ = true;
     stop_ = true;
@@ -812,7 +819,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // we haven't found best move
 #ifdef USE_HASH_TABLE_GENERAL
-  if ( alpha == savedAlpha )
+  if ( alpha == savedAlpha && !stop_ )
   {
     ghash_.push(board_.hashCode(), alpha, depth, ply, board_.halfmovesCount(), board_.getColor(), GeneralHashTable::Alpha, PackedMove());
   }
@@ -981,7 +988,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 #endif
 
   // force to recalculate again with full depth
-  if ( contexts_[ply].null_move_threat_ && alpha >= betta && ply > 0 && isRealThreat(move) )
+  if ( !stop_ && contexts_[ply].null_move_threat_ && alpha >= betta && ply > 0 && isRealThreat(move) )
   {
     contexts_[ply-1].threat_ = true;
     if ( reduced )
@@ -1034,42 +1041,35 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   int counter = 0;
   ScoreType saveAlpha = alpha;
 
-#if ((defined USE_HASH_TABLE_CAPTURE) && (defined RETURN_IF_ALPHA_BETTA_CAPTURES))
-  CaptureHItem & hitem = chash_[board_.hashCode()];
-  if ( hitem.hcode_ == board_.hashCode() )
-  {
-    THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "identical hash code but different color in captures" );
+  Figure::Type minimalType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
-    if ( CapturesHashTable::Alpha == hitem.flag_ && hitem.score_ <= alpha )
-    {
-      THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
-      return alpha;
-    }
+#ifdef USE_HASH_TABLE_CAPTURE
+  Move hcap;
+  CapturesHashTable::Flag flag = testCaptureHashItem(depth, ply, alpha, betta, minimalType, hcap);
 
-#ifdef RETURN_IF_BETTA
-    if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hitem.move_ && hitem.score_ >= betta )
-    {
-      THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
-      return betta;
-    }
-#endif // RETURN_IF_BETTA
-  }
+#ifdef RETURN_IF_ALPHA_BETTA_CAPTURES
+  if ( flag == CapturesHashTable::Alpha )
+    return alpha;
+  else if ( flag == CapturesHashTable::Betta )
+    return betta;
+#endif
+
 #endif //USE_HASH_TABLE_CAPTURE
-
-  Figure::Type minimalType = delta2type(delta);
-  if ( board_.isWinnerLoser() )
-    minimalType = Figure::TypePawn;
 
   if ( board_.getState() == Board::UnderCheck )
   {
+#ifdef USE_HASH_TABLE_CAPTURE
+    EscapeGenerator eg(hcap, board_, 0, ply, *this, alpha, betta, counter);
+#else
     EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+#endif
 
-    depth +=extend_check(depth, ply, eg, alpha, betta);
+    depth += extend_check(depth, ply, eg, alpha, betta);
 
     for ( ; !stop_ && alpha < betta ; )
     {
       const Move & move = eg.escape();
-      if ( !move || stop_ )
+      if ( !move )
         break;
 
       checkForStop();
@@ -1081,6 +1081,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       capture(depth, ply, alpha, betta, move, counter);
     }
+
+    if ( stop_ )
+      return alpha;
 
     if ( !counter )
     {
@@ -1106,32 +1109,27 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
   else
   {
-#ifdef USE_HASH_TABLE_CAPTURE
-    Move hcaps[HashedMoves_Size];
-    int hcapsN = collectHashCaps(ply, minimalType, hcaps);
-
-    for (Move * c = hcaps; alpha < betta && !stop_ && *c; ++c)
-      capture(depth, ply, alpha, betta, *c, counter);
+    if ( hcap )
+      capture(depth, ply, alpha, betta, hcap, counter);
 
     if ( stop_ || alpha >= betta )
-    {
-      THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
       return alpha;
-    }
-#endif
 
     // generate only suitable captures
     CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta; )
     {
       const Move & cap = cg.capture();
-      if ( !cap || stop_ )
+      if ( !cap )
         break;
 
       checkForStop();
 
+      if ( stop_ )
+        break;
+
 #ifdef USE_HASH_TABLE_CAPTURE
-      if ( find_move(hcaps, hcapsN, cap) )
+      if ( hcap == cap )
         continue;
 #endif
 
@@ -1149,13 +1147,16 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       for ( ; !stop_ && alpha < betta ; )
       {
         Move & check = ckg.check();
-        if ( !check || stop_ )
+        if ( !check )
           break;
 
         checkForStop();
 
+        if ( stop_ )
+          break;
+
 #ifdef USE_HASH_TABLE_CAPTURE
-        if ( find_move(hcaps, hcapsN, check ) )
+        if ( hcap == check )
           continue;
 #endif
         THROW_IF( !board_.validMove(check), "move validation failed" );
@@ -1171,7 +1172,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
 
 #ifdef USE_HASH_TABLE_CAPTURE
-  if ( alpha == saveAlpha )
+  if ( alpha == saveAlpha && !stop_ )
   {
     chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, depth, ply, PackedMove());
   }
