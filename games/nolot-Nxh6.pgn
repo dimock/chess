@@ -1,0 +1,31 @@
+[Event "Computer chess game"]
+[Site "ALEX-PC"]
+[Date "2012.03.27"]
+[Round "?"]
+[White "Tequilla"]
+[Black "pk"]
+[Result "1-0"]
+[BlackElo "2400"]
+[ECO "TB: Wh"]
+[Opening "ite wins in 0"]
+[Time "12:50:33"]
+[WhiteElo "1500"]
+[TimeControl "40/240:40/240:40/240"]
+[SetUp "1"]
+[FEN "r3qb1k/1b4p1/p2pr2p/3n4/Pnp1N1N1/6RP/1B3PP1/1B1QR1K1 w - - 0 1"]
+[Termination "normal"]
+[PlyCount "103"]
+[WhiteType "human"]
+[BlackType "human"]
+[Comment "bm Nxh6; id \"Position 1\";"]
+
+1. Nxh6 c3 2. Kh2 Rxh6 3. Ng5 Be7 4. Qf3 Rh4 5. Bxc3 Nxc3 6. Nf7+ Kg8 7.
+Qxb7 Rb8 8. Rxe7 Rxb7 9. Rxe8+ Kxf7 10. Bg6+ Kf6 11. Rf8+ Ke5 12. Rxc3 d5
+13. Rf5+ Kd6 14. Bf7 Rd4 15. Rg3 Nc6 16. Rxg7 Ne5 17. f4 Nxf7 18. Rf6+ Kc5
+19. Rfxf7 Rxf7 20. Rxf7 Rxa4 21. h4 d4 22. h5 d3 23. h6 Rb4 24. Rc7+ Kd6
+25. Rc3 d2 26. Rd3+ Ke6 27. h7 Rb8 28. g4 Rh8 29. f5+ Ke5 30. Kg3 Rxh7 31.
+Rxd2 Ra7 32. Re2+ Kf6 33. Kf4 Kf7 34. g5 Kf8 35. g6 Rb7 36. f6 Rb1 37. Re7
+Rf1+ 38. Ke5 Re1+ 39. Kd6 Rd1+ 40. Kc7 Rc1+ 41. Kd8 Rd1+ 42. Rd7 Rf1 43.
+Rf7+ Kg8 44. Ke8 Rxf6 45. Rxf6 Kg7 46. Rxa6 Kh6 47. g7+ Kh7 48. Kd8 Kxg7
+49. Ke7 Kg8 50. Kf6 Kh7 51. Kf7 Kh8 52. Rh6# 1-0
+
