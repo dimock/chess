@@ -124,17 +124,22 @@ void Thinking::enableBook(int v)
 {
 }
 
-void Thinking::undo()
+bool Thinking::undo()
 {
   if ( is_thinking() )
   {
     player_.postUndo();
-    return;
+    return false;
   }
 
   Board & board = player_.getBoard();
   if ( board.halfmovesCount() > 0 )
+  {
     board.unmakeMove();
+    return true;
+  }
+
+  return false;
 }
 
 void Thinking::setMemory(int mb)
@@ -308,6 +313,14 @@ bool Thinking::fromFEN(xCmd & cmd)
   }
 
   return player_.fromFEN(fen);
+}
+
+void Thinking::toFEN(char * fen)
+{
+  if ( is_thinking() || !fen )
+    return;
+
+  player_.toFEN(fen);
 }
 
 //////////////////////////////////////////////////////////////////////////

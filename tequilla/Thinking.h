@@ -19,11 +19,12 @@ public:
   void setXtime(int ms);
   void setMovesLeft(int mleft);
   void setPost(bool);
-	void undo();
+	bool undo();
 
 	void save();
   void fen2file(const char * fname);
   void hash2file(const char * fname);
+  void toFEN(char * );
 
   bool fromFEN(xCmd & cmd);
 	void editCmd(xCmd & cmd);
@@ -37,9 +38,9 @@ public:
   
   int giveMoreTime();
 
-private:
-
   bool is_thinking() const { return thinking_; }
+
+private:
 
   void performAnalyze();
   void updateTiming();

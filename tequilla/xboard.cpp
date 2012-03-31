@@ -267,7 +267,22 @@ void xBoardMgr::process_cmd(xCmd & cmd)
     break;
 
   case xCmd::xUndo:
-    thk_.undo();
+    if ( !thk_.undo() )
+    {
+#ifdef WRITE_LOG_FILE_
+      ofs_log_ << " can't undo move" << endl;
+      if ( thk_.is_thinking() )
+        ofs_log_ << " thinking" << endl;
+#endif
+    }
+    {
+      char fen[256];
+      thk_.toFEN(fen);
+
+#ifdef WRITE_LOG_FILE_
+      ofs_log_ << "       " << fen << endl;
+#endif
+    }
     break;
 
   case xCmd::xRemove:
@@ -321,6 +336,11 @@ void xBoardMgr::process_cmd(xCmd & cmd)
     }
     else
     {
+#ifdef WRITE_LOG_FILE_
+      if ( thk_.is_thinking() )
+        ofs_log_ << " can't move - thinking" << endl;
+#endif
+
       Board::State state;
       bool white;
       if ( thk_.move(cmd, state, white) )

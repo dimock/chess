@@ -77,7 +77,7 @@ typedef int16 ScoreType;
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF
 #else
-  #define TIMING_FLAG 0x7FFF
+  #define TIMING_FLAG 0x1FFF
 #endif
 
 
