@@ -27,7 +27,7 @@ public:
   static ScoreType fakecastlePenalty_, castleImpossiblePenalty_;
   static ScoreType kingbishopPressure_;
   static ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
-  static const ScoreType positionGain_ = 80;
+  static const ScoreType positionGain_ = 70;
   static const ScoreType tempoBonus_ = 5;
   static const uint64 pawnCutoffMasks_[2];
 

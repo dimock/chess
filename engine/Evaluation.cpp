@@ -172,14 +172,14 @@ ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
 ScoreType Figure::rookDistBonus_[8] = { 0, 10, 8, 6, 2, 1, 0, 0 };
 ScoreType Figure::queenDistBonus_[8] = { 0, 24, 18, 16, 12, 4, 1, 0 };
 ScoreType Figure::queenToMyKingDistPenalty_[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-ScoreType Figure::fakecastlePenalty_ = 20;
+ScoreType Figure::fakecastlePenalty_ = 10;
 ScoreType Figure::castleImpossiblePenalty_ = 10;
 
-#define MAX_PASSED_SCORE 70
+#define MAX_PASSED_SCORE 60
 
 ScoreType Figure::pawnPassed_[2][8] = {
-  { 0, MAX_PASSED_SCORE, 50, 28, 16, 12, 8, 0 },
-  { 0, 8, 12, 16, 28, 50, MAX_PASSED_SCORE, 0 }
+  { 0, MAX_PASSED_SCORE, 40, 25, 15, 10, 5, 0 },
+  { 0, 5, 10, 15, 25, 40, MAX_PASSED_SCORE, 0 }
 };
 
 ScoreType Figure::pawnGuarded_[2][8] = {
@@ -442,8 +442,8 @@ inline ScoreType Board::evaluateKing(Figure::Color color, const FiguresMobility 
   bool bCastle = castle && !(ky > 1 && color) && !(ky < 6 && !color);
   if ( !bCastle )
   {
-    if ( !castling(color, 0) && !castling(color, 1) )
-      kingEval -= Figure::castleImpossiblePenalty_;
+    //if ( !castling(color, 0) && !castling(color, 1) )
+    //  kingEval -= Figure::castleImpossiblePenalty_;
 
     return kingEval;
   }
