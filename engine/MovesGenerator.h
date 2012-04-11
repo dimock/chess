@@ -163,7 +163,7 @@ private:
     {
       const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
       Figure::Type atype = board_.getField(move.from_).type();
-      move.srt_score_ = Figure::figureWeight_[rfig.getType()] - (Figure::figureWeight_[atype] >> 2) + 1000000;
+      move.srt_score_ = Figure::figureWeight_[rfig.getType()] - Figure::figureWeight_[atype] + 1000000;
       if ( board_.halfmovesCount() > 1 )
       {
         MoveCmd & prev = board_.getMoveRev(-1);
@@ -329,11 +329,11 @@ private:
       const Field & ffield = board_.getField(move.from_);
       THROW_IF( !ffield, "no figure on field we move from" );
       const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] + 1000000;
+      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + 10000000;
     }
     else if ( move.new_type_ > 0 )
     {
-      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 500000;
+      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
     }
 
     ++m;

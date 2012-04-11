@@ -1529,6 +1529,17 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
     }
 #endif
 
+#ifdef EXTEND_PASSED_PAWN
+   if ( board_.pawnPassed(move) )
+   {
+     Move next;
+     int rdepth = 0;
+     int score_see = board_.see(initial_balance, next, rdepth);
+     if ( score_see >= 0 )
+       return 1;
+   }
+#endif
+
 #ifdef RECAPTURE_EXTENSION
   if ( alpha < Figure::figureWeight_[Figure::TypeKnight] && recapture(ply, depth, initial_balance) )
       return 1;

@@ -269,7 +269,7 @@ void MovesGenerator::calculateWeight(Move & move)
   {
     Figure::Type atype = board_.getField(move.from_).type();
     Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-    move.srt_score_ = Figure::figureWeight_[vtype] - (Figure::figureWeight_[atype] >> 2) + 10000000;
+    move.srt_score_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + 10000000;
     if ( board_.halfmovesCount() > 1 )
     {
       MoveCmd & prev = board_.getMoveRev(-1);
@@ -284,7 +284,7 @@ void MovesGenerator::calculateWeight(Move & move)
 #ifdef USE_KILLER
   else if ( move == killer_ )
   {
-    move.srt_score_ = 4000000;
+    move.srt_score_ = 3000000;
     move.fkiller_ = 1;
   }
 #endif
