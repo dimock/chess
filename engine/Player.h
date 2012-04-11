@@ -402,35 +402,7 @@ private:
         if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hitem.move_ && hscore >= betta )
         {
           THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
-
-          //if ( hmove.rindex_ >= 0 || hitem.move_.new_type_ > 0 )
-            return CapturesHashTable::Betta;
-
-//#ifndef NDEBUG
-//          Board board0 = board_;
-//#endif
-//
-//          totalNodes_++;
-//          nodesCount_++;
-//
-//          bool returnBetta = false;
-//          if ( board_.makeMove(hmove) )
-//            returnBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
-//
-//#ifndef NDEBUG
-//          board_.verifyMasks();
-//#endif
-//
-//          board_.unmakeMove();
-//
-//          THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-//
-//#ifndef NDEBUG
-//         board_.verifyMasks();
-//#endif
-//
-//          if ( returnBetta )
-//            return CapturesHashTable::Betta;
+          return CapturesHashTable::Betta;
         }
 #endif // RETURN_IF_BETTA
       }
