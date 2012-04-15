@@ -115,6 +115,10 @@ int Thinking::giveMoreTime()
       return xtimeMS_/mcount;
     else if ( mcount > movesLeft_/3 )
       return (xtimeMS_/mcount)/2;
+    else if ( mcount > movesLeft_/6 )
+      return (xtimeMS_/mcount)/4;
+    else if ( mcount > 0 )
+      return (xtimeMS_/mcount)/8;
   }
   return 0;
 }
