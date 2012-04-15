@@ -15,7 +15,7 @@ int give_more_time()
 
 using namespace std;
 
-#define DEPTH_MAXIMUM 20
+#define DEPTH_MAXIMUM 32
 
 Thinking::Thinking() :
 	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
