@@ -118,14 +118,16 @@ public:
     if ( p_caps & o_mask )
       return true;
 
-    // becomes passed
-    const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
-    Figure::Color ocolor = Figure::otherColor(color_);
-    const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
-    const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
-    const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
+    return false;
 
-    return !(opmsk & passmsk) && !(pmsk & blckmsk);
+    //// becomes passed
+    //const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
+    //Figure::Color ocolor = Figure::otherColor(color_);
+    //const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
+    //const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
+    //const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
+
+    //return !(opmsk & passmsk) && !(pmsk & blckmsk);
   }
 
   // becomes passed

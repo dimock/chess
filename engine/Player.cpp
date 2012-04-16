@@ -1447,7 +1447,7 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !pfig, "field is occupied but there is no figure in the list in threat detector" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) )
+  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) /*|| pawnBeforePromotion(prev)*/)
   {
     return false;
   }
