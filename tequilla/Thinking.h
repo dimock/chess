@@ -4,6 +4,8 @@
 #include "xcommands.h"
 #include <Windows.h>
 
+#define WRITE_LOG_FILE_
+
 class Thinking
 {
 public:
@@ -40,6 +42,10 @@ public:
 
   bool is_thinking() const { return thinking_; }
 
+#ifdef WRITE_LOG_FILE_
+  void set_logfile(std::ofstream * ofslog);
+#endif
+
 private:
 
   void performAnalyze();
@@ -55,4 +61,8 @@ private:
   bool post_;
   bool thinking_;
   unsigned int givetimeCounter_;
+
+#ifdef WRITE_LOG_FILE_
+  std::ofstream * ofs_log_;
+#endif
 };

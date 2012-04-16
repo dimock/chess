@@ -1,7 +1,5 @@
 #pragma once
 
-#define WRITE_LOG_FILE_
-
 #include "xparser.h"
 #include "Thinking.h"
 

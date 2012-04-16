@@ -1,6 +1,6 @@
-#include "Thinking.h"
 #include <iostream>
 #include <fstream>
+#include "Thinking.h"
 
 static Thinking * g_thinking_ = 0;
 
@@ -23,6 +23,10 @@ Thinking::Thinking() :
   post_(false), thinking_(false), givetimeCounter_(0)
 {
   g_thinking_ = this;
+
+#ifdef WRITE_LOG_FILE_
+  ofs_log_ = 0;
+#endif
 }
 
 Thinking::~Thinking()
@@ -465,5 +469,22 @@ void Thinking::updateTiming()
     mcount = movesLeft_ - (mcount-1) % movesLeft_;
     mcount += 3;
     player_.setTimeLimit(xtimeMS_/mcount);
+
+#ifdef WRITE_LOG_FILE_
+    if ( ofs_log_ )
+    {
+      *ofs_log_ << "  time per move = " << xtimeMS_/mcount << " ms" << std::endl;
+      *ofs_log_ << "  xtime  = " << xtimeMS_ << " ms" << std::endl;
+      *ofs_log_ << "  mcount = " << mcount << std::endl;
+    }
+#endif
   }
 }
+
+//////////////////////////////////////////////////////////////////////////
+#ifdef WRITE_LOG_FILE_
+void Thinking::set_logfile(std::ofstream * ofslog)
+{
+  ofs_log_ = ofslog;
+}
+#endif

@@ -24,6 +24,7 @@ xBoardMgr::xBoardMgr() :
 {
 #ifdef WRITE_LOG_FILE_
   ofs_log_.open("log.txt", ios_base::app);
+  thk_.set_logfile(&ofs_log_);
 #endif
 
   vNum_ = 0;
