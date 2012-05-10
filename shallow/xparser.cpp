@@ -72,19 +72,6 @@ xCmd xParser::parse(char * str)
   if ( params.empty() )
     return xCmd();
 
-  for (int i = 0; i < sizeof(command_lines)/sizeof(CommandLine); ++i)
-  {
-    const CommandLine & cmdLine = command_lines[i];
-
-    if ( string(cmdLine.commandName_) == params[0] )
-	  {
-		  if ( params.size() )
-			  params.erase(params.begin());
-
-		  return xCmd(cmdLine.commandType_, params);
-	  }
-  }
-
   if ( strlen(str) == 3 && isalpha(str[0]) && isalpha(str[1]) && isdigit(str[2]) )
     return xCmd(xCmd::xSetFigure, str);
 
@@ -92,7 +79,20 @@ xCmd xParser::parse(char * str)
 	if ( moveCmd )
 		return moveCmd;
 
-	return xCmd();
+  for (int i = 0; i < sizeof(command_lines)/sizeof(CommandLine); ++i)
+  {
+    const CommandLine & cmdLine = command_lines[i];
+
+    if ( string(cmdLine.commandName_) == params[0] )
+    {
+      if ( params.size() )
+        params.erase(params.begin());
+
+      return xCmd(cmdLine.commandType_, params);
+    }
+  }
+
+  return xCmd();
 }
 
 xCmd xParser::parseMove(char * str)
