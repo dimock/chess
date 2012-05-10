@@ -189,7 +189,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
     {
       os_ << "feature done=0" << endl;
       os_ << "feature setboard=1" << endl;
-      os_ << "feature myname=\"Tequilla 1.0\" memory=1" << endl;
+      os_ << "feature myname=\"shallow\" memory=1" << endl;
       os_ << "feature done=1" << endl;
     }
     break;

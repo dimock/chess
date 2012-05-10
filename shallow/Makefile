@@ -25,19 +25,19 @@ ifeq "$(CFG)" "Release"
 CFLAGS=  -O2 -W -fno-inline  -mcpu=pentiumpro -D_M_IX86=500 -fexceptions -D_THREAD_SAFE -D_LINUX  -DNDEBUG -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS
 LIBS= -lpthread -lm -lengine
 ILFLAGS= -I../engine -L../engine
-TARGET=tequilla.exe
+TARGET=shallow.exe
 endif
 
 ifeq "$(CFG)" "Debug"
 CFLAGS= -g -O0 -W -fno-inline  -mcpu=pentiumpro -D_M_IX86=500 -fexceptions -D_THREAD_SAFE -D_LINUX  -D_DEBUG -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS
 LIBS= -lCDP_Debug -lrt -lpthread -lm 
 ILFLAGS= -I../engine
-TARGET=tequilla.exe
+TARGET=shallow.exe
 endif
 
 SOURCE_FILES= 	\
 	StopTimer.cpp	\
-	tequilla.cpp	\
+	shallow.cpp	\
 	Thinking.cpp	\
 	xparser.cpp
 

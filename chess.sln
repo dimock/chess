@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine", "engine\engine.vcproj", "{A9A60BF7-AF11-41FA-9B1F-042087379D1B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tequilla", "tequilla\tequilla.vcproj", "{0632E56D-48B6-4578-8223-F1DDDA079106}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shallow", "shallow\shallow.vcproj", "{0632E56D-48B6-4578-8223-F1DDDA079106}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A9A60BF7-AF11-41FA-9B1F-042087379D1B} = {A9A60BF7-AF11-41FA-9B1F-042087379D1B}
 	EndProjectSection

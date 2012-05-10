@@ -1,7 +1,7 @@
 import os, os.path, subprocess, thread
 
 def run_engine():
-    ename = r'D:\Projects\qt_proj\chess\tables\tequilla.exe'
+    ename = r'D:\Projects\qt_proj\chess\tables\shallow.exe'
     sp = subprocess.Popen( ename, shell = False, stdout = subprocess.PIPE, stdin = subprocess.PIPE)
     return sp
 

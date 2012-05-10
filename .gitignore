@@ -33,5 +33,5 @@ chess-helpers/transp.cpp
 chess-helpers/mirror.cpp
 chess-helpers/zobrist.cpp
 *.pgn
-tequilla/log.txt
+shallow/log.txt
 qchess/vc80.idb
