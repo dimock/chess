@@ -10,6 +10,66 @@ CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, int ply, P
   captures_[numOfMoves_].clear();
 }
 
+Move & CapsGenerator::capture()
+{
+  for ( ;; )
+  {
+    Move * move = captures_ + numOfMoves_;
+    Move * mv = captures_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+        continue;
+
+      move = mv;
+    }
+    if ( !*move )
+      return *move;
+
+    int see_gain = 0;
+    if ( !move->seen_ && !see(*move, see_gain) )
+    {
+      move->seen_ = 1;
+
+#ifdef USE_SEE_PRUNING
+      move->alreadyDone_ = 1;
+#else
+      if ( move->rindex_ >= 0 )
+        move->srt_score_ = see_gain + 10000;
+      else
+        move->srt_score_ = see_gain + 5000;
+#endif
+
+      continue;
+    }
+
+    move->alreadyDone_ = 1;
+    return *move;
+  }
+}
+
+bool CapsGenerator::see(Move & move, int & see_gain)
+{
+  THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
+
+  if ( move.rindex_ >= 0 )
+  {
+    // victim >= attacker
+    Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+    Figure::Type atype = board_.getField(move.from_).type();
+    if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype] )
+      return true;
+  }
+
+  // we look from side, that goes to move. we should adjust sing of initial mat-balance
+  int initial_balance = board_.fmgr().weight();
+  if ( !board_.getColor() )
+    initial_balance = -initial_balance;
+
+  see_gain = board_.see_before(initial_balance, move);
+  return see_gain >= 0;
+}
+
 int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 {
   int m = 0;

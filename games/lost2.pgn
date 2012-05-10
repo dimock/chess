@@ -1,0 +1,64 @@
+[Event "Computer chess game"]
+[Site "ALEX-PC"]
+[Date "2012.02.08"]
+[Round "?"]
+[White "Slow"]
+[Black "Tequilla"]
+[Result "1-0"]
+[BlackElo "1500"]
+[ECO "E63"]
+[Opening "King's Indian"]
+[Time "14:06:24"]
+[Variation "Fianchetto, Panno, 8.b3"]
+[WhiteElo "2700"]
+[TimeControl "40/240:40/240:40/240"]
+[Termination "normal"]
+[PlyCount "73"]
+[WhiteType "program"]
+[BlackType "program"]
+
+1. Nf3 Nf6 2. d4 g6 3. b3 Bg7 4. Bb2 d6 5. g3 O-O 6. Bg2 Nc6 7. O-O e5 8.
+dxe5 Nd7 9. Nc3 {(Nc3 Ndxe5 Nxe5 Bxe5 e3 Be6 Qd3 Qd7 Rfd1 Rfe8 a4) +0.04/11
+8} Ndxe5 {(Ndxe5 Nxe5 Nxe5 Qd2 Bf6 Qf4 Rb8) +0.03/11 6} 10. Nxe5 {(Nxe5
+Bxe5 f4 Bd4+ Kh1 Bd7 e4 b5 f5 g5 b4 Qf6) 0.00/11 8} Bxe5 {(Bxe5 Bxc6 bxc6
+Qd3 c5 e4) 0.00/12 6} 11. f4 {(f4 Bd4+ Kh1 Bd7 e3 Bg7 Qd5 Re8 e4 Be6 Qb5
+Rb8) +0.04/11 8} Bd4+ {(Bd4+ Kh1 Qd7 e4) +0.13/11 6} 12. Kh1 {(Kh1 Bd7 Qd3
+Re8 e4 Kh8 Rad1 a6 f5 f6 Bf3) +0.08/11 5} Bd7 {(Bd7 e4 Rc8 Qd3 Re8 Rae1 a6
+f5) +0.12/11 6} 13. e3 {(e3 Bf6 e4 Re8 f5 g5 a4 Bd4 Qd3 Qf6 Nd5) +0.08/11
+7} Bf6 {(Bf6 e4 Qc8 Qd2) +0.11/11 6} 14. e4 {(e4 Re8 f5 g5 Rb1 a6 a4 Ne5
+Nd5 Bc6 Nxf6+ Qxf6) +0.08/10 9} Rc8 {(Rc8 Rb1 Re8 Nd5 Bxb2 Rxb2 f5 Re1 fxe4
+Bxe4 Be6) +0.06/11 6} 15. Rf2 {(Rf2 Qe8 Rb1 a6 f5 Kh8 Qd5 Bd4 Rf4 b5)
++0.24/10 7} Qe8 {(Qe8 Qf3 Bd4 Rff1 Nb4 Rfc1 Nc6 Rf1) +0.16/10 6} 16. Rd2
+{(Rd2 Rd8 Qf3 a6 Rf1 b5 e5 Be7 Nd5 dxe5 Nxe7+ Nxe7 fxe5) +0.32/10 11} Be6
+{(Be6 Rc1 Kh8 Qf3 Kg8 Rdd1 Qd7 Qe3 Qe8 Bf3) +0.16/11 6} 17. Qf3 {(Qf3 a6
+Rf1 Kh8 a4 Qe7 Nd5 Bxd5 Bxf6+ Qxf6 Rxd5) +0.36/10 6} Rd8 {(Rd8 f5 Bd7)
++0.10/10 6} 18. Rf1 {(Rf1 Kh8 Qd1 Kg8 f5 Bd7 a4 Kh8 Qg4 Ne5) +0.40/10 9}
+Bd4 {(Bd4 Rdd1 a6 f5 Bd7 Qf4 Qe5 Qxe5 Bxe5 Bf3 Nd4) +0.07/11 6} 19. Ba1
+{(Ba1 Rc8 Qd1 Bf6 f5 Bd7 Nd5 Bxa1 Qxa1 Qe5) +0.56/10 9} Rc8 {(Rc8 Qd1 Bf6
+f5 Bd7 Nd5 Bg5 Re2 Ne5 Bd4 Bb5) 0.00/11 6} 20. Qd1 {(Qd1 Bg7 f5 Bd7 Nd5 Kh8
+Bxg7+ Kxg7 Qg4 Ne5 Qg5 f6) +0.48/11 11} Bh8 {(Bh8 Nd5 Bxa1 Qxa1 Bxd5 exd5
+Ne7 Qd4 a6 Re2 Qd7 Rfe1) -0.08/12 6} 21. f5 {(f5 Bd7 Nd5 Qd8 Rdf2 g5 Qh5
+Bxa1 f6 Kh8 Rxa1) +0.60/11 9} Bd7 {(Bd7 Nd5 Be5 Bxe5) -0.08/12 6} 22. Nd5
+{(Nd5 Qd8 c4 Bxa1 Qxa1 Ne5 Qd4 b6 a3 g5 b4) +0.48/11 9} Be5 {(Be5 Bxe5 Qxe5
+fxg6 fxg6 Rxf8+ Kxf8 Qf3+ Kg7 Rf2 Be6 Nf4) -0.07/12 6} 23. Nf6+ {(Nf6+ Bxf6
+Bxf6 Ne5 Qa1 Bc6 Qd4 b6 c4 a5 Rdf2 Rb8) +1.08/11 5} Bxf6 {(Bxf6 Bxf6 Ra8
+Qg4) -0.16/12 6} 24. Bxf6 {(Bxf6 Ne5 Qa1 Bc6 Qd4 b6 c4 a5 a3 Bb7 b4)
++1.00/11 1} Ne5 {(Ne5 Bg5 f6 Bh6 Rf7 Be3 a6 Rdf2 Qe7 fxg6 hxg6 Qd5)
+-0.18/12 6} 25. Qa1 {(Qa1 Bc6 Qd4 b6 c4 a5 a3 h6 b4 g5) +0.96/10 6} Bc6
+{(Bc6 Qd4 a6 Rfd1 Bb5 fxg6) -0.10/12 6} 26. c4 {(c4 b6 Qd4 h6 h3 g5 Rfd1 a6
+a3 a5) +0.96/10 6} b6 {(b6 Qd4 Rb8 Bg5 Qd7 Bf6 Qe8 Rfd1 Rc8) -0.09/11 6}
+27. Rf4 {(Rf4 a5 Qd4 Bb7 Rdf2 a4 fxg6 fxg6 Bh3 Ra8 b4) +1.00/11 4} a6 {(a6
+Qd4) -0.07/11 6} 28. Qd4 {(Qd4 a5 Rdf2 Bb7 a3 Rb8 <tt>) +1.00/11 6} Rb8
+{(Rb8 Rf1 Ra8 Bg5) -0.09/11 6} 29. Rdf2 {(Rdf2 Rc8 a3 Qd7 Bh3 Rb8 Bxe5 dxe5
+Qxe5 Qd1+ Bf1 gxf5) +1.04/10 4} a5 {(a5 fxg6) -0.12/11 6} 30. Rh4 {(Rh4 Nd7
+Bg7 g5 Rh3 Qd8 Bxf8 Qxf8 Qe3 f6 Bf3 Ne5 Bh5) +1.76/12 6} Bb7 {(Bb7 Qe3 Nd7
+Bc3 f6 Qh6 Qf7 Rg4 Qg7 Qxg7+) -0.42/10 6} 31. Rxh7 {(Rxh7 Kxh7 Rf4 Nf3 Bxf3
+g5 Rh4+ gxh4 e5 Bxf3+ Kg1 dxe5 Qxh4+ Bh5 Qxh5+ Kg8 #mate1) +M9/15 6} Kxh7
+{(Kxh7 Rf4 g5 Rh4+ gxh4) +2.42/11 6} 32. Rf4 {(Rf4 g5 Rh4+ gxh4 Qd1 Kh6
+Qc1+ Kh7 Qg5 Ng6 Qh5+ Kg8 Qh6 hxg3 #mate1) +M8/13 0} g5 {(g5 Rh4+ gxh4 Qd1
+Kg8 Qh5) -5.13/11 6} 33. Rh4+ {(Rh4+ gxh4 <tt>) +M7/11 0} gxh4 {(gxh4 Qd1
+Nf3 Qxf3) -M5/9 0} 34. Qd1 {(Qd1 Kh6 Qc1+ Kh7 Qg5 Ng6 Qh5+ <tt>) +M6/9 0}
+Nf3 {(Nf3 Qxf3) -M4/7 0} 35. Qxf3 {(Qxf3 Kh6 Qf4+ Kh7 Qxh4+ Kg8 #mate1)
++M4/5 0} a4 {(a4 Qh5+) -M5/2} 36. Qg4 {(Qg4 axb3 #mate1) +M2/1 0} Qb5 {(Qb5
+Qg7#) -M1/2 0} 37. Qg7# {(Qg7+ #mate) +M1/1 0} 1-0
+

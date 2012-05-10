@@ -1,0 +1,221 @@
+[Event "Computer chess game"]
+[Site "ALEX-PC"]
+[Date "2012.03.26"]
+[Round "?"]
+[White "Queen4"]
+[Black "Tequilla"]
+[Result "1/2-1/2"]
+[BlackElo "1500"]
+[ECO "B15"]
+[Opening "Caro-Kann"]
+[Time "21:29:38"]
+[Variation "Gurgenidze: 4.Nf3 Bg7 5.h3 Nf6 6.e5"]
+[WhiteElo "2450"]
+[TimeControl "40/240:40/240:40/240"]
+[Termination "normal"]
+[PlyCount "198"]
+[WhiteType "program"]
+[BlackType "program"]
+
+1. d4 e6 2. e4 d5 3. Nc3 Nc6 4. Be3 Nf6 5. e5 Nd7 6. f4 Nb6 7. a3 Ne7 8.
+Bf2 Bd7 {(Bd7 Bd3) -0.13/10 6} 9. Bd3 g6 {(g6 Qg4 Bg7 Nf3) -0.22/11 6} 10.
+Nf3 {(Ng1-f3 Bf8-h6 Qd1-d2 O-O O-O Nb6-c4 Bd3xc4 d5xc4 Bf2-h4) +0.73/11 7}
+Bg7 {(Bg7 O-O Bc6 Rc1) -0.21/11 6} 11. Bh4 {(Bf2-h4 O-O O-O a7-a6 Qd1-e2
+f7-f6 a3-a4 Ne7-f5 Bd3xf5 e6xf5) +0.71/11 7} O-O {(O-O O-O Bc6 Bg3)
+-0.18/11 6} 12. O-O {(O-O f7-f6 a3-a4 a7-a5 b2-b3 Ne7-f5 Bd3xf5 e6xf5
+Qd1-e2 Qd8-e7) +0.65/10 7} Na4 {(Na4 Nxa4 Bxa4 Rc1 Bc6 Qd2 Re8 Bg3)
+-0.21/11 6} 13. Nxa4 {(Nc3xa4 Bd7xa4 b2-b3 Ba4-d7 Qd1-d2 f7-f6 Qd2-b4 b7-b6
+c2-c4 Rf8-f7) +0.82/11 7} Bxa4 {(Bxa4 Qd2 Re8 Bg3) -0.24/11 6} 14. b3
+{(b2-b3 Ba4-c6 a3-a4 Qd8-e8 Bh4-f6 Bg7xf6 e5xf6 Ne7-f5 Rf1-e1 Nf5-d6)
++0.83/10 7} Bc6 {(Bc6 Qd2 a6 Rac1) -0.11/11 6} 15. a4 {(a3-a4 a7-a6 Qd1-d2
+Qd8-e8 Qd2-b4 f7-f6 Qb4-a5 b7-b6 Qa5-b4) +0.89/10 7} b6 {(b6 Qd2 Bb7 Rad1
+Rc8 Bg3 Nc6 Qc3 Re8) -0.06/10 6} 16. Qe2 {(Qd1-e2 Ra8-b8 Bh4-g5 Qd8-e8
+Bg5-f6 Bg7xf6 e5xf6 Ne7-f5 c2-c3) +1.00/9 7} Re8 {(Re8 Qe3) -0.10/10 6} 17.
+c3 {(c2-c3 Qd8-d7 Bh4-f6 Bg7xf6 e5xf6 Ne7-f5 Nf3-e5 Qd7-d6 Ra1-c1) +1.06/10
+7} Bb7 {(Bb7 b4 Qd7 Bg3 a5 Qd1 Nf5) -0.10/11 6} 18. a5 {(a4-a5 Qd8-d7
+Bh4-f6 Bg7xf6 e5xf6 Ne7-c6 a5xb6 c7xb6 Bd3-b5 Qd7-c7) +1.04/10 7} bxa5
+{(bxa5 Rxa5 c6 b4 Qb6 Bg3 Nf5 Bxf5 exf5 Re1) -0.15/10 6} 19. Rxa5 {(Ra1xa5
+c7-c6 Rf1-a1 Qd8-b8 Nf3-g5 h7-h6 Ng5-f3 Ne7-f5 Bd3xf5 e6xf5) +1.33/11 7} c6
+{(c6 b4 Qb6 Bg3 Nf5 Bxf5 exf5 Qe3 Qc7 Re1) -0.20/11 6} 20. Rfa1 {(Rf1-a1
+Qd8-b6 Ra1-a3 Ne7-f5 Bh4-f2 f7-f6 b3-b4 Re8-e7 Bd3xf5 e6xf5) +1.31/11 7}
+Qb6 {(Qb6 R1a4 Nc8 Qb2 Qc7 Bg3) -0.32/11 6} 21. c4 {(c3-c4 Bb7-c8 c4-c5
+Qb6-b7 Qe2-a2 h7-h6 Ra5-a4 Bc8-d7 Bd3-a6 Qb7-c7) +1.44/11 7} Bc8 {(Bc8 c5
+Qb7 Be1 f6 b4 Bd7 Bc3 Rf8 Rf1) -0.34/10 6} 22. c5 {(c4-c5 Qb6-b8 Qe2-a2
+Bg7-h6 Nf3-g5 Ne7-f5 Bd3xf5 g6xf5 Qa2-a4) +1.41/10 7} Qb7 {(Qb7 Be1 Bh6 Bd2
+Bd7 b4 Bg7 b5 cxb5 Bxb5 Nc6) -0.38/11 6} 23. Be1 {(Bh4-e1 Bg7-h6 Be1-d2
+Bc8-d7 b3-b4 Bh6-g7) +1.41/10 7} Bh6 {(Bh6 Bd2 Bd7 b4 Bg7 Bc3 Bh6 Qe3 Bg7
+Rc1 Nf5) -0.46/11 6} 24. Bd2 {(Be1-d2 Bc8-d7 b3-b4 Qb7-c7 Qe2-f2 Ne7-f5
+Ra5-a2 Bh6-g7 Nf3-g5 Re8-d8) +1.42/10 7} Bd7 {(Bd7 b4 Bg7 Qd1) -0.46/11 6}
+25. b4 {(b3-b4 Re8-f8 Ra5-a3 f7-f6 Kg1-h1 f6xe5 f4xe5 Bh6xd2 Qe2xd2 h7-h6)
++1.38/10 7} Rf8 {(Rf8 R1a2 Qc7) -0.46/10 6} 26. Qd1 {(Qe2-d1 Qb7-c7 Qd1-a4
+Ne7-c8 Bd3-a6 Bh6-g7 h2-h3 h7-h5 Ba6xc8 Rf8xc8) +1.49/10 7} Qc7 {(Qc7 Qa4
+Nc8 b5 cxb5 Bxb5 Bxb5 Rxb5 Ne7 Qa5) -0.59/11 6} 27. Qa4 {(Qd1-a4 Ne7-c8
+Bd3-a6 f7-f6 Ba6xc8 Bd7xc8 Ra5xa7 Bc8-b7 Qa4-d1 Ra8xa7 Ra1xa7) +1.43/11 7}
+Nc8 {(Nc8 b5 Rb8) -0.61/11 6} 28. Qa3 {(Qa4-a3 f7-f6 Ra1-a2 f6xe5 f4xe5
+Bh6xd2 Nf3xd2 Rf8-f4 Nd2-b3 Ra8-b8) +1.39/10 7} f6 {(f6 Qa2 Be8 Kh1)
+-0.53/11 6} 29. Qa2 {(Qa3-a2 f6xe5 f4xe5 Bh6xd2 Qa2xd2 Nc8-e7 Nf3-g5 h7-h6
+Ng5-f3 Qc7-b7) +1.38/11 7} fxe5 {(fxe5 fxe5 Bxd2 Qxd2 Qb7 R1a4 Rf7 Qa2 Rf4
+Kh1 Be8) -0.55/11 6} 30. fxe5 {(f4xe5 Bh6xd2 Qa2xd2 Ra8-b8 Ra5-a4 Rf8-f7
+Qd2-g5 Rb8-b7 Bd3-a6 Rb7-b8 Kg1-h1 Nc8-e7 Ra1-b1) +1.42/13 7} Bxd2 {(Bxd2
+Qxd2 Ne7 Qa2 Nc8 Kh1 Kh8 Qa3 Be8 b5) -0.63/12 6} 31. Qxd2 {(Qa2xd2 Ra8-b8
+Ra5-a4 Rf8-f7 Qd2-g5 Rb8-a8 Kg1-h1 Nc8-e7 Qg5-c1 Ne7-f5 Nf3-g5 Rf7-f8)
++1.42/13 7} Ne7 {(Ne7 Qa2 Nc8 Kh1 Kh8 Qb2 Ne7) -0.64/12 6} 32. Qh6 {(Qd2-h6
+Rf8-f7 Nf3-g5 Rf7-g7 Kg1-h1 Bd7-c8 Ra1-b1 Qc7-d7 Bd3-a6 Ne7-f5 Ba6xc8)
++1.53/12 7} Nf5 {(Nf5 Bxf5 Rxf5 b5 cxb5 Ng5 Bc8 Rxb5 Qe7 Nf3 Bb7) -0.52/11
+6} 33. Bxf5 {(Bd3xf5 Rf8xf5 Nf3-g5 Bd7-c8 Ra5-a4 a7-a6 h2-h4 Ra8-a7 Kg1-h1
+Qc7-g7 Qh6xg7+ Ra7xg7) +1.45/12 7} Rxf5 {(Rxf5 R5a3 Be8 Kh1 Qb7 Qd2 Bd7 Rf1
+Kh8 Rb3 Raf8) -0.37/11 6} 34. Ng5 {(Nf3-g5 Bd7-c8 h2-h3 Qc7-e7 h3-h4 Qe7-b7
+g2-g3) +1.40/12 7} Bc8 {(Bc8 R5a3 Qe7 Nf3 Qb7 Ra4 a6 Qh4 Qb5 Ng5 Ra7)
+-0.34/11 6} 35. h4 {(h2-h4 a7-a6 b4-b5 c6xb5 Ra5xb5 Qc7-g7 Qh6xg7+ Kg8xg7
+Rb5-b4 a6-a5 Rb4-b6 Rf5-f4) +1.28/12 7} a6 {(a6 b5 cxb5 Rxb5 a5 Rb3 Ra7)
+-0.21/12 6} 36. b5 {(b4-b5 c6xb5 Ra5xb5 Qc7-g7 Qh6xg7+ Kg8xg7 c5-c6 Rf5-f4
+Rb5-b7+ Kg7-g8 Rb7-e7 Kg8-f8 Re7xh7 Rf4xd4) +1.08/13 7} cxb5 {(cxb5 Rxb5 a5
+Rab1 a4) -0.27/11 6} 37. Rxb5 {(Ra5xb5 Qc7-g7 Qh6xg7+ Kg8xg7 Rb5-b6 Rf5-f4
+Ra1xa6 Ra8xa6 Rb6xa6 Rf4xh4 Ra6-c6 Bc8-d7) +1.27/13 7} a5 {(a5 Rab1 Qg7
+Qxg7+ Kxg7 Rb6 Rf4 Rd1 Rxh4 Nxe6+) -0.35/10 6} 38. Kh2 {(Kg1-h2 Ra8-a6
+g2-g4 Rf5-f8 Ra1-a4 Rf8-f2+ Kh2-h3 Qc7-g7 Qh6xg7+ Kg8xg7 Kh3-g3) +1.47/10
+7} a4 {(a4 Rb6 Qe7 g4 Rf8 h5 gxh5 gxh5 Re8 Rf1) -0.32/10 6} 39. Rb4
+{(Rb5-b4 a4-a3 g2-g4 Rf5-f2+ Kh2-g3 Rf2-b2 Ra1-f1 Qc7-g7 Qh6xg7+ Kg8xg7
+Rf1-f7+ Kg7-g8) +1.38/11 7} a3 {(a3 Nf3 Ra5 Rb3 a2 Rb2 Rxc5 dxc5 Rxf3
+Raxa2) -0.26/10 6} 40. Nf3 {(Ng5-f3 Qc7-e7 Qh6-e3 a3-a2 Qe3-e2 Qe7-f8
+Ra1xa2 Ra8xa2 Qe2xa2 Bc8-d7) +1.35/10 7} Qa5 {(Qa5 Rb3 a2 Rb2 Rf7 Kg3 Rg7
+Qe3) -0.96/10 6} 41. Rb6 {(Rb4-b6 Ra8-a7 Qh6-e3 Qa5-a4 Nf3-g5 a3-a2 Ng5xe6
+Bc8xe6 Rb6xe6 Ra7-f7) +1.40/10 6} Rf8 {(Rf8 Ng5 Ra7 Rb3 a2 Rb2 Qc3 Raxa2)
+-1.08/10 12} 42. Ng5 {(Nf3-g5 Ra8-a7 Rb6-b3 Qa5-d2 Ra1xa3 Ra7-g7 Ra3-a4
+Qd2-f4+ Rb3-g3 Bc8-d7 Ra4-b4 Kg8-h8) +1.37/11 6} Ra7 {(Ra7 Rb3 Qd2 Raxa3
+Rg7 Rd3 Qf2 Kh3 Bd7 Nf3) -1.11/10 5} 43. Rb3 {(Rb6-b3 Qa5-d2 Ra1xa3 Rf8-f2
+Rb3-g3 Ra7xa3 Qh6xh7+ Kg8-f8 Qh7-h8+ Kf8-e7 Qh8-g7+ Ke7-d8 Qg7-g8+ Kd8-c7
+Rg3xa3) +1.25/11 6} Qd2 {(Qd2 Raxa3 Rg7 Rf3 Rxf3 Rxf3 Qxd4 Nxh7 Qxe5+ Kh3)
+-1.08/10 5} 44. Raxa3 {(Ra1xa3 Rf8-f2 Rb3-g3 Ra7xa3 Qh6xh7+ Kg8-f8 Qh7-h8+
+Kf8-e7 Qh8-g7+ Ke7-d8 Qg7-g8+ Kd8-c7 Rg3xa3 Rf2xg2+ Kh2-h3 Rg2-h2+ Kh3-g3)
++1.22/11 6} Rf2 {(Rf2 Kh3 Rxg2 Rf3 Rh2+ Kg3 Rg2+ Kh3 Rh2+ Kg3) 0.00/10 5}
+45. Rg3 {(Rb3-g3 Ra7xa3 Qh6xh7+ Kg8-f8 Qh7-h8+ Kf8-e7 Qh8-h7+ Ke7-d8 c5-c6
+Rf2xg2+ Rg3xg2 Qd2-f4+ Kh2-h1 Ra3-a1+ Rg2-g1 Ra1xg1+ Kh1xg1 Qf4xd4+ Kg1-h1)
+-0.83/12 6} Rxa3 {(Rxa3 Qxh7+ Kf8 Qh8+ Ke7 Qg7+ Kd8 Qh8+ Kc7 Rxa3) +1.24/10
+5} 46. Qxh7+ {(Qh6xh7+ Kg8-f8 Qh7-h8+ Kf8-e7 Rg3xa3 Rf2xg2+ Kh2-h3 Rg2-h2+
+Kh3-g4 Qd2xd4+ Kg4-g3 Qd4-g1+ Kg3-f4 Rh2-f2+ Ra3-f3 Qg1-h2+ Kf4-e3 Rf2-e2+
+Ke3-d4 Qh2-g1+ Kd4-d3 Bc8-a6+ Kd3-c3) -0.72/13 6} Kf8 {(Kf8) -1.27/1 0} 47.
+Qh8+ {(Qh7-h8+ Kf8-e7 Rg3xa3 Rf2xg2+ Kh2-h3 Rg2-h2+ Kh3-g4 Qd2xd4+ Kg4-g3
+Qd4-g1+ Kg3-f4 Rh2-f2+ Ra3-f3 Qg1-h2+ Kf4-e3 Rf2-e2+ Ke3-d3 Bc8-a6+ Kd3-c3
+Qh2xe5+ Qh8xe5 Re2xe5 c5-c6) -0.81/13 6} Ke7 {(Ke7) -1.27/1 0} 48. Rxa3
+{(Rg3xa3 Rf2xg2+ Kh2-h3 Rg2-h2+ Kh3-g4 Qd2xd4+ Kg4-g3 Qd4-g1+ Kg3-f4
+Rh2-f2+ Ng5-f3 Qg1-h2+ Kf4-g5 Qh2-g3+ Kg5-h6 Qg3-f4+ Kh6-h7 Rf2xf3 Ra3xf3
+Qf4xf3 Qh8xc8) -0.33/13 6} Rxg2+ {(Rxg2+ Kh3 Rh2+ Kg3 Qf2+ Kg4 Qxd4+ Kg3
+Qf2+ Kg4) +1.30/10 6} 49. Kh3 {(Kh2-h3 Rg2-h2+ Kh3-g4 Qd2xd4+ Kg4-g3
+Qd4-g1+ Kg3-f4 Rh2-f2+ Ng5-f3 Qg1-h2+ Kf4-g5 Qh2-g3+ Kg5-h6 Qg3-f4+ Kh6xg6
+Rf2-g2+ Nf3-g5 Qf4-e4+ Kg6-h5 Qe4-g4+ Kh5-g6 Qg4-e4+) 0.00/13 6} Rh2+
+{(Rh2+ Kg3 Qf2+ Kg4 Qxd4+ Kg3 Qg1+ Kf4 Qd4+ Kg3) +1.26/10 6} 50. Kg4
+{(Kh3-g4 Qd2xd4+ Kg4-g3 Qd4-g1+ Kg3-f4 Rh2-f2+ Ng5-f3) 0.00/13 6} Qxd4+
+{(Qxd4+ Kg3 Qg1+ Kf4 Qd4+ Kg3 Qg1+ Kf4 Qc1+) +1.25/9 6} 51. Kg3 {(Kg4-g3
+Qd4-g1+ Kg3-f4 Rh2-f2+ Ng5-f3 Qg1-h2+ Kf4-g5) -0.20/13 6} Qf2+ {(Qf2+ Kg4)
++0.42/9 6} 52. Kg4 {(Kg3-g4) 0.00/1 0} Qf5+ {(Qf5+ Kg3) +0.41/9 6} 53. Kg3
+{(Kg4-g3) 0.00/1 0} Qf2+ {(Qf2+ Kg4 Qd4+ Kg3 Qg1+ Kf4 Qc1+ Kg3 Qg1+)
++0.40/9 6} 54. Kg4 {(Kg3-g4) 0.00/1 0} Qd4+ {(Qd4+ Kg3 Qg1+ Kf4 Qc1+ Kg3
+Qg1+ Kf4 Qf1+ Nf3) +0.40/10 6} 55. Kg3 {(Kg4-g3) 0.00/19 6} Qg1+ {(Qg1+ Kf4
+Rf2+ Nf3) +0.27/10 6} 56. Kf4 {(Kg3-f4 Rh2-f2+ Ng5-f3 Qg1-h2+ Kf4-g5)
+0.00/13 6} Qc1+ {(Qc1+ Kg3 Qg1+ Kf4 Rf2+ Nf3 Qh2+ Kg5 Qg3+ Kh6) +0.25/10 6}
+57. Kg3 {(Kf4-g3 Qc1-g1+) 0.00/13 6} Qg1+ {(Qg1+ Kf4 Rf2+ Nf3 Qh2+ Kg5 Qg3+
+Kh6 Qf4+ Kxg6) +0.25/10 6} 58. Kf4 {(Kg3-f4) 0.00/18 6} Rf2+ {(Rf2+ Nf3)
++0.18/10 6} 59. Nf3 {(Ng5-f3 Qg1-h2+ Kf4-g5 Qh2-g3+ Kg5-h6) 0.00/13 6} Qc1+
+{(Qc1+ Kg3 Qxa3 Qg7+ Ke8 Qxg6+ Kd7 Qf7+) +0.08/10 6} 60. Kg3 {(Kf4-g3
+Rf2xf3+ Ra3xf3 Qc1-g1+ Kg3-h3 Qg1-h1+ Kh3-g4 Qh1-g2+ Rf3-g3 Qg2-e4+ Kg4-h3
+Qe4-h1+ Kh3-g4 Qh1-e4+) 0.00/14 6} Qxa3 {(Qxa3 Qg7+ Ke8 Qxg6+ Ke7 Kxf2)
+0.00/10 6} 61. Qg7+ {(Qh8-g7+ Ke7-e8 Qg7xg6+ Ke8-f8 Kg3xf2 Qa3xc5+ Kf2-g3
+Qc5-e7 h4-h5 Qe7-f7 Kg3-g4 Bc8-d7 Nf3-d4 Kf8-e8 Qg6-f6 Qf7-f8) +0.46/13 6}
+Ke8 {(Ke8 Qxg6+ Kf8 Kxf2 Qxc5+ Kg3 Qe7 h5 Qf7 Qc2 Qg7+) -0.03/11 6} 62.
+Qxg6+ {(Qg7xg6+ Ke8-f8 Kg3xf2 Qa3xc5+ Kf2-g3 Qc5-e7 Nf3-g5 Qe7-g7 Qg6-f6+
+Qg7xf6 e5xf6 e6-e5 f6-f7 Bc8-f5 h4-h5 d5-d4 h5-h6) +0.62/14 6} Kf8 {(Kf8
+Kxf2 Qxc5+ Kg2 Qe7 Ng5 Qe8 Qh6+ Ke7) -0.08/12 6} 63. Kxf2 {(Kg3xf2 Qa3xc5+
+Kf2-g3 Qc5-e7 Kg3-f4 Qe7-f7+ Qg6-f6 Kf8-e8 Kf4-g5 Ke8-f8 h4-h5 Kf8-g8 h5-h6
+Bc8-a6 Nf3-d4 Qf7xf6+ e5xf6) +0.96/14 6} Qxc5+ {(Qxc5+ Kg2 Qe7 Ng5 Qe8 Qh6+
+Ke7 Qg7+ Kd8 Nf7+ Kc7) -0.07/11 6} 64. Kg3 {(Kf2-g3 Qc5-e7 Nf3-g5 Qe7-a3+
+Kg3-g4 Qa3-a4+ Kg4-h5 Qa4-e8 Ng5-h7+ Kf8-e7 Qg6xe8+ Ke7xe8 Kh5-g6 Bc8-a6
+Nh7-g5 Ba6-d3+ Kg6-f6 Bd3-f5) +1.28/13 6} Qe7 {(Qe7 h5 Qg7 Kf4 Qxg6 hxg6
+Kg8 Ke3 Kg7 Nh4 Bd7 Kd4) -0.05/12 6} 65. Ng5 {(Nf3-g5 Qe7-g7 Qg6-f6+ Qg7xf6
+e5xf6 e6-e5 h4-h5 Kf8-g8 h5-h6 Bc8-f5 Kg3-f2 Bf5-g6 Ng5-f3 e5-e4) +0.76/13
+6} Qa3+ {(Qa3+ Nf3 Qe7 h5 Qg7 Qg4 Bd7 Kf4 Qh7 Ke3 Qh6+) -0.01/11 6} 66. Kg4
+{(Kg3-g4 Qa3-a4+ Kg4-h5 Qa4-e8 Ng5-h7+ Kf8-e7 Qg6xe8+ Ke7xe8 Kh5-g6 d5-d4
+h4-h5 d4-d3 h5-h6 d3-d2 Nh7-f6+ Ke8-e7 h6-h7 d2-d1Q) +0.62/13 6} Qa4+
+{(Qa4+ Kg3 Qa3+ Nf3 Qe7 Kf4 Qf7+ Qxf7+ Kxf7 h5 Kg7 Kg5) -0.02/12 6} 67. Kh5
+{(Kg4-h5 Qa4-e8 Kh5-h6 Qe8xg6+ Kh6xg6 d5-d4 h4-h5 d4-d3 h5-h6 d3-d2 h6-h7
+Bc8-d7 Ng5xe6+) +1.46/15 6} Qe8 {(Qe8 Qxe8+ Kxe8 Kg6 d4 h5 d3 h6 d2 h7 d1=Q
+h8=Q+ Kd7) -0.74/13 6} 68. Qxe8+ {(Qg6xe8+ Kf8xe8 Kh5-g6 d5-d4 h4-h5 d4-d3
+h5-h6 d3-d2 h6-h7 Ke8-d8 Ng5xe6+ Bc8xe6 Kg6-f6 Be6-f5 Kf6xf5) +1.71/16 6}
+Kxe8 {(Kxe8 Kg6 d4 h5 d3 h6 d2 h7 d1=Q h8=Q+ Kd7 Nxe6 Qd3+ Kf7 Qf1+)
+-0.74/15 6} 69. Kg6 {(Kh5-g6 d5-d4 h4-h5 d4-d3 h5-h6 d3-d2 h6-h7 Ke8-d8
+Ng5xe6+ Bc8xe6 Be6-f5+ Kg6xf5 Kd8-d7 Kf5-e4) +1.66/16 6} Bd7 {(Bd7 h5 Kf8
+h6 Be8+ Kf6 Kg8 Nxe6 Ba4 Ng5) -1.66/15 6} 70. h5 {(h4-h5 Ke8-e7 h5-h6
+Bd7-b5 Ng5-f3 Bb5-d3+ Kg6-g7 Bd3-e4 h6-h7 Be4xh7 Kg7xh7 Ke7-f7 Nf3-d4
+Kf7-f8 Kh7-g6 Kf8-e8 Kg6-f6 Ke8-d7) +4.17/16 6} Kf8 {(Kf8 Nh7+ Ke7 h6 Bb5
+Ng5 Bd3+ Kg7 Bc2 h7 Bxh7 Nxh7 d4 Nf6 d3) -2.14/15 6} 71. h6 {(h5-h6 Bd7-e8+
+Kg6-f6 Kf8-g8 Ng5xe6 Kg8-h7 Kf6-g5 Be8-c6 Ne6-d4 Bc6-d7 e5-e6 Bd7-e8 e6-e7
+Be8-d7 Nd4-f5 Bd7-e8 Kg5-f6 Be8-b5) +4.95/16 6} Be8+ {(Be8+ Kf6 Kg8 Nxe6
+Bc6 Nd4) -2.61/15 6} 72. Kf6 {(Kg6-f6 Kf8-g8 Ng5xe6 Kg8-h7 Kf6-g5 Be8-c6
+Ne6-d4 Bc6-d7 e5-e6 Bd7-e8 Nd4-f5 Be8-c6 Kg5-f6 Bc6-b5 e6-e7 Kh7-g8)
++5.08/16 6} Kg8 {(Kg8 Nxe6 Kh7 Kg5 Bc6 Nd4 Bd7 e6) -2.75/14 6} 73. Nxe6
+{(Ng5xe6 Kg8-h7 Kf6-g5 Be8-c6 Ne6-d4 Bc6-d7 e5-e6 Bd7-e8 Nd4-f5 Be8-c6
+Kg5-f6 Bc6-b5 e6-e7 Bb5-c6 Kf6-e6 Kh7-g6 Ke6-e5) +5.05/16 6} Kh7 {(Kh7 Kg5
+Bb5 Nd4 Be8 e6) -3.44/14 6} 74. Kg5 {(Kf6-g5 Be8-c6 Ne6-d4 Bc6-d7 e5-e6
+Bd7-c8 e6-e7 Bc8-d7 Nd4-f5 Bd7-c6 Kg5-f6 Bc6-e8 Kf6-e5 Kh7-g6 Nf5-h4+
+Kg6-h7 Ke5xd5 Kh7-g8) +5.71/16 6} Bb5 {(Bb5 Nd4 Be8 e6 Ba4 e7 Kg8 Nf5 Kh7
+Nd6 d4 e8=B Bxe8) -3.45/13 6} 75. Nd4 {(Ne6-d4 Bb5-e8 e5-e6 Kh7-g8 Nd4-f5
+Kg8-h7 Kg5-f6 Be8-a4 e6-e7 Ba4-c6 Kf6-e5 Kh7-g8 Ke5-d6) +5.81/15 6} Be8
+{(Be8 e6 Ba4 e7 Kg8 Nf5 Kh7 Ng7 Kh8 Kf4 Kh7) -3.47/14 6} 76. e6 {(e5-e6
+Kh7-g8 Nd4-f5 Kg8-h7 Kg5-f6 Be8-a4 e6-e7 Ba4-c6 Kf6-e5 Kh7-g6 Ke5-d6 Bc6-e8
+h6-h7 Kg6xh7 Kd6xd5 Be8-f7+ Kd5-d6 Kh7-g6) +6.76/15 6} Ba4 {(Ba4 e7 Kg8 Nf5
+Kh7 Ng7 d4 Ne6 d3 Nc5 d2 Nxa4 d1=Q) -3.51/13 6} 77. Nf5 {(Nd4-f5 Ba4-e8
+Kg5-f6 d5-d4 Nf5xd4 Kh7xh6 Nd4-f3 Kh6-h7 Nf3-e5 Kh7-h6 e6-e7 Be8-b5 Kf6-e6
+Kh6-g7 Ke6-d6) +6.79/15 6} Be8 {(Be8 Nd4 Ba4 e7 Kg8 Ne6 Kh7 Nf8+ Kg8 Kf5
+Kf7) -3.48/13 6} 78. Kf6 {(Kg5-f6 d5-d4 Nf5xd4 Kh7xh6 Nd4-f5+ Kh6-h7 e6-e7
+Be8-a4 Nf5-d6 Kh7-h6 Nd6-f7+ Kh6-h5 Kf6-e5 Kh5-g4 Nf7-d6 Kg4-f3 Ke5-d5)
++6.67/14 6} d4 {(d4 Nxd4 Kxh6 Nf5+ Kh7 e7 Ba4 Ne3 Kg8 Ng4 Kh8 Ne5 Kg8)
+-1.06/14 6} 79. Nxd4 {(Nf5xd4 Kh7xh6 Nd4-f5+ Kh6-h7 e6-e7 Be8-a4 Nf5-e3
+Kh7-h6 Ne3-d5 Ba4-c6 Nd5-c3 Bc6-e8 Nc3-e2 Be8-b5 Kf6-f7 Bb5-d7 Kf7-f8)
++6.69/16 6} Kxh6 {(Kxh6 Nf5+ Kh7 e7 Ba4 Ne3 Kg8 Ng4 Kh8 Kf7 Kh7 Nf6+ Kh6
+Ng8+) -1.06/14 6} 80. Nf5+ {(Nd4-f5+ Kh6-h7 e6-e7 Be8-a4 Nf5-e3 Kh7-h6
+Ne3-d5 Kh6-h5 Nd5-c3 Ba4-e8 Nc3-a2 Kh5-g4) +6.45/15 6} Kh7 {(Kh7 e7 Ba4 Ne3
+Kg8 Ng4 Kh8 Kf7 Kh7 Ne5 Bb3+) -1.06/14 6} 81. e7 {(e6-e7 Be8-a4 Nf5-e3
+Kh7-h6 Ne3-d5 Kh6-h5 Nd5-f4+ Kh5-g4 Nf4-e6 Kg4-f3 Kf6-e5 Ba4-e8 Ke5-d4
+Be8-h5 Ne6-c5 Kf3-f4 Nc5-d7) +6.45/16 6} Ba4 {(Ba4 Ne3 Kg8 Ng4 Kh8 Kf7 Kh7
+Ne5 Kh8 Ng6+ Kh7 Nf8+ Kh6 Ne6) -1.06/14 6} 82. Kf7 {(Kf6-f7 Ba4-b3+ Kf7-e8
+Bb3-d1 Ke8-d7 Bd1-h5 Kd7-e6 Bh5-e8 Ke6-f6 Be8-a4) +6.45/16 6} Bb3+ {(Bb3+
+Ke8 Bd1 Ne3 Be2 Kf8 Bb5) -1.06/13 6} 83. Ke8 {(Kf7-e8 Bb3-d1 Ke8-d7 Bd1-h5
+Kd7-e6 Bh5-e8 Ke6-f6 Be8-a4 Kf6-f7) +6.45/16 6} Bd1 {(Bd1 Kd7 Bh5) -1.06/14
+6} 84. Kd7 {(Ke8-d7 Bd1-h5) +6.45/16 6} Bh5 {(Bh5 Ke6 Be8 Nd6 Ba4 Kf7 Bc6
+Nf5 Ba4 Ne3 Kh6 Ng4+ Kg5 Ne5) -1.06/14 6} 85. Ke6 {(Kd7-e6 Bh5-e8 Ke6-f6
+Be8-a4 Kf6-f7) +6.45/16 6} Be8 {(Be8 Nd6 Ba4 Kf7 Bc6 Nf5 Ba4 Nh4 Bc6 Ng6
+Kh6 Ne5 Ba4 Ng4+) -1.06/14 6} 86. Kf6 {(Ke6-f6 Kh7-g8 Nf5-d6 Be8-a4 Nd6-c4
+Ba4-e8 Nc4-e5 Kg8-h7 Kf6-e6 Kh7-g7 Ne5-d7 Be8-h5 Nd7-c5 Bh5-g6 Ke6-d7)
++6.31/16 6} Ba4 {(Ba4 Kf7 Bb3+ Ke8 Bd1 Nd6 Kg7 Kd8 Bh5 Nf7 Bxf7 Kd7)
+-1.05/12 6} 87. Kf7 {(Kf6-f7) +6.45/17 6} Bd7 {(Bd7 Ne3 Kh6 Nd5 Kg5 Nf6 Bc6
+Kg7 Kf5 Nd7 Bxd7 Kf7) -0.76/12 6} 88. Nd4 {(Nf5-d4 Kh7-h6 Kf7-f6 Kh6-h7
+Nd4-e6 Kh7-h6 Kf6-f7 Bd7-c6 Ne6-c5 Kh6-g5 Kf7-e6 Bc6-e8 Nc5-e4+ Kg5-f4
+Ne4-f6 Be8-g6 Ke6-d7) +6.37/17 6} Ba4 {(Ba4 Ne6 Kh6 Nc5 Bb5 Kf8 Kh7 Na6)
+-0.75/13 6} 89. Ne6 {(Nd4-e6 Ba4-b5 Kf7-f6 Kh7-h6 Ne6-c5 Bb5-c6 Nc5-e4
+Bc6-b5 Kf6-f7 Bb5-a4) +6.39/17 6} Kh6 {(Kh6 Nc5 Bb5 Ne4 Ba4 Nf6 Bb3+ Kf8
+Ba4 Nd7 Bxd7 Kf7 Ba4) -0.75/13 6} 90. Nc5 {(Ne6-c5 Ba4-b5 Kf7-f6 Bb5-c6
+Nc5-e4 Bc6-e8 Ne4-d6 Be8-c6 Kf6-e6 Kh6-g6 Nd6-c4) +6.39/17 6} Bc6 {(Bc6 Ne4
+Ba4 Nf6 Kg5 Kg7 Kf5 Nd7 Bxd7 Kf7 Ba4 Kg7) -0.68/12 6} 91. Ke6 {(Kf7-e6
+Bc6-e8 Ke6-f6 Kh6-h7 Nc5-e4 Kh7-g8 Ne4-d6 Be8-a4) +6.31/17 6} Be8 {(Be8 Kf6
+Kh7 Nd7 Kh8 Ne5 Kh7 Nf7 Kg8 Nh6+ Kh7 Ng4) -0.53/12 6} 92. Kf6 {(Ke6-f6
+Kh6-h7 Nc5-e4 Kh7-g8 Ne4-d6 Be8-a4) +6.31/17 6} Kh7 {(Kh7 Na6 Kg8 Nb4 Kh8
+Nc6 Kh7 Ne5 Kg8 Nc4 Kh8 Nd6 Ba4) -0.53/13 6} 93. Ne4 {(Nc5-e4 Kh7-g8 Ne4-d6
+Be8-a4 Nd6-c4 Ba4-e8 Nc4-e5 Kg8-h7 Ne5-g4 Be8-b5 Kf6-e6 Kh7-g6 Ng4-e3
+Bb5-c6 Ne3-f5 Bc6-d7+ Ke6xd7) +6.31/17 6} Kh8 {(Kh8 Nd6 Ba4 Kf7 Kh7 Nc4 Kh6
+Ne5 Bb5 Kf8 Ba4 Nc6) -0.75/13 6} 94. Nd6 {(Ne4-d6 Be8-c6 Kf6-f7 Kh8-h7
+Nd6-c4 Bc6-d5+ Kf7-f6 Bd5-c6 Nc4-e5 Bc6-e8 Ne5-f7 Kh7-g8 Nf7-d6 Be8-a4)
++6.31/17 6} Ba4 {(Ba4 Kf7 Kh7 Nc4 Kh6 Ne5 Kg5 Kg7 Kf4 Kf8 Kf5 Nd7) -0.73/13
+6} 95. Nc4 {(Nd6-c4 Ba4-e8 Nc4-e5 Kh8-g8 Ne5-g4 Kg8-h7 Ng4-e3 Kh7-h6
+Ne3-f5+ Kh6-h7 Kf6-e6 Kh7-g6 Nf5-g3 Be8-f7+ Ke6-d6 Kg6-f6 Ng3-e4+ Kf6-f5
+Ne4-c5) +6.31/16 6} Kg8 {(Kg8 Ne5 Be8 Nc4 Kh8 Nd6 Ba4 Nf7+ Kg8 Nh6+ Kh7
+Nf7) -0.53/12 6} 96. Ne5 {(Nc4-e5 Ba4-e8 Ne5-g4 Kg8-h7 Ng4-e3 Be8-a4 Kf6-f7
+Kh7-h6 Ne3-f5+ Kh6-g5 Nf5-d4 Ba4-d7 Kf7-g7 Kg5-f4 Nd4-b3 Kf4-e5 Nb3-c5)
++6.24/17 6} Be8 {(Be8 Nc4 Bd7 Nd6 Kh7 Kf7 Kh6 Ne4 Bb5 Kf8 Kg6 Nc3 Bc6)
+-0.53/13 6} 97. Ng4 {(Ne5-g4 Kg8-h7 Ng4-e3 Be8-a4 Ne3-d5 Ba4-e8 Kf6-e6
+Kh7-g6 Nd5-c3 Be8-c6 Nc3-e4 Bc6-e8 Ne4-d6 Be8-c6 Nd6-c4) +6.21/17 6} Bd7
+{(Bd7 Nh6+ Kh7 Nf7 Be8 Ng5+ Kg8 Ne4 Bd7 Nd6 Kh7 Nf7 Be8 Ng5+) -0.53/14 6}
+98. Nh6+ {(Ng4-h6+ Kg8-h7 Nh6-f5 Bd7-e8 Nf5-d6 Be8-c6 Kf6-e6 Kh7-g6)
++6.21/18 6} Kh7 {(Kh7 Nf7 Be8 Ng5+ Kg8 Ne4 Bd7 Nd6 Kh7 Kf7 Kh6 Ne4 Bb5 Kf8)
+-0.53/14 6} 99. Nf5 {(Nh6-f5 Bd7-e8) +6.21/18 6} Ba4 {(Ba4) 0.00/17 6
+3-fold repetition} 1/2-1/2
+

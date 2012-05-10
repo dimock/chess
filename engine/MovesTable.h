@@ -18,6 +18,7 @@ class MovesTable
 
   // mobility mask
   uint64 s_bishopMob_[64];
+  uint64 s_rookMob_[64];
 
   void resetAllTables(int);
 
@@ -93,5 +94,11 @@ public:
   {
     THROW_IF((unsigned)pos > 63, "invalid bishop pos");
     return s_bishopMob_[pos];
+  }
+
+  inline const uint64 & rook_mobility(int pos) const
+  {
+    THROW_IF((unsigned)pos > 63, "invalid rook pos");
+    return s_rookMob_[pos];
   }
 };

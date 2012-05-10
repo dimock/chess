@@ -254,6 +254,98 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   return m;
 }
 
+void MovesGenerator::calculateWeight(Move & move)
+{
+  const Field & ffield = board_.getField(move.from_);
+  THROW_IF( !ffield, "no figure on field we move from" );
+
+  const History & hist = history_[move.from_][move.to_];
+  move.srt_score_ = hist.score_ + 100000;
+
+  if ( move.srt_score_ > history_max_ )
+    history_max_ = move.srt_score_;
+
+  if ( move.rindex_ >= 0 )
+  {
+    Figure::Type atype = board_.getField(move.from_).type();
+    Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+    move.srt_score_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + 10000000;
+    if ( board_.halfmovesCount() > 1 )
+    {
+      MoveCmd & prev = board_.getMoveRev(-1);
+      if ( prev.to_ == move.to_ )
+        move.srt_score_ += Figure::figureWeight_[vtype] >> 1;
+    }
+  }
+  else if ( move.new_type_ > 0 )
+  {
+    move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
+  }
+#ifdef USE_KILLER
+  else if ( move == killer_ )
+  {
+    move.srt_score_ = 3000000;
+    move.fkiller_ = 1;
+  }
+#endif
+}
+
+Move & MovesGenerator::move()
+{
+  for ( ;; )
+  {
+    Move * move = moves_ + numOfMoves_;
+    Move * mv = moves_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+        continue;
+
+      move = mv;
+    }
+    if ( !*move )
+      return *move;
+
+    int see_gain = 0;
+    if ( (move->rindex_ >= 0 || move->new_type_ > 0) && !move->seen_ && !see(*move, see_gain) )
+    {
+      move->seen_ = 1;
+      if ( move->rindex_ >= 0 )
+        move->srt_score_ = see_gain + 3000;//000;
+      else
+        move->srt_score_ = see_gain + 2000;//000;
+
+      continue;
+    }
+
+    move->alreadyDone_ = 1;
+    return *move;
+  }
+}
+
+
+bool MovesGenerator::see(Move & move, int & see_gain)
+{
+  THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
+
+  if ( move.rindex_ >= 0 )
+  {
+    // victim >= attacker
+    Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+    Figure::Type atype = board_.getField(move.from_).type();
+    if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype] )
+      return true;
+  }
+
+  // we look from side, that goes to move. we should adjust sing of initial mat-balance
+  int initial_balance = board_.fmgr().weight();
+  if ( !board_.getColor() )
+    initial_balance = -initial_balance;
+
+  see_gain = board_.see_before(initial_balance, move);
+  return see_gain >= 0;
+}
+
 //////////////////////////////////////////////////////////////////////////
 EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
   board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), pv_(pv)
@@ -261,6 +353,10 @@ EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int 
   numOfMoves_ = push_pv();
   numOfMoves_ = generate(alpha, betta, counter);
   escapes_[numOfMoves_].clear();
+
+#ifdef SORT_ESCAPE_MOVES
+  sort();
+#endif
 }
 
 EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
@@ -287,6 +383,80 @@ int EscapeGenerator::push_pv()
     pv_.clear();
 
   return m;
+}
+
+void EscapeGenerator::sort()
+{
+  for (int i = 0; i < numOfMoves_; ++i)
+  {
+    Move & move = escapes_[i];
+    move.srt_score_ = 0;
+    if ( move == pv_ )
+      move.srt_score_ = 100000000;
+    else if ( move.rindex_ >= 0 )
+    {
+      Figure::Type atype = board_.getField(move.from_).type();
+      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+      if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype] || atype == Figure::TypeKing )
+      {
+        if ( atype == Figure::TypeKing )
+          move.srt_score_ = Figure::figureWeightSEE_[vtype] + 10002000;
+        else
+          move.srt_score_ = Figure::figureWeightSEE_[vtype] - (Figure::figureWeightSEE_[atype] >> 2) + 10000000;
+
+        if ( board_.halfmovesCount() > 1 )
+        {
+          MoveCmd & prev = board_.getMoveRev(-1);
+          if ( prev.to_ == move.to_ )
+            move.srt_score_ += Figure::figureWeight_[vtype] >> 1;
+        }
+      }
+      else
+      {
+        int initial_balance = board_.fmgr().weight();
+        if ( !board_.getColor() )
+          initial_balance = -initial_balance;
+
+        int score_see = board_.see_before(initial_balance, move);
+        if ( score_see >= 0 )
+          move.srt_score_ = (unsigned)score_see + 10000000;
+        else
+          move.srt_score_ = (unsigned)(10000 + score_see);
+      }
+    }
+    else if ( move.new_type_ > 0 )
+    {
+      int initial_balance = board_.fmgr().weight();
+      if ( !board_.getColor() )
+        initial_balance = -initial_balance;
+
+      int score_see = board_.see_before(initial_balance, move);
+      if ( score_see >= 0 )
+        move.srt_score_ = Figure::figureWeightSEE_[move.new_type_] + 5000000;
+      else
+        move.srt_score_ = (unsigned)(5000 + score_see);
+    }
+    else
+    {
+      const History & hist = MovesGenerator::history(move.from_, move.to_);
+      move.srt_score_ = hist.score_ + 20000;
+    }
+  }
+
+  for (int i = 0; i < numOfMoves_; ++i)
+  {
+    Move & move_i = escapes_[i];
+    for (int j = i+1; j < numOfMoves_; ++j)
+    {
+      Move & move_j = escapes_[j];
+      if ( move_j.srt_score_ > move_i.srt_score_ )
+      {
+        Move t = move_j;
+        move_j = move_i;
+        move_i = t;
+      }
+    }
+  }
 }
 
 int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
@@ -545,7 +715,6 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
   }
 
   // at the last generate all king's movements
-
   m = generateKingonly(m, alpha, betta, counter);
 
   return m;
@@ -562,11 +731,7 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
     prev = board_.getMoveRev(0);
   
   const Figure & king = board_.getFigure(color, Board::KingIndex);
-
   const int8 * table = board_.g_movesTable->king(king.where());
-
-  Move kingMoves[16];
-  int num = 0;
 
   for (; *table >= 0; ++table)
   {
@@ -580,42 +745,14 @@ int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta,
       rindex = field.index();
     }
 
-    Move & move = kingMoves[num];
+    Move move;
     move.set(king.where(), *table, rindex, 0, 0);
     if ( move == pv_ || !board_.isMoveValidUnderCheck(move) )
       continue;
 
-    move.srt_score_ = 0;
-    if ( move.rindex_ > 0 )
-    {
-      move.srt_score_ = Figure::figureWeight_[board_.getFigure(ocolor, move.rindex_).getType()];
-      if ( prev && move.rindex_ == board_.getField(prev.to_).index() )
-        move.srt_score_ += 50;
-    }
-
     move.checkVerified_ = 1;
-    num++;
-  }
-
-  for (int i = 0; i < num; ++i)
-  {
-    Move & move = escapes_[m++];
-    move.srt_score_ = 0; 
-    int index = -1;
-    for (int j = 0; j < num; ++j)
-    {
-      if ( !kingMoves[j] )
-        continue;
-
-      if ( kingMoves[j].srt_score_ >= move.srt_score_ )
-      {
-        move = kingMoves[j];
-        index = j;
-      }
-    }
-    if ( index < 0 )
-      break;
-    kingMoves[index].clear();
+    escapes_[m] = move;
+    m++;
   }
 
   return m;

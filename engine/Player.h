@@ -366,6 +366,66 @@ private:
 #endif // USE_HASH_TABLE_GENERAL
 
 #ifdef USE_HASH_TABLE_CAPTURE
+  CapturesHashTable::Flag testCaptureHashItem(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType, Move & hmove)
+  {
+    hmove.clear();
+    CaptureHItem & hitem = chash_[board_.hashCode()];
+
+    if ( hitem.hcode_ == board_.hashCode() )
+    {
+      hmove = board_.unpack(hitem.move_);
+
+      // ensure that we already verified checking moves
+      if ( depth < 0 || !(hitem.depth_ & 32) /* HACK */ || board_.getState() == Board::UnderCheck )
+      {
+        ScoreType hscore = hitem.score_;
+        if ( hscore >= Figure::WeightMat-MaxPly )
+        {
+          hscore += hitem.ply_;
+          hscore -= ply;
+        }
+        else if ( hscore <= MaxPly-Figure::WeightMat )
+        {
+          hscore -= hitem.ply_;
+          hscore += ply;
+        }
+
+        THROW_IF( (Figure::Color)hitem.color_ != board_.getColor(), "identical hash code but different color in captures" );
+
+        if ( CapturesHashTable::Alpha == hitem.flag_ && hscore <= alpha )
+        {
+          THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
+          return CapturesHashTable::Alpha;
+        }
+
+#ifdef RETURN_IF_BETTA
+        if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hitem.move_ && hscore >= betta )
+        {
+          THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
+          return CapturesHashTable::Betta;
+        }
+#endif // RETURN_IF_BETTA
+      }
+    }
+
+#if ((defined USE_GENERAL_HASH_IN_CAPS) && (defined USE_HASH_TABLE_GENERAL))
+    if ( !hmove )
+    {
+      GeneralHItem & ghitem = ghash_[board_.hashCode()];
+      if ( ghitem.move_ && ghitem.hcode_ == board_.hashCode() )
+      {
+        hmove = board_.unpack(ghitem.move_);
+        if ( board_.getState() != Board::UnderCheck && (hmove.rindex_ < 0 || board_.getFigure(Figure::otherColor(board_.getColor()), hmove.rindex_).getType() < minimalType) )
+          hmove.clear();
+      }
+    }
+#endif
+
+    return CapturesHashTable::AlphaBetta;
+  }
+#endif
+
+#ifdef USE_HASH_TABLE_CAPTURE
   void updateCaptureHash(int depth, int ply, const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
     PackedMove pm = board_.pack(move);
@@ -386,54 +446,7 @@ private:
 #endif
 
 #ifdef RECAPTURE_EXTENSION
-  bool recapture(int ply, int initial_value)
-  {
-    if ( board_.halfmovesCount() < 1 )
-      return false;
-
-    const MoveCmd & move = board_.getMoveRev(0);
-    if ( move.rindex_ < 0 )
-      return false;
-
-    // don't extend pawn's recapture
-    //if ( move.eaten_type_ == Figure::TypePawn && board_.getField(move.to_).type() == Figure::TypePawn )
-    //  return false;
-
-    // this is not a recapture (?) but capture of strong figure by weaker one.
-    // it usually means that previous move was stupid )
-    if ( board_.halfmovesCount() > 1 )
-    {
-      const MoveCmd & prev = board_.getMoveRev(-1);
-      if ( prev.rindex_ < 0 &&
-           !typeLEQ( (Figure::Type)board_.getField(move.to_).type(), (Figure::Type)move.eaten_type_) )
-      {
-        //char fen[256];
-        //board_.toFEN(fen);
-        return false;
-      }
-    }
-
-    //if ( contexts_[ply].ext_data_.recapture_count_ >= RecaptureExtension_Limit )
-    //  return false;
-
-    Move next;
-    int score_see = board_.see(initial_value, next);
-    if ( score_see >= 0 )
-    {
-      contexts_[ply].ext_data_.recap_curr_ = move;
-      contexts_[ply].ext_data_.recap_next_ = next;
-      //contexts_[ply].ext_data_.recapture_count_++;
-      return true;
-    }
-    else if ( ply > 0 )
-    {
-      const MoveCmd & prev = board_.getMoveRev(-1);
-      if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
-        return true;
-    }
-
-    return false;
-  }
+  bool recapture(int ply, int depth, int initial_balance);
 #endif //RECAPTURE_EXTENSION
 
   inline bool pawnBeforePromotion(const MoveCmd & move) const
@@ -449,7 +462,7 @@ private:
   }
 
   /// returns numer of ply to extend
-  int do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser);
+  int do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser, int initial_balance);
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
@@ -458,22 +471,6 @@ private:
   // do we need additional check extension
   int extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alpha, ScoreType betta);
 
-  bool see_check(const Move & move) const
-  {
-    // certainly discovered check
-    if ( move.discoveredCheck_ )
-      return true;
-
-    // we look from side, that goes to move. we should adjust sing of initial mat-balance
-    int initial_balance = board_.fmgr().weight();//initial_material_balance_;
-    if ( !board_.getColor() )
-      initial_balance = -initial_balance;
-
-    // do winning-capture check
-    int score_see = board_.see_before(initial_balance, move);
-    if ( score_see >= 0 )
-      return true;
-
-    return false;
-  }
+  public:
+  bool see_cc(const Move & move) const;
 };

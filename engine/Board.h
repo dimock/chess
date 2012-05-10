@@ -19,12 +19,12 @@ class Player;
 struct FiguresMobility
 {
   FiguresMobility() :
-    knightMob_(0), bishopMob_(0), queenMob_(0),
-    knightDist_(0), bishopDist_(0)
+    knightMob_(0), bishopMob_(0), rookMob_(0), queenMob_(0),
+    knightDist_(0), bishopDist_(0), rookDist_(0), queenDist_(0)
   {}
 
-  int knightMob_, bishopMob_, queenMob_;
-  int knightDist_, bishopDist_;
+  int knightMob_, bishopMob_, rookMob_, queenMob_;
+  int knightDist_, bishopDist_, rookDist_, queenDist_;
 };
 
 /*! board representation
@@ -118,15 +118,14 @@ public:
     if ( p_caps & o_mask )
       return true;
 
-    return false;
-    //// becomes passed
-    //const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
-    //Figure::Color ocolor = Figure::otherColor(color_);
-    //const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
-    //const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
-    //const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
+    // becomes passed
+    const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
+    Figure::Color ocolor = Figure::otherColor(color_);
+    const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
+    const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
+    const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
 
-    //return !(opmsk & passmsk) && !(pmsk & blckmsk);
+    return !(opmsk & passmsk) && !(pmsk & blckmsk);
   }
 
   // becomes passed
@@ -187,17 +186,26 @@ public:
 
   inline bool allowNullMove() const
   {
-    if ( fmgr_.knights(color_)+fmgr_.bishops(color_)+fmgr_.rooks(color_)+fmgr_.queens(color_) == 0 || !can_win_[0] || !can_win_[1] )
+    if ( (fmgr_.knights(color_)+fmgr_.bishops(color_)+fmgr_.rooks(color_)+fmgr_.queens(color_) == 0) ||
+          !can_win_[0] ||
+          !can_win_[1] ||
+         (fmgr_.weight(color_) < Figure::figureWeight_[Figure::TypeRook]) ||
+         (fmgr_.weight(color_) < Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] && !fmgr_.pawns(color_)) )
+    {
       return false;
+    }
 
-    bool ok = fmgr_.weight(color_) >= Figure::figureWeight_[Figure::TypeRook];// + Figure::figureWeight_[Figure::TypeKnight];
-
-    return ok;
+    return true;
   }
 
   inline bool shortNullMoveReduction() const
   {
     return fmgr_.weight(color_) <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn];
+  }
+
+  inline bool limitedNullMoveReduction() const
+  {
+    return fmgr_.weight(color_)- fmgr_.pawns()*Figure::figureWeight_[Figure::TypePawn] <= Figure::figureWeight_[Figure::TypeQueen];
   }
 
   inline bool isWinnerLoser() const
@@ -364,7 +372,7 @@ public:
   /// static exchange evaluation
 
   /// should be called directly after move
-  int see(int initial_value, Move & next) const;
+  int see(int initial_value, Move & next, int & /*recapture depth*/) const;
 
   // we try to do 'move'
   int see_before(int initial_value, const Move & move) const;

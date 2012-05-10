@@ -4,6 +4,8 @@
 #include "xcommands.h"
 #include <Windows.h>
 
+#define WRITE_LOG_FILE_
+
 class Thinking
 {
 public:
@@ -19,11 +21,12 @@ public:
   void setXtime(int ms);
   void setMovesLeft(int mleft);
   void setPost(bool);
-	void undo();
+	bool undo();
 
 	void save();
   void fen2file(const char * fname);
   void hash2file(const char * fname);
+  void toFEN(char * );
 
   bool fromFEN(xCmd & cmd);
 	void editCmd(xCmd & cmd);
@@ -37,9 +40,13 @@ public:
   
   int giveMoreTime();
 
-private:
-
   bool is_thinking() const { return thinking_; }
+
+#ifdef WRITE_LOG_FILE_
+  void set_logfile(std::ofstream * ofslog);
+#endif
+
+private:
 
   void performAnalyze();
   void updateTiming();
@@ -54,4 +61,8 @@ private:
   bool post_;
   bool thinking_;
   unsigned int givetimeCounter_;
+
+#ifdef WRITE_LOG_FILE_
+  std::ofstream * ofs_log_;
+#endif
 };

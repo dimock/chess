@@ -1,6 +1,6 @@
-#include "Thinking.h"
 #include <iostream>
 #include <fstream>
+#include "Thinking.h"
 
 static Thinking * g_thinking_ = 0;
 
@@ -23,6 +23,10 @@ Thinking::Thinking() :
   post_(false), thinking_(false), givetimeCounter_(0)
 {
   g_thinking_ = this;
+
+#ifdef WRITE_LOG_FILE_
+  ofs_log_ = 0;
+#endif
 }
 
 Thinking::~Thinking()
@@ -115,6 +119,10 @@ int Thinking::giveMoreTime()
       return xtimeMS_/mcount;
     else if ( mcount > movesLeft_/3 )
       return (xtimeMS_/mcount)/2;
+    else if ( mcount > movesLeft_/6 )
+      return (xtimeMS_/mcount)/4;
+    else if ( mcount > 0 )
+      return (xtimeMS_/mcount)/8;
   }
   return 0;
 }
@@ -124,17 +132,22 @@ void Thinking::enableBook(int v)
 {
 }
 
-void Thinking::undo()
+bool Thinking::undo()
 {
   if ( is_thinking() )
   {
     player_.postUndo();
-    return;
+    return false;
   }
 
   Board & board = player_.getBoard();
   if ( board.halfmovesCount() > 0 )
+  {
     board.unmakeMove();
+    return true;
+  }
+
+  return false;
 }
 
 void Thinking::setMemory(int mb)
@@ -310,6 +323,14 @@ bool Thinking::fromFEN(xCmd & cmd)
   return player_.fromFEN(fen);
 }
 
+void Thinking::toFEN(char * fen)
+{
+  if ( is_thinking() || !fen )
+    return;
+
+  player_.toFEN(fen);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // edit mode
 //////////////////////////////////////////////////////////////////////////
@@ -448,5 +469,22 @@ void Thinking::updateTiming()
     mcount = movesLeft_ - (mcount-1) % movesLeft_;
     mcount += 3;
     player_.setTimeLimit(xtimeMS_/mcount);
+
+#ifdef WRITE_LOG_FILE_
+    if ( ofs_log_ )
+    {
+      *ofs_log_ << "  time per move = " << xtimeMS_/mcount << " ms" << std::endl;
+      *ofs_log_ << "  xtime  = " << xtimeMS_ << " ms" << std::endl;
+      *ofs_log_ << "  mcount = " << mcount << std::endl;
+    }
+#endif
   }
 }
+
+//////////////////////////////////////////////////////////////////////////
+#ifdef WRITE_LOG_FILE_
+void Thinking::set_logfile(std::ofstream * ofslog)
+{
+  ofs_log_ = ofslog;
+}
+#endif
