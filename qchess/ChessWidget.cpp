@@ -227,12 +227,9 @@ void ChessWidget::onGo()
   {
     if ( useTimer_ )
     {
-      thread_.start();
-//      QTimer::singleShot(timelimit_, this, SLOT(onTimeoutStop()));
       enableActions(false);
+      thread_.start();
     }
-    //else
-    //  doBestStep();
   }
 
   update();
