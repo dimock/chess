@@ -4,7 +4,7 @@
 #include "xcommands.h"
 #include <Windows.h>
 
-#define WRITE_LOG_FILE_
+#undef WRITE_LOG_FILE_
 
 class Thinking
 {
