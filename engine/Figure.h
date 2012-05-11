@@ -11,7 +11,7 @@ __declspec (align(1)) class Figure
 public:
 #endif
 
-  // position evaluation. 0 - debut, 1 - endgame; color,type,pos
+  // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static ScoreType positionEvaluations_[2][8][64];
   static uint8 mirrorIndex_[64];
 

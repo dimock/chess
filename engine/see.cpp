@@ -98,7 +98,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
     attackers[c][num] = (uint16)-1;
   }
 
-  // if there are both kings they couldn't capture
+  // if there are both kings they can't capture
   if ( king_found[0] && king_found[1] )
   {
     THROW_IF( figsN[0] < 1 || figsN[1] < 1 , "see: no figures but both kings found?" );
@@ -241,6 +241,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
 }
 
 // static exchange evaluation
+// almost the same as see(), need to be refactored
 int Board::see_before(int initial_value, const Move & move) const
 {
   if ( state_ != Ok )
@@ -340,7 +341,7 @@ int Board::see_before(int initial_value, const Move & move) const
     attackers[c][num] = (uint16)-1;
   }
 
-  // if there are both kings they couldn't capture
+  // if there are both kings they can't capture
   if ( king_found[0] && king_found[1] )
   {
     THROW_IF( figsN[0] < 1 || figsN[1] < 1 , "see: no figures but both kings found?" );

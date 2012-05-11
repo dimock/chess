@@ -1,5 +1,9 @@
 #pragma once
 
+/**
+  Player class implements the main search routine (alpha-betta algorithm)
+ */
+
 #include "Board.h"
 #include "HashTable.h"
 #include <time.h>
@@ -34,6 +38,7 @@ class EscapeGenerator;
 class ChecksGenerator;
 class CapsChecksGenerator;
 
+// implementation isn't perfect )) have to rewrite
 typedef void (* PLAYER_CALLBACK)();
 typedef int (*GIVE_MORE_TIME)();
 
@@ -115,6 +120,7 @@ struct PlyContext
 
   ExtData ext_data_;
 };
+
 
 class Player
 {
@@ -204,12 +210,19 @@ private:
   void processPosted(int t);
   void printPV(Board & pv_board, SearchResult & sres);
 
+  // start point of search algorithm
   bool search(SearchResult & , std::ostream * out = 0);
 
-  ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
+  // core of search algorithm
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
+
+  // only tactical moves (captures + winning checks) after horizon
   ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta);
 
+  // null-move heuristic
+  ScoreType nullMove(int depth, int ply, ScoreType alpha, ScoreType betta);
+
+  // time control
   void testTimer();
 
   volatile bool stop_;

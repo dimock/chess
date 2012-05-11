@@ -861,6 +861,7 @@ void Board::verifyMasks() const
 }
 
 //////////////////////////////////////////////////////////////////////////
+// only for debugging purposes, saves complete board memory dump
 void Board::save(const char * fname) const
 {
   FILE * f = fopen(fname, "wb");

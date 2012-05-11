@@ -58,6 +58,7 @@ public:
   static bool load(Board & , std::istream &);
   static bool save(const Board & , std::ostream &);
 
+  // only for debugging purposes, saves complete board memory dump
   void save(const char * fname) const;
   void load(const char * fname);
 
@@ -375,6 +376,7 @@ public:
   int see(int initial_value, Move & next, int & /*recapture depth*/) const;
 
   // we try to do 'move'
+  // almost the same as see(), need to be refactored
   int see_before(int initial_value, const Move & move) const;
 
   /// methods

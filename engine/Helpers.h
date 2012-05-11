@@ -7,6 +7,7 @@ class Board;
 
 unsigned long xorshf96();
 
+// got from chessprogramming.wikispaces.com
 inline int pop_count(uint64 n)
 {
   n =  n - ((n >> 1)  & 0x5555555555555555ULL);
@@ -68,7 +69,7 @@ end:
   return m;
 }
 
-// multiplies v*n and diveides by d v*n/d
+// multiplies v*n and divides by d v*n/d
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
   unsigned int r = 0;

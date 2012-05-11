@@ -153,8 +153,7 @@ private:
 
   void calculateWeight(Move & move) const
   {
-    const Field & ffield = board_.getField(move.from_);
-    THROW_IF( !ffield, "no figure on field we move from" );
+    THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
 	
 	  //const History & hist = MovesGenerator::history(move.from_, move.to_);
     move.srt_score_ = 0;
