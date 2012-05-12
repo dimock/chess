@@ -46,9 +46,11 @@ ChessWidget::ChessWidget(QWidget * parent) :
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
   depthMax_ = settings.value(tr("max_depth"), 16).toInt();
 
-  setFixedSize(450, 525);
+  setFixedSize(450, 600);
   pv_str_[0] = 0;
   setAttribute(Qt::WA_DeleteOnClose);
+
+  upleft_.setY(cpos_.getDiffHeight() + 50);
   cpos_.setUpLeft(upleft_);
 
   createMenu();
@@ -365,7 +367,7 @@ void ChessWidget::drawInfo()
   else
     infoText.sprintf("[%d]", cpos_.movesCount());
 
-  painter.drawText(QRect(00, 450, 450, 75), Qt::AlignCenter, infoText);
+  painter.drawText(QRect(0, upleft_.y() + cpos_.getBoardHeight() + 20, 450, 75), Qt::AlignCenter, infoText);
 }
 
 void ChessWidget::mouseDoubleClickEvent(QMouseEvent * e)

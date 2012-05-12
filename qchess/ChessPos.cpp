@@ -20,7 +20,10 @@ using namespace std;
 ChessPosition::ChessPosition() : working_(false), turned_(false)
 {
   squareSize_ = 44;
+  squareDiffSize_ = squareSize_ / 2;
   borderWidth_ = 16;
+  diff_margin_ = 4;
+  diff_hei_ = squareDiffSize_ + diff_margin_*2;
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
   halfmovesNumber_ = 0;
   vmove_.clear();
@@ -87,6 +90,7 @@ void ChessPosition::draw(QWidget * view, const QPoint & cursorPt) const
 	drawBoard(&painter, sz);
 	drawFigures(&painter, sz);
   drawCurrentMoving(&painter, sz, cursorPt);
+  drawMaterialDifference(&painter, sz);
 }
 
 void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
@@ -156,6 +160,73 @@ void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
   }
 }
 
+const QImage * ChessPosition::figImage(int idx, Figure::Type t, Figure::Color c) const
+{
+  if ( (unsigned)idx > 11 )
+    return 0;
+
+  if ( fimages_[idx].get() )
+    return fimages_[idx].get();
+
+  Figure fig(t, c, 0, 0);
+  return figImage(idx, fig);
+}
+
+const QImage * ChessPosition::figImage(int idx, const Figure & fig) const
+{
+  if ( !fimages_[idx].get() )
+  {
+    QString imgName;
+    imgName.sprintf(":/images/%s_%c.png", fig.name(), fig.getColor() ? 'w' : 'b');
+    fimages_[idx].reset( new QImage(imgName) );
+  }
+
+  return fimages_[idx].get();
+}
+
+void ChessPosition::drawMaterialDifference(QPainter * painter, QSize & ) const
+{
+  const FiguresManager & fmgr = vboard_.fmgr();
+  int diff_count[Figure::TypeKing] = {};
+
+  diff_count[Figure::TypePawn] = fmgr.pawns(Figure::ColorWhite) - fmgr.pawns(Figure::ColorBlack);
+  diff_count[Figure::TypeKnight] = fmgr.knights(Figure::ColorWhite) - fmgr.knights(Figure::ColorBlack);
+  diff_count[Figure::TypeBishop] = fmgr.bishops(Figure::ColorWhite) - fmgr.bishops(Figure::ColorBlack);
+  diff_count[Figure::TypeRook] = fmgr.rooks(Figure::ColorWhite) - fmgr.rooks(Figure::ColorBlack);
+  diff_count[Figure::TypeQueen] = fmgr.queens(Figure::ColorWhite) - fmgr.queens(Figure::ColorBlack);
+
+  int x0 = upleft_.x() + boardSize_.width() - borderWidth_ - squareDiffSize_,
+      y0 = upleft_.y() - diff_hei_ + diff_margin_;
+
+  int x = x0, y = y0;
+  for (int t = Figure::TypePawn; t < Figure::TypeKing; ++t)
+  {
+    if ( !diff_count[t] )
+      continue;
+
+    int cnt = diff_count[t];
+    int inum = t - 1;
+    Figure::Color c = Figure::ColorWhite;
+    if ( cnt > 0 )
+      inum += 6;
+    if ( cnt < 0 )
+    {
+      cnt = -cnt;
+      c = Figure::ColorBlack;
+    }
+
+    const QImage * img = figImage(inum, (Figure::Type)t, c);
+    if ( !img )
+      continue;
+
+    for (int j = 0; j < cnt; ++j, x -= squareDiffSize_)
+    {
+      QRect r(x, y, squareDiffSize_, squareDiffSize_);
+      painter->drawImage(r, *img, img->rect());
+    }
+  }
+}
+
 void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
 {
   QSize boardSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
@@ -172,20 +243,14 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
   	  if ( inum < 0 || inum > 11 )
   		  continue;
 
-  	  if ( !fimages_[inum].get() )
-  	  {
-  		  QString imgName;
-  		  imgName.sprintf(":/images/%s_%c.png", fig.name(), fig.getColor() ? 'w' : 'b');
-  		  fimages_[inum].reset( new QImage(imgName) );
-  	  }
-
-  	  if ( !fimages_[inum].get() )
+      const QImage * img = figImage(inum, fig);
+  	  if ( !img )
   		  continue;
 
       QPoint p = coordByField(fig.where());
       QRect r(p.x(), p.y(), squareSize_, squareSize_);
 
-      painter->drawImage(r, *fimages_[inum].get(), fimages_[inum]->rect());
+      painter->drawImage(r, *img, img->rect());
     }
   }
 }
@@ -199,18 +264,12 @@ void ChessPosition::drawCurrentMoving(QPainter * painter, QSize & , const QPoint
   if ( inum < 0 || inum > 11 )
     return;
 
-  if ( !fimages_[inum].get() )
-  {
-    QString imgName;
-    imgName.sprintf(":/images/%s_%c.png", selectedFigure_.name(), selectedFigure_.getColor() ? 'w' : 'b');
-    fimages_[inum].reset( new QImage(imgName) );
-  }
-
-  if ( !fimages_[inum].get() )
+  const QImage * img = figImage(inum, selectedFigure_);
+  if ( !img )
     return;
 
   QRect r(cursorPt.x()-squareSize_/2, cursorPt.y()-squareSize_/2, squareSize_, squareSize_);
-  painter->drawImage(r, *fimages_[inum].get(), fimages_[inum]->rect());
+  painter->drawImage(r, *img, img->rect());
 
 }
 
@@ -418,12 +477,6 @@ bool ChessPosition::findMove(SearchResult & sres)
 bool ChessPosition::applyMove(const Move & move)
 {
   Board & board = player_.getBoard();
-
-  //int initial_value = board.fmgr().weight();
-  //if ( !board.getColor() )
-  //  initial_value = -initial_value;
-
-  //int score = board.see_before(initial_value, move);
 
   if ( board.makeMove(move) )
   {

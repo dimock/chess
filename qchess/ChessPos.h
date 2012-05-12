@@ -27,6 +27,8 @@ public:
   bool selectFigure(const QPoint & pt);
   void setTurned(bool t) { turned_ = t; }
   void clearSelected();
+  int  getDiffHeight() const { return diff_hei_; }
+  int  getBoardHeight() const { return boardSize_.height(); }
 
   // making move
   bool findMove(SearchResult & sres);
@@ -56,10 +58,13 @@ private:
   bool getFigureOnPt(const QPoint & pt, Figure & fig) const;
   int  getPositionOnPt(const QPoint & pt) const;
 
+  const QImage * figImage(int idx, Figure::Type, Figure::Color) const;
+  const QImage * figImage(int idx, const Figure &) const;
 
 	void drawBoard(QPainter *, QSize & ) const;
 	void drawFigures(QPainter *, QSize & ) const;
   void drawCurrentMoving(QPainter * , QSize & , const QPoint & cursorPt) const;
+  void drawMaterialDifference(QPainter * , QSize & ) const;
 
   std::vector<Move> selectedMoves_;
   std::set<int> selectedPositions_;
@@ -69,10 +74,12 @@ private:
 
   mutable Figure selectedFigure_;
   mutable QPoint upleft_;
+  int diff_hei_, diff_margin_;
 
   static std::auto_ptr<QImage> fimages_[12];
 
   int squareSize_;
+  int squareDiffSize_;
   int borderWidth_;
   QSize boardSize_;
   bool turned_;
