@@ -30,8 +30,17 @@ void ChessAlgThread::run()
 ChessWidget::ChessWidget(QWidget * parent) :
   QMainWindow(parent), upleft_(30, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
   moves_base_(0), dt_(0),
-  thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), computerAnswers_(true), timelimit_(1000),
-  depthMax_(2), ticksAll_(0)
+  thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), /*computerAnswers_(true),*/ timelimit_(1000),
+  depthMax_(2), ticksAll_(0),
+  onNewAction_(0),
+  onLoadAction_(0),
+  onSaveAction_(0),
+  onNextAction_(0),
+  onPrevAction_(0),
+  onGoAction_(0),
+  onTurnBoardAction_(0),
+  onHumanVsHumanAction_(0),
+  onSettingsAction_(0)
 {
   QSettings settings(tr("Dimock"), tr("qchess"));
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
@@ -80,6 +89,11 @@ void ChessWidget::createMenu()
   onTurnBoardAction_->setCheckable(true);
   onTurnBoardAction_->setChecked(false);
 
+  onHumanVsHumanAction_ = new QAction(tr("&Human vs. Human"), this);
+  onHumanVsHumanAction_->setStatusTip(tr("Switch to Human with Human mode"));
+  onHumanVsHumanAction_->setCheckable(true);
+  onHumanVsHumanAction_->setChecked(false);
+
   onSettingsAction_ = new QAction(tr("Settin&gs"), this);
   onSettingsAction_->setStatusTip(tr("Change game settings"));
 
@@ -91,6 +105,8 @@ void ChessWidget::createMenu()
   gameMenu->addAction(onGoAction_);
   gameMenu->addAction(onTurnBoardAction_);
   gameMenu->addSeparator();
+  gameMenu->addAction(onHumanVsHumanAction_);
+  gameMenu->addSeparator();
   gameMenu->addAction(onSettingsAction_);
 
   connect(onNewAction_, SIGNAL(triggered()), this, SLOT(onNew()));
@@ -100,6 +116,7 @@ void ChessWidget::createMenu()
   connect(onNextAction_, SIGNAL(triggered()), this, SLOT(onNext()));
   connect(onGoAction_, SIGNAL(triggered()), this, SLOT(onGo()));
   connect(onTurnBoardAction_, SIGNAL(toggled(bool)), this, SLOT(onTurnBoard(bool)));
+  connect(onHumanVsHumanAction_, SIGNAL(toggled(bool)), this, SLOT(onHumanWithHumanMode(bool)));
   connect(onSettingsAction_, SIGNAL(triggered()), this, SLOT(onSettings()));
 }
 
@@ -223,7 +240,7 @@ void ChessWidget::onGo()
   if ( thread_.isRunning() )
     return;
 
-  if ( computerAnswers_ )
+  if ( computerAnswers() )
   {
     if ( useTimer_ )
     {
@@ -246,19 +263,9 @@ void ChessWidget::onMoveFound()
     if ( goingToClose_ )
       return;
 
-    //std::vector<Step> steps;
-    //cpos_.calculateSteps(steps);
-    //if ( steps.empty() )
-    //  return;
-
     onGo();
   }
 }
-
-//void ChessWidget::onTimeoutStop()
-//{
-//  cpos_.stop();
-//}
 
 void ChessWidget::onTurnBoard(bool t)
 {
@@ -266,7 +273,17 @@ void ChessWidget::onTurnBoard(bool t)
   update();
 }
 
+void ChessWidget::onHumanWithHumanMode(bool)
+{
+  update();
+}
+
 //////////////////////////////////////////////////////////////////////////
+
+bool ChessWidget::computerAnswers() const
+{
+  return !onHumanVsHumanAction_->isChecked();
+}
 
 bool ChessWidget::okToReset()
 {
@@ -320,7 +337,7 @@ void ChessWidget::drawState()
   else if ( state == Board::ChessMat )
     stateText += tr("Mat");
   else if ( Board::isDraw(state) )
-    stateText = tr("There is ChessDraw");
+    stateText = tr("Draw");
   else
     return;
 
@@ -340,8 +357,13 @@ void ChessWidget::drawInfo()
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
   int ticksN = Board::ticks_;
   int hscore = Board::tcounter_;
-  infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, LMR-errors = %d, hist. score(avg) = %d\n{ %s }",
-    cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
+  //infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, LMR-errors = %d, hist. score(avg) = %d\n{ %s }",
+  //  cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
+
+  if ( computerAnswers() )
+    infoText.sprintf("[%d] (%d ply) { %s } score = %4.2f", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_ / 100.f);
+  else
+    infoText.sprintf("[%d]", cpos_.movesCount());
 
   painter.drawText(QRect(00, 450, 450, 75), Qt::AlignCenter, infoText);
 }
@@ -372,7 +394,6 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
 
   if ( e->button() == Qt::LeftButton )
   {
-//    cpos_.clearSelected();
     if ( cpos_.makeMovement(curPt_) )
     {
       changed_ = true;
@@ -380,10 +401,6 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
       onGo();
     }
   }
-  //else if ( e->button() == Qt::RightButton )
-  //{
-  //  onGo();
-  //}
 
   update();
 }

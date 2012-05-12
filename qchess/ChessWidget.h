@@ -52,8 +52,8 @@ private slots:
   void onPutFEN() const;
   void onGo();
   void onMoveFound();
-  //void onTimeoutStop();
   void onTurnBoard(bool t);
+  void onHumanWithHumanMode(bool t);
   void onSettings();
 
 private:
@@ -62,6 +62,7 @@ private:
   void drawState();
   void drawInfo();
   void findMove();
+  bool computerAnswers() const;
 
   bool okToReset();
 
@@ -83,7 +84,7 @@ private:
   bool autoPlay_;
   int  timelimit_;
   bool useTimer_;
-  bool computerAnswers_;
+  //bool computerAnswers_;
   int  depthMax_;
   int64 ticksAll_;
 
@@ -94,6 +95,7 @@ private:
   QAction * onPrevAction_;
   QAction * onGoAction_;
   QAction * onTurnBoardAction_;
+  QAction * onHumanVsHumanAction_;
   QAction * onSettingsAction_;
 
   ChessAlgThread thread_;
