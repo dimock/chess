@@ -28,10 +28,10 @@ void ChessAlgThread::run()
 
 //////////////////////////////////////////////////////////////////////////
 ChessWidget::ChessWidget(QWidget * parent) :
-  QMainWindow(parent), upleft_(30, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
+  QMainWindow(parent), upleft_(20, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
   moves_base_(0), dt_(0),
   thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), /*computerAnswers_(true),*/ timelimit_(1000),
-  depthMax_(2), ticksAll_(0),
+  depthMax_(2), ticksAll_(0), infoHeight_(50),
   onNewAction_(0),
   onLoadAction_(0),
   onSaveAction_(0),
@@ -46,12 +46,14 @@ ChessWidget::ChessWidget(QWidget * parent) :
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
   depthMax_ = settings.value(tr("max_depth"), 16).toInt();
 
-  setFixedSize(450, 600);
+  //setFixedSize(450, 600);
   pv_str_[0] = 0;
   setAttribute(Qt::WA_DeleteOnClose);
 
   upleft_.setY(cpos_.getDiffHeight() + 50);
   cpos_.setUpLeft(upleft_);
+
+  setFixedSize(cpos_.getBoardWidth() + upleft_.x()*2, cpos_.getBoardHeight() + infoHeight_ + upleft_.y());
 
   createMenu();
 
@@ -367,7 +369,7 @@ void ChessWidget::drawInfo()
   else
     infoText.sprintf("[%d]", cpos_.movesCount());
 
-  painter.drawText(QRect(0, upleft_.y() + cpos_.getBoardHeight() + 20, 450, 75), Qt::AlignCenter, infoText);
+  painter.drawText(QRect(upleft_.x(), upleft_.y() + cpos_.getBoardHeight(), cpos_.getBoardWidth(), infoHeight_), Qt::AlignCenter, infoText);
 }
 
 void ChessWidget::mouseDoubleClickEvent(QMouseEvent * e)

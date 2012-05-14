@@ -29,6 +29,7 @@ public:
   void clearSelected();
   int  getDiffHeight() const { return diff_hei_; }
   int  getBoardHeight() const { return boardSize_.height(); }
+  int  getBoardWidth() const { return boardSize_.width(); }
 
   // making move
   bool findMove(SearchResult & sres);
@@ -58,8 +59,8 @@ private:
   bool getFigureOnPt(const QPoint & pt, Figure & fig) const;
   int  getPositionOnPt(const QPoint & pt) const;
 
-  const QImage * figImage(int idx, Figure::Type, Figure::Color) const;
-  const QImage * figImage(int idx, const Figure &) const;
+  const QImage * figImage(Figure::Type, Figure::Color) const;
+  const QImage * figImage(const Figure &) const;
 
 	void drawBoard(QPainter *, QSize & ) const;
 	void drawFigures(QPainter *, QSize & ) const;

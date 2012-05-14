@@ -68,6 +68,7 @@ private:
 
   QPoint curPt_;
   QPoint upleft_;
+  int infoHeight_;
   ChessPosition cpos_;
   SearchResult sres_;
   int movesCount_;

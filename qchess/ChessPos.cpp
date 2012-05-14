@@ -160,20 +160,18 @@ void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
   }
 }
 
-const QImage * ChessPosition::figImage(int idx, Figure::Type t, Figure::Color c) const
+const QImage * ChessPosition::figImage(Figure::Type t, Figure::Color c) const
 {
-  if ( (unsigned)idx > 11 )
-    return 0;
-
-  if ( fimages_[idx].get() )
-    return fimages_[idx].get();
-
   Figure fig(t, c, 0, 0);
-  return figImage(idx, fig);
+  return figImage(fig);
 }
 
-const QImage * ChessPosition::figImage(int idx, const Figure & fig) const
+const QImage * ChessPosition::figImage(const Figure & fig) const
 {
+  unsigned idx = fig.getColor()*6 + (fig.getType() - 1);
+  if ( idx > 11 )
+    return 0;
+
   if ( !fimages_[idx].get() )
   {
     QString imgName;
@@ -198,31 +196,42 @@ void ChessPosition::drawMaterialDifference(QPainter * painter, QSize & ) const
   int x0 = upleft_.x() + boardSize_.width() - borderWidth_ - squareDiffSize_,
       y0 = upleft_.y() - diff_hei_ + diff_margin_;
 
-  int x = x0, y = y0;
+  std::pair<int, int> mdifferences[2][Figure::TypeKing];
+  int mdiffN[2] = { 0, 0 };
+
   for (int t = Figure::TypePawn; t < Figure::TypeKing; ++t)
   {
     if ( !diff_count[t] )
       continue;
 
     int cnt = diff_count[t];
-    int inum = t - 1;
     Figure::Color c = Figure::ColorWhite;
-    if ( cnt > 0 )
-      inum += 6;
     if ( cnt < 0 )
     {
       cnt = -cnt;
       c = Figure::ColorBlack;
     }
 
-    const QImage * img = figImage(inum, (Figure::Type)t, c);
-    if ( !img )
-      continue;
+    mdifferences[c][mdiffN[c]++] = std::make_pair(cnt, t);
+  }
 
-    for (int j = 0; j < cnt; ++j, x -= squareDiffSize_)
+  int x = x0, y = y0;
+
+  for (int c = 0; c < 2; ++c)
+  {
+    for (int i = 0; i < mdiffN[c]; ++i)
     {
-      QRect r(x, y, squareDiffSize_, squareDiffSize_);
-      painter->drawImage(r, *img, img->rect());
+      int cnt = mdifferences[c][i].first;
+      int t = mdifferences[c][i].second;
+      const QImage * img = figImage((Figure::Type)t, (Figure::Color)c);
+      if ( !img )
+        continue;
+
+      for (int j = 0; j < cnt; ++j, x -= squareDiffSize_)
+      {
+        QRect r(x, y, squareDiffSize_, squareDiffSize_);
+        painter->drawImage(r, *img, img->rect());
+      }
     }
   }
 }
@@ -239,11 +248,7 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
       if ( !fig || fig == selectedFigure_ )
         continue;
 
-  	  int inum = fig.getColor()*6+(fig.getType()-1);
-  	  if ( inum < 0 || inum > 11 )
-  		  continue;
-
-      const QImage * img = figImage(inum, fig);
+      const QImage * img = figImage(fig);
   	  if ( !img )
   		  continue;
 
@@ -260,11 +265,7 @@ void ChessPosition::drawCurrentMoving(QPainter * painter, QSize & , const QPoint
   if ( selectedFigure_.getType() == Figure::TypeNone )
     return;
 
-  int inum = selectedFigure_.getColor()*6+(selectedFigure_.getType()-1);
-  if ( inum < 0 || inum > 11 )
-    return;
-
-  const QImage * img = figImage(inum, selectedFigure_);
+  const QImage * img = figImage(selectedFigure_);
   if ( !img )
     return;
 
