@@ -1,3 +1,8 @@
+
+/*************************************************************
+  ChessPos.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "ChessPos.h"
 #include "MovesGenerator.h"
 #include <QDir>

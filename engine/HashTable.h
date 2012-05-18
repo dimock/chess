@@ -1,5 +1,9 @@
 #pragma once
 
+/*************************************************************
+  HashTable.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "BasicTypes.h"
 
 __declspec (align(16)) struct GeneralHItem

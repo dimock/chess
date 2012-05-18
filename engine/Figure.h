@@ -1,5 +1,9 @@
 #pragma once
 
+/*************************************************************
+  Figure.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "BasicTypes.h"
 #include "Helpers.h"
 

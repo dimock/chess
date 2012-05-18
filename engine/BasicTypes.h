@@ -1,5 +1,9 @@
 #pragma once
 
+/*************************************************************
+  BasicTypes.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include <stdexcept>
 #include <vector>
 #include <string>

@@ -1,5 +1,9 @@
 #pragma once
 
+/*************************************************************
+  selfiguredlg.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "ui_selfiguredlg.h"
 #include <QDialog>
 

@@ -1,5 +1,10 @@
 #pragma once
 
+/*************************************************************
+  MovesGenerator.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
+
 #include "Board.h"
 
 class Player;

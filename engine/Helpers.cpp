@@ -1,3 +1,7 @@
+/*************************************************************
+  Helpers.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "Helpers.h"
 #include "Board.h"
 #include "MovesGenerator.h"
@@ -5,23 +9,6 @@
 
 using namespace std;
 
-//////////////////////////////////////////////////////////////////////////
-unsigned long xorshf96()
-{
-  static unsigned long x= (unsigned long)time(0) ^ clock(), y=362436069, z=521288629;
-
-  unsigned long t;
-  x ^= x << 16;
-  x ^= x >> 5;
-  x ^= x << 1;
-
-  t = x;
-  x = y;
-  y = z;
-  z = t ^ x ^ y;
-
-  return z;
-}
 
 //////////////////////////////////////////////////////////////////////////
 int8 BitsCounter::s_array_[256] =

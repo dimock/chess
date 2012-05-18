@@ -1,3 +1,7 @@
+/*************************************************************
+  Player.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 
 #include "Player.h"
 #include "MovesGenerator.h"

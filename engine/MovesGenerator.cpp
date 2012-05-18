@@ -5,6 +5,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 History MovesGenerator::history_[64][64];
+/*************************************************************
+  MovesGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 unsigned History::history_max_;
 
 MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter) :

@@ -1,5 +1,9 @@
 #pragma once
 
+/*************************************************************
+  Board.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "Figure.h"
 #include "Field.h"
 #include "Move.h"

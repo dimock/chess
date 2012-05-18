@@ -1,11 +1,14 @@
 #pragma once
 
+/*************************************************************
+  Helpers.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
+
 #include "BasicTypes.h"
 #include "fpos.h"
 
 class Board;
-
-unsigned long xorshf96();
 
 // got from chessprogramming.wikispaces.com
 inline int pop_count(uint64 n)

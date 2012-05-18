@@ -1,3 +1,8 @@
+
+/*************************************************************
+  qchess_main.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include <QApplication>
 #include "ChessWidget.h"
 

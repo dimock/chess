@@ -1,8 +1,10 @@
 #pragma once
 
-/**
+
+/*************************************************************
+  Player.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
   Player class implements the main search routine (alpha-betta algorithm)
- */
+ *************************************************************/
 
 #include "Board.h"
 #include "HashTable.h"

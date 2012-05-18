@@ -1,3 +1,8 @@
+
+/*************************************************************
+  minidump.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include <windows.h>
 #include <Dbghelp.h>
 #include <time.h>

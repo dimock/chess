@@ -1,5 +1,9 @@
 #pragma once
 
+/*************************************************************
+  FigureDirs.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "Figure.h"
 
 class FigureDir
