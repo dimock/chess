@@ -37,7 +37,7 @@ ChessWidget::ChessWidget(QWidget * parent) :
   QMainWindow(parent), upleft_(20, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
   moves_base_(0), dt_(0),
   thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), /*computerAnswers_(true),*/ timelimit_(1000),
-  depthMax_(2), ticksAll_(0), infoHeight_(50),
+  depthMax_(2), ticksAll_(0), infoHeight_(60),
   onNewAction_(0),
   onLoadAction_(0),
   onSaveAction_(0),
@@ -396,7 +396,7 @@ void ChessWidget::drawInfo()
   //  cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
 
   if ( computerAnswers() )
-    infoText.sprintf("[%d] (%d ply) { %s } score = %4.2f", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_ / 100.f);
+    infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_ / 100.f);
   else
     infoText.sprintf("[%d]", cpos_.movesCount());
 
