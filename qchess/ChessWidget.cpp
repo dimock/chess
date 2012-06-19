@@ -15,6 +15,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QClipboard>
+#include <QTextStream>
 #include "setparamsdlg.h"
 
 
@@ -45,6 +46,7 @@ ChessWidget::ChessWidget(QWidget * parent) :
   onGoAction_(0),
   onTurnBoardAction_(0),
   onHumanVsHumanAction_(0),
+  onOpenBookAction_(0),
   onSettingsAction_(0)
 {
   QSettings settings(tr("Dimock"), tr("qchess"));
@@ -63,6 +65,8 @@ ChessWidget::ChessWidget(QWidget * parent) :
   createMenu();
 
   onNew();
+
+  obook_.load( "debut.tbl", cpos_.getBoard() );
 
   connect(&thread_, SIGNAL(finished()), this, SLOT(onMoveFound()));
 }
@@ -103,6 +107,12 @@ void ChessWidget::createMenu()
   onHumanVsHumanAction_->setCheckable(true);
   onHumanVsHumanAction_->setChecked(false);
 
+  QSettings settings(tr("Dimock"), tr("qchess"));
+  onOpenBookAction_ = new QAction(tr("&Open book"), this);
+  onOpenBookAction_->setStatusTip(tr("Use open book"));
+  onOpenBookAction_->setCheckable(true);
+  onOpenBookAction_->setChecked( settings.value(tr("open_book"), true).toBool() );
+
   onSettingsAction_ = new QAction(tr("Settin&gs"), this);
   onSettingsAction_->setStatusTip(tr("Change game settings"));
 
@@ -113,6 +123,7 @@ void ChessWidget::createMenu()
   gameMenu->addAction(onNextAction_);
   gameMenu->addAction(onGoAction_);
   gameMenu->addAction(onTurnBoardAction_);
+  gameMenu->addAction(onOpenBookAction_);
   gameMenu->addSeparator();
   gameMenu->addAction(onHumanVsHumanAction_);
   gameMenu->addSeparator();
@@ -126,6 +137,7 @@ void ChessWidget::createMenu()
   connect(onGoAction_, SIGNAL(triggered()), this, SLOT(onGo()));
   connect(onTurnBoardAction_, SIGNAL(toggled(bool)), this, SLOT(onTurnBoard(bool)));
   connect(onHumanVsHumanAction_, SIGNAL(toggled(bool)), this, SLOT(onHumanWithHumanMode(bool)));
+  connect(onOpenBookAction_, SIGNAL(toggled(bool)), this, SLOT(onUseOpenBook(bool)));
   connect(onSettingsAction_, SIGNAL(triggered()), this, SLOT(onSettings()));
 }
 
@@ -287,11 +299,22 @@ void ChessWidget::onHumanWithHumanMode(bool)
   update();
 }
 
+void ChessWidget::onUseOpenBook(bool o)
+{
+  QSettings settings(tr("Dimock"), tr("qchess"));
+  settings.setValue(tr("open_book"), o);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 bool ChessWidget::computerAnswers() const
 {
-  return !onHumanVsHumanAction_->isChecked();
+  return onHumanVsHumanAction_ && !onHumanVsHumanAction_->isChecked();
+}
+
+bool ChessWidget::useOpenBook() const
+{
+  return onOpenBookAction_ && onOpenBookAction_->isChecked();
 }
 
 bool ChessWidget::okToReset()
@@ -321,6 +344,9 @@ void ChessWidget::closeEvent(QCloseEvent *event)
     event->ignore();
     return;
   }
+
+  QSettings settings(tr("Dimock"), tr("qchess"));
+  settings.setValue(tr("open_book"), useOpenBook());
 
   event->accept();
 }
@@ -414,8 +440,24 @@ void ChessWidget::mouseReleaseEvent(QMouseEvent * e)
   update();
 }
 
+bool ChessWidget::findInBook()
+{
+  Board board = cpos_.getBoard();
+  Move move = obook_.nextMove(board);
+  if ( !move )
+    return false;
+
+  if ( !cpos_.applyMove(move) )
+    return false;
+
+  return true;
+}
+
 void ChessWidget::findMove()
 {
+  if ( useOpenBook() && findInBook() )
+    return;
+
   QTime tm;
   tm.start();
 
@@ -514,4 +556,101 @@ void ChessWidget::keyReleaseEvent(QKeyEvent * e)
     }
     break;
   }
+}
+
+//////////////////////////////////////////////////////////////////////////
+bool OpenBook::load(const char * fname, const Board & i_board)
+{
+  FILE * f = fopen(fname, "rt");
+  if ( !f )
+    return false;
+
+  QTextStream sbook(f, QIODevice::ReadOnly);
+
+  if ( sbook.status() != QTextStream::Ok )
+    return false;
+
+  MoveCmd tmoves[Board::GameLength];
+
+  for ( ; !sbook.atEnd(); )
+  {
+    QString sline = sbook.readLine();
+    if ( sline.isEmpty() )
+      break;
+
+    Board board = i_board;
+    board.set_moves(tmoves);
+    board.fromFEN(0);
+
+    MovesLine moves;
+    QStringList slist = sline.split( QObject::tr(" "), QString::SkipEmptyParts);
+    for (QStringList::iterator it = slist.begin(); it != slist.end(); ++it)
+    {
+      char str[256];
+      strncpy(str, it->toAscii().data(), sizeof(str));
+      Move move;
+      if ( !strToMove(str, board, move) || !board.makeMove(move) )
+        break;
+
+      moves.push_back(move);
+    }
+
+    mtable_.push_back(moves);
+  }
+  fclose(f);
+
+//  qsrand( QTime::currentTime().msec() );
+
+  return true;
+}
+
+unsigned long xorshf96()
+{
+  static unsigned long x= (unsigned long)time(0) ^ clock(), y=362436069, z=521288629;
+
+  unsigned long t;
+  x ^= x << 16;
+  x ^= x >> 5;
+  x ^= x << 1;
+
+  t = x;
+  x = y;
+  y = z;
+  z = t ^ x ^ y;
+
+  return z;
+}
+
+Move OpenBook::nextMove(const Board & board)
+{
+  MovesLine valid_moves;
+
+  for (size_t i = 0; i < mtable_.size(); ++i)
+  {
+    MovesLine & mline = mtable_[i];
+    int j = 0;
+    for ( ; j < board.halfmovesCount() && j < mline.size(); ++j)
+    {
+      Move mv = board.getMove(j);
+      if ( mv != mline[j] )
+        j = mline.size();
+    }
+
+    if ( j < mline.size() )
+    {
+      const Move & m = mline[j];
+      valid_moves.push_back(m);
+    }
+  }
+
+  Move mres;
+  mres.clear();
+
+  if ( valid_moves.empty() )
+    return mres;
+
+  int n = xorshf96() % valid_moves.size();
+  mres = valid_moves[n];
+
+  return mres;
 }

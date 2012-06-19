@@ -38,6 +38,7 @@ public:
 
   // making move
   bool findMove(SearchResult & sres);
+  bool applyMove(const Move &);
 
   const Board & getBoard() const;
   Board & getBoardT() { return player_.getBoard(); }
@@ -54,7 +55,6 @@ public:
 
 private:
 
-  bool applyMove(const Move &);
   void setLastMove(const Board & board);
 
 	bool doSave() const;

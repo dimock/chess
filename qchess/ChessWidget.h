@@ -23,6 +23,23 @@ protected:
   ChessWidget * widget_;
 };
 
+class OpenBook
+{
+public:
+
+  OpenBook() {}
+
+  bool load(const char * fname, const Board & );
+  Move nextMove(const Board & );
+
+private:
+
+  typedef std::vector<Move> MovesLine;
+  typedef std::vector<MovesLine> MovesTable;
+
+  MovesTable mtable_;
+};
+
 class ChessWidget : public QMainWindow
 {
 	Q_OBJECT;
@@ -57,7 +74,8 @@ private slots:
   void onGo();
   void onMoveFound();
   void onTurnBoard(bool t);
-  void onHumanWithHumanMode(bool t);
+  void onHumanWithHumanMode(bool);
+  void onUseOpenBook(bool);
   void onSettings();
 
 private:
@@ -67,8 +85,11 @@ private:
   void drawInfo();
   void findMove();
   bool computerAnswers() const;
-
+  bool useOpenBook() const;
   bool okToReset();
+  bool findInBook();
+
+  bool readOpenBook();
 
   QPoint curPt_;
   QPoint upleft_;
@@ -101,7 +122,10 @@ private:
   QAction * onGoAction_;
   QAction * onTurnBoardAction_;
   QAction * onHumanVsHumanAction_;
+  QAction * onOpenBookAction_;
   QAction * onSettingsAction_;
 
   ChessAlgThread thread_;
+
+  OpenBook obook_;
 };
