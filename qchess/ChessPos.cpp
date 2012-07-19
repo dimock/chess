@@ -484,6 +484,9 @@ bool ChessPosition::applyMove(const Move & move)
 {
   Board & board = player_.getBoard();
 
+  if ( !board.validMove(move) )
+    return false;
+
   if ( board.makeMove(move) )
   {
     halfmovesNumber_ = board.halfmovesCount();
