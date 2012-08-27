@@ -189,12 +189,12 @@ void Player::setMemory(int mb)
     return;
 
 #ifdef USE_HASH_TABLE_GENERAL
-  ghash_.resize(hsize);
+  ghash_.resize(hsize-1);
   use_pv_ = false;
 #endif
 
 #ifdef USE_HASH_TABLE_CAPTURE
-  chash_.resize(hsize);
+  chash_.resize(hsize+1);
   use_pv_ = false;
 #endif
 
