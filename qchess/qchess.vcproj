@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="qchess"
 	ProjectGUID="{D539E96B-6A8D-3A87-9693-BE8C07B270B3}"
 	RootNamespace="qchess"
@@ -487,7 +487,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\*"
+				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\* /Y /R"
 			/>
 		</Configuration>
 		<Configuration
@@ -584,7 +584,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\*"
+				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\* /Y /R"
 			/>
 		</Configuration>
 		<Configuration
@@ -679,7 +679,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\*"
+				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\* /Y /R"
 			/>
 		</Configuration>
 		<Configuration
@@ -776,7 +776,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\*"
+				CommandLine="xcopy ..\tables\debut.tbl $(TargetDir)\* /Y /R"
 			/>
 		</Configuration>
 	</Configurations>
@@ -1101,42 +1101,6 @@
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}"
 			>
 			<File
-				RelativePath="debug\moc_ChessWidget.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Qt|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Qt|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="release\moc_ChessWidget.cpp"
 				>
 				<FileConfiguration
@@ -1173,7 +1137,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_selfiguredlg.cpp"
+				RelativePath="debug\moc_ChessWidget.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1237,6 +1201,42 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug-Qt|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="debug\moc_selfiguredlg.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Qt|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1317,42 +1317,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\qrc_qchess.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Qt|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release-Qt|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="release\qrc_qchess.cpp"
 				>
 				<FileConfiguration
@@ -1381,6 +1345,42 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug-Qt|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="debug\qrc_qchess.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Qt|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release-Qt|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
