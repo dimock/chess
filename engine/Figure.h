@@ -236,13 +236,14 @@ public:
   const uint64 & rook_mask() const { return tmask_[Figure::TypeRook]; }
   const uint64 & queen_mask() const { return tmask_[Figure::TypeQueen]; }
   const uint64 & king_mask() const { return tmask_[Figure::TypeKing]; }
+  const BBits & type_mask(const Figure::Type type) const { return tmask_[type]; }
 
 private:
 
   // 8 - types, 2 - field color (for bishops only!!!)
   uint8 tcount_[8][2];
   uint8 count_;
-  uint64 tmask_[8];
+  uint64 tmask_[8]; // TODO: should be 7
   uint64 pmask_t_;
   ScoreType weight_, eval_[2];
 };
@@ -384,6 +385,7 @@ public:
   const uint64 & queen_mask(Figure::Color color) const { return fcounter_[color].queen_mask(); }
   const uint64 & king_mask(Figure::Color color) const { return fcounter_[color].king_mask(); }
   const uint64 & mask(Figure::Color color) const { return mask_[color]; }
+  const BBits & type_mask(const Figure::Type type, const Figure::Color color) const { return fcounter_[color].type_mask(type); }
 
 private:
 

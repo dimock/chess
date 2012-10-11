@@ -73,102 +73,20 @@ bool MovesGenerator::find(const Move & m) const
 int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 {
   int m = 0;
-  Figure::Color & color = board_.color_;
-  Figure::Color ocolor = Figure::otherColor(color);
+  const Figure::Color & color = board_.color_;
+  const Figure::Color ocolor = Figure::otherColor(color);
 
-  static int s_findex[2][Board::NumOfFigures] = { {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}, {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0} };
-  int v = board_.checkingNum_ > 1 ? 1 : 0;
-
-  for (int j = 0; j < Board::NumOfFigures; ++j)
+  if ( board_.checkingNum_ < 2 )
   {
-    int n = s_findex[v][j];
-
-    const Figure & fig = board_.getFigure(color, n);
-
-    switch ( fig.getType() )
+    // pawns movements
+    if ( board_.fmgr().pawn_mask_o(color) )
     {
-    case Figure::TypeKing:
+      BBits pw_mask = board_.fmgr().pawn_mask_o(color);
+      for ( ; pw_mask; )
       {
-        const int8 * table = board_.g_movesTable->king(fig.where());
+        int pw_pos = least_bit_number(pw_mask);
 
-        for (; *table >= 0; ++table)
-        {
-          const Field & field = board_.getField(*table);
-          int rindex = -1;
-          if ( field )
-          {
-            if ( field.color() == color )
-              continue;
-            rindex = field.index();
-          }
-
-          add_move(m, fig.where(), *table, rindex, 0);
-        }
-
-        if ( fig.isFirstStep() && board_.state_ != Board::UnderCheck )
-        {
-          add_move(m, fig.where(), fig.where()+2, -1, 0);
-          add_move(m, fig.where(), fig.where()-2, -1, 0);
-        }
-      }
-      break;
-
-    case Figure::TypeBishop:
-    case Figure::TypeRook:
-    case Figure::TypeQueen:
-      {
-        const uint16 * table = board_.g_movesTable->move(fig.getType()-Figure::TypeBishop, fig.where());
-
-        for (; *table; ++table)
-        {
-          const int8 * packed = reinterpret_cast<const int8*>(table);
-          int8 count = packed[0];
-          int8 delta = packed[1];
-
-          int8 p = fig.where();
-          int rindex = -1;
-          for ( ; count && rindex < 0; --count)
-          {
-            p += delta;
-
-            const Field & field = board_.getField(p);
-            if ( field )
-            {
-              if ( field.color() == color )
-                break;
-
-              rindex = field.index();
-            }
-
-            add_move(m, fig.where(), p, rindex, 0);
-          }
-        }
-      }
-      break;
-
-    case Figure::TypeKnight:
-      {
-        const int8 * table = board_.g_movesTable->knight(fig.where());
-
-        for (; *table >= 0; ++table)
-        {
-          const Field & field = board_.getField(*table);
-          int rindex = -1;
-          if ( field )
-          {
-            if ( field.color() == color )
-              continue;
-            rindex = field.index();
-          }
-
-          add_move(m, fig.where(), *table, rindex, 0);
-        }
-      }
-      break;
-
-    case Figure::TypePawn:
-      {
-        const int8 * table = board_.g_movesTable->pawn(color, fig.where());
+        const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
 
         for (int i = 0; i < 2; ++i, ++table)
         {
@@ -198,7 +116,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
           Move & move = moves_[m++];
           move.alreadyDone_ = 0;
-          move.set(fig.where(), *table, rfig.getIndex(), 0, 0);
+          move.set(pw_pos, *table, rfig.getIndex(), 0, 0);
           calculateWeight(move);
 
           if ( promotion )
@@ -226,7 +144,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           Move & move = moves_[m++];
 
           move.alreadyDone_ = 0;
-          move.set(fig.where(), *table, -1, 0, 0);
+          move.set(pw_pos, *table, -1, 0, 0);
           calculateWeight(move);
 
           if ( promotion )
@@ -247,12 +165,104 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           }
         }
       }
-      break;
     }
 
-    // only king's movements are available
-    if ( board_.checkingNum_ > 1 )
-      break;
+    // knights movements
+    if ( board_.fmgr().knight_mask(color) )
+    {
+      BBits kn_mask = board_.fmgr().knight_mask(color);
+      for ( ; kn_mask; )
+      {
+        int kn_pos = least_bit_number(kn_mask);
+
+        const int8 * table = board_.g_movesTable->knight(kn_pos);
+
+        for (; *table >= 0; ++table)
+        {
+          const Field & field = board_.getField(*table);
+          int rindex = -1;
+          if ( field )
+          {
+            if ( field.color() == color )
+              continue;
+            rindex = field.index();
+          }
+
+          add_move(m, kn_pos, *table, rindex, 0);
+        }
+      }
+    }
+
+    // bishops, rooks and queens movements
+    for (int type = Figure::TypeBishop; type < Figure::TypeKing; ++type)
+    {
+      BBits fg_mask = board_.fmgr().type_mask((Figure::Type)type, color);
+
+      for ( ; fg_mask; )
+      {
+        int fg_pos = least_bit_number(fg_mask);
+
+        const uint16 * table = board_.g_movesTable->move(type-Figure::TypeBishop, fg_pos);
+
+        for (; *table; ++table)
+        {
+          const int8 * packed = reinterpret_cast<const int8*>(table);
+          int8 count = packed[0];
+          int8 delta = packed[1];
+
+          int8 p = fg_pos;
+          int rindex = -1;
+          for ( ; count && rindex < 0; --count)
+          {
+            p += delta;
+
+            const Field & field = board_.getField(p);
+            if ( field )
+            {
+              if ( field.color() == color )
+                break;
+
+              rindex = field.index();
+            }
+
+            add_move(m, fg_pos, p, rindex, 0);
+          }
+        }
+      }
+    }
+  }
+
+  // kings movements
+  {
+    BBits ki_mask = board_.fmgr().king_mask(color);
+    
+    THROW_IF( ki_mask == 0, "invalid position - no king" );
+
+    int ki_pos = least_bit_number(ki_mask);
+
+    const int8 * table = board_.g_movesTable->king(ki_pos);
+
+    for (; *table >= 0; ++table)
+    {
+      const Field & field = board_.getField(*table);
+      int rindex = -1;
+      if ( field )
+      {
+        if ( field.color() == color )
+          continue;
+        rindex = field.index();
+      }
+
+      add_move(m, ki_pos, *table, rindex, 0);
+    }
+
+    int index = board_.getField(ki_pos).index();
+    const Figure & king = board_.getFigure(color, index);
+    if ( king.isFirstStep() && board_.state_ != Board::UnderCheck )
+    {
+      add_move(m, ki_pos, ki_pos+2, -1, 0);
+      add_move(m, ki_pos, ki_pos-2, -1, 0);
+    }
   }
 
   return m;

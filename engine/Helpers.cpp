@@ -445,7 +445,7 @@ bool printSAN(Board & board, const Move & move, char * str)
       ++s;
     }
     
-    // stupid Arena doesn't understand pawn's capture, even if other movies are illegal
+    // Arena doesn't understand pawn's capture, even if other movies are illegal
     if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.rindex_ >= 0) )
     {
       if ( same_x <= 1 )

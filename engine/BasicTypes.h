@@ -40,6 +40,7 @@ typedef __int64 int64;
 typedef unsigned __int64 uint64;
 
 typedef int16 ScoreType;
+typedef uint64 BBits;
 
 #define PERFORM_CHECKS_IN_CAPTURES
 #define USE_ZERO_WINDOW
