@@ -22,7 +22,7 @@ inline int pop_count(uint64 n)
 
 #ifndef _M_X64
 // return least significant bit index, clear it
-inline int least_bit_number(uint64 & mask)
+inline int least_bit_number(BitMask & mask)
 {
   int n;
   __asm
@@ -49,6 +49,39 @@ nxt:mov eax, dword ptr [edi+4]
     and eax, ebx
     mov dword ptr [edi+4], eax
     add ecx, 32
+
+end:mov dword ptr [n], ecx
+  }
+  return n;
+}
+
+// return most significant bit index, clear it
+inline int most_bit_number(BitMask & mask)
+{
+  int n;
+  __asm
+  {
+    ; scan upper dword
+
+    mov edi, mask
+    mov eax, dword ptr [edi+4]
+    bsr ecx, eax
+    jz  nxt
+    mov ebx, 1
+    shl ebx, cl
+    xor eax, ebx
+    mov dword ptr [edi+4], eax
+    add ecx, 32
+    jmp end
+
+    ; scan lower dword
+
+nxt:mov eax, DWORD ptr [edi]
+    bsr ecx, eax
+    mov ebx, 1
+    shl ebx, cl
+    xor eax, ebx
+    mov dword ptr [edi], eax
 
 end:mov dword ptr [n], ecx
   }

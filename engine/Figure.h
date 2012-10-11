@@ -236,7 +236,7 @@ public:
   const uint64 & rook_mask() const { return tmask_[Figure::TypeRook]; }
   const uint64 & queen_mask() const { return tmask_[Figure::TypeQueen]; }
   const uint64 & king_mask() const { return tmask_[Figure::TypeKing]; }
-  const BBits & type_mask(const Figure::Type type) const { return tmask_[type]; }
+  const BitMask & type_mask(const Figure::Type type) const { return tmask_[type]; }
 
 private:
 
@@ -385,7 +385,7 @@ public:
   const uint64 & queen_mask(Figure::Color color) const { return fcounter_[color].queen_mask(); }
   const uint64 & king_mask(Figure::Color color) const { return fcounter_[color].king_mask(); }
   const uint64 & mask(Figure::Color color) const { return mask_[color]; }
-  const BBits & type_mask(const Figure::Type type, const Figure::Color color) const { return fcounter_[color].type_mask(type); }
+  const BitMask & type_mask(const Figure::Type type, const Figure::Color color) const { return fcounter_[color].type_mask(type); }
 
 private:
 

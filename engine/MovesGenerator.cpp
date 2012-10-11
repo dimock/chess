@@ -81,10 +81,10 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     // pawns movements
     if ( board_.fmgr().pawn_mask_o(color) )
     {
-      BBits pw_mask = board_.fmgr().pawn_mask_o(color);
+      BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
       for ( ; pw_mask; )
       {
-        int pw_pos = least_bit_number(pw_mask);
+        int pw_pos = most_bit_number(pw_mask);
 
         const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
 
@@ -170,10 +170,10 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     // knights movements
     if ( board_.fmgr().knight_mask(color) )
     {
-      BBits kn_mask = board_.fmgr().knight_mask(color);
+      BitMask kn_mask = board_.fmgr().knight_mask(color);
       for ( ; kn_mask; )
       {
-        int kn_pos = least_bit_number(kn_mask);
+        int kn_pos = most_bit_number(kn_mask);
 
         const int8 * table = board_.g_movesTable->knight(kn_pos);
 
@@ -196,11 +196,11 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     // bishops, rooks and queens movements
     for (int type = Figure::TypeBishop; type < Figure::TypeKing; ++type)
     {
-      BBits fg_mask = board_.fmgr().type_mask((Figure::Type)type, color);
+      BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, color);
 
       for ( ; fg_mask; )
       {
-        int fg_pos = least_bit_number(fg_mask);
+        int fg_pos = most_bit_number(fg_mask);
 
         const uint16 * table = board_.g_movesTable->move(type-Figure::TypeBishop, fg_pos);
 
@@ -234,11 +234,11 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
   // kings movements
   {
-    BBits ki_mask = board_.fmgr().king_mask(color);
+    BitMask ki_mask = board_.fmgr().king_mask(color);
     
     THROW_IF( ki_mask == 0, "invalid position - no king" );
 
-    int ki_pos = least_bit_number(ki_mask);
+    int ki_pos = most_bit_number(ki_mask);
 
     const int8 * table = board_.g_movesTable->king(ki_pos);
 
