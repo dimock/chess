@@ -567,9 +567,16 @@ bool Board::see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv,
   return false;
 }
 
-bool Board::see_check2(Figure::Color kc, uint8 from, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const
+bool Board::see_check2(Figure::Color kc, uint8 from, const BitMask & all_mask_inv, const BitMask & a_brq_mask) const
 {
   const Figure & king = getFigure((Figure::Color)kc, KingIndex);
+
+  // we need to check if there is some attacker on line to king
+  BitMask from_msk = g_betweenMasks->from(king.where(), from);
+
+  // no attachers at all
+  if ( !(a_brq_mask & from_msk) )
+    return false;
 
   // are king and field we move from on the same line
   Figure queen(king);
@@ -578,14 +585,12 @@ bool Board::see_check2(Figure::Color kc, uint8 from, const uint64 & all_mask_inv
     return false;
 
   // is there some figure between king and field that we move from
-  const uint64 & btw_king_msk = g_betweenMasks->between(king.where(), from);
-  uint64 all_mask_inv2 = (all_mask_inv | (1ULL << from));
+  const BitMask & btw_king_msk = g_betweenMasks->between(king.where(), from);
+  BitMask all_mask_inv2 = (all_mask_inv | (1ULL << from));
   if ( (btw_king_msk & all_mask_inv2) != btw_king_msk )
     return false;
 
-  // then we need to check if there is some attacker on line to king
-  uint64 from_msk = g_betweenMasks->from(king.where(), from);
-
+  // than check if there is something between king and attacker
   // all figures on direction from king to 'from' field
   BitMask all_mask_from = ~all_mask_inv2 & from_msk;
   if ( !all_mask_from )
@@ -595,7 +600,7 @@ bool Board::see_check2(Figure::Color kc, uint8 from, const uint64 & all_mask_inv
   int index = -1;
   if ( from > king.where() ) // use LSB
     index = least_bit_number(all_mask_from);
-  else
+  else // MSB
     index = most_bit_number(all_mask_from);
 
   const Field & field = getField(index);
