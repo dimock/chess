@@ -388,6 +388,7 @@ private:
 
   // detect discovered check to king of 'kc' color
   bool see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const;
+  bool see_check2(Figure::Color kc, uint8 from, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const;
 
   /// clear board. remove all figures. reset all fields, number of moves etc...
   void clear();

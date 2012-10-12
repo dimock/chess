@@ -138,7 +138,11 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
       case Figure::TypePawn:
       case Figure::TypeKnight:
         {
-          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
+          bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+          if ( !is_checking )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
@@ -156,7 +160,11 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
           if ( (btw_mask & all_mask_inv) != btw_mask )
             continue;
 
-          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
+          bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+          if ( !is_checking )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
@@ -228,7 +236,11 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
       break;
 
     // if we give check we don't need to continue
-    if ( see_check( (Figure::Color)((col+1)&1), (attc >> 8) & 255, all_mask_inv, brq_masks[col]) )
+    bool give_check = see_check2( (Figure::Color)((col+1)&1), (attc >> 8) & 255, all_mask_inv, brq_masks[col]);
+    //bool give_check2 = see_check2( (Figure::Color)((col+1)&1), (attc >> 8) & 255, all_mask_inv, brq_masks[col]);
+    //THROW_IF( give_check != give_check2, "error in see_check2()" );
+
+    if ( give_check )
       break;
 
     // remove from (inverted) mask
@@ -397,7 +409,11 @@ int Board::see_before(int initial_value, const Move & move) const
       case Figure::TypePawn:
       case Figure::TypeKnight:
         {
-          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
+          bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+          if ( !is_checking )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
@@ -418,7 +434,11 @@ int Board::see_before(int initial_value, const Move & move) const
           if ( (btw_mask & all_mask_inv) != btw_mask )
             continue;
 
-          if ( !see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]) )
+          bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+          if ( !is_checking )
           {
             attc = attackers[col][i];
             attackers[col][i] = 0;
@@ -483,7 +503,11 @@ int Board::see_before(int initial_value, const Move & move) const
       break;
 
     // if we give check we don't need to continue
-    if ( see_check( (Figure::Color)((col+1)&1), pos, all_mask_inv, brq_masks[col]) )
+    bool give_check = see_check2( (Figure::Color)((col+1)&1), pos, all_mask_inv, brq_masks[col]);
+    //bool give_check2 = see_check2( (Figure::Color)((col+1)&1), pos, all_mask_inv, brq_masks[col]);
+    //THROW_IF( give_check != give_check2, "error in see_check2()" );
+
+    if ( give_check )
       break;
 
     // remove from (inverted) mask
@@ -539,6 +563,58 @@ bool Board::see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv,
     if ( (btw_mask & all_mask_inv2) == btw_mask )
       return true;
   }
+
+  return false;
+}
+
+bool Board::see_check2(Figure::Color kc, uint8 from, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const
+{
+  const Figure & king = getFigure((Figure::Color)kc, KingIndex);
+
+  // are king and field we move from on the same line
+  Figure queen(king);
+  queen.setType(Figure::TypeQueen);
+  if ( g_figureDir->dir(queen, from) < 0 )
+    return false;
+
+  // is there some figure between king and field that we move from
+  const uint64 & btw_king_msk = g_betweenMasks->between(king.where(), from);
+  uint64 all_mask_inv2 = (all_mask_inv | (1ULL << from));
+  if ( (btw_king_msk & all_mask_inv2) != btw_king_msk )
+    return false;
+
+  // then we need to check if there is some attacker on line to king
+  uint64 from_msk = g_betweenMasks->from(king.where(), from);
+
+  // all figures on direction from king to 'from' field
+  BitMask all_mask_from = ~all_mask_inv2 & from_msk;
+  if ( !all_mask_from )
+    return false;
+
+  // field index of first figure on this line
+  int index = -1;
+  if ( from > king.where() ) // use LSB
+    index = least_bit_number(all_mask_from);
+  else
+    index = most_bit_number(all_mask_from);
+
+  const Field & field = getField(index);
+
+  // figure is the same color as king
+  if ( field.color() == kc )//|| field.type() < Figure::TypeBishop || field.type() > Figure::TypeQueen )
+    return false;
+
+  // figure have to be in updated BRQ mask
+  if ( !((1ULL<<index) & a_brq_mask) )
+    return false;
+
+  const Figure & fig = getFigure(field.color(), field.index());
+
+  THROW_IF( fig.getType() < Figure::TypeBishop || fig.getType() > Figure::TypeQueen, "see: not appropriate attacker type" );
+
+  // could figure attack king from it's position
+  if ( g_figureDir->dir(fig, king.where()) >= 0 )
+    return true;
 
   return false;
 }
