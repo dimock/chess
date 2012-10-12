@@ -148,9 +148,11 @@ public:
     //int8 bit = (s_transposeIndex_[fig.where()] & ptmask) | (fig.where() & ~ptmask);
     //tmask_[fig.getType()] |= 1ULL << bit;
 
-    int64 ptmask = ((int64)fig.getType() - 2) >> 63;
+    //int64 ptmask = ((int64)fig.getType() - 2) >> 63;
     tmask_[fig.getType()] |= 1ULL << fig.where();
-    pmask_t_ |= (1ULL << s_transposeIndex_[fig.where()]) & ptmask;
+
+    if ( fig.getType() == Figure::TypePawn )
+      pmask_t_ |= (1ULL << s_transposeIndex_[fig.where()]);// & ptmask;
 
     //THROW_IF( (fig.getType() == Figure::TypePawn && bit != s_transposeIndex_[fig.where()]) || (fig.getType() != Figure::TypePawn && bit != fig.where()), "invalid bit shift for mask" );
 
@@ -178,9 +180,11 @@ public:
     //int8 bit = (s_transposeIndex_[fig.where()] & ptmask) | (fig.where() & ~ptmask);
     //tmask_[fig.getType()] ^= 1ULL << bit;
 
-    int64 ptmask = ((int64)fig.getType() - 2) >> 63;
+    //int64 ptmask = ((int64)fig.getType() - 2) >> 63;
     tmask_[fig.getType()] ^= 1ULL << fig.where();
-    pmask_t_ ^= (1ULL << s_transposeIndex_[fig.where()]) & ptmask;
+
+    if ( fig.getType() == Figure::TypePawn )
+      pmask_t_ ^= (1ULL << s_transposeIndex_[fig.where()]);// & ptmask;
 
     //THROW_IF( (fig.getType() == Figure::TypePawn && bit != s_transposeIndex_[fig.where()]) || (fig.getType() != Figure::TypePawn && bit != fig.where()), "invalid bit shift for mask" );
     THROW_IF( tmask_[fig.getType()] & (1ULL << fig.where()), "invalid queen mask" );
@@ -209,11 +213,15 @@ public:
     //THROW_IF( tmask_[fig.getType()] & (1ULL << bit_from), "invalid figure mask" );
     //tmask_[fig.getType()] |= 1ULL << bit_to;
 
-    int64 ptmask = ((int64)fig.getType() - 2) >> 63;
+    //int64 ptmask = ((int64)fig.getType() - 2) >> 63;
     tmask_[fig.getType()] ^= 1ULL << fig.where();
     tmask_[fig.getType()] |= 1ULL << to;
-    pmask_t_ ^= (1ULL << s_transposeIndex_[fig.where()]) & ptmask;
-    pmask_t_ |= (1ULL << s_transposeIndex_[to]) & ptmask;
+
+    if ( fig.getType() == Figure::TypePawn )
+    {
+      pmask_t_ ^= (1ULL << s_transposeIndex_[fig.where()]);// & ptmask;
+      pmask_t_ |= (1ULL << s_transposeIndex_[to]);// & ptmask;
+    }
 
     fig.go(to);
   }
