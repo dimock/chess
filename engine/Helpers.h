@@ -129,6 +129,7 @@ md_begin:
 #else
 
 #pragma intrinsic(_BitScanForward64)
+#pragma intrinsic(_BitScanReverse64)
 #pragma intrinsic(_BitScanReverse)
 
 inline int least_bit_number(uint64 & mask)
@@ -141,6 +142,18 @@ inline int least_bit_number(uint64 & mask)
 	THROW_IF( !b, "no bit found in nonzero number" );
 	mask &= mask-1;
 	return n;
+}
+
+inline int most_bit_number(uint64 & mask)
+{
+  unsigned long n;
+#ifndef NDEBUG
+  uint8 b = 
+#endif
+    _BitScanReverse64(&n, mask);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  mask ^= 1ULL << n;
+  return n;
 }
 
 inline int log2(int n)
