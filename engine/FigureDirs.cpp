@@ -18,7 +18,45 @@ FigureDir::FigureDir()
 		calcRookDir(i);
 		calcQueenDir(i);
 		calcKingDir(i);
+
+    calcDDir(i);
 	}
+}
+
+void FigureDir::calcDDir(int i)
+{
+  int from = i & 63;
+  int to = i >> 6;
+
+  FPos dp(FPosIndexer::get(to) - FPosIndexer::get(from));
+
+  nst::dirs d = nst::no_dir;
+  dir_ref(from, to) = d;
+  
+  int x = abs(dp.x());
+  int y = abs(dp.y());
+
+  if ( x != y && x != 0 && y != 0 )
+    return;
+
+  if ( dp.x() < 0 && dp.y() > 0 )
+    d = nst::nw;
+  else if ( dp.x() == 0 && dp.y() > 0 )
+    d = nst::no;
+  else if ( dp.x() > 0 && dp.y() > 0 )
+    d = nst::ne;
+  else if ( dp.x() > 0 && dp.y() == 0 )
+    d = nst::ea;
+  else if ( dp.x() > 0 && dp.y() < 0 )
+    d = nst::se;
+  else if ( dp.x() == 0 && dp.y() < 0 )
+    d = nst::so;
+  else if ( dp.x() < 0 && dp.y() < 0 )
+    d = nst::sw;
+  else if ( dp.x() < 0 && dp.y() == 0 )
+    d = nst::we;
+
+  dir_ref(from, to) = d;
 }
 
 void FigureDir::calcPawnDir(int idp)

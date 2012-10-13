@@ -139,8 +139,12 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
       case Figure::TypeKnight:
         {
           bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+#ifndef NDEBUG
+          bool is_checking_o = see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+#endif
+
+          THROW_IF( is_checking != is_checking_o, "error in see_check2()" );
 
           if ( !is_checking )
           {
@@ -161,8 +165,12 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
             continue;
 
           bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+#ifndef NDEBUG
+          bool is_checking_o = see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+#endif
+
+          THROW_IF( is_checking != is_checking_o, "error in see_check2()" );
 
           if ( !is_checking )
           {
@@ -237,8 +245,12 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
 
     // if we give check we don't need to continue
     bool give_check = see_check2( (Figure::Color)((col+1)&1), (attc >> 8) & 255, all_mask_inv, brq_masks[col]);
-    //bool give_check2 = see_check2( (Figure::Color)((col+1)&1), (attc >> 8) & 255, all_mask_inv, brq_masks[col]);
-    //THROW_IF( give_check != give_check2, "error in see_check2()" );
+
+#ifndef NDEBUG
+    bool give_check_o = see_check( (Figure::Color)((col+1)&1), (attc >> 8) & 255, all_mask_inv, brq_masks[col]);
+#endif
+
+    THROW_IF( give_check != give_check_o, "error in see_check2()" );
 
     if ( give_check )
       break;
@@ -410,8 +422,11 @@ int Board::see_before(int initial_value, const Move & move) const
       case Figure::TypeKnight:
         {
           bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+#ifndef NDEBUG
+          bool is_checking_o = see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+#endif
+          THROW_IF( is_checking != is_checking_o, "error in see_check2()" );
 
           if ( !is_checking )
           {
@@ -435,8 +450,11 @@ int Board::see_before(int initial_value, const Move & move) const
             continue;
 
           bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //bool is_checking2 = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
-          //THROW_IF( is_checking != is_checking2, "error in see_check2()" );
+
+#ifndef NDEBUG
+          bool is_checking_o = see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
+#endif
+          THROW_IF( is_checking != is_checking_o, "error in see_check2()" );
 
           if ( !is_checking )
           {
@@ -504,8 +522,11 @@ int Board::see_before(int initial_value, const Move & move) const
 
     // if we give check we don't need to continue
     bool give_check = see_check2( (Figure::Color)((col+1)&1), pos, all_mask_inv, brq_masks[col]);
-    //bool give_check2 = see_check2( (Figure::Color)((col+1)&1), pos, all_mask_inv, brq_masks[col]);
-    //THROW_IF( give_check != give_check2, "error in see_check2()" );
+
+#ifndef NDEBUG
+    bool give_check_o = see_check( (Figure::Color)((col+1)&1), pos, all_mask_inv, brq_masks[col]);
+#endif
+    THROW_IF( give_check != give_check_o, "error in see_check2()" );
 
     if ( give_check )
       break;
@@ -571,17 +592,18 @@ bool Board::see_check2(Figure::Color kc, uint8 from, const BitMask & all_mask_in
 {
   const Figure & king = getFigure((Figure::Color)kc, KingIndex);
 
+  // is there valid direction from to king
+  if ( g_figureDir->dir(king.where(), from) == nst::no_dir )
+  {
+    THROW_IF( g_figureDir->dir(Figure::TypeQueen, kc, king.where(), from) >= 0, "bug in figure-dirs calculation" )
+    return false;
+  }
+
   // we need to check if there is some attacker on line to king
   BitMask from_msk = g_betweenMasks->from(king.where(), from);
 
   // no attachers at all
   if ( !(a_brq_mask & from_msk) )
-    return false;
-
-  // are king and field we move from on the same line
-  //Figure queen(king);
-  //queen.setType(Figure::TypeQueen);
-  if ( g_figureDir->dir(Figure::TypeQueen, kc, king.where(), from) < 0 )
     return false;
 
   // is there some figure between king and field that we move from
