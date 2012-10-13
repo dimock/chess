@@ -26,7 +26,8 @@ bool Board::isChecking(MoveCmd & move) const
     if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() )
     {
       const Figure & king = getFigure(ocolor, KingIndex);
-      int dir = g_figureDir->dir(fig, king.where());
+      THROW_IF( fig.where() != move.to_, "invalid moving figure position" );
+      int dir = g_figureDir->dir(fig.getType(), color_, move.to_, king.where());
       if ( (Figure::TypePawn == fig.getType() && 0 == dir || 1 == dir) || (Figure::TypeKnight == fig.getType() && dir >= 0) )
         idx0 = move.index_;
     }
@@ -320,7 +321,7 @@ int Board::getAttackedFrom(Figure::Color color, int apt) const
     if ( Figure::TypeBishop != afig.getType() && Figure::TypeRook != afig.getType() && Figure::TypeQueen != afig.getType() )
       return -1;
 
-    int dir = g_figureDir->dir(afig, king.where());
+    int dir = g_figureDir->dir(field.type(), field.color(), p.index(), king.where());
     return dir >= 0 ? afig.getIndex() : -1;
   }
   return -1;
@@ -361,11 +362,11 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
     const Figure & afig = getFigure(ocolor, field.index());
     THROW_IF( !afig, "no figure, but bit in mask isn't zero" );
 
-    int dir = g_figureDir->dir(afig, king.where());
+    int dir = g_figureDir->dir(field.type(), ocolor, n, king.where());
     if ( dir < 0 )
       continue;
 
-    const uint64 & btw_msk = g_betweenMasks->between(afig.where(), king.where());
+    const uint64 & btw_msk = g_betweenMasks->between(n, king.where());
 
     if ( (figs_msk_inv & btw_msk) != btw_msk )
       continue;
@@ -410,7 +411,7 @@ int Board::getAttackedFrom(Figure::Color ocolor, int8 pt, int8 from) const
     const Figure & afig = getFigure(ocolor, field.index());
     THROW_IF( !afig, "no figure, but bit in mask isn't zero" );
 
-    int dir = g_figureDir->dir(afig, pt);
+    int dir = g_figureDir->dir(field.type(), ocolor, n, pt);
     if ( dir < 0 )
       continue;
 
@@ -463,7 +464,7 @@ int Board::fastAttackedFrom(Figure::Color color, int apt,
     const Figure & afig = getFigure(ocolor, field.index());
     THROW_IF( !afig, "no figure, but bit in mask isn't zero" );
 
-    int dir = g_figureDir->dir(afig, king.where());
+    int dir = g_figureDir->dir(field.type(), ocolor, n, king.where());
     if ( dir < 0 )
       continue;
 
@@ -487,7 +488,7 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
     if ( !fig )
       continue;
 
-    int dir = g_figureDir->dir(fig, pos);
+    int dir = g_figureDir->dir(fig.getType(), c, fig.where(), pos);
     if ( (dir < 0) || (Figure::TypePawn == fig.getType() && (2 == dir || 3 == dir)) || (Figure::TypeKing == fig.getType() && dir > 7) )
       continue;
 
@@ -513,7 +514,7 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
       if ( field.color() == c && (Figure::TypeBishop == field.type() || Figure::TypeRook == field.type()) )
       {
         const Figure & afig = getFigure(c, field.index());
-        int dir = g_figureDir->dir(afig, pos);
+        int dir = g_figureDir->dir(field.type(), c, p.index(), pos);
         if ( dir >= 0 )
           return true;
 
@@ -530,7 +531,7 @@ bool Board::isAttacked(const Figure::Color c, int pos) const
       if ( Figure::TypePawn == field.type() )
       {
         const Figure & pawn = getFigure(field.color(), field.index());
-        int d = g_figureDir->dir(pawn, pos);
+        int d = g_figureDir->dir(Figure::TypePawn, field.color(), p.index(), pos);
         if ( 0 == d || 1 == d )
           return true;
 
@@ -762,7 +763,7 @@ int Board::findCheckingFigures(Figure::Color color, int pos)
     if ( !fig )
       continue;
 
-    int dir = g_figureDir->dir(fig, pos);
+    int dir = g_figureDir->dir(fig.getType(), color, fig.where(), pos);
     if ( (dir < 0) || (Figure::TypePawn == fig.getType() && (2 == dir || 3 == dir)) || (Figure::TypeKing == fig.getType() && dir > 7) )
       continue;
 

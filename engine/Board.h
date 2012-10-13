@@ -154,7 +154,7 @@ public:
   /// is pt attacked by given figure
   inline bool ptAttackedBy(int8 pt, const Figure & fig) const
   {
-    int dir = g_figureDir->dir(fig, pt);
+    int dir = g_figureDir->dir(fig.getType(), fig.getColor(), fig.where(), pt);
     if ( dir < 0 )
       return false;
 
@@ -461,7 +461,7 @@ private:
   inline int isAttackedBy(Figure::Color color, const Figure & fig) const
   {
     const Figure & king = getFigure(color, KingIndex);
-    int dir = g_figureDir->dir(fig, king.where());
+    int dir = g_figureDir->dir(fig.getType(), fig.getColor(), fig.where(), king.where());
     if ( dir < 0 || Figure::TypeKing == fig.getType() && dir > 7 )
       return -1;
 

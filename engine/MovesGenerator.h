@@ -302,7 +302,7 @@ private:
       THROW_IF( !field || field.color() != board_.color_, "invalid checking figure found" );
 
       const Figure & cfig = board_.getFigure(board_.color_, field.index());
-      if ( board_.g_figureDir->dir(cfig, oking.where()) < 0 )
+      if ( board_.g_figureDir->dir(cfig.getType(), cfig.getColor(), cfig.where(), oking.where()) < 0 )
         continue;
 
       const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oking.where());

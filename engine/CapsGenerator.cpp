@@ -168,54 +168,64 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   }
 
   // generate captures
-  for (int i = 0; i < Board::NumOfFigures; ++i)
+
+  if ( board_.checkingNum_ < 2 )
   {
-    const Figure & fig = board_.getFigure(board_.color_, i);
-    if ( !fig || (fig.getType() == Figure::TypePawn && !pawns_eat) )
-      continue;
-
-  	if ( fig.getType() == Figure::TypePawn )
+    // 1. Pawns
+    if ( pawns_eat )
     {
-      uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, fig.where()) & oppenent_mask_p;
+      BitMask pw_mask = board_.fmgr().pawn_mask_o(board_.color_);
 
-      for ( ; p_caps; )
+      for ( ; pw_mask; )
       {
-        THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
+        int pw_pos = most_bit_number(pw_mask);
 
-        int to = least_bit_number(p_caps);
+        uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, pw_pos) & oppenent_mask_p;
 
-        bool promotion = to > 55 || to < 8; // 1st || last line
-
-        THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
-
-        const Field & field = board_.getField(to);
-        if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
-          continue;
-
-        add_capture(m, fig.where(), to, field.index(), promotion ? Figure::TypeQueen : 0);
-      }
-
-      if ( board_.en_passant_ >= 0 && minimalType_ <= Figure::TypePawn )
-      {
-        const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
-        THROW_IF( !epawn, "there is no en passant pawn" );
-
-        int to = epawn.where() + pw_delta[board_.color_];
-        THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
-
-        int dir = board_.g_figureDir->dir(fig, to);
-        if ( 0 == dir || 1 == dir )
+        for ( ; p_caps; )
         {
           THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
 
-          add_capture(m, fig.where(), to, board_.en_passant_, 0);
+          int to = least_bit_number(p_caps);
+
+          bool promotion = to > 55 || to < 8; // 1st || last line
+
+          THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
+
+          const Field & field = board_.getField(to);
+          if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
+            continue;
+
+          add_capture(m, pw_pos, to, field.index(), promotion ? Figure::TypeQueen : 0);
+        }
+
+        if ( board_.en_passant_ >= 0 && minimalType_ <= Figure::TypePawn )
+        {
+          const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
+          THROW_IF( !epawn, "there is no en passant pawn" );
+
+          int to = epawn.where() + pw_delta[board_.color_];
+          THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
+
+          int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, pw_pos, to);
+          if ( 0 == dir || 1 == dir )
+          {
+            THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
+
+            add_capture(m, pw_pos, to, board_.en_passant_, 0);
+          }
         }
       }
     }
-    else if ( fig.getType() == Figure::TypeKnight || fig.getType() == Figure::TypeKing )
+
+    // 2. Knights
+    BitMask kn_mask = board_.fmgr().knight_mask(board_.color_);
+    for ( ; kn_mask; )
     {
+      int kn_pos = most_bit_number(kn_mask);
+
       // don't need to verify capture possibility by mask
-      uint64 f_caps = board_.g_movesTable->caps(fig.getType(), fig.where()) & oppenent_mask;
+      uint64 f_caps = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos) & oppenent_mask;
       for ( ; f_caps; )
       {
         int to = least_bit_number(f_caps);
@@ -228,33 +238,63 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
         THROW_IF( field.type() < minimalType_, "try to capture figure with score lower than required" );
 
-        add_capture(m, fig.where(), to, field.index(), 0);
+        add_capture(m, kn_pos, to, field.index(), 0);
       }
     }
-    else // other figures
+
+    // 3. Bishops + Rooks + Queens
+    for (int type = Figure::TypeBishop; type < Figure::TypeKing; ++type)
     {
-      uint64 f_caps = board_.g_movesTable->caps(fig.getType(), fig.where()) & oppenent_mask;
-      for ( ; f_caps; )
+      BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, board_.color_);
+      for ( ; fg_mask; )
       {
-        int8 to = least_bit_number(f_caps);
+        int fg_pos = most_bit_number(fg_mask);
 
-        const Field & field = board_.getField(to);
-        THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
+        uint64 f_caps = board_.g_movesTable->caps((Figure::Type)type, fg_pos) & oppenent_mask;
+        for ( ; f_caps; )
+        {
+          int8 to = least_bit_number(f_caps);
 
-        THROW_IF( field.type() < minimalType_, "try to capture figure " );
+          const Field & field = board_.getField(to);
+          THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
-        // can't go here
-        const uint64 & btw_msk = board_.g_betweenMasks->between(fig.where(), to);
-        if ( (btw_msk & mask_all_inv) != btw_msk )
-          continue;
+          THROW_IF( field.type() < minimalType_, "try to capture figure " );
 
-        add_capture(m, fig.where(), to, field.index(), 0);
+          // can't go here
+          const uint64 & btw_msk = board_.g_betweenMasks->between(fg_pos, to);
+          if ( (btw_msk & mask_all_inv) != btw_msk )
+            continue;
+
+          add_capture(m, fg_pos, to, field.index(), 0);
+        }
       }
     }
+  }
 
-	// only king's movements are available
-	if ( board_.checkingNum_ > 1 )
-		break;
+  // 4. King
+  {
+    BitMask ki_mask = board_.fmgr().king_mask(board_.color_);
+
+    THROW_IF( ki_mask == 0, "invalid position - no king" );
+
+    int ki_pos = least_bit_number(ki_mask);
+
+    // don't need to verify capture possibility by mask
+    uint64 f_caps = board_.g_movesTable->caps(Figure::TypeKing, ki_pos) & oppenent_mask;
+    for ( ; f_caps; )
+    {
+      int to = least_bit_number(f_caps);
+
+      THROW_IF( (unsigned)to > 63, "invalid field index while capture" );
+
+      const Field & field = board_.getField(to);
+
+      THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
+
+      THROW_IF( field.type() < minimalType_, "try to capture figure with score lower than required" );
+
+      add_capture(m, ki_pos, to, field.index(), 0);
+    }
   }
 
   return m;

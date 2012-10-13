@@ -24,12 +24,12 @@ public:
  //   return *(s_dirs_ + ((type<<9) | (color<<8) | u));
  // }
 
-  // from 'figure' to 'p'
-  inline int dir(const Figure & fig, int p) const
+  // from 'figure' with 'pos' to 'p'
+  inline int dir(const Figure::Type type, const Figure::Color color, int pos, int p) const
 	{
     THROW_IF( p < 0 || p > 63, "invalid point to get direction" );
-    unsigned u = (p << 6) | fig.where();
-		return *(s_dirs_ + ((fig.getType()<<13) | (fig.getColor()<<12) | u));
+    unsigned u = (p << 6) | pos;
+		return *(s_dirs_ + ((type<<13) | (color<<12) | u));
 	}
 
 	FigureDir();

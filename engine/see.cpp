@@ -535,9 +535,9 @@ bool Board::see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv,
   const Figure & king = getFigure((Figure::Color)kc, KingIndex);
 
   // are king and field we move from on the same line
-  Figure queen(king);
-  queen.setType(Figure::TypeQueen);
-  if ( g_figureDir->dir(queen, from) < 0 )
+  //Figure queen(king);
+  //queen.setType(Figure::TypeQueen);
+  if ( g_figureDir->dir(Figure::TypeQueen, kc, king.where(), from) < 0 )
     return false;
 
   // is there some figure between king and field that we move from
@@ -553,8 +553,8 @@ bool Board::see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv,
     int n = least_bit_number(from_msk);
     const Field & afield = getField(n);
     THROW_IF( !afield, "see: no BRQ of opponents color" );
-    const Figure & fig = getFigure(afield.color(), afield.index());
-    int dir = g_figureDir->dir(fig, king.where());
+    //const Figure & fig = getFigure(afield.color(), afield.index());
+    int dir = g_figureDir->dir(afield.type(), afield.color(), n, king.where());
     if ( dir < 0 )
       continue;
 
@@ -579,9 +579,9 @@ bool Board::see_check2(Figure::Color kc, uint8 from, const BitMask & all_mask_in
     return false;
 
   // are king and field we move from on the same line
-  Figure queen(king);
-  queen.setType(Figure::TypeQueen);
-  if ( g_figureDir->dir(queen, from) < 0 )
+  //Figure queen(king);
+  //queen.setType(Figure::TypeQueen);
+  if ( g_figureDir->dir(Figure::TypeQueen, kc, king.where(), from) < 0 )
     return false;
 
   // is there some figure between king and field that we move from
@@ -618,7 +618,7 @@ bool Board::see_check2(Figure::Color kc, uint8 from, const BitMask & all_mask_in
   THROW_IF( fig.getType() < Figure::TypeBishop || fig.getType() > Figure::TypeQueen, "see: not appropriate attacker type" );
 
   // could figure attack king from it's position
-  if ( g_figureDir->dir(fig, king.where()) >= 0 )
+  if ( g_figureDir->dir(field.type(), field.color(), index, king.where()) >= 0 )
     return true;
 
   return false;

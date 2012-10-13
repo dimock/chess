@@ -27,7 +27,7 @@ bool Board::validMove(const Move & move) const
 
   THROW_IF( fig.where() != move.from_, "figure isn't on its fiels" );
 
-  int dir = g_figureDir->dir(fig, move.to_);
+  int dir = g_figureDir->dir(ffrom.type(), color_, move.from_, move.to_);
   if ( dir < 0 )
     return false;
 

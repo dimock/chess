@@ -69,23 +69,27 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         uint64 all_but_king_mask = ~mask_all | (1ULL << king.where());
         if ( board_.castling(board_.color_, 0) && !board_.getField(fig.where()+2) ) // short
         {
-          const Field & rfield = board_.getField(board_.color_ ? 7 : 63);
+          int r_pos = board_.color_ ? 7 : 63;
+          const Field & rfield = board_.getField(r_pos);
           THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
-          Figure rook = board_.getFigure(board_.color_, rfield.index());
-          rook.go(rook.where()-2);
-          uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
-          if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
+          //Figure rook = board_.getFigure(board_.color_, rfield.index());
+          //rook.go(rook.where()-2);
+          int r_pos_to = r_pos - 2;
+          uint64 rk_mask = board_.g_betweenMasks->between(r_pos_to, oking.where());
+          if ( board_.g_figureDir->dir(Figure::TypeRook, board_.color_, r_pos_to, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
             add_check(m, fig.where(), fig.where()+2, -1, Figure::TypeNone, discovered);
         }
 
         if ( board_.castling(board_.color_, 1) && !board_.getField(fig.where()-2) ) // long
         {
-          const Field & rfield = board_.getField(board_.color_ ? 0 : 56);
+          int r_pos = board_.color_ ? 0 : 56;
+          const Field & rfield = board_.getField(r_pos);
           THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
-          Figure rook = board_.getFigure(board_.color_, rfield.index());
-          rook.go(rook.where()+3);
-          uint64 rk_mask = board_.g_betweenMasks->between(rook.where(), oking.where());
-          if ( board_.g_figureDir->dir(rook, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
+          //Figure rook = board_.getFigure(board_.color_, rfield.index());
+          //rook.go(rook.where()+3);
+          int r_pos_to = r_pos + 3;
+          uint64 rk_mask = board_.g_betweenMasks->between(r_pos_to, oking.where());
+          if ( board_.g_figureDir->dir(Figure::TypeRook, board_.color_, r_pos_to, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
             add_check(m, fig.where(), fig.where()-2, -1, Figure::TypeNone, discovered);
         }
       }

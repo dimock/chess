@@ -636,11 +636,11 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
       THROW_IF( !fig || !(fig.getType() == Figure::TypeBishop || fig.getType() == Figure::TypeRook || fig.getType() == Figure::TypeQueen), "capturing figure not found" );
 
       // can fig go to cfig's field
-      int dir = board_.g_figureDir->dir(fig, cfig.where());
+      int dir = board_.g_figureDir->dir(field.type(), board_.color_, n, cfig.where());
       if ( dir < 0 )
         continue;
 
-      const uint64 & btw_msk = board_.g_betweenMasks->between(fig.where(), cfig.where());
+      const uint64 & btw_msk = board_.g_betweenMasks->between(n/*fig.where()*/, cfig.where());
       if ( (btw_msk & mask_all_inv) != btw_msk )
         continue;
 
@@ -654,58 +654,69 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
   if ( Figure::TypePawn != cfig.getType() && Figure::TypeKnight != cfig.getType()&& protect_king_msk )
   {
-    for (int n = 0; n < Board::KingIndex; ++n)
+    // 1. Pawns
+    BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
+    for ( ; pw_mask; )
     {
-      const Figure & fig = board_.getFigure(color, n);
-      if ( !fig )
-        continue;
+      int pw_pos = most_bit_number(pw_mask);
 
-      if ( Figure::TypePawn == fig.getType() )
+      // +2 - skip captures
+      const int8 * table = board_.g_movesTable->pawn(color, pw_pos) + 2;
+
+      for (; *table >= 0 && !board_.getField(*table); ++table)
       {
-        // +2 - skip captures
-        const int8 * table = board_.g_movesTable->pawn(color, fig.where()) + 2;
+        if ( !(protect_king_msk & (1ULL << *table)) )
+          continue;
 
-        for (; *table >= 0 && !board_.getField(*table); ++table)
+        bool promotion = *table > 55 || *table < 8;
+
+        int m0 = m;
+        if ( add_escape(m, pw_pos, *table, -1, promotion ? Figure::TypeQueen : 0) && promotion )
         {
-          if ( !(protect_king_msk & (1ULL << *table)) )
-            continue;
+          Move & move = escapes_[m0];
 
-          bool promotion = *table > 55 || *table < 8;
+          escapes_[m] = move;
+          escapes_[m++].new_type_ = Figure::TypeRook;
 
-          int m0 = m;
-          if ( add_escape(m, fig.where(), *table, -1, promotion ? Figure::TypeQueen : 0) && promotion )
-          {
-            Move & move = escapes_[m0];
+          escapes_[m] = move;
+          escapes_[m++].new_type_ = Figure::TypeBishop;
 
-            escapes_[m] = move;
-            escapes_[m++].new_type_ = Figure::TypeRook;
-
-            escapes_[m] = move;
-            escapes_[m++].new_type_ = Figure::TypeBishop;
-
-            escapes_[m] = move;
-            escapes_[m++].new_type_ = Figure::TypeKnight;
-          }
+          escapes_[m] = move;
+          escapes_[m++].new_type_ = Figure::TypeKnight;
         }
       }
-      else if ( fig.getType() == Figure::TypeKnight )
+    }
+
+
+    // 2. Knights
+    BitMask kn_mask = board_.fmgr().knight_mask(color);
+    for ( ; kn_mask; )
+    {
+      int kn_pos = most_bit_number(kn_mask);
+
+      const uint64 & knight_msk = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos);
+      uint64 msk_protect = protect_king_msk & knight_msk;
+      for ( ; msk_protect; )
       {
-        const uint64 & knight_msk = board_.g_movesTable->caps(fig.getType(), fig.where());
-        uint64 msk_protect = protect_king_msk & knight_msk;
-        for ( ; msk_protect; )
-        {
-          int n = least_bit_number(msk_protect);
+        int n = least_bit_number(msk_protect);
 
-          const Field & field = board_.getField(n);
+        const Field & field = board_.getField(n);
 
-          THROW_IF( field, "there is something between king and checking figure" );
+        THROW_IF( field, "there is something between king and checking figure" );
 
-          add_escape(m, fig.where(), n, -1, 0);
-        }
+        add_escape(m, kn_pos, n, -1, 0);
       }
-      else
+    }
+
+    // 3. Bishops + Rooks + Queens
+    for (int type = Figure::TypeBishop; type < Figure::TypeKing; ++type)
+    {
+      BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, color);
+      for ( ; fg_mask; )
       {
-        const uint64 & figure_msk = board_.g_movesTable->caps(fig.getType(), fig.where());
+        int fg_pos = most_bit_number(fg_mask);
+
+        const uint64 & figure_msk = board_.g_movesTable->caps(type, fg_pos);
         uint64 msk_protect = protect_king_msk & figure_msk;
 
         for ( ; msk_protect; )
@@ -716,13 +727,13 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
           THROW_IF( field, "there is something between king and checking figure" );
 
-          THROW_IF( board_.g_figureDir->dir(fig, n) < 0, "figure can't go to required field" );
+          THROW_IF( board_.g_figureDir->dir((Figure::Type)type, color, fg_pos, n) < 0, "figure can't go to required field" );
 
-          const uint64 & btw_msk = board_.g_betweenMasks->between(fig.where(), n);
+          const uint64 & btw_msk = board_.g_betweenMasks->between(fg_pos, n);
           if ( (btw_msk & mask_all_inv) != btw_msk )
             continue;
 
-          add_escape(m, fig.where(), n, -1, 0);
+          add_escape(m, fg_pos, n, -1, 0);
         }
       }
     }
