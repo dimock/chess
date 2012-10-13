@@ -388,7 +388,48 @@ private:
 
   // detect discovered check to king of 'kc' color
   bool see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const;
-  bool see_check2(Figure::Color kc, uint8 from, const BitMask & all_mask_inv, const BitMask & a_brq_mask) const;
+  
+  inline bool see_check2(Figure::Color kc, uint8 from, const BitMask & all_mask_inv, const BitMask & a_brq_mask) const
+  {
+    const Figure & king = getFigure((Figure::Color)kc, KingIndex);
+
+    // we need to check if there is some attacker on line to king
+    const BitMask & from_msk = g_betweenMasks->from(king.where(), from);
+
+    // no attachers at all
+    if ( !(a_brq_mask & from_msk) )
+      return false;
+
+    // is there some figure between king and field that we move from
+    BitMask all_mask_inv2 = (all_mask_inv | (1ULL << from));
+
+    if ( is_something_between(king.where(), from, all_mask_inv2) )
+      return false;
+
+    int index = find_first_index(king.where(), from, ~all_mask_inv2);
+    if ( index < 0 )
+      return false;
+
+    const Field & field = getField(index);
+
+    // figure is the same color as king
+    if ( field.color() == kc )
+      return false;
+
+    // figure have to be in updated BRQ mask
+    if ( !((1ULL<<index) & a_brq_mask) )
+      return false;
+
+    const Figure & fig = getFigure(field.color(), field.index());
+
+    THROW_IF( fig.getType() < Figure::TypeBishop || fig.getType() > Figure::TypeQueen, "see: not appropriate attacker type" );
+
+    // could figure attack king from it's position
+    if ( g_figureDir->dir(field.type(), field.color(), index, king.where()) >= 0 )
+      return true;
+
+    return false;
+  }
 
   /// clear board. remove all figures. reset all fields, number of moves etc...
   void clear();
@@ -491,6 +532,31 @@ private:
   // returns number of checking figures.
   // very slow. used only for initial validation
   int findCheckingFigures(Figure::Color color, int pos);
+
+  // find 1st figure on the whole semi-line given by direction 'from' -> 'to'
+  // mask gives all interesting figures
+  inline int find_first_index(int from, int to, const BitMask & mask) const
+  {    
+    BitMask mask_from = mask & g_betweenMasks->from(from, to);
+    if ( !mask_from )
+      return -1;
+
+    int index = -1;
+    if ( from < to ) // use LSB
+      index = find_lsb(mask_from);
+    else // MSB
+      index = find_msb(mask_from);
+
+    return index;
+  }
+
+  // check if there is some figure between 'from' and 'to'
+  // inv_mask - inverted mask of all interesting figures
+  inline bool is_something_between(int from, int to, const BitMask & inv_mask) const
+  {
+    const BitMask & btw_msk = g_betweenMasks->between(from, to);
+    return (btw_msk & inv_mask) != btw_msk;
+  }
 
 
   /// data

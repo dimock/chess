@@ -21,6 +21,8 @@ inline int pop_count(uint64 n)
 }
 
 #ifndef _M_X64
+
+// ALL OF THESE FUNCTIONS BELIEVE THAT mask ISN'T ZERO
 // return least significant bit index, clear it
 inline int least_bit_number(BitMask & mask)
 {
@@ -82,6 +84,56 @@ nxt:mov eax, DWORD ptr [edi]
     shl ebx, cl
     xor eax, ebx
     mov dword ptr [edi], eax
+
+end:mov dword ptr [n], ecx
+  }
+  return n;
+}
+
+// return least significant bit, don't change mask
+inline int find_lsb(const BitMask & mask)
+{
+  int n;
+  __asm
+  {
+    ; scan lower dword
+
+    mov edi, mask
+    mov eax, dword ptr [edi]
+    bsf ecx, eax
+    jnz end
+
+
+    ; scan upper dword
+
+    mov eax, dword ptr [edi+4]
+    bsf ecx, eax
+    add ecx, 32
+
+end:mov dword ptr [n], ecx
+  }
+  return n;
+}
+
+// return most significant bit, don't change mask
+inline int find_msb(const BitMask & mask)
+{
+  int n;
+  __asm
+  {
+    ; scan upper dword
+
+    mov edi, mask
+    mov eax, dword ptr [edi+4]
+    bsr ecx, eax
+    jz  nxt
+    add ecx, 32
+    jmp end
+
+    ; scan lower dword
+
+nxt:mov eax, DWORD ptr [edi]
+    bsr ecx, eax
 
 end:mov dword ptr [n], ecx
   }
@@ -153,6 +205,28 @@ inline int most_bit_number(uint64 & mask)
     _BitScanReverse64(&n, mask);
   THROW_IF( !b, "no bit found in nonzero number" );
   mask ^= 1ULL << n;
+  return n;
+}
+
+inline int find_lsb(const BitMask & mask)
+{
+  unsigned long n;
+#ifndef NDEBUG
+  uint8 b = 
+#endif
+    _BitScanForward64(&n, mask);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  return n;
+}
+
+inline int find_msb(const BitMask & mask)
+{
+  unsigned long n;
+#ifndef NDEBUG
+  uint8 b = 
+#endif
+    _BitScanReverse64(&n, mask);
+  THROW_IF( !b, "no bit found in nonzero number" );
   return n;
 }
 
