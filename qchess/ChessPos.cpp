@@ -72,7 +72,7 @@ bool ChessPosition::fromFEN(const char * fen)
   //if ( !vboard_.getColor() )
   //  imb = -imb;
   //Move m;
-  //m.set(49, 28, 4, 0, 0);
+  //m.set(27, 20, 0, 0, 0);
 
   //int score = vboard_.see_before(imb, m);
   //int score2 = vboard_.see_before2(imb, m);

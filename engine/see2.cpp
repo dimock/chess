@@ -43,8 +43,10 @@ int Board::see_before2(int initial_value, const Move & move) const
   uint64 brq_masks[2] = {0ULL, 0ULL};
 
   // pawn's movement without capture
-  if ( move.rindex_ < 0 && ffield.type() == Figure::TypePawn )
-    attackers[color][figsN[color]++] = Figure::TypePawn | (move.from_ << 8);
+  //if ( move.rindex_ < 0 && ffield.type() == Figure::TypePawn )
+
+  // put 'move' to 1st position
+  attackers[color][figsN[color]++] = ffield.type() | (move.from_ << 8);
 
   bool promotion = (move.to_ >> 3) == 0 || (move.to_ >> 3) == 7;
   BitMask all_mask = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
@@ -60,7 +62,8 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; pmask; )
     {
       int n = least_bit_number(pmask);
-      attackers[c][num++] = Figure::TypePawn | (n << 8);
+      if ( n != move.from_ )
+        attackers[c][num++] = Figure::TypePawn | (n << 8);
     }
 
     // knights
@@ -68,7 +71,8 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; nmask; )
     {
       int n = least_bit_number(nmask);
-      attackers[c][num++] = Figure::TypeKnight | (n << 8);
+      if ( n != move.from_ )
+        attackers[c][num++] = Figure::TypeKnight | (n << 8);
     }
   }
 
@@ -83,6 +87,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = least_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() == Figure::TypeBishop || field.type() == Figure::TypeQueen )
       {
@@ -108,6 +115,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = least_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() == Figure::TypeRook || field.type() == Figure::TypeQueen )
       {
@@ -117,21 +127,6 @@ int Board::see_before2(int initial_value, const Move & move) const
       }
       else if ( n != move.from_ ) // it isn't figure, that makes first 'move'
         break;
-//      {
-//        // because of promotion only, target field should be empty
-//        if ( getField(move.to_) )
-//          break;
-//
-//        // only pawn promotion is allowed
-//        // color should be white because of north dir
-//        if ( field.type() != Figure::TypePawn || field.color() != Figure::ColorWhite || n < 48 || n > 55 || (n&7) != (move.to_&7) )
-//          break;
-//
-//#ifndef NDEBUG
-//        int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
-//        THROW_IF( dir != 2, "pawns promotion only is accepted" );
-//#endif
-//      }
     }
   }
 
@@ -141,6 +136,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = least_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() == Figure::TypeBishop || field.type() == Figure::TypeQueen )
       {
@@ -167,6 +165,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = least_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() != Figure::TypeRook && field.type() != Figure::TypeQueen )
         break;
@@ -183,6 +184,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = most_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() == Figure::TypeBishop || field.type() == Figure::TypeQueen )
       {
@@ -209,6 +213,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = most_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() == Figure::TypeRook || field.type() == Figure::TypeQueen )
       {
@@ -218,21 +225,6 @@ int Board::see_before2(int initial_value, const Move & move) const
       }
       else if ( n != move.from_ ) // it isn't figure, that makes first 'move'
         break;
-//      {
-//        // because of promotion only, target field should be empty
-//        if ( getField(move.to_) )
-//          break;
-//
-//        // only pawn promotion is allowed
-//        // color should be black because of south dir
-//        if ( field.type() != Figure::TypePawn || field.color() != Figure::ColorBlack || n < 8 || n > 15 || (n&7) != (move.to_&7) )
-//          break;
-//
-//#ifndef NDEBUG
-//        int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
-//        THROW_IF( dir != 2, "pawns promotion only is accepted" );
-//#endif
-//      }
     }
   }
 
@@ -242,6 +234,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = most_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() == Figure::TypeBishop || field.type() == Figure::TypeQueen )
       {
@@ -268,6 +263,9 @@ int Board::see_before2(int initial_value, const Move & move) const
     for ( ; from_mask; )
     {
       int n = most_bit_number(from_mask);
+      if ( n == move.from_ )
+        continue;
+
       const Field & field = getField(n);
       if ( field.type() != Figure::TypeRook && field.type() != Figure::TypeQueen )
         break;
@@ -299,8 +297,11 @@ int Board::see_before2(int initial_value, const Move & move) const
     if ( kmask )
     {
       const Figure & king = getFigure((Figure::Color)c, KingIndex);
-      attackers[c][num++] = Figure::TypeKing | (king.where() << 8);
-      king_found[c] = true;
+      if ( king.where() != move.from_ )
+      {
+        attackers[c][num++] = Figure::TypeKing | (king.where() << 8);
+        king_found[c] = true;
+      }
     }
 
     attackers[c][num] = (uint16)-1;
@@ -318,23 +319,23 @@ int Board::see_before2(int initial_value, const Move & move) const
     return score_gain;
 
   // find 'move' and put it to the 1st position
-  bool found = false;
-  for (int i = 0; i < figsN[color]; ++i)
-  {
-    Figure::Type t =  (Figure::Type)(attackers[color][i] & 255);
-    uint8 pos = (attackers[color][i] >> 8) & 255;
-    if ( pos == move.from_ )
-    {
-      uint16 attc0 = attackers[color][i];
-      for (int j = i; j > 0; --j)
-        attackers[color][j] = attackers[color][j-1];
-      attackers[color][0] = attc0;
-      found = true;
-      break;
-    }
-  }
+  //bool found = false;
+  //for (int i = 0; i < figsN[color]; ++i)
+  //{
+  //  Figure::Type t =  (Figure::Type)(attackers[color][i] & 255);
+  //  uint8 pos = (attackers[color][i] >> 8) & 255;
+  //  if ( pos == move.from_ )
+  //  {
+  //    uint16 attc0 = attackers[color][i];
+  //    for (int j = i; j > 0; --j)
+  //      attackers[color][j] = attackers[color][j-1];
+  //    attackers[color][0] = attc0;
+  //    found = true;
+  //    break;
+  //  }
+  //}
 
-  THROW_IF( !found, "move wasn't found in list of moves" );
+  //THROW_IF( !found, "move wasn't found in list of moves" );
 
   // starting calculation
   int col = color;
