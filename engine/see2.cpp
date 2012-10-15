@@ -115,22 +115,23 @@ int Board::see_before2(int initial_value, const Move & move) const
         long_figures[field.color()][ty][long_N[field.color()][ty]] = n;
         long_N[field.color()][ty]++;
       }
-      else
-      {
-        // because of promotion only, target field should be empty
-        if ( getField(move.to_) )
-          break;
-
-        // only pawn promotion is allowed
-        // color should be white because of north dir
-        if ( field.type() != Figure::TypePawn || field.color() != Figure::ColorWhite || n < 48 || n > 55 || (n&7) != (move.to_&7) )
-          break;
-
-#ifndef NDEBUG
-        int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
-        THROW_IF( dir != 2, "pawns promotion only is accepted" );
-#endif
-      }
+      else if ( n != move.from_ ) // it isn't figure, that makes first 'move'
+        break;
+//      {
+//        // because of promotion only, target field should be empty
+//        if ( getField(move.to_) )
+//          break;
+//
+//        // only pawn promotion is allowed
+//        // color should be white because of north dir
+//        if ( field.type() != Figure::TypePawn || field.color() != Figure::ColorWhite || n < 48 || n > 55 || (n&7) != (move.to_&7) )
+//          break;
+//
+//#ifndef NDEBUG
+//        int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
+//        THROW_IF( dir != 2, "pawns promotion only is accepted" );
+//#endif
+//      }
     }
   }
 
@@ -152,6 +153,7 @@ int Board::see_before2(int initial_value, const Move & move) const
         if ( field.type() != Figure::TypePawn )
           break;
 
+        // capturing pawn
         int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
         if ( dir != 0 && dir != 1 )
           break;
@@ -193,6 +195,7 @@ int Board::see_before2(int initial_value, const Move & move) const
         if ( field.type() != Figure::TypePawn )
           break;
 
+        // capturing pawn
         int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
         if ( dir != 0 && dir != 1 )
           break;
@@ -213,22 +216,23 @@ int Board::see_before2(int initial_value, const Move & move) const
         long_figures[field.color()][ty][long_N[field.color()][ty]] = n;
         long_N[field.color()][ty]++;
       }
-      else
-      {
-        // because of promotion only, target field should be empty
-        if ( getField(move.to_) )
-          break;
-
-        // only pawn promotion is allowed
-        // color should be black because of south dir
-        if ( field.type() != Figure::TypePawn || field.color() != Figure::ColorBlack || n < 8 || n > 15 || (n&7) != (move.to_&7) )
-          break;
-
-#ifndef NDEBUG
-        int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
-        THROW_IF( dir != 2, "pawns promotion only is accepted" );
-#endif
-      }
+      else if ( n != move.from_ ) // it isn't figure, that makes first 'move'
+        break;
+//      {
+//        // because of promotion only, target field should be empty
+//        if ( getField(move.to_) )
+//          break;
+//
+//        // only pawn promotion is allowed
+//        // color should be black because of south dir
+//        if ( field.type() != Figure::TypePawn || field.color() != Figure::ColorBlack || n < 8 || n > 15 || (n&7) != (move.to_&7) )
+//          break;
+//
+//#ifndef NDEBUG
+//        int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
+//        THROW_IF( dir != 2, "pawns promotion only is accepted" );
+//#endif
+//      }
     }
   }
 
@@ -250,6 +254,7 @@ int Board::see_before2(int initial_value, const Move & move) const
         if ( field.type() != Figure::TypePawn )
           break;
 
+        // capturing pawn
         int dir = g_figureDir->dir(field.type(), field.color(), n, move.to_);
         if ( dir != 0 && dir != 1 )
           break;
