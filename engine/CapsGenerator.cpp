@@ -71,18 +71,20 @@ bool CapsGenerator::see(Move & move, int & see_gain)
   if ( !board_.getColor() )
     initial_balance = -initial_balance;
 
-  see_gain = board_.see_before(initial_balance, move);
+  see_gain = board_.see_before2(initial_balance, move);
+
 #ifndef NDEBUG
-  int see_gain2 = board_.see_before2(initial_balance, move);
-  //if ( see_gain != see_gain2 )
+  int see_gain1 = board_.see_before(initial_balance, move);
+  //if ( see_gain != see_gain1 )
   //{
   //  char fen[256];
   //  board_.toFEN(fen);
   //  std::ofstream of("see.bug.fen");
   //  of << std::string(fen) << std::endl;
   //}
-  THROW_IF(see_gain != see_gain2, "see_before2() failed" );
+  THROW_IF(see_gain != see_gain1, "see_before2() failed" );
 #endif
+
   return see_gain >= 0;
 }
 
