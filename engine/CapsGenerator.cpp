@@ -71,6 +71,10 @@ bool CapsGenerator::see(Move & move, int & see_gain)
     initial_balance = -initial_balance;
 
   see_gain = board_.see_before(initial_balance, move);
+#ifndef NDEBUG
+  int see_gain2 = board_.see_before2(initial_balance, move);
+  THROW_IF(see_gain != see_gain2, "see_before2() failed" );
+#endif
   return see_gain >= 0;
 }
 

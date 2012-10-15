@@ -218,9 +218,54 @@ BetweenMask::BetweenMask(DeltaPosCounter * deltaPoscounter)
       {
         FPos p = FPosIndexer::get(i) + dp;
 
-        for ( ; p ; p += dp)
+        for ( ; p; p += dp)
           s_from_[i][j] |= 1ULL << p.index();
       }
+    }
+
+    for (int j = 0; j < 8; ++j)
+    {
+      s_from_dir_[j][i] = 0;
+
+      FPos dp;
+      switch ( j+1 )
+      {
+      case nst::nw:
+        dp = FPos(-1, 1);
+        break;
+
+      case nst::no:
+        dp = FPos(0, 1);
+        break;
+
+      case nst::ne:
+        dp = FPos(1, 1);
+        break;
+
+      case nst::ea:
+        dp = FPos(1, 0);
+        break;
+
+      case nst::se:
+        dp = FPos(1, -1);
+        break;
+
+      case nst::so:
+        dp = FPos(0, -1);
+        break;
+
+      case nst::sw:
+        dp = FPos(-1, -1);
+        break;
+
+      case nst::we:
+        dp = FPos(-1, 0);
+        break;
+      }
+
+      FPos p = FPosIndexer::get(i) + dp;
+      for ( ; p; p += dp)
+        s_from_dir_[j][i] |= 1ULL << p.index();
     }
   }
 }

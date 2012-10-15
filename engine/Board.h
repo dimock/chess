@@ -382,6 +382,7 @@ public:
   // we try to do 'move'
   // almost the same as see(), need to be refactored
   int see_before(int initial_value, const Move & move) const;
+  int see_before2(int initial_value, const Move & move) const;
 
   /// methods
 private:

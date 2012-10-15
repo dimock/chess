@@ -368,27 +368,37 @@ public:
 class BetweenMask
 {
   // masks between two fields
-  uint64 s_between_[64][64];
+  BitMask s_between_[64][64];
 
-  // mask from field in given direction. until border
-  uint64 s_from_[64][64];
+  // mask 'from' field in direction 'to'. until border
+  BitMask s_from_[64][64];
+
+  // mask from field in given direction up to the border
+  BitMask s_from_dir_[8][64];
 
 public:
   
   BetweenMask(DeltaPosCounter *);
 
   // mask contains only bits BETWEEN from & to
-  inline const uint64 & between(int8 from, int8 to) const
+  inline const BitMask & between(int8 from, int8 to) const
   {
     THROW_IF( (uint8)from > 63 || (uint8)to > 63, "invalid positions given" );
     return s_between_[from][to];
   }
 
   // mask contains bits along from-to direction starting from and finishing at border
-  inline const uint64 & from(int8 from, int8 to) const
+  inline const BitMask & from(int8 from, int8 to) const
   {
     THROW_IF( (uint8)from > 63 || (uint8)to > 63, "invalid positions given" );
     return s_from_[from][to];
+  }
+
+  // mask contains bits from square in dir direction  up to the border
+  inline const BitMask & from_dir(int8 from, nst::dirs dir) const
+  {
+    THROW_IF( (uint8)from > 63 || (uint8)dir > 8 || dir == nst::no_dir, "invalid positions given" );
+    return s_from_dir_[(uint8)dir-1][from];
   }
 };
 

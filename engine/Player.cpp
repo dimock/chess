@@ -1603,6 +1603,10 @@ bool Player::see_cc(const Move & move) const
 
   // do winning capture/check
   int score_see = board_.see_before(initial_balance, move);
+#ifndef NDEBUG
+  int score_see2 = board_.see_before2(initial_balance, move);
+  THROW_IF(score_see != score_see2, "see_before2() failed" );
+#endif
   if ( score_see >= 0 )
     return true;
 

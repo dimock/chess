@@ -47,14 +47,14 @@ namespace nst
   enum dirs
   {
     no_dir,
-    nw,
-    no,
-    ne,
-    ea,
-    se,
-    so,
-    sw,
-    we
+    nw, // lsb
+    no, // lsb
+    ne, // lsb
+    ea, // lsb
+    se, // msb
+    so, // msb
+    sw, // msb
+    we  // msb
   };
 };
 
