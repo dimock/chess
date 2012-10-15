@@ -308,8 +308,10 @@ int Board::see_before(int initial_value, const Move & move) const
   uint64 brq_masks[2] = {0ULL, 0ULL};
 
   // pawn's movement without capture
-  if ( move.rindex_ < 0 && ffield.type() == Figure::TypePawn )
-    attackers[color][figsN[color]++] = Figure::TypePawn | (move.from_ << 8);
+  //if ( move.rindex_ < 0 && ffield.type() == Figure::TypePawn )
+
+  // push 1st move
+  attackers[color][figsN[color]++] = ffield.type() | (move.from_ << 8);
 
   for (int c = 0; c < 2; ++c)
   {
@@ -322,7 +324,8 @@ int Board::see_before(int initial_value, const Move & move) const
     for ( ; pmask; )
     {
       int n = least_bit_number(pmask);
-      attackers[c][num++] = Figure::TypePawn | (n << 8);
+      if ( n != move.from_ )
+        attackers[c][num++] = Figure::TypePawn | (n << 8);
     }
 
     // knights
@@ -330,7 +333,8 @@ int Board::see_before(int initial_value, const Move & move) const
     for ( ; nmask; )
     {
       int n = least_bit_number(nmask);
-      attackers[c][num++] = Figure::TypeKnight | (n << 8);
+      if ( n != move.from_ )
+        attackers[c][num++] = Figure::TypeKnight | (n << 8);
     }
 
     // bishops
@@ -338,7 +342,8 @@ int Board::see_before(int initial_value, const Move & move) const
     for ( ; bmask; )
     {
       int n = least_bit_number(bmask);
-      attackers[c][num++] = Figure::TypeBishop | (n << 8);
+      if ( n != move.from_ )
+        attackers[c][num++] = Figure::TypeBishop | (n << 8);
     }
 
     // rooks
@@ -346,7 +351,8 @@ int Board::see_before(int initial_value, const Move & move) const
     for ( ; rmask; )
     {
       int n = least_bit_number(rmask);
-      attackers[c][num++] = Figure::TypeRook | (n << 8);
+      if ( n != move.from_ )
+        attackers[c][num++] = Figure::TypeRook | (n << 8);
     }
 
     // queens
@@ -354,7 +360,8 @@ int Board::see_before(int initial_value, const Move & move) const
     for ( ; qmask; )
     {
       int n = least_bit_number(qmask);
-      attackers[c][num++] = Figure::TypeQueen | (n << 8);
+      if ( n != move.from_ )
+        attackers[c][num++] = Figure::TypeQueen | (n << 8);
     }
 
     // king
@@ -362,8 +369,11 @@ int Board::see_before(int initial_value, const Move & move) const
     if ( kmask )
     {
       const Figure & king = getFigure((Figure::Color)c, KingIndex);
-      attackers[c][num++] = Figure::TypeKing | (king.where() << 8);
-      king_found[c] = true;
+      if ( king.where() != move.from_ )
+      {
+        attackers[c][num++] = Figure::TypeKing | (king.where() << 8);
+        king_found[c] = true;
+      }
     }
 
     attackers[c][num] = (uint16)-1;
@@ -380,24 +390,24 @@ int Board::see_before(int initial_value, const Move & move) const
   if ( figsN[color] < 1 )
     return score_gain;
 
-  // find 'move' and put it to the 1st position
-  bool found = false;
-  for (int i = 0; i < figsN[color]; ++i)
-  {
-    Figure::Type t =  (Figure::Type)(attackers[color][i] & 255);
-    uint8 pos = (attackers[color][i] >> 8) & 255;
-    if ( pos == move.from_ )
-    {
-      uint16 attc0 = attackers[color][i];
-      for (int j = i; j > 0; --j)
-        attackers[color][j] = attackers[color][j-1];
-      attackers[color][0] = attc0;
-      found = true;
-      break;
-    }
-  }
+  //// find 'move' and put it to the 1st position
+  //bool found = false;
+  //for (int i = 0; i < figsN[color]; ++i)
+  //{
+  //  Figure::Type t =  (Figure::Type)(attackers[color][i] & 255);
+  //  uint8 pos = (attackers[color][i] >> 8) & 255;
+  //  if ( pos == move.from_ )
+  //  {
+  //    uint16 attc0 = attackers[color][i];
+  //    for (int j = i; j > 0; --j)
+  //      attackers[color][j] = attackers[color][j-1];
+  //    attackers[color][0] = attc0;
+  //    found = true;
+  //    break;
+  //  }
+  //}
 
-  THROW_IF( !found, "move wasn't found in list of moves" );
+  //THROW_IF( !found, "move wasn't found in list of moves" );
 
   // starting calculation
   int col = color;
@@ -445,9 +455,11 @@ int Board::see_before(int initial_value, const Move & move) const
       case Figure::TypeQueen:
         {
           // can go to target field
-          const uint64 & btw_mask = g_betweenMasks->between(pos, move.to_);
-          if ( (btw_mask & all_mask_inv) != btw_mask )
+          if ( is_something_between(pos, move.to_, all_mask_inv) )
             continue;
+          //const uint64 & btw_mask = g_betweenMasks->between(pos, move.to_);
+          //if ( (btw_mask & all_mask_inv) != btw_mask )
+          //  continue;
 
           bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
 
@@ -483,8 +495,9 @@ int Board::see_before(int initial_value, const Move & move) const
               check = true;
             else
             {
-              const uint64 & btw_mask = g_betweenMasks->between(opos, move.to_);
-              if ( (btw_mask & all_mask_inv) == btw_mask )
+              //const uint64 & btw_mask = g_betweenMasks->between(opos, move.to_);
+              //if ( (btw_mask & all_mask_inv) == btw_mask )
+              if ( !is_something_between(opos, move.to_, all_mask_inv) )
                 check = true;
             }
           }

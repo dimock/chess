@@ -71,10 +71,10 @@ bool CapsGenerator::see(Move & move, int & see_gain)
   if ( !board_.getColor() )
     initial_balance = -initial_balance;
 
-  see_gain = board_.see_before2(initial_balance, move);
+  see_gain = board_.see_before(initial_balance, move);
 
 #ifndef NDEBUG
-  int see_gain1 = board_.see_before(initial_balance, move);
+  int see_gain1 = board_.see_before2(initial_balance, move);
   //if ( see_gain != see_gain1 )
   //{
   //  char fen[256];

@@ -1603,10 +1603,10 @@ bool Player::see_cc(const Move & move) const
     initial_balance = -initial_balance;
 
   // do winning capture/check
-  int score_see = board_.see_before2(initial_balance, move);
+  int score_see = board_.see_before(initial_balance, move);
 
 #ifndef NDEBUG
-  int score_see1 = board_.see_before(initial_balance, move);
+  int score_see1 = board_.see_before2(initial_balance, move);
   //if ( score_see1 != score_see )
   //{
   //  char fen[256];

@@ -356,10 +356,10 @@ bool MovesGenerator::see(Move & move, int & see_gain)
   if ( !board_.getColor() )
     initial_balance = -initial_balance;
 
-  see_gain = board_.see_before2(initial_balance, move);
+  see_gain = board_.see_before(initial_balance, move);
 
 #ifndef NDEBUG
-  int see_gain1 = board_.see_before(initial_balance, move);
+  int see_gain1 = board_.see_before2(initial_balance, move);
   THROW_IF(see_gain != see_gain1, "see_before2() failed" );
 #endif
 
@@ -437,10 +437,10 @@ void EscapeGenerator::sort()
         if ( !board_.getColor() )
           initial_balance = -initial_balance;
 
-        int score_see = board_.see_before2(initial_balance, move);
+        int score_see = board_.see_before(initial_balance, move);
 
 #ifndef NDEBUG
-        int score_see1 = board_.see_before(initial_balance, move);
+        int score_see1 = board_.see_before2(initial_balance, move);
         THROW_IF(score_see != score_see1, "see_before2() failed" );
 #endif
 
@@ -456,10 +456,10 @@ void EscapeGenerator::sort()
       if ( !board_.getColor() )
         initial_balance = -initial_balance;
 
-      int score_see = board_.see_before2(initial_balance, move);
+      int score_see = board_.see_before(initial_balance, move);
 
 #ifndef NDEBUG
-      int score_see1 = board_.see_before(initial_balance, move);
+      int score_see1 = board_.see_before2(initial_balance, move);
       THROW_IF(score_see != score_see1, "see_before2() failed" );
 #endif
 
