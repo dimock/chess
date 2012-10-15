@@ -282,9 +282,9 @@ int Board::see_before(int initial_value, const Move & move) const
   Figure::Color ocolor = Figure::otherColor(color);
   Figure::Type ftype =  ffield.type();
 
-  // king
-  if ( ffield.type() == Figure::TypeKing )
-    return -Figure::WeightMat;
+  //// king
+  //if ( ffield.type() == Figure::TypeKing )
+  //  return -Figure::WeightMat;
 
   // en-passant
   if ( !tfield && ffield.type() == Figure::TypePawn && move.rindex_ >= 0 )
@@ -306,9 +306,6 @@ int Board::see_before(int initial_value, const Move & move) const
   int figsN[2] = {0, 0}; 
   bool king_found[2] = { false, false };
   uint64 brq_masks[2] = {0ULL, 0ULL};
-
-  // pawn's movement without capture
-  //if ( move.rindex_ < 0 && ffield.type() == Figure::TypePawn )
 
   // push 1st move
   attackers[color][figsN[color]++] = ffield.type() | (move.from_ << 8);
@@ -374,6 +371,11 @@ int Board::see_before(int initial_value, const Move & move) const
         attackers[c][num++] = Figure::TypeKing | (king.where() << 8);
         king_found[c] = true;
       }
+      else
+      {
+        // if king's movement is 1st its is last. we can't make recapture after it
+        num = 1;
+      }
     }
 
     attackers[c][num] = (uint16)-1;
@@ -389,25 +391,6 @@ int Board::see_before(int initial_value, const Move & move) const
 
   if ( figsN[color] < 1 )
     return score_gain;
-
-  //// find 'move' and put it to the 1st position
-  //bool found = false;
-  //for (int i = 0; i < figsN[color]; ++i)
-  //{
-  //  Figure::Type t =  (Figure::Type)(attackers[color][i] & 255);
-  //  uint8 pos = (attackers[color][i] >> 8) & 255;
-  //  if ( pos == move.from_ )
-  //  {
-  //    uint16 attc0 = attackers[color][i];
-  //    for (int j = i; j > 0; --j)
-  //      attackers[color][j] = attackers[color][j-1];
-  //    attackers[color][0] = attc0;
-  //    found = true;
-  //    break;
-  //  }
-  //}
-
-  //THROW_IF( !found, "move wasn't found in list of moves" );
 
   // starting calculation
   int col = color;
@@ -457,9 +440,6 @@ int Board::see_before(int initial_value, const Move & move) const
           // can go to target field
           if ( is_something_between(pos, move.to_, all_mask_inv) )
             continue;
-          //const uint64 & btw_mask = g_betweenMasks->between(pos, move.to_);
-          //if ( (btw_mask & all_mask_inv) != btw_mask )
-          //  continue;
 
           bool is_checking = see_check2((Figure::Color)col, (attackers[col][i] >> 8) & 255, all_mask_inv, brq_masks[(col+1)&1]);
 
@@ -495,8 +475,6 @@ int Board::see_before(int initial_value, const Move & move) const
               check = true;
             else
             {
-              //const uint64 & btw_mask = g_betweenMasks->between(opos, move.to_);
-              //if ( (btw_mask & all_mask_inv) == btw_mask )
               if ( !is_something_between(opos, move.to_, all_mask_inv) )
                 check = true;
             }

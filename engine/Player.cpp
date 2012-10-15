@@ -1605,17 +1605,17 @@ bool Player::see_cc(const Move & move) const
   // do winning capture/check
   int score_see = board_.see_before(initial_balance, move);
 
-#ifndef NDEBUG
-  int score_see1 = board_.see_before2(initial_balance, move);
-  //if ( score_see1 != score_see )
-  //{
-  //  char fen[256];
-  //  board_.toFEN(fen);
-  //  std::ofstream of("see.bug.fen");
-  //  of << std::string(fen) << std::endl;
-  //}
-  THROW_IF(score_see != score_see1, "see_before2() failed" );
-#endif
+//#ifndef NDEBUG
+//  int score_see1 = board_.see_before2(initial_balance, move);
+//  //if ( score_see1 != score_see )
+//  //{
+//  //  char fen[256];
+//  //  board_.toFEN(fen);
+//  //  std::ofstream of("see.bug.fen");
+//  //  of << std::string(fen) << std::endl;
+//  //}
+//  THROW_IF(score_see != score_see1, "see_before2() failed" );
+//#endif
 
   if ( score_see >= 0 )
     return true;
