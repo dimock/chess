@@ -204,7 +204,7 @@ ScoreType Figure::pawnGuarded_[2][8] = {
   int okx = oking.where() & 7;\
   for ( ; rook_mask; )\
   {\
-    int n = least_bit_number(rook_mask);\
+    int n = clear_lsb(rook_mask);\
     THROW_IF( (unsigned)n > 63, "invalid rook index" );\
     THROW_IF( getField(n).color() != clr || getField(n).type() != Figure::TypeRook, "there should be rook on given field" );\
     int x = n & 7;\
@@ -593,7 +593,7 @@ ScoreType Board::evaluateRooks(Figure::Color color) const
 	ScoreType score = 0;
 	for ( ; rook_mask; )
 	{
-		int n = least_bit_number(rook_mask);
+		int n = clear_lsb(rook_mask);
 
 		THROW_IF( (unsigned)n > 63, "invalid rook index" );
 		THROW_IF( getField(n).color() != color || getField(n).type() != Figure::TypeRook, "there should be rook on given field" );
@@ -807,7 +807,7 @@ ScoreType Board::evaluateWinnerLoser() const
     weight += Figure::bishopKnightMat_[kp];
 
     uint64 n_mask = fmgr_.knight_mask(win_color);
-    int np = least_bit_number(n_mask);
+    int np = clear_lsb(n_mask);
     THROW_IF( (unsigned)np > 63, "no knigt found" );
     int ndist = g_distanceCounter->getDistance(np, king_l.where());
     weight -= ndist >> 1;
@@ -830,7 +830,7 @@ ScoreType Board::evaluateWinnerLoser() const
       {
         weight = (MAX_PASSED_SCORE);
         uint64 pwmask = fmgr_.pawn_mask_o(win_color);
-        int pp = least_bit_number(pwmask);
+        int pp = clear_lsb(pwmask);
         int x = pp & 7;
         int y = pp >> 3;
         if ( !win_color )
@@ -861,7 +861,7 @@ ScoreType Board::evaluateWinnerLoser() const
     if ( fmgr_.pawns(win_color) == 1 )
     {
       uint64 pwmsk = fmgr_.pawn_mask_o(win_color);
-      int pp = least_bit_number(pwmsk);
+      int pp = clear_lsb(pwmsk);
       THROW_IF( (unsigned)pp > 63, "no pawn found" );
 
       int ykl = king_l.where() >> 3;

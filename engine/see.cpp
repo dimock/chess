@@ -54,7 +54,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
     uint64 pmask = fmgr_.pawn_mask_o((Figure::Color)c) & g_movesTable->pawnCaps_o((Figure::Color)((c+1)&1), move.to_);
     for ( ; pmask; )
     {
-      int n = least_bit_number(pmask);
+      int n = clear_lsb(pmask);
       attackers[c][num++] = Figure::TypePawn | (n << 8);
     }
 
@@ -62,7 +62,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
     uint64 nmask = fmgr_.knight_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeKnight, move.to_);
     for ( ; nmask; )
     {
-      int n = least_bit_number(nmask);
+      int n = clear_lsb(nmask);
       attackers[c][num++] = Figure::TypeKnight | (n << 8);
     }
 
@@ -70,7 +70,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
     uint64 bmask = fmgr_.bishop_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeBishop, move.to_);
     for ( ; bmask; )
     {
-      int n = least_bit_number(bmask);
+      int n = clear_lsb(bmask);
       attackers[c][num++] = Figure::TypeBishop | (n << 8);
     }
 
@@ -78,7 +78,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
     uint64 rmask = fmgr_.rook_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeRook, move.to_);
     for ( ; rmask; )
     {
-      int n = least_bit_number(rmask);
+      int n = clear_lsb(rmask);
       attackers[c][num++] = Figure::TypeRook | (n << 8);
     }
 
@@ -86,7 +86,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
     uint64 qmask = fmgr_.queen_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeQueen, move.to_);
     for ( ; qmask; )
     {
-      int n = least_bit_number(qmask);
+      int n = clear_lsb(qmask);
       attackers[c][num++] = Figure::TypeQueen | (n << 8);
     }
 
@@ -320,7 +320,7 @@ int Board::see_before(int initial_value, const Move & move) const
     uint64 pmask = fmgr_.pawn_mask_o((Figure::Color)c) & g_movesTable->pawnCaps_o((Figure::Color)((c+1)&1), move.to_);
     for ( ; pmask; )
     {
-      int n = least_bit_number(pmask);
+      int n = clear_lsb(pmask);
       if ( n != move.from_ )
         attackers[c][num++] = Figure::TypePawn | (n << 8);
     }
@@ -329,7 +329,7 @@ int Board::see_before(int initial_value, const Move & move) const
     uint64 nmask = fmgr_.knight_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeKnight, move.to_);
     for ( ; nmask; )
     {
-      int n = least_bit_number(nmask);
+      int n = clear_lsb(nmask);
       if ( n != move.from_ )
         attackers[c][num++] = Figure::TypeKnight | (n << 8);
     }
@@ -338,7 +338,7 @@ int Board::see_before(int initial_value, const Move & move) const
     uint64 bmask = fmgr_.bishop_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeBishop, move.to_);
     for ( ; bmask; )
     {
-      int n = least_bit_number(bmask);
+      int n = clear_lsb(bmask);
       if ( n != move.from_ )
         attackers[c][num++] = Figure::TypeBishop | (n << 8);
     }
@@ -347,7 +347,7 @@ int Board::see_before(int initial_value, const Move & move) const
     uint64 rmask = fmgr_.rook_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeRook, move.to_);
     for ( ; rmask; )
     {
-      int n = least_bit_number(rmask);
+      int n = clear_lsb(rmask);
       if ( n != move.from_ )
         attackers[c][num++] = Figure::TypeRook | (n << 8);
     }
@@ -356,7 +356,7 @@ int Board::see_before(int initial_value, const Move & move) const
     uint64 qmask = fmgr_.queen_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeQueen, move.to_);
     for ( ; qmask; )
     {
-      int n = least_bit_number(qmask);
+      int n = clear_lsb(qmask);
       if ( n != move.from_ )
         attackers[c][num++] = Figure::TypeQueen | (n << 8);
     }
@@ -562,7 +562,7 @@ bool Board::see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv,
   uint64 from_msk = g_betweenMasks->from(king.where(), from) & a_brq_mask;
   for ( ; from_msk; )
   {
-    int n = least_bit_number(from_msk);
+    int n = clear_lsb(from_msk);
     const Field & afield = getField(n);
     THROW_IF( !afield, "see: no BRQ of opponents color" );
     //const Figure & fig = getFigure(afield.color(), afield.index());

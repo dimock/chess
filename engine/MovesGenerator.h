@@ -288,30 +288,47 @@ public:
 
 private:
 
-  inline bool discoveredCheck(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, const Figure & oking)
+  inline bool discoveredCheck(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, int oki_pos)
   {
     bool checking = false;
     uint64 from_msk_inv = ~(1ULL << pt);
-    uint64 chk_msk = board_.g_betweenMasks->from(oking.where(), pt) & (brq_mask & from_msk_inv);
+    uint64 chk_msk = board_.g_betweenMasks->from(oki_pos, pt) & (brq_mask & from_msk_inv);
     uint64 mask_all_inv_ex = ~(mask_all & from_msk_inv);
     for ( ; !checking && chk_msk; )
     {
-      int n = least_bit_number(chk_msk);
+      int n = clear_lsb(chk_msk);
 
       const Field & field = board_.getField(n);
       THROW_IF( !field || field.color() != board_.color_, "invalid checking figure found" );
 
       const Figure & cfig = board_.getFigure(board_.color_, field.index());
-      if ( board_.g_figureDir->dir(cfig.getType(), cfig.getColor(), cfig.where(), oking.where()) < 0 )
+      if ( board_.g_figureDir->dir(cfig.getType(), cfig.getColor(), cfig.where(), oki_pos) < 0 )
         continue;
 
-      const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oking.where());
+      const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oki_pos);
       if ( (btw_msk & mask_all_inv_ex) != btw_msk )
         continue;
 
       checking = true;
     }
     return checking;
+  }
+
+  inline bool discoveredCheck2(int8 pt, const uint64 & mask_all, int oki_pos)
+  {
+    BitMask from_msk = board_.g_betweenMasks->from(oki_pos, pt);
+    BitMask mask_all_ex = mask_all & ~(1ULL << pt);
+    mask_all_ex &= from_msk;
+    if ( !mask_all_ex )
+      return false;
+
+    int index = oki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    const Field & afield = board_.getField(index);
+    if ( afield.color() != board_.color_ || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
+      return false;
+
+    int dir = board_.g_figureDir->dir(afield.type(), afield.color(), index, oki_pos);
+    return dir >= 0;
   }
 
   int generate(ScoreType & alpha, ScoreType betta, int & counter);

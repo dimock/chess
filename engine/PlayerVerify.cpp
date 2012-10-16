@@ -153,16 +153,27 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
     {
       if ( move.new_type_ == Figure::TypeQueen || !move.new_type_ )
         legal[n++] = move;
-      else if ( move.new_type_ == Figure::TypeKnight && board_.getNumOfChecking() == 1 )
+      else if ( move.new_type_ == Figure::TypeKnight )
       {
         const Field & ffield = board_.getField(move.to_);
         THROW_IF( ffield.color() == board_.color_ || ffield.type() != Figure::TypeKnight, "invalid color or type of promoted knight" );
-        const Figure & knight = board_.getFigure(Figure::otherColor(board_.color_), ffield.index());
-        THROW_IF( knight.getType() != Figure::TypeKnight || knight.getColor() != Figure::otherColor(board_.color_), "invalid promotion to knight in check generator" );
-        const Figure & oking = board_.getFigure(board_.color_, Board::KingIndex);
-        int dir = board_.g_figureDir->dir(knight, oking.where());
-        if ( dir >= 0 )
-          legal[n++] = move;
+        bool checkingKnight = false;
+        for (int j = 0; j < board_.checkingNum_; ++j)
+        {
+          if ( board_.checking_[j] == ffield.index() )
+          {
+            checkingKnight = true;
+          }
+        }
+        if ( checkingKnight )
+        {
+          const Figure & knight = board_.getFigure(Figure::otherColor(board_.color_), ffield.index());
+          THROW_IF( knight.getType() != Figure::TypeKnight || knight.getColor() != Figure::otherColor(board_.color_), "invalid promotion to knight in check generator" );
+          const Figure & oking = board_.getFigure(board_.color_, Board::KingIndex);
+          int dir = board_.g_figureDir->dir(knight, oking.where());
+          if ( dir >= 0 )
+            legal[n++] = move;
+        }
       }
     }
 

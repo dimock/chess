@@ -84,7 +84,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
       for ( ; pw_mask; )
       {
-        int pw_pos = least_bit_number(pw_mask);
+        int pw_pos = clear_lsb(pw_mask);
 
         const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
 
@@ -173,7 +173,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       BitMask kn_mask = board_.fmgr().knight_mask(color);
       for ( ; kn_mask; )
       {
-        int kn_pos = least_bit_number(kn_mask);
+        int kn_pos = clear_lsb(kn_mask);
 
         const int8 * table = board_.g_movesTable->knight(kn_pos);
 
@@ -200,7 +200,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       for ( ; fg_mask; )
       {
-        int fg_pos = least_bit_number(fg_mask);
+        int fg_pos = clear_lsb(fg_mask);
 
         const uint16 * table = board_.g_movesTable->move(type-Figure::TypeBishop, fg_pos);
 
@@ -238,7 +238,7 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     
     THROW_IF( ki_mask == 0, "invalid position - no king" );
 
-    int ki_pos = least_bit_number(ki_mask);
+    int ki_pos = clear_lsb(ki_mask);
 
     const int8 * table = board_.g_movesTable->king(ki_pos);
 
@@ -564,7 +564,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
       for ( ; eat_msk_ep; )
       {
-        int n = least_bit_number(eat_msk_ep);
+        int n = clear_lsb(eat_msk_ep);
 
         const Field & fpawn = board_.getField(n);
         
@@ -586,7 +586,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
     for ( ; eat_msk; )
     {
-      int n = least_bit_number(eat_msk);
+      int n = clear_lsb(eat_msk);
 
       const Field & fpawn = board_.getField(n);
 
@@ -621,7 +621,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
     for ( ; eat_msk; )
     {
-      int n = least_bit_number(eat_msk);
+      int n = clear_lsb(eat_msk);
 
       const Field & fknight = board_.getField(n);
 
@@ -643,7 +643,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
 
     for ( ; eat_msk; )
     {
-      int n = least_bit_number(eat_msk);
+      int n = clear_lsb(eat_msk);
 
       const Field & field = board_.getField(n);
 
@@ -676,7 +676,7 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
     BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
     for ( ; pw_mask; )
     {
-      int pw_pos = most_bit_number(pw_mask);
+      int pw_pos = clear_msb(pw_mask);
 
       // +2 - skip captures
       const int8 * table = board_.g_movesTable->pawn(color, pw_pos) + 2;
@@ -710,13 +710,13 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
     BitMask kn_mask = board_.fmgr().knight_mask(color);
     for ( ; kn_mask; )
     {
-      int kn_pos = most_bit_number(kn_mask);
+      int kn_pos = clear_msb(kn_mask);
 
       const uint64 & knight_msk = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos);
       uint64 msk_protect = protect_king_msk & knight_msk;
       for ( ; msk_protect; )
       {
-        int n = least_bit_number(msk_protect);
+        int n = clear_lsb(msk_protect);
 
         const Field & field = board_.getField(n);
 
@@ -732,14 +732,14 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
       BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, color);
       for ( ; fg_mask; )
       {
-        int fg_pos = most_bit_number(fg_mask);
+        int fg_pos = clear_msb(fg_mask);
 
         const uint64 & figure_msk = board_.g_movesTable->caps(type, fg_pos);
         uint64 msk_protect = protect_king_msk & figure_msk;
 
         for ( ; msk_protect; )
         {
-          int n = least_bit_number(msk_protect);
+          int n = clear_lsb(msk_protect);
 
           const Field & field = board_.getField(n);
 

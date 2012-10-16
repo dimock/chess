@@ -28,80 +28,93 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   Figure::Color color  = board_.getColor();
   Figure::Color ocolor = Figure::otherColor(color);
 
-  const Figure & king  = board_.getFigure(color, Board::KingIndex);
-  const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
-  uint64 brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
-  const uint64 & pw_check_mask = board_.g_movesTable->pawnCaps_o(ocolor, oking.where());
-  const uint64 & knight_check_mask = board_.g_movesTable->caps(Figure::TypeKnight, oking.where());
-  const uint64 & black = board_.fmgr_.mask(Figure::ColorBlack);
-  const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
-  uint64 mask_all = white | black;
+  const BitMask & oki_mask = board_.fmgr().king_mask(ocolor);
+  int oki_pos = find_lsb(oki_mask);
 
-  const uint64 & kn_check_mask = board_.g_movesTable->caps(Figure::TypeKnight, oking.where());
-  for (int i = 0; i < Board::NumOfFigures; ++i)
+  BitMask brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
+  const BitMask & pw_check_mask = board_.g_movesTable->pawnCaps_o(ocolor, oki_pos);
+  const BitMask & knight_check_mask = board_.g_movesTable->caps(Figure::TypeKnight, oki_pos);
+  const BitMask & black = board_.fmgr_.mask(Figure::ColorBlack);
+  const BitMask & white = board_.fmgr_.mask(Figure::ColorWhite);
+  BitMask mask_all = white | black;
+
+  const BitMask & kn_check_mask = board_.g_movesTable->caps(Figure::TypeKnight, oki_pos);
+
+
+  // 1. King
   {
-    const Figure & fig = board_.getFigure(board_.color_, i);
-    if ( !fig )
-      continue;
+    const BitMask & ki_mask = board_.fmgr().king_mask(color);
+    int ki_pos = find_lsb(ki_mask);
 
     // figure opens line between attacker and king
-    bool discovered = discoveredCheck(fig.where(), mask_all, brq_mask, oking);
+    bool discovered = discoveredCheck(ki_pos, mask_all, brq_mask, oki_pos);
 
-    switch ( fig.getType() )
+#ifndef NDEBUG
+    bool discovered2 = discoveredCheck2(ki_pos, mask_all, oki_pos);
+    THROW_IF( discovered != discovered2, "error in discoveredCheck2()" );
+#endif
+
+    if ( discovered )
     {
-    case Figure::TypeKing:
+      const int8 * table = board_.g_movesTable->king(ki_pos);
+
+      for (; *table >= 0; ++table)
       {
-        if ( discovered )
-        {
-          const int8 * table = board_.g_movesTable->king(fig.where());
+        const Field & field = board_.getField(*table);
+        if ( field && (field.color() == color || field.type() >= minimalType_) )
+          continue;
 
-          for (; *table >= 0; ++table)
-          {
-            const Field & field = board_.getField(*table);
-            if ( field && (field.color() == color || field.type() >= minimalType_) )
-              continue;
-
-            add_check(m, fig.where(), *table, field ? field.index() : -1, Figure::TypeNone, discovered);
-          }
-        }
-
-        // castling also could be with check
-        uint64 all_but_king_mask = ~mask_all | (1ULL << king.where());
-        if ( board_.castling(board_.color_, 0) && !board_.getField(fig.where()+2) ) // short
-        {
-          int r_pos = board_.color_ ? 7 : 63;
-          const Field & rfield = board_.getField(r_pos);
-          THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
-          //Figure rook = board_.getFigure(board_.color_, rfield.index());
-          //rook.go(rook.where()-2);
-          int r_pos_to = r_pos - 2;
-          uint64 rk_mask = board_.g_betweenMasks->between(r_pos_to, oking.where());
-          if ( board_.g_figureDir->dir(Figure::TypeRook, board_.color_, r_pos_to, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
-            add_check(m, fig.where(), fig.where()+2, -1, Figure::TypeNone, discovered);
-        }
-
-        if ( board_.castling(board_.color_, 1) && !board_.getField(fig.where()-2) ) // long
-        {
-          int r_pos = board_.color_ ? 0 : 56;
-          const Field & rfield = board_.getField(r_pos);
-          THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
-          //Figure rook = board_.getFigure(board_.color_, rfield.index());
-          //rook.go(rook.where()+3);
-          int r_pos_to = r_pos + 3;
-          uint64 rk_mask = board_.g_betweenMasks->between(r_pos_to, oking.where());
-          if ( board_.g_figureDir->dir(Figure::TypeRook, board_.color_, r_pos_to, oking.where()) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
-            add_check(m, fig.where(), fig.where()-2, -1, Figure::TypeNone, discovered);
-        }
+        add_check(m, ki_pos, *table, field ? field.index() : -1, Figure::TypeNone, discovered);
       }
-      break;
+    }
 
-    case Figure::TypeBishop:
-    case Figure::TypeRook:
-    case Figure::TypeQueen:
+    // castling also could be with check
+    BitMask all_but_king_mask = ~mask_all | (1ULL << ki_pos);
+    if ( board_.castling(board_.color_, 0) && !board_.getField(ki_pos+2) ) // short
+    {
+      int r_pos = board_.color_ ? 7 : 63;
+      const Field & rfield = board_.getField(r_pos);
+      THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
+      int r_pos_to = r_pos - 2;
+      BitMask rk_mask = board_.g_betweenMasks->between(r_pos_to, oki_pos);
+      if ( board_.g_figureDir->dir(Figure::TypeRook, board_.color_, r_pos_to, oki_pos) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
       {
+        add_check(m, ki_pos, ki_pos+2, -1, Figure::TypeNone, discovered);
+      }
+    }
+
+    if ( board_.castling(board_.color_, 1) && !board_.getField(ki_pos-2) ) // long
+    {
+      int r_pos = board_.color_ ? 0 : 56;
+      const Field & rfield = board_.getField(r_pos);
+      THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
+      int r_pos_to = r_pos + 3;
+      BitMask rk_mask = board_.g_betweenMasks->between(r_pos_to, oki_pos);
+      if ( board_.g_figureDir->dir(Figure::TypeRook, board_.color_, r_pos_to, oki_pos) >= 0 && (rk_mask & all_but_king_mask) == rk_mask )
+        add_check(m, ki_pos, ki_pos-2, -1, Figure::TypeNone, discovered);
+    }
+  }
+
+  // 2. Bishop + Rook + Queen
+  {
+    for (int t = Figure::TypeBishop; t < Figure::TypeKing; ++t)
+    {
+      Figure::Type type = (Figure::Type)t;
+      BitMask fg_mask = board_.fmgr().type_mask(type, color);
+
+      for ( ; fg_mask; )
+      {
+        int fg_pos = clear_lsb(fg_mask);
+        bool discovered = discoveredCheck(fg_pos, mask_all, brq_mask, oki_pos);
+
+#ifndef NDEBUG
+        bool discovered2 = discoveredCheck2(fg_pos, mask_all, oki_pos);
+        THROW_IF( discovered != discovered2, "error in discoveredCheck2()" );
+#endif
+
         if ( discovered )
         {
-          const uint16 * table = board_.g_movesTable->move(fig.getType()-Figure::TypeBishop, fig.where());
+          const uint16 * table = board_.g_movesTable->move(type-Figure::TypeBishop, fg_pos);
 
           for (; *table; ++table)
           {
@@ -109,7 +122,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
             int8 count = packed[0];
             int8 delta = packed[1];
 
-            int8 p = fig.where();
+            int8 p = fg_pos;
             for ( ; count; --count)
             {
               p += delta;
@@ -118,7 +131,7 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               if ( field && (field.color() == color || field.type() >= minimalType_) )
                 break;
 
-              add_check(m, fig.where(), p, field ? field.index() : -1, Figure::TypeNone, discovered);
+              add_check(m, fg_pos, p, field ? field.index() : -1, Figure::TypeNone, discovered);
 
               if ( field )
                 break;
@@ -127,129 +140,152 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         }
         else
         {
-          uint64 mask_all_inv_ex = ~(mask_all & ~(1ULL << fig.where()));
-          uint64 f_msk = board_.g_movesTable->caps(fig.getType(), fig.where()) & board_.g_movesTable->caps(fig.getType(), oking.where());
+          BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << fg_pos));
+          BitMask f_msk = board_.g_movesTable->caps(type, fg_pos) & board_.g_movesTable->caps(type, oki_pos);
           for ( ; f_msk; )
           {
-            int to = least_bit_number(f_msk);
+            int to = clear_lsb(f_msk);
 
             const Field & field = board_.getField(to);
             if ( field && (field.color() == color || field.type() >= minimalType_) )
               continue;
 
             // can we check from this position?
-            const uint64 & btw_msk_k = board_.g_betweenMasks->between(to, oking.where());
-            if ( (btw_msk_k & mask_all_inv_ex) != btw_msk_k )
+            if ( board_.is_something_between(to, oki_pos, mask_all_inv_ex) )
               continue;
 
             // can we go to this position?
-            const uint64 & btw_msk_f = board_.g_betweenMasks->between(to, fig.where());
-            if ( (btw_msk_f & mask_all_inv_ex) != btw_msk_f )
+            if ( board_.is_something_between(to, fg_pos, mask_all_inv_ex) )
               continue;
 
-            add_check(m, fig.where(), to, field ? field.index() : -1, Figure::TypeNone, discovered);
+            add_check(m, fg_pos, to, field ? field.index() : -1, Figure::TypeNone, discovered);
           }
         }
       }
-      break;
+    }
+  }
 
-    case Figure::TypeKnight:
+  // 3. Knight
+  {
+    BitMask kn_mask = board_.fmgr().knight_mask(color);
+    for ( ; kn_mask; )
+    {
+      int kn_pos = clear_lsb(kn_mask);
+      bool discovered = discoveredCheck(kn_pos, mask_all, brq_mask, oki_pos);
+
+#ifndef NDEBUG
+      bool discovered2 = discoveredCheck2(kn_pos, mask_all, oki_pos);
+      THROW_IF( discovered != discovered2, "error in discoveredCheck2()" );
+#endif
+
+      if ( discovered )
       {
-        if ( discovered )
+        const int8 * table = board_.g_movesTable->knight(kn_pos);
+
+        for (; *table >= 0; ++table)
         {
-          const int8 * table = board_.g_movesTable->knight(fig.where());
+          const Field & field = board_.getField(*table);
+          if ( field && (field.color() == color || field.type() >= minimalType_) )
+            continue;
 
-          for (; *table >= 0; ++table)
-          {
-            const Field & field = board_.getField(*table);
-            if ( field && (field.color() == color || field.type() >= minimalType_) )
-              continue;
-
-            add_check(m, fig.where(), *table, field ? field.index() : -1, Figure::TypeNone, discovered);
-          }
-        }
-        else
-        {
-          uint64 kn_msk = board_.g_movesTable->caps(Figure::TypeKnight, fig.where()) & knight_check_mask;
-          for ( ; kn_msk; )
-          {
-            int to = least_bit_number(kn_msk);
-
-            const Field & field = board_.getField(to);
-            if ( field && (field.color() == color || field.type() >= minimalType_))
-              continue;
-
-            add_check(m, fig.where(), to, field ? field.index() : -1, Figure::TypeNone, discovered);
-          }
+          add_check(m, kn_pos, *table, field ? field.index() : -1, Figure::TypeNone, discovered);
         }
       }
-      break;
-
-    case Figure::TypePawn:
+      else
       {
-        const int8 * table = board_.g_movesTable->pawn(color, fig.where());
-        for (int i = 0; i < 4; ++i, ++table)
+        BitMask kn_msk = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos) & knight_check_mask;
+        for ( ; kn_msk; )
         {
-          bool ep_checking = false;
-          int rindex = -1;
-          if ( i < 2 )
+          int to = clear_lsb(kn_msk);
+
+          const Field & field = board_.getField(to);
+          if ( field && (field.color() == color || field.type() >= minimalType_))
+            continue;
+
+          add_check(m, kn_pos, to, field ? field.index() : -1, Figure::TypeNone, discovered);
+        }
+      }
+    }
+  }
+
+  // 4. Pawn
+  {
+    BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
+    for ( ; pw_mask; )
+    {
+      int pw_pos = clear_lsb(pw_mask);
+      bool discovered = discoveredCheck(pw_pos, mask_all, brq_mask, oki_pos);
+
+#ifndef NDEBUG
+      bool discovered2 = discoveredCheck2(pw_pos, mask_all, oki_pos);
+      THROW_IF( discovered != discovered2, "error in discoveredCheck2()" );
+#endif
+
+      const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
+      for (int i = 0; i < 4; ++i, ++table)
+      {
+        bool ep_checking = false;
+        int rindex = -1;
+        if ( i < 2 )
+        {
+          if ( *table < 0 )
+            continue;
+
+          const Field & field = board_.getField(*table);
+          if ( field && field.color() == ocolor )
+            rindex = field.index();
+          else if ( board_.en_passant_ >= 0 )
           {
-            if ( *table < 0 )
-              continue;
-
-            const Field & field = board_.getField(*table);
-            if ( field && field.color() == ocolor )
-              rindex = field.index();
-            else if ( board_.en_passant_ >= 0 )
+            const Figure & rfig = board_.getFigure(ocolor, board_.en_passant_);
+            int8 to = rfig.where();
+            static const int8 delta_pos[] = {8, -8};
+            to += delta_pos[ocolor];
+            if ( to == *table )
             {
-              const Figure & rfig = board_.getFigure(ocolor, board_.en_passant_);
-              int8 to = rfig.where();
-              static const int8 delta_pos[] = {8, -8};
-              to += delta_pos[ocolor];
-              if ( to == *table )
-              {
-                rindex = board_.en_passant_;
-                uint64 pw_msk_to = 1ULL << *table;
-                uint64 pw_msk_from = 1ULL << fig.where();
-                uint64 mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
-                ep_checking = discoveredCheck(rfig.where(), mask_all_pw, brq_mask, oking);
-              }
-            }
+              rindex = board_.en_passant_;
+              BitMask pw_msk_to = 1ULL << *table;
+              BitMask pw_msk_from = 1ULL << pw_pos;
+              BitMask mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
+              ep_checking = discoveredCheck(rfig.where(), mask_all_pw, brq_mask, oki_pos);
 
-            if ( rindex < 0 )
-              continue;
-
-            const Figure & rfig = board_.getFigure(ocolor, rindex);
-
-            if ( rfig.getType() >= minimalType_ )
-              continue;
-          }
-          else if ( *table < 0 || board_.getField(*table) )
-            break;
-
-          uint64 pw_msk_to = 1ULL << *table;
-          bool promotion = *table > 55 || *table < 8;
-
-          if ( discovered  || ep_checking|| (pw_msk_to & pw_check_mask) )
-            add_check(m, fig.where(), *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone, discovered);
-          // if it's not check, it could be promotion to knight
-          else if ( promotion )
-          {
-            if ( knight_check_mask & pw_msk_to )
-              add_check(m, fig.where(), *table, rindex, Figure::TypeKnight, discovered);
-            // may be we haven't generated promotion to checking queen yet
-            else if ( minimalType_ > Figure::TypeQueen )
-            {
-              // can we check from this position?
-              uint64 mask_all_inv_ex = ~(mask_all & ~(1ULL << fig.where()));
-              const uint64 & btw_msk = board_.g_betweenMasks->between(*table, oking.where());
-              if ( (btw_msk & mask_all_inv_ex) == btw_msk )
-                add_check(m, fig.where(), *table, rindex, Figure::TypeQueen, discovered);
+#ifndef NDEBUG
+              bool ep_checking2 = discoveredCheck2(rfig.where(), mask_all_pw, oki_pos);
+              THROW_IF( discovered != discovered2, "error in discoveredCheck2()" );
+#endif
             }
           }
+
+          if ( rindex < 0 )
+            continue;
+
+          const Figure & rfig = board_.getFigure(ocolor, rindex);
+
+          if ( rfig.getType() >= minimalType_ )
+            continue;
+        }
+        else if ( *table < 0 || board_.getField(*table) )
+          break;
+
+        BitMask pw_msk_to = 1ULL << *table;
+        bool promotion = *table > 55 || *table < 8;
+
+        if ( discovered  || ep_checking || (pw_msk_to & pw_check_mask) )
+          add_check(m, pw_pos, *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone, discovered);
+        // if it's not check, it could be promotion to knight
+        else if ( promotion )
+        {
+          if ( knight_check_mask & pw_msk_to )
+            add_check(m, pw_pos, *table, rindex, Figure::TypeKnight, discovered);
+          // may be we haven't generated promotion to checking queen yet
+          else if ( minimalType_ > Figure::TypeQueen )
+          {
+            // could we check from this position?
+            BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << pw_pos));
+            if ( !board_.is_something_between(*table, oki_pos, mask_all_inv_ex) )
+              add_check(m, pw_pos, *table, rindex, Figure::TypeQueen, discovered);
+          }
         }
       }
-      break;
     }
   }
 

@@ -350,7 +350,7 @@ int Board::fastAttackedFrom(Figure::Color color, int apt) const
 
   for ( ; all; )
   {
-    int n = least_bit_number(all);
+    int n = clear_lsb(all);
     
     THROW_IF( (unsigned)n > 63, "least siginficant bit is invalid" );
 
@@ -399,7 +399,7 @@ int Board::getAttackedFrom(Figure::Color ocolor, int8 pt, int8 from) const
 
   for ( ; all; )
   {
-    int n = least_bit_number(all);
+    int n = clear_lsb(all);
 
     THROW_IF( (unsigned)n > 63, "least siginficant bit is invalid" );
 
@@ -452,7 +452,7 @@ int Board::fastAttackedFrom(Figure::Color color, int apt,
 
   for ( ; all; )
   {
-    int n = least_bit_number(all);
+    int n = clear_lsb(all);
 
     THROW_IF( (unsigned)n > 63, "least siginficant bit is invalid" );
 
@@ -572,7 +572,7 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
     uint64 queen_msk = fmgr_.queen_mask(c) & q_caps;
     for ( ; queen_msk; )
     {
-      int n = least_bit_number(queen_msk);
+      int n = clear_lsb(queen_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 
@@ -592,7 +592,7 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
     uint64 rook_msk = fmgr_.rook_mask(c) & r_caps;
     for ( ; rook_msk; )
     {
-      int n = least_bit_number(rook_msk);
+      int n = clear_lsb(rook_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 
@@ -612,7 +612,7 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
     uint64 bishop_msk = fmgr_.bishop_mask(c) & b_caps;
     for ( ; bishop_msk; )
     {
-      int n = least_bit_number(bishop_msk);
+      int n = clear_lsb(bishop_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 
@@ -674,7 +674,7 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) cons
     uint64 queen_msk = (fmgr_.queen_mask(c) & exclude_mask) & q_caps;
     for ( ; queen_msk; )
     {
-      int n = least_bit_number(queen_msk);
+      int n = clear_lsb(queen_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 
@@ -694,7 +694,7 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) cons
     uint64 rook_msk = (fmgr_.rook_mask(c) & exclude_mask) & r_caps;
     for ( ; rook_msk; )
     {
-      int n = least_bit_number(rook_msk);
+      int n = clear_lsb(rook_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 
@@ -714,7 +714,7 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) cons
     uint64 bishop_msk = (fmgr_.bishop_mask(c) & exclude_mask) & b_caps;
     for ( ; bishop_msk; )
     {
-      int n = least_bit_number(bishop_msk);
+      int n = clear_lsb(bishop_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
 

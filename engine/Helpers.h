@@ -24,7 +24,7 @@ inline int pop_count(uint64 n)
 
 // ALL OF THESE FUNCTIONS BELIEVE THAT mask ISN'T ZERO
 // return least significant bit index, clear it
-inline int least_bit_number(BitMask & mask)
+inline int clear_lsb(BitMask & mask)
 {
   int n;
   __asm
@@ -58,7 +58,7 @@ end:mov dword ptr [n], ecx
 }
 
 // return most significant bit index, clear it
-inline int most_bit_number(BitMask & mask)
+inline int clear_msb(BitMask & mask)
 {
   int n;
   __asm
@@ -184,7 +184,7 @@ md_begin:
 #pragma intrinsic(_BitScanReverse64)
 #pragma intrinsic(_BitScanReverse)
 
-inline int least_bit_number(uint64 & mask)
+inline int clear_lsb(uint64 & mask)
 {
 	unsigned long n;
 #ifndef NDEBUG
@@ -196,7 +196,7 @@ inline int least_bit_number(uint64 & mask)
 	return n;
 }
 
-inline int most_bit_number(uint64 & mask)
+inline int clear_msb(uint64 & mask)
 {
   unsigned long n;
 #ifndef NDEBUG

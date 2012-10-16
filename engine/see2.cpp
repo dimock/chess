@@ -61,7 +61,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     uint64 pmask = fmgr_.pawn_mask_o((Figure::Color)c) & g_movesTable->pawnCaps_o((Figure::Color)((c+1)&1), move.to_);
     for ( ; pmask; )
     {
-      int n = least_bit_number(pmask);
+      int n = clear_lsb(pmask);
       if ( n != move.from_ )
         attackers[c][num++] = Figure::TypePawn | (n << 8);
     }
@@ -70,7 +70,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     uint64 nmask = fmgr_.knight_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeKnight, move.to_);
     for ( ; nmask; )
     {
-      int n = least_bit_number(nmask);
+      int n = clear_lsb(nmask);
       if ( n != move.from_ )
         attackers[c][num++] = Figure::TypeKnight | (n << 8);
     }
@@ -86,7 +86,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::nw) & all_mask;
     for ( ; from_mask; )
     {
-      int n = least_bit_number(from_mask);
+      int n = clear_lsb(from_mask);
       if ( n == move.from_ )
         continue;
 
@@ -114,7 +114,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::no) & all_mask;
     for ( ; from_mask; )
     {
-      int n = least_bit_number(from_mask);
+      int n = clear_lsb(from_mask);
       if ( n == move.from_ )
         continue;
 
@@ -135,7 +135,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::ne) & all_mask;
     for ( ; from_mask; )
     {
-      int n = least_bit_number(from_mask);
+      int n = clear_lsb(from_mask);
       if ( n == move.from_ )
         continue;
 
@@ -164,7 +164,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::ea) & all_mask;
     for ( ; from_mask; )
     {
-      int n = least_bit_number(from_mask);
+      int n = clear_lsb(from_mask);
       if ( n == move.from_ )
         continue;
 
@@ -183,7 +183,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::se) & all_mask;
     for ( ; from_mask; )
     {
-      int n = most_bit_number(from_mask);
+      int n = clear_msb(from_mask);
       if ( n == move.from_ )
         continue;
 
@@ -212,7 +212,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::so) & all_mask;
     for ( ; from_mask; )
     {
-      int n = most_bit_number(from_mask);
+      int n = clear_msb(from_mask);
       if ( n == move.from_ )
         continue;
 
@@ -233,7 +233,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::sw) & all_mask;
     for ( ; from_mask; )
     {
-      int n = most_bit_number(from_mask);
+      int n = clear_msb(from_mask);
       if ( n == move.from_ )
         continue;
 
@@ -262,7 +262,7 @@ int Board::see_before2(int initial_value, const Move & move) const
     BitMask from_mask = g_betweenMasks->from_dir(move.to_, nst::we) & all_mask;
     for ( ; from_mask; )
     {
-      int n = most_bit_number(from_mask);
+      int n = clear_msb(from_mask);
       if ( n == move.from_ )
         continue;
 

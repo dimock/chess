@@ -140,7 +140,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
     for ( ; promo_msk; )
     {
-      int from = least_bit_number(promo_msk);
+      int from = clear_lsb(promo_msk);
 
       THROW_IF( (unsigned)from > 63, "invalid promoted pawn's position" );
 
@@ -192,7 +192,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       for ( ; pw_mask; )
       {
-        int pw_pos = most_bit_number(pw_mask);
+        int pw_pos = clear_msb(pw_mask);
 
         uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, pw_pos) & oppenent_mask_p;
 
@@ -200,7 +200,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         {
           THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
 
-          int to = least_bit_number(p_caps);
+          int to = clear_lsb(p_caps);
 
           bool promotion = to > 55 || to < 8; // 1st || last line
 
@@ -236,13 +236,13 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     BitMask kn_mask = board_.fmgr().knight_mask(board_.color_);
     for ( ; kn_mask; )
     {
-      int kn_pos = most_bit_number(kn_mask);
+      int kn_pos = clear_msb(kn_mask);
 
       // don't need to verify capture possibility by mask
       uint64 f_caps = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos) & oppenent_mask;
       for ( ; f_caps; )
       {
-        int to = least_bit_number(f_caps);
+        int to = clear_lsb(f_caps);
 
         THROW_IF( (unsigned)to > 63, "invalid field index while capture" );
 
@@ -262,12 +262,12 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, board_.color_);
       for ( ; fg_mask; )
       {
-        int fg_pos = most_bit_number(fg_mask);
+        int fg_pos = clear_msb(fg_mask);
 
         uint64 f_caps = board_.g_movesTable->caps((Figure::Type)type, fg_pos) & oppenent_mask;
         for ( ; f_caps; )
         {
-          int8 to = least_bit_number(f_caps);
+          int8 to = clear_lsb(f_caps);
 
           const Field & field = board_.getField(to);
           THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
@@ -291,13 +291,13 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
     THROW_IF( ki_mask == 0, "invalid position - no king" );
 
-    int ki_pos = least_bit_number(ki_mask);
+    int ki_pos = clear_lsb(ki_mask);
 
     // don't need to verify capture possibility by mask
     uint64 f_caps = board_.g_movesTable->caps(Figure::TypeKing, ki_pos) & oppenent_mask;
     for ( ; f_caps; )
     {
-      int to = least_bit_number(f_caps);
+      int to = clear_lsb(f_caps);
 
       THROW_IF( (unsigned)to > 63, "invalid field index while capture" );
 
