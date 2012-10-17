@@ -54,6 +54,8 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     THROW_IF( discovered != discovered2, "error in discoveredCheck2()" );
 #endif
 
+    const BitMask & from_mask = board_.g_betweenMasks->from(oki_pos, ki_pos);
+
     if ( discovered )
     {
       const int8 * table = board_.g_movesTable->king(ki_pos);
@@ -62,6 +64,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       {
         const Field & field = board_.getField(*table);
         if ( field && (field.color() == color || field.type() >= minimalType_) )
+          continue;
+
+        // if king moves along line of attack, it covers opponent from check
+        if ( from_mask & (1ULL << *table) )
           continue;
 
         add_check(m, ki_pos, *table, field ? field.index() : -1, Figure::TypeNone, discovered);
@@ -221,6 +227,8 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       THROW_IF( discovered != discovered2, "error in discoveredCheck2()" );
 #endif
 
+      const BitMask & from_mask = board_.g_betweenMasks->from(oki_pos, pw_pos);
+
       const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
       for (int i = 0; i < 4; ++i, ++table)
       {
@@ -269,7 +277,10 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         BitMask pw_msk_to = 1ULL << *table;
         bool promotion = *table > 55 || *table < 8;
 
-        if ( discovered  || ep_checking || (pw_msk_to & pw_check_mask) )
+        // pawn doesn't cover opponent's king in its new position
+        bool doesnt_cover = (from_mask & (1ULL << *table)) == 0;
+
+        if ( (discovered && doesnt_cover) || ep_checking || (pw_msk_to & pw_check_mask) )
           add_check(m, pw_pos, *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone, discovered);
         // if it's not check, it could be promotion to knight
         else if ( promotion )
@@ -280,9 +291,13 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           else if ( minimalType_ > Figure::TypeQueen )
           {
             // could we check from this position?
-            BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << pw_pos));
-            if ( !board_.is_something_between(*table, oki_pos, mask_all_inv_ex) )
-              add_check(m, pw_pos, *table, rindex, Figure::TypeQueen, discovered);
+            int dir = board_.g_figureDir->dir(Figure::TypeQueen, color, *table, oki_pos);
+            if ( dir >= 0 )
+            {
+              BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << pw_pos));
+              if ( !board_.is_something_between(*table, oki_pos, mask_all_inv_ex) )
+                add_check(m, pw_pos, *table, rindex, Figure::TypeQueen, discovered);
+            }
           }
         }
       }

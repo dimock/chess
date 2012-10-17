@@ -208,8 +208,20 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
 
     Board board0(board_);
 
-    if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
+    bool stateCheck = true;
+    if ( board_.makeMove(move) )
+    {
       checks[m++] = move;
+      stateCheck = board_.getState() == Board::UnderCheck;
+      if ( !stateCheck &&
+        (board_.getState() == Board::DrawReps ||
+         board_.getState() == Board::Draw50Moves ||
+         board_.getState() == Board::ChessMat) )
+      {
+        stateCheck = true;
+      }
+      THROW_IF( !stateCheck, "non checking move" );
+    }
 
     board_.verifyMasks();
     board_.unmakeMove();
@@ -217,6 +229,14 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
     board_.verifyMasks();
 
     THROW_IF( cg.find(move), "duplicated move found in checks geneator" );
+
+    if ( !stateCheck )
+    {
+      char fen[256];
+      board_.toFEN(fen);
+
+      ChecksGenerator ckg2(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
+    }
   }
 
   for (int i = 0; i < n; ++i)
