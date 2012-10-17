@@ -219,6 +219,7 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
          board_.getState() == Board::ChessMat) )
       {
         stateCheck = true;
+        --m;
       }
       THROW_IF( !stateCheck, "non checking move" );
     }
