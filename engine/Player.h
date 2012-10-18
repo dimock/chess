@@ -38,7 +38,7 @@ class CapsGenerator;
 class MovesGenerator;
 class EscapeGenerator;
 class ChecksGenerator;
-class CapsChecksGenerator;
+class ChecksGenerator2;
 
 // implementation isn't perfect )) have to rewrite
 typedef void (* PLAYER_CALLBACK)();
@@ -130,7 +130,7 @@ class Player
   friend class MovesGenerator;
   friend class EscapeGenerator;
   friend class ChecksGenerator;
-  friend class CapsChecksGenerator;
+  friend class ChecksGenerator2;
 
 
   // analyze move support
@@ -454,6 +454,7 @@ private:
 
 #ifdef VERIFY_CHECKS_GENERATOR
   void verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType);
+  void verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType);
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR

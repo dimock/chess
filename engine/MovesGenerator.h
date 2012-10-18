@@ -314,23 +314,6 @@ private:
     return checking;
   }
 
-  inline bool discoveredCheck2(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, int oki_pos)
-  {
-    BitMask from_msk = board_.g_betweenMasks->from(oki_pos, pt);
-    BitMask mask_all_ex = mask_all & ~(1ULL << pt);
-    mask_all_ex &= from_msk;
-    if ( (mask_all_ex & brq_mask) == 0 )
-      return false;
-
-    int index = oki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
-    const Field & afield = board_.getField(index);
-    if ( afield.color() != board_.color_ || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
-      return false;
-
-    int dir = board_.g_figureDir->dir(afield.type(), afield.color(), index, oki_pos);
-    return dir >= 0;
-  }
-
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
   void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
@@ -343,6 +326,73 @@ private:
       return;
 
 	  const History & hist = MovesGenerator::history(move.from_, move.to_);
+    move.srt_score_ = hist.score_;
+
+    if ( move.rindex_ >= 0 )
+    {
+      const Field & ffield = board_.getField(move.from_);
+      THROW_IF( !ffield, "no figure on field we move from" );
+      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
+      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + 10000000;
+    }
+    else if ( move.new_type_ > 0 )
+    {
+      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
+    }
+
+    ++m;
+  }
+
+  Player & player_;
+  int ply_;
+
+  CapsGenerator * cg_;
+  Figure::Type minimalType_;
+
+  Move killer_;
+  int numOfMoves_;
+
+  Board & board_;
+  Move checks_[Board::MovesMax];
+};
+
+//////////////////////////////////////////////////////////////////////////
+// generate all captures with type gt/eq to minimalType
+class ChecksGenerator2
+{
+public:
+
+  ChecksGenerator2(CapsGenerator * cg, Board &, int ply, Player & player, ScoreType & alpha, ScoreType betta, Figure::Type minimalType, int & counter);
+
+  Move & check()
+  {
+    Move * move = checks_ + numOfMoves_;
+    Move * mv = checks_;
+    for ( ; *mv; ++mv)
+    {
+      if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+        continue;
+
+      move = mv;
+    }
+    move->alreadyDone_ = 1;
+    return *move;
+  }
+
+private:
+
+  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+
+  void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
+  {
+    Move & move = checks_[m];
+    move.set(from, to, rindex, new_type, 0);
+    move.discoveredCheck_ = discovered;
+
+    if ( rindex >= 0 && cg_ && cg_->find(move) )
+      return;
+
+    const History & hist = MovesGenerator::history(move.from_, move.to_);
     move.srt_score_ = hist.score_;
 
     if ( move.rindex_ >= 0 )
