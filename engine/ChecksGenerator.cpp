@@ -335,7 +335,6 @@ int ChecksGenerator2::generate(ScoreType & alpha, ScoreType betta, int & counter
   int oki_pos = find_lsb(oki_mask);
 
   BitMask brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
-  const BitMask & pw_check_mask = board_.g_movesTable->pawnCaps_o(ocolor, oki_pos);
   const BitMask & knight_check_mask = board_.g_movesTable->caps(Figure::TypeKnight, oki_pos);
   const BitMask & black = board_.fmgr_.mask(Figure::ColorBlack);
   const BitMask & white = board_.fmgr_.mask(Figure::ColorWhite);
@@ -507,6 +506,60 @@ int ChecksGenerator2::generate(ScoreType & alpha, ScoreType betta, int & counter
 
   // 4. Pawn
   {
+    // caps
+    {
+      BitMask pw_check_mask = board_.g_movesTable->pawnCaps_o(ocolor, oki_pos);
+      BitMask cap_mask = 0;
+
+      // collect all figures, which we haven't eaten yet
+      for (int type = Figure::TypePawn; type < minimalType_; ++type)
+        cap_mask |= board_.fmgr().type_mask((Figure::Type)type, ocolor);
+
+      cap_mask &= pw_check_mask;
+
+      BitMask looked_up = 0;
+      for ( ; cap_mask; )
+      {
+        int to = clear_lsb(cap_mask);
+        const Field & tfield = board_.getField(to);
+        THROW_IF( !tfield || tfield.color() != ocolor || tfield.type() >= minimalType_, "invalid pawns capture in checks generator" );
+        BitMask pw_from = board_.g_movesTable->pawnCaps_o(ocolor, to) & board_.fmgr().pawn_mask_o(color);
+
+        // exclude pawns, that we already added
+        pw_from &= ~looked_up;
+        looked_up |= pw_from;
+
+        for ( ; pw_from; )
+        {
+          int from = clear_lsb(pw_from);
+          add_check(m, from, to, tfield.index(), Figure::TypeNone, false);
+        }
+      }
+    }
+
+    // normal moves
+    {
+      BitMask inv_mask_all = ~mask_all;
+      BitMask move_mask = board_.g_movesTable->pawnCaps_o(ocolor, oki_pos) & inv_mask_all;
+      for ( ; move_mask; )
+      {
+        int to = clear_lsb(move_mask);
+        const Field & tfield = board_.getField(to);
+        THROW_IF( tfield , "invalid pawns movement in checks generator" );
+        BitMask pw_from = board_.g_movesTable->pawnFrom(color, to) & board_.fmgr().pawn_mask_o(color);
+
+        for ( ; pw_from; )
+        {
+          int from = clear_lsb(pw_from);
+          if ( board_.is_something_between(from, to, inv_mask_all) )
+            break;
+
+          add_check(m, from, to, -1, Figure::TypeNone, false);
+        }
+      }
+    }
+
+    // promotions
   }
   //{
   //  BitMask pw_mask = board_.fmgr().pawn_mask_o(color);

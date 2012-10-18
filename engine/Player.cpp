@@ -1034,7 +1034,10 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #ifdef VERIFY_CHECKS_GENERATOR
   if ( board_.getState() != Board::UnderCheck )
+  {
     verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
+    verifyChecksGenerator2(depth, ply, alpha, betta, Figure::TypeKing);
+  }
 #endif
 
 #ifdef VERIFY_ESCAPE_GENERATOR
