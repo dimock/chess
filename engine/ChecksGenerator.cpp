@@ -6,6 +6,8 @@
 #include "MovesTable.h"
 #include "Player.h"
 
+#define USE_DISCOVERED2
+
 //////////////////////////////////////////////////////////////////////////
 ChecksGenerator::ChecksGenerator(CapsGenerator * cg, Board & board, int ply, Player & player, ScoreType & alpha, ScoreType betta, Figure::Type minimalType, int & counter) :
   board_(board), player_(player), ply_(ply), numOfMoves_(0), cg_(cg), minimalType_(minimalType)
@@ -47,11 +49,11 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     int ki_pos = find_lsb(ki_mask);
 
     // figure opens line between attacker and king
-    bool discovered = discoveredCheck2(ki_pos, mask_all, oki_pos);
 
-#ifndef NDEBUG
-    bool discovered1 = discoveredCheck(ki_pos, mask_all, brq_mask, oki_pos);
-    THROW_IF( discovered != discovered1, "error in discoveredCheck2()" );
+#ifdef USE_DISCOVERED2
+    bool discovered = discoveredCheck2(ki_pos, mask_all, brq_mask, oki_pos);
+#else
+    bool discovered = discoveredCheck(ki_pos, mask_all, brq_mask, oki_pos);
 #endif
 
     const BitMask & from_mask = board_.g_betweenMasks->from(oki_pos, ki_pos);
@@ -111,11 +113,11 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       for ( ; fg_mask; )
       {
         int fg_pos = clear_lsb(fg_mask);
-        bool discovered = discoveredCheck2(fg_pos, mask_all, oki_pos);
 
-#ifndef NDEBUG
-        bool discovered1 = discoveredCheck(fg_pos, mask_all, brq_mask, oki_pos);
-        THROW_IF( discovered != discovered1, "error in discoveredCheck2()" );
+#ifdef USE_DISCOVERED2
+        bool discovered = discoveredCheck2(fg_pos, mask_all, brq_mask, oki_pos);
+#else
+        bool discovered = discoveredCheck(fg_pos, mask_all, brq_mask, oki_pos);
 #endif
 
         if ( discovered )
@@ -177,11 +179,11 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     for ( ; kn_mask; )
     {
       int kn_pos = clear_lsb(kn_mask);
-      bool discovered = discoveredCheck2(kn_pos, mask_all, oki_pos);
 
-#ifndef NDEBUG
-      bool discovered1 = discoveredCheck(kn_pos, mask_all, brq_mask, oki_pos);
-      THROW_IF( discovered != discovered1, "error in discoveredCheck2()" );
+#ifdef USE_DISCOVERED2
+      bool discovered = discoveredCheck2(kn_pos, mask_all, brq_mask, oki_pos);
+#else
+      bool discovered = discoveredCheck(kn_pos, mask_all, brq_mask, oki_pos);
 #endif
 
       if ( discovered )
@@ -220,11 +222,11 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
     for ( ; pw_mask; )
     {
       int pw_pos = clear_lsb(pw_mask);
-      bool discovered = discoveredCheck2(pw_pos, mask_all, oki_pos);
 
-#ifndef NDEBUG
-      bool discovered1 = discoveredCheck(pw_pos, mask_all, brq_mask, oki_pos);
-      THROW_IF( discovered != discovered1, "error in discoveredCheck2()" );
+#ifdef USE_DISCOVERED2
+      bool discovered = discoveredCheck2(pw_pos, mask_all, brq_mask, oki_pos);
+#else
+      bool discovered = discoveredCheck(pw_pos, mask_all, brq_mask, oki_pos);
 #endif
 
       const BitMask & from_mask = board_.g_betweenMasks->from(oki_pos, pw_pos);
@@ -254,11 +256,11 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
               BitMask pw_msk_to = 1ULL << *table;
               BitMask pw_msk_from = 1ULL << pw_pos;
               BitMask mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
-              ep_checking = discoveredCheck2(rfig.where(), mask_all_pw, oki_pos);
 
-#ifndef NDEBUG
-              bool ep_checking1 = discoveredCheck(rfig.where(), mask_all_pw, brq_mask, oki_pos);
-              THROW_IF( discovered != discovered1, "error in discoveredCheck2()" );
+#ifdef USE_DISCOVERED2
+              ep_checking = discoveredCheck2(rfig.where(), mask_all_pw, brq_mask, oki_pos);
+#else
+              ep_checking = discoveredCheck(rfig.where(), mask_all_pw, brq_mask, oki_pos);
 #endif
             }
           }

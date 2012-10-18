@@ -314,12 +314,12 @@ private:
     return checking;
   }
 
-  inline bool discoveredCheck2(int8 pt, const uint64 & mask_all, int oki_pos)
+  inline bool discoveredCheck2(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, int oki_pos)
   {
     BitMask from_msk = board_.g_betweenMasks->from(oki_pos, pt);
     BitMask mask_all_ex = mask_all & ~(1ULL << pt);
     mask_all_ex &= from_msk;
-    if ( !mask_all_ex )
+    if ( (mask_all_ex & brq_mask) == 0 )
       return false;
 
     int index = oki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
