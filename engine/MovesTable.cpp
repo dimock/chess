@@ -62,6 +62,8 @@ void MovesTable::resetAllTables(int pos)
   {
     s_pawnsCaps_t_[color][pos] = 0;
     s_pawnsCaps_o_[color][pos] = 0;
+    s_pawnsMoves_[color][pos] = 0;
+    s_pawnsFrom_[color][pos] = 0;
   }
 
   for (int type = 0; type < 8; ++type)
@@ -103,6 +105,49 @@ void MovesTable::initPawns(int pos)
         int8 & pp = s_tablePawn_[color][pos][i];
         s_pawnsCaps_o_[color][pos] |= 1ULL << pp;
         s_pawnsCaps_t_[color][pos] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
+      }
+    }
+
+    // fill moves mask
+    int8 * ptable  = s_tablePawn_[color][pos] + 2;
+    for ( ; *ptable >= 0; ++ptable)
+    {
+      s_pawnsMoves_[color][pos] |= 1ULL << *ptable;
+    }
+
+    // fill 'from' mask
+    if ( p.y() == 0 || p.y() == 7 )
+      continue;
+
+    {
+      int y_from[2] = { -1, -1 };
+
+      if ( color )
+      {
+        if ( p.y() == 1 )
+          continue;
+
+        y_from[0] = p.y() - 1;
+        if ( p.y() == 3 )
+          y_from[1] = 1;
+      }
+      else
+      {
+        if ( p.y() == 6 )
+          continue;
+
+        y_from[0] = p.y() + 1;
+        if ( p.y() == 4 )
+          y_from[1] = 6;
+      }
+
+      for (int i = 0; i < 2; ++i)
+      {
+        if ( y_from[i] >= 0 )
+        {
+          int index = p.x() | (y_from[i] << 3);
+          s_pawnsFrom_[color][pos] |= 1ULL << index;
+        }
       }
     }
   }

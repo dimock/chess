@@ -507,85 +507,87 @@ int ChecksGenerator2::generate(ScoreType & alpha, ScoreType betta, int & counter
 
   // 4. Pawn
   {
-    BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
-    for ( ; pw_mask; )
-    {
-      int pw_pos = clear_lsb(pw_mask);
-
-      bool discovered = board_.discoveredCheck(pw_pos, color, mask_all, brq_mask, oki_pos);
-
-      const BitMask & from_mask = board_.g_betweenMasks->from(oki_pos, pw_pos);
-
-      const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
-      for (int i = 0; i < 4; ++i, ++table)
-      {
-        bool ep_checking = false;
-        int rindex = -1;
-        if ( i < 2 )
-        {
-          if ( *table < 0 )
-            continue;
-
-          const Field & field = board_.getField(*table);
-          if ( field && field.color() == ocolor )
-            rindex = field.index();
-          else if ( board_.en_passant_ >= 0 )
-          {
-            const Figure & rfig = board_.getFigure(ocolor, board_.en_passant_);
-            int8 to = rfig.where();
-            static const int8 delta_pos[] = {8, -8};
-            to += delta_pos[ocolor];
-            if ( to == *table )
-            {
-              rindex = board_.en_passant_;
-              BitMask pw_msk_to = 1ULL << *table;
-              BitMask pw_msk_from = 1ULL << pw_pos;
-              BitMask mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
-
-              ep_checking = board_.discoveredCheck(rfig.where(), color, mask_all_pw, brq_mask, oki_pos);
-            }
-          }
-
-          if ( rindex < 0 )
-            continue;
-
-          const Figure & rfig = board_.getFigure(ocolor, rindex);
-
-          if ( rfig.getType() >= minimalType_ )
-            continue;
-        }
-        else if ( *table < 0 || board_.getField(*table) )
-          break;
-
-        BitMask pw_msk_to = 1ULL << *table;
-        bool promotion = *table > 55 || *table < 8;
-
-        // pawn doesn't cover opponent's king in its new position
-        bool doesnt_cover = (from_mask & (1ULL << *table)) == 0;
-
-        if ( (discovered && doesnt_cover) || ep_checking || (pw_msk_to & pw_check_mask) )
-          add_check(m, pw_pos, *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone, discovered);
-        // if it's not check, it could be promotion to knight
-        else if ( promotion )
-        {
-          if ( knight_check_mask & pw_msk_to )
-            add_check(m, pw_pos, *table, rindex, Figure::TypeKnight, discovered);
-          // may be we haven't generated promotion to checking queen yet
-          else if ( minimalType_ > Figure::TypeQueen )
-          {
-            // could we check from this position?
-            int dir = board_.g_figureDir->dir(Figure::TypeQueen, color, *table, oki_pos);
-            if ( dir >= 0 )
-            {
-              BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << pw_pos));
-              if ( !board_.is_something_between(*table, oki_pos, mask_all_inv_ex) )
-                add_check(m, pw_pos, *table, rindex, Figure::TypeQueen, discovered);
-            }
-          }
-        }
-      }
-    }
   }
+  //{
+  //  BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
+  //  for ( ; pw_mask; )
+  //  {
+  //    int pw_pos = clear_lsb(pw_mask);
+
+  //    bool discovered = board_.discoveredCheck(pw_pos, color, mask_all, brq_mask, oki_pos);
+
+  //    const BitMask & from_mask = board_.g_betweenMasks->from(oki_pos, pw_pos);
+
+  //    const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
+  //    for (int i = 0; i < 4; ++i, ++table)
+  //    {
+  //      bool ep_checking = false;
+  //      int rindex = -1;
+  //      if ( i < 2 )
+  //      {
+  //        if ( *table < 0 )
+  //          continue;
+
+  //        const Field & field = board_.getField(*table);
+  //        if ( field && field.color() == ocolor )
+  //          rindex = field.index();
+  //        else if ( board_.en_passant_ >= 0 )
+  //        {
+  //          const Figure & rfig = board_.getFigure(ocolor, board_.en_passant_);
+  //          int8 to = rfig.where();
+  //          static const int8 delta_pos[] = {8, -8};
+  //          to += delta_pos[ocolor];
+  //          if ( to == *table )
+  //          {
+  //            rindex = board_.en_passant_;
+  //            BitMask pw_msk_to = 1ULL << *table;
+  //            BitMask pw_msk_from = 1ULL << pw_pos;
+  //            BitMask mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
+
+  //            ep_checking = board_.discoveredCheck(rfig.where(), color, mask_all_pw, brq_mask, oki_pos);
+  //          }
+  //        }
+
+  //        if ( rindex < 0 )
+  //          continue;
+
+  //        const Figure & rfig = board_.getFigure(ocolor, rindex);
+
+  //        if ( rfig.getType() >= minimalType_ )
+  //          continue;
+  //      }
+  //      else if ( *table < 0 || board_.getField(*table) )
+  //        break;
+
+  //      BitMask pw_msk_to = 1ULL << *table;
+  //      bool promotion = *table > 55 || *table < 8;
+
+  //      // pawn doesn't cover opponent's king in its new position
+  //      bool doesnt_cover = (from_mask & (1ULL << *table)) == 0;
+
+  //      if ( (discovered && doesnt_cover) || ep_checking || (pw_msk_to & pw_check_mask) )
+  //        add_check(m, pw_pos, *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone, discovered);
+  //      // if it's not check, it could be promotion to knight
+  //      else if ( promotion )
+  //      {
+  //        if ( knight_check_mask & pw_msk_to )
+  //          add_check(m, pw_pos, *table, rindex, Figure::TypeKnight, discovered);
+  //        // may be we haven't generated promotion to checking queen yet
+  //        else if ( minimalType_ > Figure::TypeQueen )
+  //        {
+  //          // could we check from this position?
+  //          int dir = board_.g_figureDir->dir(Figure::TypeQueen, color, *table, oki_pos);
+  //          if ( dir >= 0 )
+  //          {
+  //            BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << pw_pos));
+  //            if ( !board_.is_something_between(*table, oki_pos, mask_all_inv_ex) )
+  //              add_check(m, pw_pos, *table, rindex, Figure::TypeQueen, discovered);
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 
   return m;
 }
