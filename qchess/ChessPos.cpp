@@ -67,7 +67,10 @@ bool ChessPosition::fromFEN(const char * fen)
   halfmovesNumber_ = player_.getBoard().halfmovesCount();
   vboard_ = player_.getBoard();
 #endif
-  
+
+  int counter = 0;
+  ScoreType a = -10000;
+  CapsGenerator cg(vboard_, Figure::TypeKing, 1, player_, a, +10000, counter);
   ChecksGenerator2 ckg(vboard_, 1, player_, Figure::TypeKing);
 
   //int imb = vboard_.fmgr().weight();

@@ -298,6 +298,10 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
   CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
   ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
 
+  if ( ckg2.has_duplicates() )
+  {
+    ChecksGenerator2 ckg3(board_, ply, *this, minimalType);
+  }
   THROW_IF( ckg2.has_duplicates(), "duplicated moves found in ChecksGenerator2" );
 
   Move legal[Board::MovesMax], checks[Board::MovesMax];
@@ -314,7 +318,7 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
 
     Board board0(board_);
 
-    if ( board_.makeMove(move) && board_.getNumOfChecking() > 0 )
+    if ( board_.makeMove(move) && board_.getMoveRev(0).checkingNum_ > 0 )
     {
       if ( move.new_type_ == Figure::TypeQueen || !move.new_type_ )
         legal[n++] = move;
@@ -360,7 +364,7 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
     if ( board_.makeMove(move) )
     {
       checks[m++] = move;
-      stateCheck = board_.getNumOfChecking() > 0;
+      stateCheck = board_.getMoveRev(0).checkingNum_ > 0;
       THROW_IF( !stateCheck, "non checking move" );
     }
 
@@ -377,6 +381,9 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
       board_.toFEN(fen);
 
       ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
+
+      board_.makeMove(move);
+      board_.unmakeMove();
     }
   }
 

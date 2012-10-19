@@ -439,8 +439,13 @@ private:
         continue;
 
       // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      if ( from_oki_mask & (1ULL << *table) )
-        break;
+      if ( (from_oki_mask & (1ULL << *table)) )
+        continue;
+
+      // don't add checking pawn's capture, because we add it another way
+      int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, *table, oki_pos);
+      if ( dir == 0 || dir == 1 )
+        continue;
 
       add_check(m, from, *table, pfield.index(), Figure::TypeNone, true);
     }

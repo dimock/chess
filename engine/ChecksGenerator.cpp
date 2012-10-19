@@ -507,7 +507,7 @@ int ChecksGenerator2::generate()
   // 4. Pawn
   {
 #ifndef NDEBUG
-    char fen[265];
+    char fen[256];
     board_.toFEN(fen);
 #endif
 
