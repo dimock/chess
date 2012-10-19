@@ -506,23 +506,36 @@ int ChecksGenerator2::generate(ScoreType & alpha, ScoreType betta, int & counter
 
   // 4. Pawn
   {
-    // caps
+#ifndef NDEBUG
+    char fen[265];
+    board_.toFEN(fen);
+#endif
+
+    int ep_pos = -1;
+    int ep_fig_pos = -1;
+    if ( board_.en_passant_ >= 0 )
     {
-      BitMask pw_check_mask = board_.g_movesTable->pawnCaps_o(ocolor, oki_pos);
-      BitMask cap_mask = 0;
+      const Figure & rfig = board_.getFigure(ocolor, board_.en_passant_);
+      ep_fig_pos = ep_pos = rfig.where();
+      static const int8 delta_pos[] = {8, -8};
+      ep_pos += delta_pos[ocolor];
+    }
 
-      // collect all figures, which we haven't eaten yet
-      for (int type = Figure::TypePawn; type < minimalType_; ++type)
-        cap_mask |= board_.fmgr().type_mask((Figure::Type)type, ocolor);
+    // 1st find immediate checks with or without capture
+    BitMask pw_check_mask = board_.g_movesTable->pawnCaps_o(ocolor, oki_pos);
+    BitMask looked_up = 0;
 
-      cap_mask &= pw_check_mask;
+    for ( ; pw_check_mask; )
+    {
+      int to = clear_lsb(pw_check_mask);
+      const Field & tfield = board_.getField(to);
 
-      BitMask looked_up = 0;
-      for ( ; cap_mask; )
+      // caps
+      if ( tfield )
       {
-        int to = clear_lsb(cap_mask);
-        const Field & tfield = board_.getField(to);
-        THROW_IF( !tfield || tfield.color() != ocolor || tfield.type() >= minimalType_, "invalid pawns capture in checks generator" );
+        if ( tfield.color() != ocolor || tfield.type() >= minimalType_ )
+          continue;
+
         BitMask pw_from = board_.g_movesTable->pawnCaps_o(ocolor, to) & board_.fmgr().pawn_mask_o(color);
 
         // exclude pawns, that we already added
@@ -532,21 +545,50 @@ int ChecksGenerator2::generate(ScoreType & alpha, ScoreType betta, int & counter
         for ( ; pw_from; )
         {
           int from = clear_lsb(pw_from);
-          add_check(m, from, to, tfield.index(), Figure::TypeNone, false);
-        }
-      }
-    }
+          bool discovered = board_.discoveredCheck(from, color, mask_all, brq_mask, oki_pos);
 
-    // normal moves
-    {
-      BitMask inv_mask_all = ~mask_all;
-      BitMask move_mask = board_.g_movesTable->pawnCaps_o(ocolor, oki_pos) & inv_mask_all;
-      for ( ; move_mask; )
+          add_check(m, from, to, tfield.index(), Figure::TypeNone, discovered);
+
+          // add another moves of this pawn if discovered check
+          if ( discovered )
+            add_other_moves(m, from, to, oki_pos);
+        }
+
+        continue;
+      }
+
+      // en-passant
+      if ( to == ep_pos && minimalType_ > Figure::TypePawn )
       {
-        int to = clear_lsb(move_mask);
-        const Field & tfield = board_.getField(to);
-        THROW_IF( tfield , "invalid pawns movement in checks generator" );
+        BitMask pw_from = board_.g_movesTable->pawnCaps_o(ocolor, to) & board_.fmgr().pawn_mask_o(color);
+        BitMask pw_from_save = pw_from;
+
+        for ( ; pw_from; )
+        {
+          int from = clear_lsb(pw_from);
+          add_check(m, from, to, board_.en_passant_, Figure::TypeNone, false);
+
+          // other moves of this pawn were already processed
+          BitMask pw_msk_from = 1ULL << from;
+          if ( pw_msk_from & looked_up )
+            continue;
+
+          // add other moves if pawn discovers check
+          bool discovered = board_.discoveredCheck(from, color, mask_all, brq_mask, oki_pos);
+          if ( discovered )
+            add_other_moves(m, from, to, oki_pos);
+        }
+
+        looked_up |= pw_from_save;
+        ep_pos = -1;
+        continue;
+      }
+
+      // normal moves
+      {
+        BitMask inv_mask_all = ~mask_all;
         BitMask pw_from = board_.g_movesTable->pawnFrom(color, to) & board_.fmgr().pawn_mask_o(color);
+        looked_up |= pw_from;
 
         for ( ; pw_from; )
         {
@@ -559,88 +601,98 @@ int ChecksGenerator2::generate(ScoreType & alpha, ScoreType betta, int & counter
       }
     }
 
-    // promotions
+    // 2nd find promotions
+    {
+      BitMask promo_mask = board_.g_movesTable->promote_o(color) & board_.fmgr().pawn_mask_o(color);
+      looked_up |= promo_mask;
+
+      for ( ; promo_mask; )
+      {
+        int from = clear_lsb(promo_mask);
+        bool discovered = board_.discoveredCheck(from, color, mask_all, brq_mask, oki_pos);
+
+        int to = color ? from+8 : from-8;
+        THROW_IF( (unsigned)to > 63, "invalid promotion field" );
+
+        // usual promotion to queen
+        if ( minimalType_ > Figure::TypeQueen )
+        {
+          if ( discovered )
+            add_check(m, from, to, -1, Figure::TypeQueen, true);
+          else
+          {
+            // could we check from this position?
+            int dir = board_.g_figureDir->dir(Figure::TypeQueen, color, to, oki_pos);
+            if ( dir >= 0 )
+            {
+              BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << from));
+              if ( !board_.is_something_between(to, oki_pos, mask_all_inv_ex) )
+                add_check(m, from, to, -1, Figure::TypeQueen, false);
+            }
+          }
+        }
+
+        // promotion to checking knight
+        if ( knight_check_mask & (1ULL << to) )
+          add_check(m, from, to, -1, Figure::TypeKnight, discovered);
+
+        BitMask pw_mask = board_.g_movesTable->pawnCaps_o(color, from) & board_.fmgr().mask(ocolor);
+        for ( ; pw_mask; )
+        {
+          int to = clear_lsb(pw_mask);
+          const Field & field = board_.getField(to);
+          THROW_IF( !field || field.color() == color, "couldn't capture on promotion in checks generator" );
+
+          if ( knight_check_mask & (1ULL << to) )
+            add_check(m, from, to, field.index(), Figure::TypeKnight, discovered);
+        }
+      }
+    }
+
+    // 3rd en-passant
+    if ( ep_pos >= 0 && minimalType_ > Figure::TypePawn )
+    {
+      BitMask pw_from = board_.g_movesTable->pawnCaps_o(ocolor, ep_pos) & board_.fmgr().pawn_mask_o(color);
+      looked_up |= pw_from;
+
+      for ( ; pw_from; )
+      {
+        int from = clear_lsb(pw_from);
+        bool discovered = board_.discoveredCheck(from, color, mask_all, brq_mask, oki_pos);
+        if ( discovered )
+        {
+          add_check(m, from, ep_pos, board_.en_passant_, Figure::TypeNone, true);
+          add_other_moves(m, from, ep_pos, oki_pos);
+        }
+        else
+        {
+          BitMask pw_msk_to = 1ULL << ep_pos;
+          BitMask pw_msk_from = 1ULL << from;
+          BitMask mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
+
+          bool ep_checking = board_.discoveredCheck(ep_fig_pos, color, mask_all_pw, brq_mask, oki_pos);
+          if ( ep_checking )
+            add_check(m, from, ep_pos, board_.en_passant_, Figure::TypeNone, true);
+        }
+      }
+
+      ep_pos = -1;
+    }
+
+    // 4th discovered checks
+    {
+      BitMask disc_mask = board_.g_movesTable->caps(Figure::TypeQueen, oki_pos) & board_.fmgr().pawn_mask_o(color);
+      disc_mask &= ~looked_up;
+
+      for ( ; disc_mask; )
+      {
+        int from = clear_lsb(disc_mask);
+        bool discovered = board_.discoveredCheck(from, color, mask_all, brq_mask, oki_pos);
+        if ( discovered )
+          add_other_moves(m, from, -1, oki_pos);
+      }
+    }
   }
-  //{
-  //  BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
-  //  for ( ; pw_mask; )
-  //  {
-  //    int pw_pos = clear_lsb(pw_mask);
-
-  //    bool discovered = board_.discoveredCheck(pw_pos, color, mask_all, brq_mask, oki_pos);
-
-  //    const BitMask & from_mask = board_.g_betweenMasks->from(oki_pos, pw_pos);
-
-  //    const int8 * table = board_.g_movesTable->pawn(color, pw_pos);
-  //    for (int i = 0; i < 4; ++i, ++table)
-  //    {
-  //      bool ep_checking = false;
-  //      int rindex = -1;
-  //      if ( i < 2 )
-  //      {
-  //        if ( *table < 0 )
-  //          continue;
-
-  //        const Field & field = board_.getField(*table);
-  //        if ( field && field.color() == ocolor )
-  //          rindex = field.index();
-  //        else if ( board_.en_passant_ >= 0 )
-  //        {
-  //          const Figure & rfig = board_.getFigure(ocolor, board_.en_passant_);
-  //          int8 to = rfig.where();
-  //          static const int8 delta_pos[] = {8, -8};
-  //          to += delta_pos[ocolor];
-  //          if ( to == *table )
-  //          {
-  //            rindex = board_.en_passant_;
-  //            BitMask pw_msk_to = 1ULL << *table;
-  //            BitMask pw_msk_from = 1ULL << pw_pos;
-  //            BitMask mask_all_pw = (mask_all ^ pw_msk_from) | pw_msk_to;
-
-  //            ep_checking = board_.discoveredCheck(rfig.where(), color, mask_all_pw, brq_mask, oki_pos);
-  //          }
-  //        }
-
-  //        if ( rindex < 0 )
-  //          continue;
-
-  //        const Figure & rfig = board_.getFigure(ocolor, rindex);
-
-  //        if ( rfig.getType() >= minimalType_ )
-  //          continue;
-  //      }
-  //      else if ( *table < 0 || board_.getField(*table) )
-  //        break;
-
-  //      BitMask pw_msk_to = 1ULL << *table;
-  //      bool promotion = *table > 55 || *table < 8;
-
-  //      // pawn doesn't cover opponent's king in its new position
-  //      bool doesnt_cover = (from_mask & (1ULL << *table)) == 0;
-
-  //      if ( (discovered && doesnt_cover) || ep_checking || (pw_msk_to & pw_check_mask) )
-  //        add_check(m, pw_pos, *table, rindex, promotion ? Figure::TypeQueen : Figure::TypeNone, discovered);
-  //      // if it's not check, it could be promotion to knight
-  //      else if ( promotion )
-  //      {
-  //        if ( knight_check_mask & pw_msk_to )
-  //          add_check(m, pw_pos, *table, rindex, Figure::TypeKnight, discovered);
-  //        // may be we haven't generated promotion to checking queen yet
-  //        else if ( minimalType_ > Figure::TypeQueen )
-  //        {
-  //          // could we check from this position?
-  //          int dir = board_.g_figureDir->dir(Figure::TypeQueen, color, *table, oki_pos);
-  //          if ( dir >= 0 )
-  //          {
-  //            BitMask mask_all_inv_ex = ~(mask_all & ~(1ULL << pw_pos));
-  //            if ( !board_.is_something_between(*table, oki_pos, mask_all_inv_ex) )
-  //              add_check(m, pw_pos, *table, rindex, Figure::TypeQueen, discovered);
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
 
   return m;
 }

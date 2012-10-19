@@ -383,14 +383,14 @@ private:
 
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
-  void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
+  inline void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
   {
     Move & move = checks_[m];
     move.set(from, to, rindex, new_type, 0);
     move.discoveredCheck_ = discovered;
 
-    if ( rindex >= 0 && cg_ && cg_->find(move) )
-      return;
+    //if ( rindex >= 0 && cg_ && cg_->find(move) )
+    //  return;
 
     const History & hist = MovesGenerator::history(move.from_, move.to_);
     move.srt_score_ = hist.score_;
@@ -408,6 +408,35 @@ private:
     }
 
     ++m;
+  }
+
+  // add non-processed moves of pawn if it discovers check in caps-loop
+  inline void add_other_moves(int & m, int from, int to, int oki_pos)
+  {
+    // not procecessed captures
+    const int8 * table = board_.g_movesTable->pawn(board_.color_, from);
+    for (int i = 0; i < 2 && *table >= 0; ++table, ++i)
+    {
+      if ( *table == to )
+        continue;
+
+      const Field & pfield = board_.getField(*table);
+      if ( !pfield || pfield.color() == board_.color_ || pfield.type() >= minimalType_ )
+        continue;
+
+      add_check(m, from, *table, pfield.index(), Figure::TypeNone, true);
+    }
+
+    // usual moves
+    for ( ; *table >= 0 && !board_.getField(*table); )
+    {
+      // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
+      const BitMask & from_oki_mask = board_.g_betweenMasks->from(oki_pos, from);
+      if ( from_oki_mask & (1ULL << *table) )
+        break;
+
+      add_check(m, from, *table, -1, Figure::TypeNone, true);
+    }
   }
 
   Player & player_;
