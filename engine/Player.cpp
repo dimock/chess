@@ -1149,7 +1149,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     // generate check only on 1st iteration under horizon
     if ( depth >= 0 && !stop_ && alpha < betta )
     {
-      ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
+      //ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
+      ChecksGenerator2 ckg(board_, ply, *this, minimalType);
 
       for ( ; !stop_ && alpha < betta ; )
       {
