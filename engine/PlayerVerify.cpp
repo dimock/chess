@@ -294,50 +294,58 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
 void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType)
 {
   int counter = 0;
+  MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
   CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
-  ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
-  ChecksGenerator2 ckg2(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
+  ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
 
-  Move checks[Board::MovesMax], checks2[Board::MovesMax];
+  THROW_IF( ckg2.has_duplicates(), "duplicated moves found in ChecksGenerator2" );
+
+  Move legal[Board::MovesMax], checks[Board::MovesMax];
   int n = 0, m = 0;
 
   for ( ;; )
   {
-    const Move & move = ckg.check();
+    const Move & move = mg.move();
     if ( !move )
       break;
 
+    if ( cg.find(move) )
+      continue;
+
     Board board0(board_);
 
-    bool stateCheck = true;
-    if ( board_.makeMove(move) )
+    if ( board_.makeMove(move) && board_.getNumOfChecking() > 0 )
     {
-      checks[n++] = move;
-      stateCheck = board_.getState() == Board::UnderCheck;
-      if ( !stateCheck &&
-        (board_.getState() == Board::DrawReps ||
-        board_.getState() == Board::Draw50Moves ||
-        board_.getState() == Board::ChessMat) )
+      if ( move.new_type_ == Figure::TypeQueen || !move.new_type_ )
+        legal[n++] = move;
+      else if ( move.new_type_ == Figure::TypeKnight )
       {
-        stateCheck = true;
+        const Field & ffield = board_.getField(move.to_);
+        THROW_IF( ffield.color() == board_.color_ || ffield.type() != Figure::TypeKnight, "invalid color or type of promoted knight" );
+        bool checkingKnight = false;
+        for (int j = 0; j < board_.checkingNum_; ++j)
+        {
+          if ( board_.checking_[j] == ffield.index() )
+          {
+            checkingKnight = true;
+          }
+        }
+        if ( checkingKnight )
+        {
+          const Figure & knight = board_.getFigure(Figure::otherColor(board_.color_), ffield.index());
+          THROW_IF( knight.getType() != Figure::TypeKnight || knight.getColor() != Figure::otherColor(board_.color_), "invalid promotion to knight in check generator" );
+          const Figure & oking = board_.getFigure(board_.color_, Board::KingIndex);
+          int dir = board_.g_figureDir->dir(knight, oking.where());
+          if ( dir >= 0 )
+            legal[n++] = move;
+        }
       }
-      THROW_IF( !stateCheck, "non checking move" );
     }
 
     board_.verifyMasks();
     board_.unmakeMove();
     THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
     board_.verifyMasks();
-
-    THROW_IF( cg.find(move), "duplicated move found in checks geneator" );
-
-    if ( !stateCheck )
-    {
-      char fen[256];
-      board_.toFEN(fen);
-
-      ChecksGenerator cgg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
-    }
   }
 
   for ( ;; )
@@ -351,15 +359,8 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
     bool stateCheck = true;
     if ( board_.makeMove(move) )
     {
-      checks2[m++] = move;
-      stateCheck = board_.getState() == Board::UnderCheck;
-      if ( !stateCheck &&
-        (board_.getState() == Board::DrawReps ||
-        board_.getState() == Board::Draw50Moves ||
-        board_.getState() == Board::ChessMat) )
-      {
-        stateCheck = true;
-      }
+      checks[m++] = move;
+      stateCheck = board_.getNumOfChecking() > 0;
       THROW_IF( !stateCheck, "non checking move" );
     }
 
@@ -368,45 +369,67 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
     THROW_IF( board0 != board_, "board unmake wasn't correct applied" );
     board_.verifyMasks();
 
-    THROW_IF( cg.find(move), "duplicated move found in checks geneator" );
+    THROW_IF( cg.find(move), "move in checks geneator duplicated move in caps generator" );
 
     if ( !stateCheck )
     {
       char fen[256];
       board_.toFEN(fen);
 
-      ChecksGenerator cgg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
+      ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
     }
   }
 
   for (int i = 0; i < n; ++i)
   {
+    const Move & move = legal[i];
+
     bool found = false;
     for (int j = 0; j < m; ++j)
     {
-      if ( checks[i] == checks2[j] )
+      const Move & cmove = checks[j];
+      if ( cmove == move )
       {
         found = true;
         break;
       }
     }
 
-    THROW_IF( !found, "error in ChecksGenerator2. move is not generated" );
+    if ( !found )
+    {
+      char fen[256];
+      board_.toFEN(fen);
+      ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
+      CapsGenerator cg2(board_, minimalType, ply, *this, alpha, betta, counter);
+    }
+
+    THROW_IF( !found, "some check wasn't generated" );
   }
 
   for (int i = 0; i < m; ++i)
   {
+    const Move & cmove = checks[i];
+
     bool found = false;
     for (int j = 0; j < n; ++j)
     {
-      if ( checks2[i] == checks[j] )
+      const Move & move = legal[j];
+      if ( move == cmove )
       {
         found = true;
         break;
       }
     }
 
-    THROW_IF( !found, "error in ChecksGenerator2. odd move was generated" );
+    if ( !found )
+    {
+      int ttt = 0;
+      char fen[256];
+      board_.toFEN(fen);
+      ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
+    }
+
+    THROW_IF( !found, "some invalid check was generated" );
   }
 }
 #endif

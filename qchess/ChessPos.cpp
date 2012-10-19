@@ -67,6 +67,8 @@ bool ChessPosition::fromFEN(const char * fen)
   halfmovesNumber_ = player_.getBoard().halfmovesCount();
   vboard_ = player_.getBoard();
 #endif
+  
+  ChecksGenerator2 ckg(vboard_, 1, player_, Figure::TypeKing);
 
   //int imb = vboard_.fmgr().weight();
   //if ( !vboard_.getColor() )

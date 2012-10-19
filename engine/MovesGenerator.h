@@ -362,7 +362,7 @@ class ChecksGenerator2
 {
 public:
 
-  ChecksGenerator2(CapsGenerator * cg, Board &, int ply, Player & player, ScoreType & alpha, ScoreType betta, Figure::Type minimalType, int & counter);
+  ChecksGenerator2(Board &, int ply, Player & player, Figure::Type minimalType);
 
   Move & check()
   {
@@ -379,18 +379,28 @@ public:
     return *move;
   }
 
+  bool has_duplicates() const
+  {
+    for (int i = 0; i < numOfMoves_; ++i)
+    {
+      for (int j = i+1; j < numOfMoves_; ++j)
+      {
+        if ( checks_[i] == checks_[j] )
+          return true;
+      }
+    }
+    return false;
+  }
+
 private:
 
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
+  int generate();
 
   inline void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
   {
     Move & move = checks_[m];
     move.set(from, to, rindex, new_type, 0);
     move.discoveredCheck_ = discovered;
-
-    //if ( rindex >= 0 && cg_ && cg_->find(move) )
-    //  return;
 
     const History & hist = MovesGenerator::history(move.from_, move.to_);
     move.srt_score_ = hist.score_;
@@ -406,6 +416,8 @@ private:
     {
       move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
     }
+    else if ( move == killer_ )
+      move.srt_score_ += 100000;
 
     ++m;
   }
@@ -413,6 +425,8 @@ private:
   // add non-processed moves of pawn if it discovers check in caps-loop
   inline void add_other_moves(int & m, int from, int to, int oki_pos)
   {
+    const BitMask & from_oki_mask = board_.g_betweenMasks->from(oki_pos, from);
+
     // not procecessed captures
     const int8 * table = board_.g_movesTable->pawn(board_.color_, from);
     for (int i = 0; i < 2 && *table >= 0; ++table, ++i)
@@ -424,14 +438,17 @@ private:
       if ( !pfield || pfield.color() == board_.color_ || pfield.type() >= minimalType_ )
         continue;
 
+      // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
+      if ( from_oki_mask & (1ULL << *table) )
+        break;
+
       add_check(m, from, *table, pfield.index(), Figure::TypeNone, true);
     }
 
     // usual moves
-    for ( ; *table >= 0 && !board_.getField(*table); )
+    for ( ; *table >= 0 && !board_.getField(*table); ++table)
     {
       // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      const BitMask & from_oki_mask = board_.g_betweenMasks->from(oki_pos, from);
       if ( from_oki_mask & (1ULL << *table) )
         break;
 
@@ -442,7 +459,6 @@ private:
   Player & player_;
   int ply_;
 
-  CapsGenerator * cg_;
   Figure::Type minimalType_;
 
   Move killer_;
