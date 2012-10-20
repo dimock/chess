@@ -6,6 +6,7 @@
 
 
 #include "Board.h"
+////#include <fstream>
 
 class Player;
 class ChecksGenerator;
@@ -62,7 +63,43 @@ public:
   static void save_history(const char * fname);
   static void load_history(const char * fname);
 
-  Move & move();
+  Move & move()
+  {
+    for ( ;; )
+    {
+      Move * move = moves_ + numOfMoves_;
+      Move * mv = moves_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+        return *move;
+
+      int see_gain = 0;
+      if ( (move->rindex_ >= 0 || move->new_type_ > 0) && !move->seen_ )
+      {
+        move->seen_ = 1;
+
+        if ( !see(*move, see_gain) )
+        {
+          if ( move->rindex_ >= 0 )
+            move->srt_score_ = see_gain + 3000;
+          else
+            move->srt_score_ = see_gain + 2000;
+
+          continue;
+        }
+      }
+
+      move->alreadyDone_ = 1;
+      return *move;
+    }
+  }
+
 
   int hist_max() const
   {
@@ -86,15 +123,77 @@ private:
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
 
-  inline void MovesGenerator::add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  inline void add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
     Move & move = moves_[m++];
     move.set(from, to, rindex, new_type, 0);
     calculateWeight(move);
   }
 
-  void calculateWeight(Move & move);
-  bool see(Move & , int &);
+  void calculateWeight(Move & move)
+  {
+    const Field & ffield = board_.getField(move.from_);
+    THROW_IF( !ffield, "no figure on field we move from" );
+
+    const History & hist = history_[move.from_][move.to_];
+    move.srt_score_ = hist.score_ + 10000;
+
+    if ( move.srt_score_ > history_max_ )
+      history_max_ = move.srt_score_;
+
+    if ( move.rindex_ >= 0 )
+    {
+      Figure::Type atype = board_.getField(move.from_).type();
+      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+      move.srt_score_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + 10000000;
+      if ( board_.halfmovesCount() > 1 )
+      {
+        MoveCmd & prev = board_.getMoveRev(-1);
+        if ( prev.to_ == move.to_ )
+          move.srt_score_ += Figure::figureWeight_[vtype] >> 1;
+      }
+    }
+    else if ( move.new_type_ > 0 )
+    {
+      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
+    }
+#ifdef USE_KILLER
+    else if ( move == killer_ )
+    {
+      move.srt_score_ = 3000000;
+      move.fkiller_ = 1;
+    }
+#endif
+  }
+  
+  bool see(Move & move, int & see_gain)
+  {
+    THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
+
+    if ( move.rindex_ >= 0 )
+    {
+      // victim >= attacker
+      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+      Figure::Type atype = board_.getField(move.from_).type();
+      see_gain = Figure::figureWeightSEE_[vtype] - Figure::figureWeightSEE_[atype];
+      if ( see_gain >= 0 )
+        return true;
+    }
+
+    // we look from side, that goes to move. we should adjust sing of initial mat-balance
+    int initial_balance = board_.fmgr().weight();
+    if ( !board_.getColor() )
+      initial_balance = -initial_balance;
+
+    see_gain = board_.see_before(initial_balance, move);
+
+    //#ifndef NDEBUG
+    //  int see_gain1 = board_.see_before2(initial_balance, move);
+    //  THROW_IF(see_gain != see_gain1, "see_before2() failed" );
+    //#endif
+
+    return see_gain >= 0;
+  }
 
   int current_;
   int numOfMoves_;
@@ -114,7 +213,37 @@ public:
 
   CapsGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
 
-  Move & capture();
+  inline Move & capture()
+  {
+    for ( ;; )
+    {
+      Move * move = captures_ + numOfMoves_;
+      Move * mv = captures_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+        return *move;
+
+      int see_gain = 0;
+      if ( !move->seen_ )
+      {
+        move->seen_ = 1;
+        if ( !see(*move, see_gain) )
+        {
+          move->alreadyDone_ = 1;
+          continue;
+        }
+      }
+
+      move->alreadyDone_ = 1;
+      return *move;
+    }
+  }
 
   operator bool () const
   {
@@ -143,7 +272,41 @@ public:
 
 private:
 
-  bool see(Move & move, int & see_gain);
+  inline bool see(Move & move, int & see_gain)
+  {
+    THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
+
+    if ( move.rindex_ >= 0 )
+    {
+      // victim >= attacker
+      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+      Figure::Type atype = board_.getField(move.from_).type();
+      see_gain = Figure::figureWeightSEE_[vtype] - Figure::figureWeightSEE_[atype];
+      if ( see_gain >= 0 )
+        return true;
+    }
+
+    // we look from side, that goes to move. we should adjust sing of initial mat-balance
+    int initial_balance = board_.fmgr().weight();
+    if ( !board_.getColor() )
+      initial_balance = -initial_balance;
+
+    see_gain = board_.see_before(initial_balance, move);
+
+    //#ifndef NDEBUG
+    //  int see_gain1 = board_.see_before2(initial_balance, move);
+    //  //if ( see_gain != see_gain1 )
+    //  //{
+    //  //  char fen[256];
+    //  //  board_.toFEN(fen);
+    //  //  std::ofstream of("see.bug.fen");
+    //  //  of << std::string(fen) << std::endl;
+    //  //}
+    //  THROW_IF(see_gain != see_gain1, "see_before2() failed" );
+    //#endif
+
+    return see_gain >= 0;
+  }
 
   /// returns number of moves found
   int generate(ScoreType & alpha, ScoreType betta, int & counter);
@@ -151,16 +314,9 @@ private:
 
   inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
-    Move & move = captures_[m++];
+    Move & move = captures_[m];
     move.set(from, to, rindex, new_type, 0);
-    calculateWeight(move);
-  }
-
-  void calculateWeight(Move & move) const
-  {
     THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
-	
-	  //const History & hist = MovesGenerator::history(move.from_, move.to_);
     move.srt_score_ = 0;
 
     if ( move.rindex_ >= 0 )
@@ -179,6 +335,7 @@ private:
     {
       move.srt_score_ = 500000;
     }
+    m++;
   }
 
 
@@ -366,17 +523,34 @@ public:
 
   Move & check()
   {
-    Move * move = checks_ + numOfMoves_;
-    Move * mv = checks_;
-    for ( ; *mv; ++mv)
+    for ( ;; )
     {
-      if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
-        continue;
+      Move * move = checks_ + numOfMoves_;
+      Move * mv = checks_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+          continue;
 
-      move = mv;
+        move = mv;
+      }
+      if ( !*move )
+        return *move;
+
+      int see_gain = 0;
+      if ( !move->seen_ )
+      {
+        move->seen_ = 1;
+        if ( !see(*move, see_gain) )
+        {
+          move->alreadyDone_ = 1;
+          continue;
+        }
+      }
+
+      move->alreadyDone_ = 1;
+      return *move;
     }
-    move->alreadyDone_ = 1;
-    return *move;
   }
 
   bool has_duplicates() const
@@ -393,6 +567,28 @@ public:
   }
 
 private:
+
+  bool see(Move & move, int & see_gain)
+  {
+    if ( move.rindex_ >= 0 )
+    {
+      // victim >= attacker
+      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
+      Figure::Type atype = board_.getField(move.from_).type();
+      see_gain = Figure::figureWeightSEE_[vtype] - Figure::figureWeightSEE_[atype];
+      if ( see_gain >= 0 )
+        return true;
+    }
+
+    // we look from side, that goes to move. we should adjust sing of initial mat-balance
+    int initial_balance = board_.fmgr().weight();
+    if ( !board_.getColor() )
+      initial_balance = -initial_balance;
+
+    see_gain = board_.see_before(initial_balance, move);
+
+    return see_gain >= 0;
+  }
 
   int generate();
 
@@ -416,8 +612,6 @@ private:
     {
       move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
     }
-    else if ( move == killer_ )
-      move.srt_score_ += 100000;
 
     ++m;
   }

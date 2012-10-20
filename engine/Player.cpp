@@ -1169,8 +1169,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #endif
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
-        if ( !see_cc(check) )
-          continue;
+        //if ( !see_cc(check) )
+        //  continue;
 
         capture(depth, ply, alpha, betta, check, counter);
       }

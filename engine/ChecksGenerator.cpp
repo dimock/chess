@@ -313,12 +313,12 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 ChecksGenerator2::ChecksGenerator2(Board & board, int ply, Player & player, Figure::Type minimalType) :
   board_(board), player_(player), ply_(ply), numOfMoves_(0), minimalType_(minimalType)
 {
-#ifdef USE_KILLER
-  if ( player_.contexts_[ply_].killer_ )
-    killer_ = player_.contexts_[ply_].killer_;
-  else
-#endif
-    killer_.clear();
+//#ifdef USE_KILLER
+//  if ( player_.contexts_[ply_].killer_ )
+//    killer_ = player_.contexts_[ply_].killer_;
+//  else
+//#endif
+//    killer_.clear();
 
   numOfMoves_ = generate();
   checks_[numOfMoves_].clear();
