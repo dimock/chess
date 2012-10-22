@@ -396,7 +396,7 @@ void ChessWidget::drawInfo()
   //  cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
 
   if ( computerAnswers() )
-    infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_ / 100.f);
+    infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f, %d nps", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_ / 100.f, nps);
   else
     infoText.sprintf("[%d]", cpos_.movesCount());
 
