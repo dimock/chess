@@ -70,8 +70,10 @@ bool ChessPosition::fromFEN(const char * fen)
 
   int counter = 0;
   ScoreType a = -10000;
-  CapsGenerator cg(vboard_, Figure::TypeKing, 1, player_, a, +10000, counter);
-  ChecksGenerator2 ckg(vboard_, 1, player_, Figure::TypeKing);
+  Move hmove;
+  hmove.clear();
+  CapsGenerator cg(hmove, vboard_, Figure::TypeKing, 1, player_, a, +10000, counter);
+  ChecksGenerator2 ckg(hmove, vboard_, 1, player_, Figure::TypeKing);
 
   //int imb = vboard_.fmgr().weight();
   //if ( !vboard_.getColor() )

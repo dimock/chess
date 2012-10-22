@@ -310,8 +310,8 @@ int ChecksGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 }
 //////////////////////////////////////////////////////////////////////////
 
-ChecksGenerator2::ChecksGenerator2(Board & board, int ply, Player & player, Figure::Type minimalType) :
-  board_(board), player_(player), ply_(ply), numOfMoves_(0), minimalType_(minimalType)
+ChecksGenerator2::ChecksGenerator2(const Move & hmove, Board & board, int ply, Player & player, Figure::Type minimalType) :
+  board_(board), player_(player), ply_(ply), numOfMoves_(0), minimalType_(minimalType), hmove_(hmove)
 {
 //#ifdef USE_KILLER
 //  if ( player_.contexts_[ply_].killer_ )

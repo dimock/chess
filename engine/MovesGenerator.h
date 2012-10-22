@@ -211,7 +211,7 @@ class CapsGenerator
 {
 public:
 
-  CapsGenerator(Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
+  CapsGenerator(const Move & hcap, Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
 
   inline Move & capture()
   {
@@ -315,7 +315,11 @@ private:
   inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
   {
     Move & move = captures_[m];
+    
     move.set(from, to, rindex, new_type, 0);
+    if ( move == hcap_ )
+      return;
+
     THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
     move.srt_score_ = 0;
 
@@ -345,6 +349,7 @@ private:
   Player & player_;
   Board & board_;
   int ply_;
+  Move hcap_;
   Move captures_[Board::MovesMax];
 };
 
@@ -478,7 +483,7 @@ private:
 	  Move & move = checks_[m];
 	  move.set(from, to, rindex, new_type, 0);
     move.discoveredCheck_ = discovered;
-    
+   
     if ( rindex >= 0 && cg_ && cg_->find(move) )
       return;
 
@@ -519,7 +524,7 @@ class ChecksGenerator2
 {
 public:
 
-  ChecksGenerator2(Board &, int ply, Player & player, Figure::Type minimalType);
+  ChecksGenerator2(const Move & hmove, Board &, int ply, Player & player, Figure::Type minimalType);
 
   Move & check()
   {
@@ -570,6 +575,10 @@ private:
 
   bool see(Move & move, int & see_gain)
   {
+    // discovered check is dangerous. don't skip it anyway
+    if ( move.discoveredCheck_ )
+      return true;
+
     if ( move.rindex_ >= 0 )
     {
       // victim >= attacker
@@ -596,6 +605,9 @@ private:
   {
     Move & move = checks_[m];
     move.set(from, to, rindex, new_type, 0);
+    if ( move == hmove_ )
+      return;
+
     move.discoveredCheck_ = discovered;
 
     const History & hist = MovesGenerator::history(move.from_, move.to_);
@@ -662,6 +674,8 @@ private:
 
   Move killer_;
   int numOfMoves_;
+
+  Move hmove_;
 
   Board & board_;
   Move checks_[Board::MovesMax];

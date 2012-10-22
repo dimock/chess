@@ -7,8 +7,8 @@
 #include "Player.h"
 
 //////////////////////////////////////////////////////////////////////////
-CapsGenerator::CapsGenerator(Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply)
+CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
+  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply), hcap_(hcap)
 {
   numOfMoves_ = generate(alpha, betta, counter);
   captures_[numOfMoves_].clear();

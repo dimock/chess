@@ -1050,8 +1050,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   Figure::Type minimalType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
-#ifdef USE_HASH_TABLE_CAPTURE
   Move hcap;
+
+#ifdef USE_HASH_TABLE_CAPTURE
   CapturesHashTable::Flag flag = testCaptureHashItem(depth, ply, alpha, betta, minimalType, hcap);
 
 #ifdef RETURN_IF_ALPHA_BETTA_CAPTURES
@@ -1061,6 +1062,8 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     return betta;
 #endif
 
+#else // !USE_HASH_TABLE_CAPTURE
+  hcap.clear();
 #endif //USE_HASH_TABLE_CAPTURE
 
   if ( board_.getState() == Board::UnderCheck )
@@ -1123,7 +1126,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       return alpha;
 
     // generate only suitable captures
-    CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+    CapsGenerator cg(hcap, board_, minimalType, ply, *this, alpha, betta, counter);
     for ( ; !stop_ && alpha < betta; )
     {
       const Move & cap = cg.capture();
@@ -1135,11 +1138,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( stop_ )
         break;
 
-#ifdef USE_HASH_TABLE_CAPTURE
-      if ( hcap == cap )
-        continue;
-#endif
-
       THROW_IF( !board_.validMove(cap), "move validation failed" );
 
       capture(depth, ply, alpha, betta, cap, counter);
@@ -1150,7 +1148,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     if ( depth >= 0 && !stop_ && alpha < betta )
     {
       //ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
-      ChecksGenerator2 ckg(board_, ply, *this, minimalType);
+      ChecksGenerator2 ckg(hcap, board_, ply, *this, minimalType);
 
       for ( ; !stop_ && alpha < betta ; )
       {
@@ -1163,10 +1161,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         if ( stop_ )
           break;
 
-#ifdef USE_HASH_TABLE_CAPTURE
-        if ( hcap == check )
-          continue;
-#endif
         THROW_IF( !board_.validMove(check), "move validation failed" );
 
         //if ( !see_cc(check) )

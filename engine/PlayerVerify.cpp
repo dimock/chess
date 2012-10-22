@@ -133,9 +133,11 @@ void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType bett
 #ifdef VERIFY_CHECKS_GENERATOR
 void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType)
 {
+  Move hmove;
+  hmove.clear();
   int counter = 0;
   MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
-  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
+  CapsGenerator cg(hmove, board_, minimalType, ply, *this, alpha, betta, counter);
   ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
 
   Move legal[Board::MovesMax], checks[Board::MovesMax];
@@ -293,14 +295,16 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
 }
 void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType)
 {
+  Move hmove;
+  hmove.clear();
   int counter = 0;
   MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
-  CapsGenerator cg(board_, minimalType, ply, *this, alpha, betta, counter);
-  ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
+  CapsGenerator cg(hmove, board_, minimalType, ply, *this, alpha, betta, counter);
+  ChecksGenerator2 ckg2(hmove, board_, ply, *this, minimalType);
 
   if ( ckg2.has_duplicates() )
   {
-    ChecksGenerator2 ckg3(board_, ply, *this, minimalType);
+    ChecksGenerator2 ckg3(hmove, board_, ply, *this, minimalType);
   }
   THROW_IF( ckg2.has_duplicates(), "duplicated moves found in ChecksGenerator2" );
 
@@ -380,7 +384,7 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
       char fen[256];
       board_.toFEN(fen);
 
-      ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
+      ChecksGenerator2 ckg2(hmove, board_, ply, *this, minimalType);
 
       board_.makeMove(move);
       board_.unmakeMove();
@@ -406,8 +410,8 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
     {
       char fen[256];
       board_.toFEN(fen);
-      ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
-      CapsGenerator cg2(board_, minimalType, ply, *this, alpha, betta, counter);
+      ChecksGenerator2 ckg2(hmove, board_, ply, *this, minimalType);
+      CapsGenerator cg2(hmove, board_, minimalType, ply, *this, alpha, betta, counter);
     }
 
     THROW_IF( !found, "some check wasn't generated" );
@@ -433,7 +437,7 @@ void Player::verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreTy
       int ttt = 0;
       char fen[256];
       board_.toFEN(fen);
-      ChecksGenerator2 ckg2(board_, ply, *this, minimalType);
+      ChecksGenerator2 ckg2(hmove, board_, ply, *this, minimalType);
     }
 
     THROW_IF( !found, "some invalid check was generated" );
