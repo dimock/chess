@@ -230,14 +230,11 @@ public:
         return *move;
 
       int see_gain = 0;
-      if ( !move->seen_ )
+      if ( !move->seen_ && !see(*move, see_gain) )
       {
         move->seen_ = 1;
-        if ( !see(*move, see_gain) )
-        {
-          move->alreadyDone_ = 1;
-          continue;
-        }
+        move->alreadyDone_ = 1;
+        continue;
       }
 
       move->alreadyDone_ = 1;
@@ -543,14 +540,11 @@ public:
         return *move;
 
       int see_gain = 0;
-      if ( !move->seen_ )
+      if ( !move->seen_ && !see(*move, see_gain) )
       {
         move->seen_ = 1;
-        if ( !see(*move, see_gain) )
-        {
-          move->alreadyDone_ = 1;
-          continue;
-        }
+        move->alreadyDone_ = 1;
+        continue;
       }
 
       move->alreadyDone_ = 1;
