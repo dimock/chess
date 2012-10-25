@@ -10,6 +10,7 @@
 #include "MovesTable.h"
 #include "FigureDirs.h"
 
+class MovesGeneratorBase;
 class MovesGenerator;
 class CapsGenerator;
 class EscapeGenerator;
@@ -35,6 +36,7 @@ struct FiguresMobility
  */
 class Board
 {
+  friend class MovesGeneratorBase;
   friend class MovesGenerator;
   friend class CapsGenerator;
   friend class EscapeGenerator;
@@ -51,8 +53,8 @@ public:
   static int   tcounter_;
 
   /// constants
-  enum State { Invalid, Ok, Castle, UnderCheck, Stalemat, DrawReps, DrawInsuf, Draw50Moves, ChessMat };
-  enum { PawnIndex, KnightIndex = 8, BishopIndex = 10, RookIndex = 12, QueenIndex = 14, KingIndex = 15, NumOfFigures = 16, NumOfFields = 64, MovesMax = 256, FENsize = 512, GameLength = 4096 };
+  enum State { Invalid, Ok = 1, UnderCheck = 2, Stalemat = 4, DrawReps = 8, DrawInsuf = 16, Draw50Moves = 64, ChessMat = 128 };
+  enum { NumOfFields = 64, MovesMax = 256, FENsize = 512, GameLength = 4096 };
 
   bool operator != (const Board & ) const;
 

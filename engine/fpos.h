@@ -10,16 +10,16 @@
 
 class FPos
 {
-  int8 x_, y_;
+  int x_, y_;
 
 public:
 
-  FPos(int8 idx) { x_ = idx & 7; y_ = idx >> 3; }
-  FPos(int8 x, int8 y) : x_(x), y_(y) {}
+  FPos(int idx) { x_ = idx & 7; y_ = idx >> 3; }
+  FPos(int x, int y) : x_(x), y_(y) {}
   FPos() : x_(0), y_(0) {}
 
-  int8 x() const { return x_; }
-  int8 y() const { return y_; }
+  int x() const { return x_; }
+  int y() const { return y_; }
 
   FPos & operator += (const FPos & p)
   {
@@ -90,7 +90,7 @@ class FPosIndexer
 
 public:
 
-  static inline const FPos & get(int8 i)
+  static inline const FPos & get(int i)
   {
     THROW_IF( i < 0 || i > 63, "invalid index" );
     return s_fromIndex_[i];

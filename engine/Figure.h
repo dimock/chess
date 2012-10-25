@@ -9,81 +9,92 @@
 
 #pragma pack (push, 1)
 
-__declspec (align(1)) class Figure
+namespace Figure
 {
-#ifndef NDEBUG
-public:
-#endif
-
-  // position evaluation. 0 - opening, 1 - endgame; color,type,pos
-  static ScoreType positionEvaluations_[2][8][64];
-  static uint8 mirrorIndex_[64];
-
-public:
-
-  static ScoreType bishopKnightMat_[64];
-  static ScoreType figureWeight_[7], figureWeightSEE_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-  static ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
-  static ScoreType knightMobilityBonus_[16], bishopMobilityBonus_[16], queenMobilityBonus_[32], rookMobilityBonus_[16];
-  static ScoreType knightDistBonus_[8], bishopDistBonus_[8], rookDistBonus_[8], queenDistBonus_[8];
-  static ScoreType queenToMyKingDistPenalty_[8];
-  static ScoreType fianchettoBonus_;
-  static ScoreType fakecastlePenalty_, castleImpossiblePenalty_;
-  static ScoreType kingbishopPressure_;
-  static ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
-  static const ScoreType positionGain_ = 70;
-  static const ScoreType tempoBonus_ = 5;
-  static const uint64 pawnCutoffMasks_[2];
-
   enum Weights { WeightDraw = 0, WeightMat = 32000 };
   enum Type  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
   enum Color { ColorBlack, ColorWhite };
+  static ScoreType figureWeight_[7], figureWeightSEE_[7];
 
-  static inline ScoreType positionEvaluation(uint8 stage, uint8 color, uint8 type, int8 pos)
-  {
-    THROW_IF( stage > 1 || color > 1 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
-
-    uint8 cmask = ((int8)(color << 7)) >> 7;
-    uint8 icmask = ~cmask;
-    uint8 i = (mirrorIndex_[pos] & cmask) | (pos & icmask);
-
-    ScoreType e = positionEvaluations_[stage][type][i];
-    return e;
-  }
-
-  Figure();
-	Figure(Type type, Color c, int x, int y, bool firstStep = false);
-
-  bool operator == ( const Figure & other ) const;
-  operator bool () const { return type_ != TypeNone; }
-
-  Color getColor() const { return (Figure::Color)color_; }
-  void  setType(Figure::Type type) { type_ = (Figure::Type)type; }
-  Type  getType() const{ return (Figure::Type)type_; }
-	void  setMoved() { first_step_ = false; }
-  bool  isFirstStep() const { return first_step_; }
-  void  setFirstStep(bool first_step) { first_step_ = first_step; }
-  int   getIndex() const { return index_; }
-  void  setIndex(int8 idx) { index_ = idx; }
-  int8  where() const { return pos_; }
-  int8  go(int8 i) { return pos_ = i; }
-  void  clear() { type_ = TypeNone; }
-
-  const char * name() const;
-
-  static inline Figure::Color otherColor(Figure::Color color)
+  inline Figure::Color otherColor(Figure::Color color)
   {
     return (Figure::Color)((color + 1) & 1);
   }
 
-protected:
+  const char * name(Type type) const;
+}
 
-	Index pos_;
-  int8  index_;
-  int8  type_;
-  uint8 color_ : 1,
-        first_step_ : 1;
-};
+//__declspec (align(1)) class Figure
+//{
+//#ifndef NDEBUG
+//public:
+//#endif
+//
+//  // position evaluation. 0 - opening, 1 - endgame; color,type,pos
+//  static ScoreType positionEvaluations_[2][8][64];
+//  static uint8 mirrorIndex_[64];
+//
+//public:
+//
+//  static ScoreType bishopKnightMat_[64];
+//  static ScoreType figureWeight_[7], figureWeightSEE_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
+//  static ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
+//  static ScoreType knightMobilityBonus_[16], bishopMobilityBonus_[16], queenMobilityBonus_[32], rookMobilityBonus_[16];
+//  static ScoreType knightDistBonus_[8], bishopDistBonus_[8], rookDistBonus_[8], queenDistBonus_[8];
+//  static ScoreType queenToMyKingDistPenalty_[8];
+//  static ScoreType fianchettoBonus_;
+//  static ScoreType fakecastlePenalty_, castleImpossiblePenalty_;
+//  static ScoreType kingbishopPressure_;
+//  static ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
+//  static const ScoreType positionGain_ = 70;
+//  static const ScoreType tempoBonus_ = 5;
+//  static const uint64 pawnCutoffMasks_[2];
+//
+//  static inline ScoreType positionEvaluation(uint8 stage, uint8 color, uint8 type, int8 pos)
+//  {
+//    THROW_IF( stage > 1 || color > 1 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
+//
+//    uint8 cmask = ((int8)(color << 7)) >> 7;
+//    uint8 icmask = ~cmask;
+//    uint8 i = (mirrorIndex_[pos] & cmask) | (pos & icmask);
+//
+//    ScoreType e = positionEvaluations_[stage][type][i];
+//    return e;
+//  }
+//
+//  Figure();
+//	Figure(Type type, Color c, int x, int y, bool firstStep = false);
+//
+//  bool operator == ( const Figure & other ) const;
+//  operator bool () const { return type_ != TypeNone; }
+//
+//  Color getColor() const { return (Figure::Color)color_; }
+//  void  setType(Figure::Type type) { type_ = (Figure::Type)type; }
+//  Type  getType() const{ return (Figure::Type)type_; }
+//	void  setMoved() { first_step_ = false; }
+//  bool  isFirstStep() const { return first_step_; }
+//  void  setFirstStep(bool first_step) { first_step_ = first_step; }
+//  int   getIndex() const { return index_; }
+//  void  setIndex(int8 idx) { index_ = idx; }
+//  int8  where() const { return pos_; }
+//  int8  go(int8 i) { return pos_ = i; }
+//  void  clear() { type_ = TypeNone; }
+//
+//  const char * name() const;
+//
+//  static inline Figure::Color otherColor(Figure::Color color)
+//  {
+//    return (Figure::Color)((color + 1) & 1);
+//  }
+//
+//protected:
+//
+//	Index pos_;
+//  int8  index_;
+//  int8  type_;
+//  uint8 color_ : 1,
+//        first_step_ : 1;
+//};
 
 Figure::Type toFtype(char c);
 char fromFtype(Figure::Type t);

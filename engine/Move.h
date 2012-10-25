@@ -43,8 +43,8 @@ struct Move
 {
 #ifndef NDEBUG
   // make all values invalid
-  Move() : from_(-1), to_(-1), rindex_(100), new_type_(10), checkVerified_(1), alreadyDone_(1), flags_(-1),
-    fkiller_(1), checkFlag_(1), threat_(1), srt_score_(0), strong_(1), discoveredCheck_(1), seen_(1)
+  Move() : from_(-1), to_(-1), new_type_(10), checkVerified_(1), alreadyDone_(1), flags_(-1),
+    counter_(1), checkFlag_(1), threat_(1), vsort_(0), strong_(1), discoveredCheck_(1), seen_(1)
   {}
 #endif
 
@@ -54,73 +54,60 @@ struct Move
   /// index of field go to
   int8 to_;
 
-  /// index of eaten (removed) figure
-  int8 rindex_;
-
   /// new type while pawn promotion
   int8 new_type_;
 
   /// flags
-  uint16 checkVerified_ : 1,
+  union
+  {
+  uint8  checkVerified_ : 1,
          alreadyDone_ : 1,
-		     fkiller_ : 1,
+		     capture_ : 1,
          checkFlag_ : 1,
          threat_ : 1,
          strong_ : 1,
          discoveredCheck_ : 1,
-         seen_ : 1,
-         flags_;
+         seen_ : 1;
 
-  unsigned srt_score_;
+  uint8  flags_;
+  };
+
+  unsigned vsort_;
 
   inline void clear()
   {
     from_ = -1;
     to_ = -1;
     new_type_ = 0;
-    rindex_ = -1;
-    srt_score_ = 0;//-std::numeric_limits<int>::max();
-
-    checkVerified_ = 0;
-    alreadyDone_ = 0;
-	  fkiller_ = 0;
-    checkFlag_ = 0;
-    threat_ = 0;
-    strong_ = 0;
-    discoveredCheck_ = 0;
+    vsort_ = 0;
     flags_ = 0;
-    seen_ = 0;
   }
 
   inline void clearFlags()
   {
-    checkVerified_ = 0;
-    alreadyDone_  = 0;
-    fkiller_ = 0;
-    checkFlag_ = 0;
-    threat_ = 0;
-    strong_ = 0;
-    discoveredCheck_ = 0;
     flags_ = 0;
-    seen_ = 0;
   }
 
-  inline void set(int8 from, int8 to, int8 rindex, int8 new_type, int8 checkVerified)
+  inline void set(int from, int to, int new_type, bool checkVerified, bool capture)
   {
     from_ = from;
     to_ = to;
-    rindex_ = rindex;
     new_type_ = new_type;
-    checkVerified_ = checkVerified;
-    alreadyDone_ = 0;
-	  fkiller_ = 0;
-    checkFlag_ = 0;
-    threat_ = 0;
-    strong_ = 0;
-    discoveredCheck_ = 0;
+    vsort_ = 0;
     flags_ = 0;
-    seen_ = 0;
-    srt_score_ = 0;//-std::numeric_limits<int>::max();
+    capture_ = capture;
+    checkVerified_ = checkVerified;
+  }
+
+  inline void set(int from, int to, int new_type, bool capture)
+  {
+    from_ = from;
+    to_ = to;
+    new_type_ = new_type;
+    vsort_ = 0;
+    flags_ = 0;
+    capture_ = capture;
+    checkVerified_ = false;
   }
 
   inline operator bool () const
@@ -131,18 +118,19 @@ struct Move
   // compare only first 4 bytes
   inline bool operator == (const Move & other) const
   {
-    return *reinterpret_cast<const uint32*>(this) == *reinterpret_cast<const uint32*>(&other);
+    return *reinterpret_cast<const uint16*>(this) == *reinterpret_cast<const uint16*>(&other) &&
+      this->new_type_ == other.new_type_;
   }
 
   // compare only first 4 bytes
   inline bool operator != (const Move & other) const
   {
-    return *reinterpret_cast<const uint32*>(this) != *reinterpret_cast<const uint32*>(&other);
+    return *reinterpret_cast<const uint16*>(this) != *reinterpret_cast<const uint16*>(&other) ||
+      this->new_type_ != other.new_type_;
   }
 };
 
-/*! complete move structure with all necessary unmove information
-  */
+/// complete move structure with all information, required for undo
 __declspec (align(1))
 struct MoveCmd : public Move
 {
@@ -156,6 +144,10 @@ struct MoveCmd : public Move
     *((Move*)this) = move;
     return *this;
   }
+
+
+  /// index of eaten figure
+  int8 rindex_;
 
   /// Zobrist key - used in fifty-move-rule detector
   uint64 zcode_;
@@ -177,7 +169,7 @@ struct MoveCmd : public Move
   /// index of moved figure
   int8 index_;
 
-  /// en-passant pawn index
+  /// en-passant position
   int8 en_passant_;
 
   /// castle: 0 - no castle, 1 - short castle, 2 - long castle
@@ -189,16 +181,13 @@ struct MoveCmd : public Move
   /// new position of rook while castle
   int8 rook_to_;
 
-  /// true - if figure haven't moved yet
-  bool first_move_;
-
-  /// type of eaten figure to restore it while unmove
+  /// type of eaten figure to restore it in undo
   int8 eaten_type_;
 
   /// used to restore rook position after castle
   int8 rook_index_;
 
-  /// restore old board state while unmove
+  /// restore old board state in undo
   int8 old_state_;
 
   /// do we need Undo
@@ -246,6 +235,7 @@ struct MoveCmd : public Move
     field_to_.clear();
     field_rook_to_.clear();
 
+    rindex_ = -1;
     en_passant_ = -1;
     castle_ = 0;
     eaten_type_ = 0;

@@ -227,18 +227,21 @@ bool Board::fromFEN(const char * fen)
         return false;
 
       char cy = *s++;
+
+      Index enpassant(cx, cy);
+
       if ( color_ )
         cy--;
       else
         cy++;
 
-      Index pos(cx, cy);
+      Index pawn_pos(cx, cy);
 
-      Field & fp = getField(pos);
+      Field & fp = getField(pawn_pos);
       if ( fp.type() != Figure::TypePawn || fp.color() == color_ )
         return false;
 
-      en_passant_ = fp.index();
+      en_passant_ = enpassant;
       continue;
     }
 
@@ -352,16 +355,22 @@ bool Board::toFEN(char * fen) const
     *s++ = ' ';
     if ( en_passant_ >= 0 )
     {
-      const Figure & epawn = getFigure(Figure::otherColor(color_), en_passant_);
-      THROW_IF( !epawn, "en-passant pawn is absent but has index" );
-      int x = epawn.where() & 7;
-      int y = epawn.where() >>3;
+      Index ep_pos(en_passant_);
+
+      int x = ep_pos.x();
+      int y = ep_pos.y();
+
       if ( color_ )
-        y++;
-      else
         y--;
-      char cx = 'a' + x;
-      char cy = '1' + y;
+      else
+        y++;
+
+      Index pawn_pos(x, y);
+      const Field & ep_field = getField(pawn_pos);
+      THROW_IF( ep_field.color() == color_ || ep_field.type() != Figure::TypePawn, "en-passant pawn is absent but has index" );
+
+      char cx = 'a' + ep_pos.x();
+      char cy = '1' + ep_pos.y();
       *s++ = cx;
       *s++ = cy;
     }

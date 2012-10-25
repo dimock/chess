@@ -18,19 +18,19 @@ uint8 Figure::mirrorIndex_[] =
 
 const uint64 Figure::pawnCutoffMasks_[2] = { 0xfefefefefefefefe /* left */, 0x7f7f7f7f7f7f7f7f /* right */ };
 
-Figure::Figure() :
-  color_(ColorBlack), type_(TypeNone), first_step_(0), index_(-1), pos_(-1)
-{
-}
-
-Figure::Figure(Type type, Color color, int x, int y, bool firstStep) :
-  color_(color), type_(type), first_step_(firstStep), index_(-1)
-{
-  pos_.set_x(x);
-  pos_.set_y(y);
-  
-  THROW_IF( pos_ < 0 || pos_ > 63, "invalid figure position");
-}
+//Figure::Figure() :
+//  color_(ColorBlack), type_(TypeNone), first_step_(0), index_(-1), pos_(-1)
+//{
+//}
+//
+//Figure::Figure(Type type, Color color, int x, int y, bool firstStep) :
+//  color_(color), type_(type), first_step_(firstStep), index_(-1)
+//{
+//  pos_.set_x(x);
+//  pos_.set_y(y);
+//  
+//  THROW_IF( pos_ < 0 || pos_ > 63, "invalid figure position");
+//}
 
 Figure::Type toFtype(char c)
 {
@@ -75,14 +75,14 @@ char fromFtype(Figure::Type t)
   return Figure::TypeNone;
 }
 
-bool Figure::operator == ( const Figure & other ) const
-{
-  return color_ == other.color_ && type_ == other.type_ && index_ == other.index_ && pos_ == other.pos_;
-}
+//bool Figure::operator == ( const Figure & other ) const
+//{
+//  return color_ == other.color_ && type_ == other.type_ && index_ == other.index_ && pos_ == other.pos_;
+//}
 
-const char * Figure::name() const
+const char * Figure::name(Type type) const
 {
-	switch ( type_ )
+	switch ( type )
 	{
 	case Figure::TypePawn:
 		return "pawn";

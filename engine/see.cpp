@@ -39,7 +39,7 @@ int Board::see(int initial_value, Move & next, int & rdepth) const
 
   // collect all attackers for each side
   // lo-byte = type, hi-byte = pos
-  uint16 attackers[2][NumOfFigures];
+  uint16 attackers[2][NumOfFields];
   int figsN[2] = {0, 0}; 
   bool king_found[2] = { false, false };
   uint64 brq_masks[2] = {0ULL, 0ULL};

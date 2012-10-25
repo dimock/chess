@@ -4,38 +4,15 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-History MovesGenerator::history_[64][64];
+History MovesGeneratorBase::history_[64][64];
 /*************************************************************
   MovesGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
  *************************************************************/
 
 unsigned History::history_max_;
 
-MovesGenerator::MovesGenerator(Board & board, int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), history_max_(0)
-{
-#ifdef USE_KILLER
-  if ( player_ && player_->contexts_[ply_].killer_ )
-    killer_ = player_->contexts_[ply_].killer_;
-  else
-#endif
-    killer_.clear();
 
-  numOfMoves_ = generate(alpha, betta, counter);
-  moves_[numOfMoves_].clear();
-}
-
-MovesGenerator::MovesGenerator(Board & board) :
-  board_(board), current_(0), numOfMoves_(0), ply_(0), depth_(0), player_(0), history_max_(0)
-{
-  killer_.clear();
-  ScoreType alpha = 0, betta = 0;
-  int counter = 0;
-  numOfMoves_ = generate(alpha, betta, counter);
-  moves_[numOfMoves_].clear();
-}
-
-void MovesGenerator::clear_history()
+void MovesGeneratorBase::clear_history()
 {
   for (int i = 0; i < 64; ++i)
     for (int j = 0; j < 64; ++j)
@@ -43,7 +20,7 @@ void MovesGenerator::clear_history()
   History::history_max_ = 0;
 }
 
-void MovesGenerator::normalize_history(int n)
+void MovesGeneratorBase::normalize_history(int n)
 {
   History::history_max_ = 0;
   for (int i = 0; i < 64; ++i)
@@ -59,7 +36,7 @@ void MovesGenerator::normalize_history(int n)
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool MovesGenerator::find(const Move & m) const
+bool MovesGeneratorBase::find(const Move & m) const
 {
   for (int i = 0; i < numOfMoves_; ++i)
   {
@@ -69,8 +46,37 @@ bool MovesGenerator::find(const Move & m) const
   }
   return false;
 }
+
+bool MovesGeneratorBase::has_duplicates() const
+{
+  for (int i = 0; i < numOfMoves_; ++i)
+  {
+    for (int j = i+1; j < numOfMoves_; ++j)
+    {
+      if ( moves_[i] == moves_[j] )
+        return true;
+    }
+  }
+  return false;
+}
+
 //////////////////////////////////////////////////////////////////////////
-int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
+MovesGenerator::MovesGenerator(Board & board, const Move & killer) :
+  MovesGeneratorBase(board), killer_(killer)
+{
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
+}
+
+MovesGenerator::MovesGenerator(Board & board) :
+  MovesGeneratorBase(board)
+{
+  killer_.clear();
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
+}
+//////////////////////////////////////////////////////////////////////////
+int MovesGenerator::generate()
 {
   int m = 0;
   const Figure::Color & color = board_.color_;
@@ -94,17 +100,11 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
             continue;
 
           const Field & field = board_.getField(*table);
-          int rindex = -1;
-          if ( field && field.color() == ocolor )
-            rindex = field.index();
-          else if ( board_.en_passant_ >= 0 )
+          bool capture = false;
+          if ( (field && field.color() == ocolor) ||
+               (board_.en_passant_ >= 0 && to == board_.en_passant_) )
           {
-            const Figure & rfig = board_.getFigure(ocolor, board_.en_passant_);
-            int8 to = rfig.where();
-            static const int8 delta_pos[] = {8, -8};
-            to += delta_pos[ocolor];
-            if ( to == *table )
-              rindex = board_.en_passant_;
+            capture = true;
           }
 
           if ( rindex < 0 )
@@ -116,8 +116,8 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
           Move & move = moves_[m++];
           move.alreadyDone_ = 0;
-          move.set(pw_pos, *table, rfig.getIndex(), 0, 0);
-          calculateWeight(move);
+          move.set(pw_pos, *table, 0, false, capture);
+          calculateSortValue(move);
 
           if ( promotion )
           {
@@ -125,15 +125,15 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
             moves_[m] = move;
             moves_[m].new_type_ = Figure::TypeRook;
-            calculateWeight(moves_[m++]);
+            calculateSortValue(moves_[m++]);
 
             moves_[m] = move;
             moves_[m].new_type_ = Figure::TypeBishop;
-            calculateWeight(moves_[m++]);
+            calculateSortValue(moves_[m++]);
 
             moves_[m] = move;
             moves_[m].new_type_ = Figure::TypeKnight;
-            calculateWeight(moves_[m++]);
+            calculateSortValue(moves_[m++]);
           }
         }
 
@@ -144,8 +144,8 @@ int MovesGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
           Move & move = moves_[m++];
 
           move.alreadyDone_ = 0;
-          move.set(pw_pos, *table, -1, 0, 0);
-          calculateWeight(move);
+          move.set(pw_pos, *table, 0, false, false);
+          calculateSortValue(move);
 
           if ( promotion )
           {

@@ -73,7 +73,8 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
   // generate pawn promotions (only if < 2 checking figures)
   const uint64 & pawn_msk = board_.fmgr_.pawn_mask_o(board_.color_);
-  static int pw_delta[] = { -8, 8 };
+
+  static int pw_delta[] = { -8, +8 };
 
   const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
 
@@ -115,15 +116,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   pawns_eat = (pawn_eat_msk & oppenent_mask_p) != 0;
 
   if ( !pawns_eat && board_.en_passant_ >= 0 && (minimalType_ <= Figure::TypePawn) )
-  {
-    const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
-    THROW_IF( !epawn, "there is no en passant pawn" );
-
-    int to = epawn.where() + pw_delta[board_.color_];
-    THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
-
-    pawns_eat = (pawn_eat_msk & (1ULL << to)) != 0;
-  }
+    pawns_eat = (pawn_eat_msk & (1ULL << board_.en_passant_)) != 0;
 
   // generate captures
 
@@ -157,18 +150,19 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       if ( board_.en_passant_ >= 0 && minimalType_ <= Figure::TypePawn )
       {
-        const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
-        THROW_IF( !epawn, "there is no en passant pawn" );
+#ifndef NDEBUG
+        Index ep_pos(board_.en_passant_);
+        Index pawn_pos(ep_pos.x(), ep_pos.y() - pw_delta[board_.color_]);
+        const Field & ep_field = board_.getField(pawn_pos);
+        THROW_IF( ep_field.type() != Figure::TypePawn || ep_field.color() != ocolor, "there is no en passant pawn" );
+#endif
 
-        int to = epawn.where() + pw_delta[board_.color_];
-        THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
-
-        int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, pw_pos, to);
+        int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, pw_pos, board_.en_passant_);
         if ( 0 == dir || 1 == dir )
         {
           THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
 
-          add_capture(m, pw_pos, to, board_.en_passant_, 0);
+          add_capture(m, pw_pos, board_.en_passant_, 0);
         }
       }
     }

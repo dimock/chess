@@ -12,31 +12,20 @@ class Board;
 __declspec (align(1)) class Field
 {
 public:
-  Field() : color_(0), type_(0), index_(0)
+  Field() : color_(0), type_(0)
   {
   }
 
   inline operator bool () const { return type_ != 0; }
-  
-  inline int index() const
-  {
-	  //int8 mask = (type_ - 1) >> 31; // no type: -1; has type: 0
-	  //int8 i = index_ | mask;
-	  //THROW_IF( (type_ && i != index_ || !type_ && i != -1), "invalid field index calcualated" );
-	  //return i;
-	  return type_ ? index_ : -1;
-  } // OPTIMIZE
-
   inline Figure::Type  type() const { return (Figure::Type)type_; }
   inline Figure::Color color() const { return (Figure::Color)color_; }
 
-  inline void set(const Figure & fig)
+  inline void set(const Figure::Type type, const Figure::Color color)
   {
     THROW_IF( *this, "try to put figure to occupied field");
 
-    color_ = fig.getColor();
-    type_  = fig.getType();
-    index_ = fig.getIndex();
+    color_ = color;
+    type_  = type;
   }
 
   inline void clear()
@@ -47,8 +36,7 @@ public:
 private:
 
   uint8 color_ : 1,
-        type_  : 3,
-        index_ : 4;
+        type_  : 3;
 };
 
 #pragma pack (pop)
