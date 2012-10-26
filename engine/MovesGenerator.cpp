@@ -114,7 +114,7 @@ int MovesGenerator::generate()
 
           Move & move = moves_[m++];
           move.alreadyDone_ = 0;
-          move.set(pw_pos, *table, 0, capture);
+          move.set(pw_pos, *table, Figure::TypeNone, capture);
           calculateSortValue(move);
 
           if ( promotion )
@@ -142,7 +142,7 @@ int MovesGenerator::generate()
           Move & move = moves_[m++];
 
           move.alreadyDone_ = 0;
-          move.set(pw_pos, *table, 0, false);
+          move.set(pw_pos, *table, Figure::TypeNone, false);
           calculateSortValue(move);
 
           if ( promotion )
@@ -187,7 +187,7 @@ int MovesGenerator::generate()
             capture = true;
           }
 
-          add(m, kn_pos, *table, 0, capture);
+          add(m, kn_pos, *table, Figure::TypeNone, capture);
         }
       }
     }
@@ -224,7 +224,7 @@ int MovesGenerator::generate()
               capture = true;
             }
 
-            add(m, fg_pos, p, 0, capture);
+            add(m, fg_pos, p, Figure::TypeNone, capture);
           }
         }
       }
@@ -253,18 +253,18 @@ int MovesGenerator::generate()
         capture = true;
       }
 
-      add(m, ki_pos, *table, 0, capture);
+      add(m, ki_pos, *table, Figure::TypeNone, capture);
     }
 
     if ( !board_.underCheck() )
     {
       // short castle
       if ( board_.castling(board_.color_, 0) )
-        add(m, ki_pos, ki_pos+2, 0, false);
+        add(m, ki_pos, ki_pos+2, Figure::TypeNone, false);
 
       // long castle
       if ( board_.castling(board_.color_, 1) )
-        add(m, ki_pos, ki_pos-2, 0, false);
+        add(m, ki_pos, ki_pos-2, Figure::TypeNone, false);
     }
   }
 
@@ -370,7 +370,7 @@ int EscapeGenerator::generateUsual()
         int n = clear_lsb(eat_msk_ep);
         const Field & fpawn = board_.getField(n);
         THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
-        add(m, n, to, 0, true);
+        add(m, n, to, Figure::TypeNone, true);
       }
     }
 
@@ -388,7 +388,7 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
 
-      if ( add(m, n, ch_pos, promotion ? Figure::TypeQueen : 0, true) && promotion )
+      if ( add(m, n, ch_pos, promotion ? Figure::TypeQueen : Figure::TypeNone, true) && promotion )
       {
         // firstly decrease m because it was increased in add()
         Move & move = moves_[--m];
@@ -420,7 +420,7 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fknight || fknight.type() != Figure::TypeKnight || fknight.color() != board_.color_, "no knight on field we are going to do capture from" );
 
-      add(m, n, ch_pos, 0, true);
+      add(m, n, ch_pos, Figure::TypeNone, true);
     }
   }
 
@@ -447,7 +447,7 @@ int EscapeGenerator::generateUsual()
       if ( (btw_msk & mask_all_inv) != btw_msk )
         continue;
 
-      add(m, n, ch_pos, 0, true);
+      add(m, n, ch_pos, Figure::TypeNone, true);
     }
   }
 
@@ -472,7 +472,7 @@ int EscapeGenerator::generateUsual()
 
         bool promotion = *table > 55 || *table < 8;
 
-        if ( add(m, pw_pos, *table, promotion ? Figure::TypeQueen : 0, false) && promotion )
+        if ( add(m, pw_pos, *table, promotion ? Figure::TypeQueen : Figure::TypeNone, false) && promotion )
         {
           Move & move = moves_[--m];
 
@@ -505,7 +505,7 @@ int EscapeGenerator::generateUsual()
 
         THROW_IF( field, "there is something between king and checking figure" );
 
-        add(m, kn_pos, n, 0, false);
+        add(m, kn_pos, n, Figure::TypeNone, false);
       }
     }
 
@@ -534,7 +534,7 @@ int EscapeGenerator::generateUsual()
           if ( (btw_msk & mask_all_inv) != btw_msk )
             continue;
 
-          add(m, fg_pos, n, 0, false);
+          add(m, fg_pos, n, Figure::TypeNone, false);
         }
       }
     }
@@ -567,7 +567,7 @@ int EscapeGenerator::generateKingonly(int m)
     }
 
     Move & move = moves_[m];
-    move.set(king_pos, *table, 0, capture);
+    move.set(king_pos, *table, Figure::TypeNone, capture);
     if ( move == hmove_ || !board_.isMoveValidUnderCheck(move) )
       continue;
 

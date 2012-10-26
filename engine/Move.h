@@ -88,7 +88,7 @@ struct Move
     flags_ = 0;
   }
 
-  inline void set(int from, int to, int new_type, bool capture)
+  inline void set(int from, int to, Figure::Type new_type, bool capture)
   {
     from_ = from;
     to_ = to;

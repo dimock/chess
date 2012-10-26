@@ -95,11 +95,9 @@ protected:
     // en-passant case
     if ( vtype == Figure::TypeNone && move.to_ == board_.en_passant_ && ffrom.type() == Figure::TypePawn )
     {
-#ifdef NDEBUG
-      Index ep_pos(board_.en_passant_);
-      Index pawn_pos(ep_pos.x(), ep_pos.y() + (board_.color_ ? -8 : +8));
-      THROW_IF( board_.getField(pawn_pos).type() != Figure::TypePawn || board_.getField(pawn_pos).color() == board_.color_, "no en-passant pawn" );
-#endif
+      THROW_IF( board_.getField(board_.enpassantPos()).type() != Figure::TypePawn ||
+        board_.getField(board_.enpassantPos()).color() == board_.color_, "no en-passant pawn" );
+
       vtype = Figure::TypePawn;
     }
 
@@ -175,7 +173,7 @@ private:
   /// returns number of moves found
   int generate();
 
-  inline void add(int & index, int8 from, int8 to, int8 new_type, bool capture)
+  inline void add(int & index, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
     Move & move = moves_[index++];
     move.set(from, to, new_type, capture);
@@ -254,7 +252,7 @@ private:
   /// returns number of moves found
   int generate();
 
-  inline void add(int & m, int8 from, int8 to, int8 new_type, bool capture)
+  inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
     THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
     
@@ -277,7 +275,6 @@ private:
 
 
   Figure::Type minimalType_;
-  Board & board_;
   Move hcap_;
 };
 
@@ -302,7 +299,7 @@ private:
   int generateUsual();
   int generateKingonly(int m);
 
-  bool add(int & m, int8 from, int8 to, int8 new_type, bool capture)
+  bool add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
     Move & move = moves_[m];
     move.set(from, to, new_type, capture);
@@ -325,11 +322,11 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 // generate all captures with type gt/eq to minimalType
-class ChecksGenerator2 : public MovesGeneratorBase
+class ChecksGenerator : public MovesGeneratorBase
 {
 public:
 
-  ChecksGenerator2(const Move & hmove, Figure::Type minimalType);
+  ChecksGenerator(const Move & hmove, Board & board, Figure::Type minimalType);
 
   Move & check()
   {
@@ -415,7 +412,7 @@ private:
       if ( dir == 0 || dir == 1 )
         continue;
 
-      add(m, from, *table, Figure::TypeNone, true, true /*cap*/);
+      add(m, from, *table, Figure::TypeNone, true /* discovered */, true /*cap*/);
     }
 
     // usual moves
@@ -425,7 +422,7 @@ private:
       if ( from_oki_mask & (1ULL << *table) )
         break;
 
-      add(m, from, *table, Figure::TypeNone, true, false/*no cap*/);
+      add(m, from, *table, Figure::TypeNone, true /* discovered */, false/*no cap*/);
     }
   }
 

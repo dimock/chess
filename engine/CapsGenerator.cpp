@@ -7,14 +7,14 @@
 #include "Player.h"
 
 //////////////////////////////////////////////////////////////////////////
-CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply), hcap_(hcap)
+CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type minimalType) :
+  MovesGeneratorBase(board), hcap_(hcap)
 {
-  numOfMoves_ = generate(alpha, betta, counter);
-  captures_[numOfMoves_].clear();
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
 }
 
-int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
+int CapsGenerator::generate()
 {
   int m = 0;
 
@@ -34,7 +34,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         const Field & field = board_.getField(to);
         THROW_IF( !field || field.color() != ocolor, "invalid promotion with capture in caps generator" );
 
-        add_capture(m, from, to, field.index(), Figure::TypeQueen);
+        add(m, from, to, Figure::TypeQueen, true);
       }
     }
     return m;
@@ -71,15 +71,11 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
   uint64 mask_all_inv = ~mask_all;
   uint64 brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
 
-  // generate pawn promotions (only if < 2 checking figures)
+  // generate pawn promotions
   const uint64 & pawn_msk = board_.fmgr_.pawn_mask_o(board_.color_);
 
-  static int pw_delta[] = { -8, +8 };
-
-  const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
-
-  if ( minimalType_ <= Figure::TypeQueen )
   {
+    static int pw_delta[] = { -8, +8 };
     uint64 promo_msk = board_.g_movesTable->promote_o(board_.color_);
     promo_msk &= pawn_msk;
 
@@ -100,7 +96,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
       if ( board_.getField(to) )
         continue;
 
-      add_capture(m, from, to, -1, Figure::TypeQueen);
+      add(m, from, to, Figure::TypeQueen, false);
     }
   }
 
@@ -145,24 +141,19 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
           continue;
 
-        add_capture(m, pw_pos, to, field.index(), promotion ? Figure::TypeQueen : Figure::TypeNone);
+        add(m, pw_pos, to, promotion ? Figure::TypeQueen : Figure::TypeNone, true);
       }
 
       if ( board_.en_passant_ >= 0 && minimalType_ <= Figure::TypePawn )
       {
-#ifndef NDEBUG
-        Index ep_pos(board_.en_passant_);
-        Index pawn_pos(ep_pos.x(), ep_pos.y() - pw_delta[board_.color_]);
-        const Field & ep_field = board_.getField(pawn_pos);
-        THROW_IF( ep_field.type() != Figure::TypePawn || ep_field.color() != ocolor, "there is no en passant pawn" );
-#endif
+        THROW_IF( board_.getField(board_.enpassantPos()).type() != Figure::TypePawn || board_.getField(board_.enpassantPos()).color() != ocolor, "there is no en passant pawn" );
 
         int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, pw_pos, board_.en_passant_);
         if ( 0 == dir || 1 == dir )
         {
           THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
 
-          add_capture(m, pw_pos, board_.en_passant_, 0);
+          add(m, pw_pos, board_.en_passant_, Figure::TypeNone, true);
         }
       }
     }
@@ -188,7 +179,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       THROW_IF( field.type() < minimalType_, "try to capture figure with score lower than required" );
 
-      add_capture(m, kn_pos, to, field.index(), 0);
+      add(m, kn_pos, to, Figure::TypeNone, true);
     }
   }
 
@@ -215,7 +206,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         if ( (btw_msk & mask_all_inv) != btw_msk )
           continue;
 
-        add_capture(m, fg_pos, to, field.index(), 0);
+        add(m, fg_pos, to, Figure::TypeNone, true);
       }
     }
   }
@@ -242,7 +233,7 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       THROW_IF( field.type() < minimalType_, "try to capture figure with score lower than required" );
 
-      add_capture(m, ki_pos, to, field.index(), 0);
+      add(m, ki_pos, to, Figure::TypeNone, true);
     }
   }
 
