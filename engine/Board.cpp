@@ -43,7 +43,6 @@ void Board::clear()
   halfmovesCounter_ = 0;
   repsCounter_ = 0;
   castling_ = 0;
-  stages_[0] = stages_[1] = 0;
 
   for (int i = 0; i < NumOfFields; ++i)
     fields_[i].clear();
@@ -416,20 +415,6 @@ bool Board::invalidate()
   else if ( cnum > 0 )
   {
     state_ |= UnderCheck;
-  }
-
-  // setup stages for each color
-  for (int c = 0; c < 2; ++c)
-  {
-    Figure::Color color =  (Figure::Color)c;
-    Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
-    stages_[color] = 0;
-    if ( !( (fmgr_.queens(ocolor) > 0 && fmgr_.rooks(ocolor)+fmgr_.knights(ocolor)+fmgr_.bishops(ocolor) > 0) ||
-            (fmgr_.rooks(ocolor) > 1 && fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 1) ||
-            (fmgr_.rooks(ocolor) > 0 && ((fmgr_.bishops_w(ocolor) > 0 && fmgr_.bishops_b(ocolor) > 0) || (fmgr_.bishops(ocolor) + fmgr_.knights(ocolor) > 2))) ) )
-    {
-      stages_[color] = 1;
-    }
   }
 
   verifyState();

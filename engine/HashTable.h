@@ -244,18 +244,3 @@ public:
       hitem.move_ = move;
   }
 };
-
-class EvalHashTable : public HashTable<EvalHItem>
-{
-public:
-
-  EvalHashTable(int size) : HashTable<EvalHItem>(size)
-  {}
-
-  void push(const uint64 & hcode, ScoreType e)
-  {
-    EvalHItem & eitem = operator [] (hcode);
-    eitem.hcode_ = hcode;
-    eitem.eval_ = e;
-  }
-};

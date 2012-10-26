@@ -307,68 +307,18 @@ ScoreType Board::calculateEval() const
   ScoreType fweight_b = fmgr_.weight(Figure::ColorBlack) - fmgr_.pawns(Figure::ColorBlack)*Figure::figureWeight_[Figure::TypePawn];
   ScoreType fweight_w = fmgr_.weight(Figure::ColorWhite) - fmgr_.pawns(Figure::ColorWhite)*Figure::figureWeight_[Figure::TypePawn];
 
+  int stage_coef = 128 * (fweight_b + fweight_w) / fweight_max;
 
-  // special case KRNKR || KRBKR - really almost draw case
-  //if ( !fmgr_.pawns(Figure::ColorWhite) && !fmgr_.pawns(Figure::ColorBlack) &&
-  //     !fmgr_.queens(Figure::ColorWhite) && !fmgr_.queens(Figure::ColorBlack) &&
-  //      fmgr_.rooks(Figure::ColorWhite) == 1 && fmgr_.rooks(Figure::ColorBlack) == 1 )
-  //{
-  //  ScoreType wdiff = fweight_w - fweight_b;
-  //  Figure::Color win_color  = wdiff > 0 ? Figure::ColorWhite : Figure::ColorBlack;
-  //  Figure::Color lose_color = wdiff > 0 ? Figure::ColorBlack : Figure::ColorWhite;
-
-  //  if ( (fmgr_.knights(Figure::ColorWhite)+fmgr_.bishops(Figure::ColorWhite) == 1 && fmgr_.knights(Figure::ColorBlack)+fmgr_.bishops(Figure::ColorBlack) == 0) ||
-  //       (fmgr_.knights(Figure::ColorWhite)+fmgr_.bishops(Figure::ColorWhite) == 0 && fmgr_.knights(Figure::ColorBlack)+fmgr_.bishops(Figure::ColorBlack) == 1) )
-  //  {
-  //    const Figure & king_l = getFigure(lose_color, KingIndex);
-
-  //    int kx = king_l.where() & 7;
-  //    int ky = king_l.where() >>3;
-
-  //    int dist = g_distanceCounter->getDistance(getFigure(Figure::ColorWhite, KingIndex).where(), getFigure(Figure::ColorBlack, KingIndex).where());
-  //    if ( win_color )
-  //      dist = -dist;
-
-  //    if ( kx == 0 || kx == 7 || ky == 0 || ky == 7 )
-  //    {
-  //      score = wdiff >> 1;
-  //      score += dist << 2;
-  //      ScoreType kscore = Figure::positionEvaluation( 1, lose_color, Figure::TypeKing, king_l.where() );
-  //      score += lose_color ? kscore : -kscore;
-  //    }
-  //    else
-  //    {
-  //      score = wdiff >> 2;
-  //      score += dist;
-  //      score += Figure::positionEvaluation( 1, Figure::ColorWhite, Figure::TypeKing, getFigure(Figure::ColorWhite, KingIndex).where() );
-  //      score -= Figure::positionEvaluation( 1, Figure::ColorBlack, Figure::TypeKing, getFigure(Figure::ColorBlack, KingIndex).where() );
-  //    }
-
-  //    return score;
-  //  }
-  //}
-
-
-  score -= fmgr_.eval(Figure::ColorBlack, stages_[0]);
-  score += fmgr_.eval(Figure::ColorWhite, stages_[1]);
+  score -= (stage_coef * fmgr_.eval(Figure::ColorBlack, 0) + (256-stage_coef) * fmgr_.eval(Figure::ColorBlack, 1)) >> 8;
+  score += (stage_coef * fmgr_.eval(Figure::ColorWhite, 0) + (256-stage_coef) * fmgr_.eval(Figure::ColorWhite, 1)) >> 8;
 
   FiguresMobility fmob_b, fmob_w;
   score -= evaluateMobility(Figure::ColorBlack, fmob_b);
   score += evaluateMobility(Figure::ColorWhite, fmob_w);
 
   // king's safety
-  if ( !stages_[Figure::ColorBlack] )
-    score -= evaluateKing(Figure::ColorBlack, fmob_w)*fweight_w/fweight_max;
-
-  if ( !stages_[Figure::ColorWhite] )
-    score += evaluateKing(Figure::ColorWhite, fmob_b)*fweight_b/fweight_max;
-
-  // king to pawns in endgame
-  if ( stages_[Figure::ColorBlack] )
-    score -= evalPawnsEndgame(Figure::ColorBlack);
-
-  if ( stages_[Figure::ColorWhite] )
-    score += evalPawnsEndgame(Figure::ColorWhite);
+  score -= (stage_coef * evaluateKing(Figure::ColorBlack, fmob_w) + (256-stage_coef) * stage_coef * evalPawnsEndgame(Figure::ColorBlack)) >> 8;
+  score += (stage_coef * evaluateKing(Figure::ColorWhite, fmob_b) + (256-stage_coef) * stage_coef * evalPawnsEndgame(Figure::ColorWhite)) >> 8;
 
   // fianchetto
   score += evaluateFianchetto();
@@ -390,17 +340,19 @@ ScoreType Board::calculateEval() const
   }
   score += pws_score;
 
-  if ( !stages_[Figure::ColorWhite] && fmgr_.rooks(Figure::ColorBlack) )
+  if ( fmgr_.rooks(Figure::ColorBlack) )
   {
     ScoreType score0 = 0;
     EVALUATE_OPEN_ROOKS(Figure::ColorBlack, score0);
+    score0 = (score0 * stage_coef) >> 8;
     score -= score0;
   }
 
-  if ( !stages_[Figure::ColorBlack] && fmgr_.rooks(Figure::ColorWhite) )
+  if ( fmgr_.rooks(Figure::ColorWhite) )
   {
     ScoreType score1 = 0;
     EVALUATE_OPEN_ROOKS(Figure::ColorWhite, score1);
+    score1 = (score1 * stage_coef) >> 8;
     score += score1;
   }
 #else
@@ -411,18 +363,10 @@ ScoreType Board::calculateEval() const
   }
 
   {
-    if ( !stages_[Figure::ColorWhite] )
-	    score -= evaluateRooks(Figure::ColorBlack);
-
-    if ( !stages_[Figure::ColorBlack] )
-	    score += evaluateRooks(Figure::ColorWhite);
+    score -= (evaluateRooks(Figure::ColorBlack) * stage_coef) >> 8;
+    score += (evaluateRooks(Figure::ColorWhite) * stage_coef) >> 8;
   }
 #endif
-
-  if ( color_ )
-    score += Figure::tempoBonus_;
-  else
-    score -= Figure::tempoBonus_;
 
   return score;
 }
@@ -587,8 +531,8 @@ ScoreType Board::evaluateRooks(Figure::Color color) const
 	const uint8 * pmsk  = (const uint8*)&fmgr_.pawn_mask_t(color);
   const uint8 * opmsk = (const uint8*)&fmgr_.pawn_mask_t(ocolor);
 
-  const Figure & oking = getFigure(ocolor, KingIndex);
-  int okx = oking.where() & 7;
+  int ok_pos = kingPos(ocolor);
+  int okx = ok_pos & 7;
 
 	ScoreType score = 0;
 	for ( ; rook_mask; )

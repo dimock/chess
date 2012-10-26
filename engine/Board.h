@@ -90,7 +90,7 @@ public:
    */
 
   /// unpack from hash
-  Move unpack(const PackedMove & ) const;
+  bool unpack(const PackedMove &, Move & move) const;
 
   PackedMove pack(const Move & move) const
   {
@@ -185,8 +185,8 @@ public:
     return fmgr_;
   }
 
-  /// verify 
-  bool validMove(const Move &) const;
+  /// verify is this move is physically possible. it could be invalid anyway
+  bool verifyMove(const Move &) const;
 
   /// null-move
   void makeNullMove(MoveCmd & move);
@@ -608,9 +608,6 @@ private:
 
   /// for chess draw detector
   bool can_win_[2];
-
-  /// game stage - opening, middle-game, etc...
-  uint8 stages_[2];
 
   /// en-passant pawn index. must be cleared (set to -1) after move. it has color different from "color_"
   int8  en_passant_;

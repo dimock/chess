@@ -155,9 +155,6 @@ struct MoveCmd : public Move
   Field field_to_;
   Field field_rook_to_;
 
-  /// index of moved figure
-  int8 index_;
-
   /// en-passant position
   int8 en_passant_;
 
@@ -176,12 +173,6 @@ struct MoveCmd : public Move
   /// restore old board state in undo
   int8 old_state_;
 
-  /// do we need Undo
-  bool need_undo_;
-
-  /// do we need unmake
-  bool need_unmake_;
-
   /// number of checking figures
   uint8 checkingNum_;
 
@@ -193,12 +184,6 @@ struct MoveCmd : public Move
 
   /// previous checking figures positions
   uint8 old_checking_[2];
-
-  /// save stage of current color
-  uint8 stage_;
-
-  /// weight for sorting moves for alpha-betta
-  ScoreType weight_;
 
   /// fifty moves rule
   uint8 fifty_moves_;
@@ -228,8 +213,6 @@ struct MoveCmd : public Move
     old_state_ = 0;
     state_ = 0;
     checkingNum_ = 0;
-    need_undo_ = false;
-    need_unmake_ = false;
     rook_to_ = -1;
     rook_from_ = -1;
     reduced_ = false;
