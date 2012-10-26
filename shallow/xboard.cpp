@@ -84,26 +84,26 @@ bool xBoardMgr::peekInput()
 
 void xBoardMgr::out_state(ostream & os, Board::State state, bool white)
 {
-  if ( Board::ChessMat == state )
+  if ( Board::ChessMat & state )
   {
     if ( white )
       os << "1-0 {White}" << endl;
     else
       os << "0-1 {Black}" << endl;
   }
-  else if ( Board::DrawInsuf == state )
+  else if ( Board::DrawInsuf & state )
   {
     os << "1/2-1/2 {Draw by material insufficient}" << endl;
   }
-  else if ( Board::Stalemat == state )
+  else if ( Board::Stalemat & state )
   {
     os << "1/2-1/2 {Stalemate}" << endl;
   }
-  else if ( Board::DrawReps == state )
+  else if ( Board::DrawReps & state )
   {
     os << "1/2-1/2 {Draw by repetition}" << endl;
   }
-  else if ( Board::Draw50Moves == state )
+  else if ( Board::Draw50Moves & state )
   {
     os << "1/2-1/2 {Draw by fifty moves rule}" << endl;
   }
@@ -319,7 +319,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
         os_ << str << endl;
 
-        if ( Board::isDraw(state) || state == Board::ChessMat )
+        if ( Board::isDraw(state) || (state & Board::ChessMat) )
         {
           out_state(os_, state, white);
 
@@ -351,7 +351,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
       bool white;
       if ( thk_.move(cmd, state, white) )
       {
-        if ( Board::isDraw(state) || Board::ChessMat == state )
+        if ( Board::isDraw(state) || (Board::ChessMat & state) )
         {
           out_state(os_, state, white);
 
@@ -372,7 +372,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
             os_ << str << endl;
 
-            if ( Board::isDraw(state) || state == Board::ChessMat )
+            if ( Board::isDraw(state) || (state & Board::ChessMat) )
             {
               out_state(os_, state, white);
 

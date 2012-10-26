@@ -17,6 +17,8 @@ namespace Figure
   
   static ScoreType figureWeight_[7], figureWeightSEE_[7];
 
+  static const BitMask pawnCutoffMasks_[2];
+
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static ScoreType positionEvaluations_[2][8][64];
   static uint8     mirrorIndex_[64];

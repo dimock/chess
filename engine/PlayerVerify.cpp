@@ -54,7 +54,7 @@ void Player::loadHash(const char * fname)
 void Player::verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
   int counter = 0;
-  if ( board_.getState() == Board::UnderCheck )
+  if ( board_.underCheck() )
   {
     EscapeGenerator eg(board_, depth, ply, *this, alpha, betta, counter);
     MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
@@ -151,7 +151,7 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
 
     Board board0(board_);
 
-    if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
+    if ( board_.makeMove(move) && board_.underCheck() )
     {
       if ( move.new_type_ == Figure::TypeQueen || !move.new_type_ )
         legal[n++] = move;
@@ -193,7 +193,7 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
 
     Board board0(board_);
 
-    if ( board_.makeMove(move) && board_.getState() == Board::UnderCheck )
+    if ( board_.makeMove(move) && board_.underCheck() )
       checks[m++] = move;
 
     board_.verifyMasks();
@@ -214,16 +214,8 @@ void Player::verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreTyp
     if ( board_.makeMove(move) )
     {
       checks[m++] = move;
-      stateCheck = board_.getState() == Board::UnderCheck;
-      if ( !stateCheck &&
-        (board_.getState() == Board::DrawReps ||
-         board_.getState() == Board::Draw50Moves ||
-         board_.getState() == Board::ChessMat) )
-      {
-        stateCheck = true;
-        --m;
-      }
-      THROW_IF( !stateCheck, "non checking move" );
+
+      THROW_IF( !board_.underCheck(), "non checking move" );
     }
 
     board_.verifyMasks();

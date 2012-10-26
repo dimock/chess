@@ -400,7 +400,7 @@ bool Board::invalidate()
   }
 
   if ( fastAttacked(ocolor, ki_pos) )
-    state_ = UnderCheck;
+    state_ |= UnderCheck;
 
   verifyChessDraw();
 
@@ -415,7 +415,7 @@ bool Board::invalidate()
   }
   else if ( cnum > 0 )
   {
-    state_ = UnderCheck;
+    state_ |= UnderCheck;
   }
 
   // setup stages for each color
@@ -440,7 +440,7 @@ bool Board::invalidate()
 // verify if there is draw or mat
 void Board::verifyState()
 {
-  if ( ChessMat == state_ || drawState() )
+  if ( matState() || drawState() )
     return;
 
 #ifndef NDEBUG
@@ -629,7 +629,7 @@ bool Board::load(Board & board, std::istream & is)
 bool Board::save(const Board & board, std::ostream & os)
 {
   const char * sres = "*";
-  if ( board.getState() == Board::ChessMat )
+  if ( board.matState() )
   {
     if ( board.getColor() )
       sres = "0-1";

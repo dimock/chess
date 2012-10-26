@@ -112,9 +112,6 @@ Move Board::unpack(const PackedMove & pm) const
   move.to_ = pm.to_;
   move.new_type_ = pm.new_type_;
 
-  // to prevent reduction of this move in LMR
-  move.strong_ = 1;
-
   if ( fto )
     move.rindex_ = fto.index();
   else if ( en_passant_ >= 0 )
@@ -143,7 +140,7 @@ bool Board::doMove()
   move.en_passant_ = en_passant_;
   move.index_ = fig.getIndex();
 
-  if ( drawState() || ChessMat == state_ )
+  if ( drawState() || matState() )
     return false;
 
   state_ = Ok;
@@ -402,7 +399,7 @@ bool Board::makeMove(const Move & mv)
   }
 
   if ( isChecking(move) )
-    state_ = UnderCheck;
+    state_ |= UnderCheck;
 
   move.can_win_[0] = can_win_[0];
   move.can_win_[1] = can_win_[1];
@@ -436,7 +433,7 @@ bool Board::makeMove(const Move & mv)
   checking_[0] = move.checking_[0];
   checking_[1] = move.checking_[1];
 
-  THROW_IF( isAttacked(color_, getFigure(Figure::otherColor(color_), KingIndex).where()) && UnderCheck != state_, "check isn't detected" );
+  THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))) && !underCheck(), "check isn't detected" );
 
   // now change color
   color_ = ocolor;
@@ -475,9 +472,9 @@ void Board::unmakeMove()
 
 bool Board::verifyChessDraw()
 {
-  if ( (fiftyMovesCount_ == 100 && UnderCheck != state_) || (fiftyMovesCount_ > 100) )
+  if ( (fiftyMovesCount_ == 100 && !underCheck()) || (fiftyMovesCount_ > 100) )
   {
-    state_ = Draw50Moves;
+    state_ |= Draw50Moves;
     return true;
   }
 
@@ -491,13 +488,9 @@ bool Board::verifyChessDraw()
 
   if ( !can_win_[0] && !can_win_[1] )
   {
-    state_ = DrawInsuf;
+    state_ |= DrawInsuf;
     return true;
   }
-
-  //// we don't need to verify threefold repetition if capture or pawn's move was less than 4 steps ago
-  //if ( fiftyMovesCount_ < 4 )
-  //  return false;
 
   int reps = 1;
   int i = halfmovesCounter_-3;
@@ -519,7 +512,7 @@ bool Board::verifyChessDraw()
 
   if ( reps >= 3 )
   {
-	  state_ = DrawReps;
+	  state_ |= DrawReps;
 	  return true;
   }
 
@@ -536,9 +529,7 @@ void Board::makeNullMove(MoveCmd & move)
 
   if ( en_passant_ >= 0 )
   {
-    const Figure & fig = getFigure(Figure::otherColor(color_), en_passant_);
-    THROW_IF( !fig, "no en-passant pawn" );
-    fmgr_.hashEnPassant(fig.where(), color_);
+    fmgr_.hashEnPassant(en_passant_, color_);
     move.en_passant_ = en_passant_;
     en_passant_ = -1;
   }

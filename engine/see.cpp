@@ -6,28 +6,36 @@
 
 // static exchange evaluation
 // have to be called before doing move
-int Board::see(int initial_value, const Move & move) const
+int Board::see(const Move & move) const
 {
-  if ( state_ != Ok )
+  if ( state_ == Invalid )
     return 0;
 
   const Field & ffield = getField(move.from_);
   const Field & tfield = getField(move.to_);
 
+  int score_gain = 0;
+
+  // victim >= attacker
+  if ( tfield.type() )
+  {
+    score_gain = Figure::figureWeightSEE_[tfield.type()] - Figure::figureWeightSEE_[ffield.type()];
+    if ( score_gain >= 0 )
+      return score_gain;
+  }
+  // en-passant
+  else if ( !tfield && ffield.type() == Figure::TypePawn && move.to_ == en_passant_ )
+  {
+    THROW_IF(board_.getField(enpassantPos()).type() != Figure::TypePawn || board_.getField(enpassantPos()).color() == color_, "no en-passant pawn");
+    return 0;
+  }
+
+
   Figure::Color color = ffield.color();
   Figure::Color ocolor = Figure::otherColor(color);
   Figure::Type  ftype =  ffield.type();
 
-  // en-passant
-  if ( !tfield && ffield.type() == Figure::TypePawn && move.capture_ && en_passant_ >= 0 )
-    return 0;
-
-  int current_value = fmgr_.weight();
-  if ( !color )
-    current_value = -current_value;
-
   ScoreType fscore = 0;
-  int score_gain = current_value - initial_value;
 
   if ( tfield )
     fscore = Figure::figureWeightSEE_[tfield.type()];

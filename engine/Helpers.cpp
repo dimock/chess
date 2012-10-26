@@ -536,14 +536,14 @@ bool printSAN(Board & board, const Move & move, char * str)
     }
   }
 
-  if ( Board::UnderCheck == state )
-  {
-    *s = '+';
-    ++s;
-  }
-  else if ( Board::ChessMat == state )
+  if ( Board::ChessMat & state )
   {
     *s = '#';
+    ++s;
+  }
+  else if ( Board::UnderCheck & state )
+  {
+    *s = '+';
     ++s;
   }
 

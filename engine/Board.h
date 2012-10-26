@@ -248,9 +248,14 @@ public:
   /// very slow. should be used only while initialization
   bool invalidate();
 
-  inline int8 getEnPassant() const
+  inline int enpassantPos() const
   {
-    return en_passant_;
+    if ( en_passant_ < 0 )
+      return -1;
+
+    // if current color is black, color of en-passant pawn is white and vise versa
+    static int pw_delta[2] = { 8, -8 };
+    return en_passant_ + pw_delta[color_];
   }
 
   /// always use this method to get field
@@ -297,28 +302,38 @@ public:
     return g_moves[halfmovesCounter_+i-1];
   }
 
+  const MoveCmd & lastMove() const
+  {
+    THROW_IF( halfmovesCounter_ < 1, "attempt to get last move before doing some");
+    return g_moves[halfmovesCounter_-1];
+  }
+
   /// returns current move color
   Figure::Color getColor() const { return color_; }
 
   /// returns current state, ie check, mat etc
   State getState() const { return state_; }
 
+  /// returns true if we are under check
+  bool underCheck() const { return state_ & UnderCheck; }
+
   /// just a useful method to quickly check if there is a draw
   static bool isDraw(State state)
   {
-    return Stalemat == state || DrawReps == state || DrawInsuf == state || Draw50Moves == state;
+    return (Stalemat & state) || (DrawReps & state) || (DrawInsuf & state) || (Draw50Moves & state);
   }
 
+  inline bool matState() const { return state_ & ChessMat; }
   inline bool drawState() const { return isDraw(state_); }
 
   inline void setNoMoves()
   {
-    if ( Invalid == state_ || ChessMat == state_ || drawState() )
+    if ( (Invalid == state_) || (ChessMat & state_) || drawState() )
       return;
-    if ( UnderCheck == state_ )
-      state_ = ChessMat;
+    if ( underCheck() )
+      state_ |= ChessMat;
     else
-      state_ = Stalemat;
+      state_ |= Stalemat;
   }
 
   void verifyMasks() const;
@@ -477,7 +492,7 @@ private:
   /// verify position after movement
   inline bool wasMoveValid(const MoveCmd & move) const
   {
-    if ( UnderCheck == move.old_state_ )
+    if ( UnderCheck & move.old_state_ )
     {
       if ( move.checkVerified_ )
       {
@@ -591,21 +606,11 @@ private:
   static const char * stdFEN_;
   static char fen_[FENsize];
 
-  /// index of castle's possibility
-  /// indices: [0 - black, 1 - white] [0 - short (King), 1 - long (Queen)]
-  //bool castle_index_[2][2];
-
-  /// indices of checking figures
-  int8 checking_[2];
-
   /// for chess draw detector
   bool can_win_[2];
 
   /// game stage - opening, middle-game, etc...
   uint8 stages_[2];
-
-  /// number of checking figures
-  int8 checkingNum_;
 
   /// en-passant pawn index. must be cleared (set to -1) after move. it has color different from "color_"
   int8  en_passant_;

@@ -83,43 +83,6 @@ public:
 
 protected:
 
-  int see(Move & move) const
-  {
-    int see_gain = 0;
-
-    const Field & ffrom = board_.getField(move.from_);
-    const Field & fto = board_.getField(move.from_);
-
-    // 1. victim >= attacker
-    if ( fto.type() )
-    {
-      see_gain = Figure::figureWeightSEE_[fto.type()] - Figure::figureWeightSEE_[ffrom.type()];
-      if ( see_gain >= 0 )
-        return see_gain;
-    }
-    // en-passant
-    else if ( move.to_ == board_.en_passant_ && ffrom.type() == Figure::TypePawn )
-    {
-#ifndef NDEBUG
-      Index ep_pos(board_.en_passant_);
-      Index pawn_pos(ep_pos.x(), ep_pos.y() + (board_.color_ ? -8 : +8));
-      THROW_IF(board_.getField(ep_pos).type() != Figure::TypePawn ||
-        board_.getField(ep_pos).color() == board_.color_, "no en-passant pawn");
-#endif
-
-      return 0;
-    }
-
-    // 2. analize using see()
-    // because we look from side that goes to move, we should adjust sing of material-balance
-    int material_balance = board_.fmgr().weight();
-    if ( !board_.color_ )
-      material_balance = -material_balance;
-
-    see_gain = board_.see_before(material_balance, move);
-    return see_gain;
-  }
-
   void sortValueOfCap(Move & move)
   {
     const Field & fto = board_.getField(move.to_);
@@ -188,7 +151,7 @@ public:
         move->seen_ = 1;
 
         int see_gain = 0;
-        if ( (see_gain = see(*move)) < 0 )
+        if ( (see_gain = board_.see(*move)) < 0 )
         {
           if ( move->capture_ )
             move->vsort_ = see_gain + 3000;
@@ -197,6 +160,9 @@ public:
 
           continue;
         }
+
+        if ( see_gain >= 0 )
+          move.recapture_ = 1;
       }
 
       move->alreadyDone_ = 1;
@@ -271,7 +237,7 @@ public:
       if ( !*move )
         return *move;
 
-      if ( !move->seen_ && see(*move) < 0 )
+      if ( !move->seen_ && board_.see(*move) < 0 )
       {
         move->seen_ = 1;
         move->alreadyDone_ = 1;
@@ -339,9 +305,9 @@ private:
   bool add(int & m, int8 from, int8 to, int8 new_type, bool capture)
   {
     Move & move = moves_[m];
-    move.set(from, to, new_type, true, capture);
+    move.set(from, to, new_type, false, capture);
 
-    if ( move == pv_ )
+    if ( move == hmove_ )
       return true;
 
     if ( !board_.isMoveValidUnderCheck(move) )
@@ -381,7 +347,7 @@ public:
       if ( !*move )
         return *move;
 
-      if ( !move.discoveredCheck_ && !move->seen_ && see(*move) < 0 )
+      if ( !move.discoveredCheck_ && !move->seen_ && board_.see(*move) < 0 )
       {
         move->seen_ = 1;
         move->alreadyDone_ = 1;
@@ -400,7 +366,7 @@ private:
   inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool discovered, bool capture)
   {
     Move & move = moves_[m];
-    move.set(from, to, new_type, false, capture);
+    move.set(from, to, new_type, capture);
     if ( move == hmove_ )
       return;
 

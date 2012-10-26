@@ -276,7 +276,7 @@ ScoreType Figure::pawnGuarded_[2][8] = {
 //////////////////////////////////////////////////////////////////////////
 ScoreType Board::evaluate() const
 {
-  if ( ChessMat == state_ )
+  if ( matState() )
     return -Figure::WeightMat;
   else if ( drawState() )
     return Figure::WeightDraw;

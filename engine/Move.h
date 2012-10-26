@@ -44,7 +44,7 @@ struct Move
 #ifndef NDEBUG
   // make all values invalid
   Move() : from_(-1), to_(-1), new_type_(10), checkVerified_(1), alreadyDone_(1), flags_(-1),
-    counter_(1), checkFlag_(1), threat_(1), vsort_(0), strong_(1), discoveredCheck_(1), seen_(1)
+    counter_(1), checkFlag_(1), threat_(1), vsort_(0), recapture_(1), discoveredCheck_(1), seen_(1)
   {}
 #endif
 
@@ -65,7 +65,7 @@ struct Move
 		     capture_ : 1,
          checkFlag_ : 1,
          threat_ : 1,
-         strong_ : 1,
+         recapture_ : 1,
          discoveredCheck_ : 1,
          seen_ : 1;
 
@@ -86,17 +86,6 @@ struct Move
   inline void clearFlags()
   {
     flags_ = 0;
-  }
-
-  inline void set(int from, int to, int new_type, bool checkVerified, bool capture)
-  {
-    from_ = from;
-    to_ = to;
-    new_type_ = new_type;
-    vsort_ = 0;
-    flags_ = 0;
-    capture_ = capture;
-    checkVerified_ = checkVerified;
   }
 
   inline void set(int from, int to, int new_type, bool capture)
@@ -199,13 +188,13 @@ struct MoveCmd : public Move
   /// number of checking figures
   uint8 checkingNum_;
 
-  /// checking figures indices
+  /// checking figures positions
   uint8 checking_[2];
 
   /// previous checking figures number
   uint8 old_checkingNum_;
 
-  /// previous checking figures indices
+  /// previous checking figures positions
   uint8 old_checking_[2];
 
   /// save stage of current color
@@ -242,7 +231,6 @@ struct MoveCmd : public Move
     rook_index_ = -1;
     old_state_ = 0;
     state_ = 0;
-    first_move_ = false;
     checkingNum_ = 0;
     need_undo_ = false;
     need_unmake_ = false;

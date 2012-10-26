@@ -258,11 +258,15 @@ int MovesGenerator::generate()
     }
 
     int index = board_.getField(ki_pos).index();
-    const Figure & king = board_.getFigure(color, index);
-    if ( king.isFirstStep() && board_.state_ != Board::UnderCheck )
+    if ( !board_.underCheck() )
     {
-      add_move(m, ki_pos, ki_pos+2, -1, 0);
-      add_move(m, ki_pos, ki_pos-2, -1, 0);
+      // short castle
+      if ( board_.castling(board_.color_, 0) )
+        add(m, ki_pos, ki_pos+2, 0, false);
+
+      // long castle
+      if ( board_.castling(board_.color_, 1) )
+        add(m, ki_pos, ki_pos-2, 0, false);
     }
   }
 
@@ -271,150 +275,55 @@ int MovesGenerator::generate()
 
 
 //////////////////////////////////////////////////////////////////////////
-EscapeGenerator::EscapeGenerator(const Move & pv, Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player), pv_(pv)
+EscapeGenerator::EscapeGenerator(const Move & hmove, Board & board) :
+  MovesGeneratorBase(board), hmove_(hmove)
 {
   numOfMoves_ = push_pv();
-  numOfMoves_ = generate(alpha, betta, counter);
-  escapes_[numOfMoves_].clear();
-
-#ifdef SORT_ESCAPE_MOVES
-  sort();
-#endif
-}
-
-EscapeGenerator::EscapeGenerator(Board & board, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), depth_(depth), ply_(ply), player_(player)
-{
-  pv_.clear();
-
-  numOfMoves_ = generate(alpha, betta, counter);
-  escapes_[numOfMoves_].clear();
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
 }
 
 int EscapeGenerator::push_pv()
 {
   int m = 0;
-  if ( pv_ && board_.validMove(pv_) && board_.isMoveValidUnderCheck(pv_) )
+  if ( hmove_ && board_.validMove(hmove_) && board_.isMoveValidUnderCheck(hmove_) )
   {
-    Move & move = escapes_[m];
-    move = pv_;
+    Move & move = moves_[m];
+    move = hmove_;
     move.checkVerified_ = 1;
     move.alreadyDone_ = 0;
     ++m;
   }
   else
-    pv_.clear();
+    hmove_.clear();
 
   return m;
 }
 
-void EscapeGenerator::sort()
-{
-  for (int i = 0; i < numOfMoves_; ++i)
-  {
-    Move & move = escapes_[i];
-    move.srt_score_ = 0;
-    if ( move == pv_ )
-      move.srt_score_ = 100000000;
-    else if ( move.rindex_ >= 0 )
-    {
-      Figure::Type atype = board_.getField(move.from_).type();
-      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-      if ( Figure::figureWeightSEE_[vtype] >= Figure::figureWeightSEE_[atype] || atype == Figure::TypeKing )
-      {
-        if ( atype == Figure::TypeKing )
-          move.srt_score_ = Figure::figureWeightSEE_[vtype] + 10002000;
-        else
-          move.srt_score_ = Figure::figureWeightSEE_[vtype] - (Figure::figureWeightSEE_[atype] >> 2) + 10000000;
-
-        if ( board_.halfmovesCount() > 1 )
-        {
-          MoveCmd & prev = board_.getMoveRev(-1);
-          if ( prev.to_ == move.to_ )
-            move.srt_score_ += Figure::figureWeight_[vtype] >> 1;
-        }
-      }
-      else
-      {
-        int initial_balance = board_.fmgr().weight();
-        if ( !board_.getColor() )
-          initial_balance = -initial_balance;
-
-        int score_see = board_.see_before(initial_balance, move);
-
-//#ifndef NDEBUG
-//        int score_see1 = board_.see_before2(initial_balance, move);
-//        THROW_IF(score_see != score_see1, "see_before2() failed" );
-//#endif
-
-        if ( score_see >= 0 )
-          move.srt_score_ = (unsigned)score_see + 10000000;
-        else
-          move.srt_score_ = (unsigned)(10000 + score_see);
-      }
-    }
-    else if ( move.new_type_ > 0 )
-    {
-      int initial_balance = board_.fmgr().weight();
-      if ( !board_.getColor() )
-        initial_balance = -initial_balance;
-
-      int score_see = board_.see_before(initial_balance, move);
-
-//#ifndef NDEBUG
-//      int score_see1 = board_.see_before2(initial_balance, move);
-//      THROW_IF(score_see != score_see1, "see_before2() failed" );
-//#endif
-
-      if ( score_see >= 0 )
-        move.srt_score_ = Figure::figureWeightSEE_[move.new_type_] + 5000000;
-      else
-        move.srt_score_ = (unsigned)(5000 + score_see);
-    }
-    else
-    {
-      const History & hist = MovesGenerator::history(move.from_, move.to_);
-      move.srt_score_ = hist.score_ + 20000;
-    }
-  }
-
-  for (int i = 0; i < numOfMoves_; ++i)
-  {
-    Move & move_i = escapes_[i];
-    for (int j = i+1; j < numOfMoves_; ++j)
-    {
-      Move & move_j = escapes_[j];
-      if ( move_j.srt_score_ > move_i.srt_score_ )
-      {
-        Move t = move_j;
-        move_j = move_i;
-        move_i = t;
-      }
-    }
-  }
-}
-
-int EscapeGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
+int EscapeGenerator::generate()
 {
   if ( board_.checkingNum_ == 1 )
-    return generateUsual(alpha, betta, counter);
+    return generateUsual();
   else
-    return generateKingonly(numOfMoves_, alpha, betta, counter);
+    return generateKingonly(numOfMoves_);
 }
 
-int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & counter)
+int EscapeGenerator::generateUsual()
 {
   int m = numOfMoves_;
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
 
-  THROW_IF( board_.checking_[0] < 0, "there is no checking figure index" );
+  MoveCmd & last_move = board_.lastMove();
 
-  const Figure & cfig = board_.getFigure(ocolor, board_.checking_[0]);
+  THROW_IF( (unsigned)last_move.checking_[0] > 63, "there is no checking figure" );
 
-  THROW_IF( !cfig, "there is no checking figure" );
-  THROW_IF( cfig.getType() == Figure::TypeKing, "king is attacking king" );
+  // checking figure position and type
+  int & ch_pos = last_move.checking_[0];
+  Figure::Type ch_type = board_.getField(last_move);
+
+  THROW_IF( !ch_type, "there is no checking figure" );
+  THROW_IF( ch_type == Figure::TypeKing, "king is attacking king" );
 
   const uint64 & black = board_.fmgr_.mask(Figure::ColorBlack);
   const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
@@ -435,19 +344,16 @@ int EscapeGenerator::generateUsual(ScoreType & alpha, ScoreType betta, int & cou
       pawn_eat_msk = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
 
     // mask of attacking figure
-    uint64 checking_fig_mask = 1ULL << cfig.where();
+    uint64 checking_fig_mask = 1ULL << ch_pos;
 
     pawns_eat = (pawn_eat_msk & checking_fig_mask) != 0;
 
-    if ( cfig.getType() == Figure::TypePawn && board_.en_passant_ == board_.checking_[0] )
+    if ( ch_type == Figure::TypePawn && board_.en_passant_ >= 0 )
     {
-      const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
-      THROW_IF( !epawn, "there is no en passant pawn" );
+      int ep_pos = board_.enpassantPos();
+      THROW_IF( !board_.getField(ep_pos), "en-passant pown doesnt exist" );
 
-      int to = epawn.where() + pw_delta[board_.color_];
-      THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
-
-      ep_capture = (pawn_eat_msk & (1ULL << to)) != 0;
+      ep_capture = (ch_pos == ep_pos) && (pawn_eat_msk & (1ULL << board_.en_passant_));
     }
 
     pawns_eat = pawns_eat || ep_capture;

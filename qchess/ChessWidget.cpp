@@ -367,10 +367,10 @@ void ChessWidget::drawState()
 
   QString stateText = color == Figure::ColorBlack ? tr("Black") : tr("White");
   stateText += tr(" have ");
-  if ( state == Board::UnderCheck )
-    stateText += tr("Check");
-  else if ( state == Board::ChessMat )
+  if ( board.matState() )
     stateText += tr("Mat");
+  else if ( board.underCheck() )
+    stateText += tr("Check");
   else if ( Board::isDraw(state) )
     stateText = tr("Draw");
   else

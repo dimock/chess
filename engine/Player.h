@@ -349,7 +349,7 @@ private:
 
             if ( board_.makeMove(hmove) )
             {
-              checking = board_.getState() == Board::UnderCheck;
+              checking = board_.underCheck();
               retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
             }
 
@@ -391,7 +391,7 @@ private:
       hmove = board_.unpack(hitem.move_);
 
       // ensure that we already verified checking moves
-      if ( depth < 0 || !(hitem.depth_ & 32) /* HACK */ || board_.getState() == Board::UnderCheck )
+      if ( depth < 0 || !(hitem.depth_ & 32) /* HACK */ || board_.underCheck() )
       {
         ScoreType hscore = hitem.score_;
         if ( hscore >= Figure::WeightMat-MaxPly )
@@ -430,7 +430,7 @@ private:
       if ( ghitem.move_ && ghitem.hcode_ == board_.hashCode() )
       {
         hmove = board_.unpack(ghitem.move_);
-        if ( board_.getState() != Board::UnderCheck && (hmove.rindex_ < 0 || board_.getFigure(Figure::otherColor(board_.getColor()), hmove.rindex_).getType() < minimalType) )
+        if ( !board_.underCheck()) && (hmove.rindex_ < 0 || board_.getFigure(Figure::otherColor(board_.getColor()), hmove.rindex_).getType() < minimalType) )
           hmove.clear();
       }
     }

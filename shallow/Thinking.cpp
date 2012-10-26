@@ -210,7 +210,7 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 	white = Figure::ColorWhite == board.getColor();
   state = board.getState();
 
-  if ( Board::isDraw(state) || Board::ChessMat == state )
+  if ( Board::isDraw(state) || (Board::ChessMat & state) )
     return true;
 
 	SearchResult sres;
@@ -253,7 +253,7 @@ bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
 	Figure::Color ocolor = Figure::otherColor(color);
   state = board.getState();
 
-  if ( Board::isDraw(state) || Board::ChessMat == state )
+  if ( Board::isDraw(state) || (Board::ChessMat & state) )
     return true;
 
 	white = Figure::ColorWhite == color;

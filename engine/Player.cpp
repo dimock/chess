@@ -499,7 +499,7 @@ void Player::processPosted(int t)
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  if ( (board_.getState() == Board::UnderCheck) ||
+  if (   board_.underCheck() ||
         !board_.allowNullMove() ||
         (ply < 1) ||
         (ply >= MaxPly-1) ||
@@ -619,17 +619,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 
 #ifdef VERIFY_ESCAPE_GENERATOR
-  if ( board_.getState() == Board::UnderCheck )
+  if ( board_.underCheck() )
     verifyEscapeGen(depth, ply, alpha, betta);
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
-  if ( board_.getState() != Board::UnderCheck )
+  if ( !board_.underCheck() )
     verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR
-  if ( board_.getState() != Board::UnderCheck )
+  if ( !board_.underCheck() )
     verifyCapsGenerator(ply, alpha, betta, 0);
 #endif
 
@@ -687,7 +687,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 #endif
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( Board::UnderCheck != board_.getState() &&
+  if ( !board_.underCheck() &&
        alpha > -Figure::WeightMat+MaxPly &&
        alpha < Figure::WeightMat-MaxPly &&
        depth == 1 && ply > 1 && !board_.isWinnerLoser() )
@@ -714,7 +714,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   else
     hmoves[0].clear();
 
-  if ( Board::UnderCheck == board_.getState() )
+  if ( board_.underCheck() )
   {
     EscapeGenerator eg(hmoves[0], board_, depth, ply, *this, alpha, betta, counter);
 
@@ -796,7 +796,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     board_.setNoMoves();
     ScoreType s = board_.evaluate();
-    if ( Board::ChessMat == board_.getState() )
+    if ( board_.matState() )
       s += ply;
 
 #ifdef USE_HASH_TABLE_GENERAL
@@ -845,7 +845,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
   uint64 hcode = board_.hashCode();
   int depth0 = depth;
   Figure::Color color = board_.getColor();
-  bool check_esc = board_.getState() == Board::UnderCheck;
+  bool check_esc = board_.underCheck();
   contexts_[ply].threat_ = false;
 
   // previous move was reduced
@@ -859,7 +859,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
     mv_cmd.extended_ = false;
     History & hist = MovesGenerator::history(move.from_, move.to_);
 
-    bool haveCheck = board_.getState() == Board::UnderCheck;
+    bool haveCheck = board_.underCheck();
     move.checkFlag_ = haveCheck;
     int ext_ply = do_extension(depth, ply, alpha, betta, was_winnerloser, initial_balance);
     if ( ext_ply )
@@ -897,7 +897,6 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               depth > LMR_DepthLimit &&
               board_.canBeReduced(move) &&
               !move.threat_ &&
-              !move.strong_ &&
                mv_cmd.castle_ == 0 &&
               !haveCheck &&
               !check_esc &&
@@ -1028,12 +1027,12 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     contexts_[ply+1].killer_.clear();
 
 #ifdef VERIFY_CAPS_GENERATOR
-  if ( board_.getState() != Board::UnderCheck )
+  if ( !board_.underCheck() )
     verifyCapsGenerator(ply, alpha, betta, delta);
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
-  if ( board_.getState() != Board::UnderCheck )
+  if ( !board_.underCheck() )
   {
     verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
     verifyChecksGenerator2(depth, ply, alpha, betta, Figure::TypeKing);
@@ -1041,7 +1040,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #endif
 
 #ifdef VERIFY_ESCAPE_GENERATOR
-  if ( board_.getState() == Board::UnderCheck )
+  if ( board_.underCheck() )
     verifyEscapeGen(depth, ply, alpha, betta);
 #endif
 
@@ -1066,7 +1065,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   hcap.clear();
 #endif //USE_HASH_TABLE_CAPTURE
 
-  if ( board_.getState() == Board::UnderCheck )
+  if ( board_.underCheck() )
   {
 #ifdef USE_HASH_TABLE_CAPTURE
     EscapeGenerator eg(hcap, board_, 0, ply, *this, alpha, betta, counter);
@@ -1099,7 +1098,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     {
       board_.setNoMoves();
       ScoreType s = board_.evaluate();
-      if ( Board::ChessMat == board_.getState() )
+      if ( board_.matState() )
         s += ply;
 
 #ifdef USE_HASH_TABLE_CAPTURE
@@ -1201,7 +1200,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
   {
     History & hist = MovesGenerator::history(cap.from_, cap.to_);
 
-    bool haveCheck = board_.getState() == Board::UnderCheck;
+    bool haveCheck = board_.underCheck();
     if ( haveCheck )
       depth++;
 
@@ -1326,7 +1325,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
   if ( pv )
     moves[num++] = pv;
 
-  if ( board_.getState() == Board::UnderCheck )
+  if ( board_.underCheck() )
   {
     moves[num].clear();
     return num;
@@ -1507,7 +1506,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
 
   const MoveCmd & move = board_.getMoveRev(0);
 
-  if ( board_.getState() == Board::UnderCheck )
+  if ( board_.underCheck() )
       return 1;
 
   // other extensions will be done only in PV
@@ -1558,7 +1557,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
 // additional check extension
 int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alpha, ScoreType betta)
 {
-  THROW_IF(board_.getState() != Board::UnderCheck, "try to extend check but there is no one");
+  THROW_IF( !board_.underCheck(), "try to extend check but there is no one" );
 
   if ( board_.halfmovesCount() < 1 || eg.count() < 1 )
   {
