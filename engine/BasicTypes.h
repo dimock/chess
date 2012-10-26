@@ -197,7 +197,7 @@ public:
     return index_;
   }
 
-  operator int & ()
+  operator int ()
   {
     return index_;
   }

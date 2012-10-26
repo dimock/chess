@@ -96,14 +96,13 @@ int MovesGenerator::generate()
 
         for (int i = 0; i < 2; ++i, ++table)
         {
-          int & to = *table;
-          if ( to < 0 )
+          if ( *table < 0 )
             continue;
 
-          const Field & field = board_.getField(to);
+          const Field & field = board_.getField(*table);
           bool capture = false;
           if ( (field && field.color() == ocolor) ||
-               (board_.en_passant_ >= 0 && to == board_.en_passant_) )
+               (board_.en_passant_ >= 0 && *table == board_.en_passant_) )
           {
             capture = true;
           }
@@ -111,11 +110,11 @@ int MovesGenerator::generate()
           if ( !capture )
             continue;
 
-          bool promotion = to > 55 || to < 8;
+          bool promotion = *table > 55 || *table < 8;
 
           Move & move = moves_[m++];
           move.alreadyDone_ = 0;
-          move.set(pw_pos, to, 0, capture);
+          move.set(pw_pos, *table, 0, capture);
           calculateSortValue(move);
 
           if ( promotion )
@@ -257,7 +256,6 @@ int MovesGenerator::generate()
       add(m, ki_pos, *table, 0, capture);
     }
 
-    int index = board_.getField(ki_pos).index();
     if ( !board_.underCheck() )
     {
       // short castle
@@ -314,13 +312,11 @@ int EscapeGenerator::generateUsual()
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
 
-  MoveCmd & last_move = board_.lastMove();
-
-  THROW_IF( (unsigned)last_move.checking_[0] > 63, "there is no checking figure" );
+  THROW_IF( (unsigned)board_.checking_[0] > 63, "there is no checking figure" );
 
   // checking figure position and type
-  int & ch_pos = last_move.checking_[0];
-  Figure::Type ch_type = board_.getField(last_move);
+  const int8 & ch_pos = board_.checking_[0];
+  Figure::Type ch_type = board_.getField(ch_pos).type();
 
   THROW_IF( !ch_type, "there is no checking figure" );
   THROW_IF( ch_type == Figure::TypeKing, "king is attacking king" );
@@ -365,34 +361,24 @@ int EscapeGenerator::generateUsual()
     // en-passant
     if ( ep_capture )
     {
-      const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
-      THROW_IF( !epawn, "there is no en passant pawn" );
-
-      int8 to = epawn.where() + pw_delta[board_.color_];
+      int8 to = board_.enpassantPos();
       const uint64 & opawn_caps_ep = board_.g_movesTable->pawnCaps_o(ocolor, to);
       uint64 eat_msk_ep = pawn_msk & opawn_caps_ep;
 
       for ( ; eat_msk_ep; )
       {
         int n = clear_lsb(eat_msk_ep);
-
         const Field & fpawn = board_.getField(n);
-        
         THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
-
-        const Figure & pawn = board_.getFigure(board_.color_, fpawn.index());
-
-        THROW_IF( !pawn, "capturing pawn not found" );
-
-        add_escape(m, n, to, epawn.getIndex(), 0);
+        add(m, n, to, 0, true);
       }
     }
 
 
-    const uint64 & opawn_caps = board_.g_movesTable->pawnCaps_o(ocolor, cfig.where());
+    const uint64 & opawn_caps = board_.g_movesTable->pawnCaps_o(ocolor, ch_pos);
     uint64 eat_msk = pawn_msk & opawn_caps;
 
-    bool promotion = cfig.where() > 55 || cfig.where() < 8; // 1st || last line
+    bool promotion = ch_pos > 55 || ch_pos < 8; // 1st || last line
 
     for ( ; eat_msk; )
     {
@@ -402,30 +388,27 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
 
-      const Figure & pawn = board_.getFigure(board_.color_, fpawn.index());
-
-      THROW_IF( !pawn, "capturing pawn not found" );
-
-      int m0 = m;
-      if ( add_escape(m, n, cfig.where(), cfig.getIndex(), promotion ? Figure::TypeQueen : 0) && promotion )
+      if ( add(m, n, ch_pos, promotion ? Figure::TypeQueen : 0, true) && promotion )
       {
-        Move & move = escapes_[m0];
+        // firstly decrease m because it was increased in add()
+        Move & move = moves_[--m];
 
-        escapes_[m] = move;
-        escapes_[m++].new_type_ = Figure::TypeRook;
+        // increase m before take move
+        moves_[++m] = move;
+        moves_[m++].new_type_ = Figure::TypeRook;
 
-        escapes_[m] = move;
-        escapes_[m++].new_type_ = Figure::TypeBishop;
+        moves_[m] = move;
+        moves_[m++].new_type_ = Figure::TypeBishop;
 
-        escapes_[m] = move;
-        escapes_[m++].new_type_ = Figure::TypeKnight;
+        moves_[m] = move;
+        moves_[m++].new_type_ = Figure::TypeKnight;
       }
     }
   }
 
   // 2nd - knight's captures
   {
-    const uint64 & knight_caps = board_.g_movesTable->caps(Figure::TypeKnight, cfig.where());
+    const uint64 & knight_caps = board_.g_movesTable->caps(Figure::TypeKnight, ch_pos);
     const uint64 & knight_msk = board_.fmgr_.knight_mask(color);
     uint64 eat_msk = knight_msk & knight_caps;
 
@@ -437,17 +420,13 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fknight || fknight.type() != Figure::TypeKnight || fknight.color() != board_.color_, "no knight on field we are going to do capture from" );
 
-      const Figure & knight = board_.getFigure(board_.color_, fknight.index());
-
-      THROW_IF( !knight, "capturing knight not found" );
-
-      add_escape(m, n, cfig.where(), cfig.getIndex(), 0);
+      add(m, n, ch_pos, 0, true);
     }
   }
 
   // 3rd - bishops, rooks and queens
   {
-    const uint64 & queen_caps = board_.g_movesTable->caps(Figure::TypeQueen, cfig.where());
+    const uint64 & queen_caps = board_.g_movesTable->caps(Figure::TypeQueen, ch_pos);
     uint64 brq_msk = board_.fmgr_.bishop_mask(color) | board_.fmgr_.rook_mask(color) | board_.fmgr_.queen_mask(color);
     uint64 eat_msk = brq_msk & queen_caps;
 
@@ -459,28 +438,23 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !field || field.color() != board_.color_, "no figure on field we are going to do capture from" );
 
-      const Figure & fig = board_.getFigure(board_.color_, field.index());
-
-      THROW_IF( !fig || !(fig.getType() == Figure::TypeBishop || fig.getType() == Figure::TypeRook || fig.getType() == Figure::TypeQueen), "capturing figure not found" );
-
-      // can fig go to cfig's field
-      int dir = board_.g_figureDir->dir(field.type(), board_.color_, n, cfig.where());
+      // can fig go to checking figure field
+      int dir = board_.g_figureDir->dir(field.type(), board_.color_, n, ch_pos);
       if ( dir < 0 )
         continue;
 
-      const uint64 & btw_msk = board_.g_betweenMasks->between(n/*fig.where()*/, cfig.where());
+      const uint64 & btw_msk = board_.g_betweenMasks->between(n, ch_pos);
       if ( (btw_msk & mask_all_inv) != btw_msk )
         continue;
 
-      add_escape(m, n, cfig.where(), cfig.getIndex(), 0);
+      add(m, n, ch_pos, 0, true);
     }
   }
 
   // now try to protect king - put something between it and checking figure
-  const Figure & king = board_.getFigure(color, Board::KingIndex);
-  const uint64 & protect_king_msk = board_.g_betweenMasks->between(king.where(), cfig.where());
+  const uint64 & protect_king_msk = board_.g_betweenMasks->between(board_.kingPos(color), ch_pos);
 
-  if ( Figure::TypePawn != cfig.getType() && Figure::TypeKnight != cfig.getType()&& protect_king_msk )
+  if ( protect_king_msk && Figure::TypePawn != ch_type && Figure::TypeKnight != ch_type )
   {
     // 1. Pawns
     BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
@@ -498,19 +472,18 @@ int EscapeGenerator::generateUsual()
 
         bool promotion = *table > 55 || *table < 8;
 
-        int m0 = m;
-        if ( add_escape(m, pw_pos, *table, -1, promotion ? Figure::TypeQueen : 0) && promotion )
+        if ( add(m, pw_pos, *table, promotion ? Figure::TypeQueen : 0, false) && promotion )
         {
-          Move & move = escapes_[m0];
+          Move & move = moves_[--m];
 
-          escapes_[m] = move;
-          escapes_[m++].new_type_ = Figure::TypeRook;
+          moves_[++m] = move;
+          moves_[m++].new_type_ = Figure::TypeRook;
 
-          escapes_[m] = move;
-          escapes_[m++].new_type_ = Figure::TypeBishop;
+          moves_[m] = move;
+          moves_[m++].new_type_ = Figure::TypeBishop;
 
-          escapes_[m] = move;
-          escapes_[m++].new_type_ = Figure::TypeKnight;
+          moves_[m] = move;
+          moves_[m++].new_type_ = Figure::TypeKnight;
         }
       }
     }
@@ -532,7 +505,7 @@ int EscapeGenerator::generateUsual()
 
         THROW_IF( field, "there is something between king and checking figure" );
 
-        add_escape(m, kn_pos, n, -1, 0);
+        add(m, kn_pos, n, 0, false);
       }
     }
 
@@ -561,71 +534,53 @@ int EscapeGenerator::generateUsual()
           if ( (btw_msk & mask_all_inv) != btw_msk )
             continue;
 
-          add_escape(m, fg_pos, n, -1, 0);
+          add(m, fg_pos, n, 0, false);
         }
       }
     }
   }
 
   // at the last generate all king's movements
-  m = generateKingonly(m, alpha, betta, counter);
+  m = generateKingonly(m);
 
   return m;
 }
 
-int EscapeGenerator::generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter)
+int EscapeGenerator::generateKingonly(int m)
 {
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
 
-  Move prev;
-  prev.clear();
-  if ( board_.halfmovesCount() > 0 )
-    prev = board_.getMoveRev(0);
-  
-  const Figure & king = board_.getFigure(color, Board::KingIndex);
-  const int8 * table = board_.g_movesTable->king(king.where());
+  int king_pos = board_.kingPos(color);
+  const int8 * table = board_.g_movesTable->king(king_pos);
 
   for (; *table >= 0; ++table)
   {
     const Field & field = board_.getField(*table);
-    int rindex = -1;
+    bool capture = false;
     if ( field )
     {
       if ( field.color() == color )
         continue;
 
-      rindex = field.index();
+      capture = true;
     }
 
-    Move move;
-    move.set(king.where(), *table, rindex, 0, 0);
-    if ( move == pv_ || !board_.isMoveValidUnderCheck(move) )
+    Move & move = moves_[m];
+    move.set(king_pos, *table, 0, capture);
+    if ( move == hmove_ || !board_.isMoveValidUnderCheck(move) )
       continue;
 
     move.checkVerified_ = 1;
-    escapes_[m] = move;
     m++;
   }
 
   return m;
 }
 
-//////////////////////////////////////////////////////////////////////////
-bool EscapeGenerator::find(const Move & m) const
-{
-  for (int i = 0; i < numOfMoves_; ++i)
-  {
-    const Move & move = escapes_[i];
-    if ( m == move )
-      return true;
-  }
-  return false;
-}
-
 
 //////////////////////////////////////////////////////////////////////////
-void MovesGenerator::save_history(const char * fname)
+void MovesGeneratorBase::save_history(const char * fname)
 {
   FILE * f = fopen(fname, "wb");
   if ( !f )
@@ -637,7 +592,7 @@ void MovesGenerator::save_history(const char * fname)
   fclose(f);
 }
 
-void MovesGenerator::load_history(const char * fname)
+void MovesGeneratorBase::load_history(const char * fname)
 {
   FILE * f = fopen(fname, "rb");
   if ( !f )

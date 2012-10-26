@@ -339,7 +339,7 @@ private:
           Board board0 = board_;
 #endif
 
-          bool retBetta = hmove.rindex_ >= 0 || hmove.new_type_;
+          bool retBetta = hmove.capture_ || hmove.new_type_;
           bool checking = false;
 
           if ( !retBetta )
@@ -430,7 +430,7 @@ private:
       if ( ghitem.move_ && ghitem.hcode_ == board_.hashCode() )
       {
         hmove = board_.unpack(ghitem.move_);
-        if ( !board_.underCheck()) && (hmove.rindex_ < 0 || board_.getFigure(Figure::otherColor(board_.getColor()), hmove.rindex_).getType() < minimalType) )
+        if ( !board_.underCheck() && board_.getField(hmove.to_).type() < minimalType )
           hmove.clear();
       }
     }
@@ -467,8 +467,8 @@ private:
 
   inline bool pawnBeforePromotion(const MoveCmd & move) const
   {
-    const Figure & fig = board_.getFigure(move.to_);
-    if ( fig.getType() == Figure::TypePawn )
+    const Field & field = board_.getField(move.to_);
+    if ( field.type() == Figure::TypePawn )
     {
       // before promotion
       int8 y = move.to_ >> 3;

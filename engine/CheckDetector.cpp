@@ -9,7 +9,7 @@
 //////////////////////////////////////////////////////////////////////////
 bool Board::isChecking(MoveCmd & move) const
 {
-  int8 idx0 = -1;
+  int8 ch_pos0 = -1;
   move.checkingNum_ = 0;
   Figure::Color ocolor = Figure::otherColor(color_);
   const Figure & fig = getFigure(color_, move.index_);

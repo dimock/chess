@@ -162,7 +162,7 @@ public:
         }
 
         if ( see_gain >= 0 )
-          move.recapture_ = 1;
+          move->recapture_ = 1;
       }
 
       move->alreadyDone_ = 1;
@@ -191,7 +191,7 @@ private:
     if ( move.capture_ )
     {
       sortValueOfCap(move);
-      move.vsort_ += 10000000
+      move.vsort_ += 10000000;
       return;
     }
     else if ( move.new_type_ )
@@ -207,7 +207,7 @@ private:
     }
 #endif
 
-    const History & hist = history_[move.from_][move.to_];
+    const History & hist = history(move.from_, move.to_);
     move.vsort_ = hist.score_ + 10000;
   }
 
@@ -305,7 +305,7 @@ private:
   bool add(int & m, int8 from, int8 to, int8 new_type, bool capture)
   {
     Move & move = moves_[m];
-    move.set(from, to, new_type, false, capture);
+    move.set(from, to, new_type, capture);
 
     if ( move == hmove_ )
       return true;
@@ -347,7 +347,7 @@ public:
       if ( !*move )
         return *move;
 
-      if ( !move.discoveredCheck_ && !move->seen_ && board_.see(*move) < 0 )
+      if ( !move->discoveredCheck_ && !move->seen_ && board_.see(*move) < 0 )
       {
         move->seen_ = 1;
         move->alreadyDone_ = 1;
@@ -377,7 +377,7 @@ private:
       sortValueOfCap(move);
       move.vsort_ += 10000000;
     }
-    else
+    else if ( move.new_type_ )
     {
       move.vsort_ = Figure::figureWeight_[move.new_type_] + 5000000;
     }

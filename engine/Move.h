@@ -173,9 +173,6 @@ struct MoveCmd : public Move
   /// type of eaten figure to restore it in undo
   int8 eaten_type_;
 
-  /// used to restore rook position after castle
-  int8 rook_index_;
-
   /// restore old board state in undo
   int8 old_state_;
 
@@ -228,7 +225,6 @@ struct MoveCmd : public Move
     en_passant_ = -1;
     castle_ = 0;
     eaten_type_ = 0;
-    rook_index_ = -1;
     old_state_ = 0;
     state_ = 0;
     checkingNum_ = 0;

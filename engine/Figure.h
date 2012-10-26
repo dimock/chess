@@ -28,7 +28,7 @@ namespace Figure
     return (Figure::Color)((color + 1) & 1);
   }
 
-  const char * name(Type type) const;
+  const char * name(Type type);
 
   inline ScoreType positionEvaluation(int stage, Figure::Color color, Figure::Type type, int pos)
   {

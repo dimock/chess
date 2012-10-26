@@ -105,7 +105,7 @@ public:
   bool canBeReduced(const Move & move) const
   {
     // don't reduce captures
-    if ( (move.rindex_ >= 0 || move.new_type_ > 0) )
+    if ( (move.capture_ || move.new_type_ > 0) )
       return false;
 
     // don't allow reduction of pawn's movement to pre-last line or pawn's attack
@@ -153,17 +153,18 @@ public:
     return !(opmsk & passmsk) && !(pmsk & blckmsk);
   }
 
-  /// is pt attacked by given figure
-  inline bool ptAttackedBy(int8 pt, const Figure & fig) const
+  /// is pt attacked by figure in position 'p'
+  inline bool ptAttackedBy(int8 pt, int p) const
   {
-    int dir = g_figureDir->dir(fig.getType(), fig.getColor(), fig.where(), pt);
+    const Field & field = getField(p);
+    int dir = g_figureDir->dir(field.type(), field.color(), p, pt);
     if ( dir < 0 )
       return false;
 
-    if ( fig.getType() == Figure::TypeKnight )
+    if ( field.type() == Figure::TypeKnight )
       return true;
 
-    const uint64 & mask = g_betweenMasks->between(fig.where(), pt);
+    const uint64 & mask = g_betweenMasks->between(p, pt);
     const uint64 & black = fmgr_.mask(Figure::ColorBlack);
     if ( (~black & mask) != mask )
       return false;
@@ -312,13 +313,13 @@ public:
   Figure::Color getColor() const { return color_; }
 
   /// returns current state, ie check, mat etc
-  State getState() const { return state_; }
+  uint8 getState() const { return state_; }
 
   /// returns true if we are under check
   bool underCheck() const { return state_ & UnderCheck; }
 
   /// just a useful method to quickly check if there is a draw
-  static bool isDraw(State state)
+  static bool isDraw(uint8 state)
   {
     return (Stalemat & state) || (DrawReps & state) || (DrawInsuf & state) || (Draw50Moves & state);
   }
@@ -365,9 +366,8 @@ public:
   bool fastAttacked(const Figure::Color c, int8 pos) const;
 
 
-  /// static exchange evaluation
-  /// should be called before move
-  int see(int initial_value, const Move & move) const;
+  /// static exchange evaluation, should be called before move
+  int see(const Move & move) const;
 
   /// find king's position
   int kingPos(Figure::Color c) const
@@ -524,23 +524,23 @@ private:
 
   /// is king of given color attacked by given figure
   /// returns index of figure if attacked or -1 otherwise
-  inline int isAttackedBy(Figure::Color color, const Figure & fig) const
+  inline bool isAttackedBy(Figure::Color color, const Figure::Color c, const Figure::Type t, int p) const
   {
-    const Figure & king = getFigure(color, KingIndex);
-    int dir = g_figureDir->dir(fig.getType(), fig.getColor(), fig.where(), king.where());
-    if ( dir < 0 || Figure::TypeKing == fig.getType() && dir > 7 )
-      return -1;
+    int king_pos = kingPos(color);
+    int dir = g_figureDir->dir(t, c, p, king_pos);
+    if ( dir < 0 || Figure::TypeKing == t && dir > 7 )
+      return false;
 
-    const uint64 & mask = g_betweenMasks->between(fig.where(), king.where());
+    const uint64 & mask = g_betweenMasks->between(p, king_pos);
     const uint64 & black = fmgr_.mask(Figure::ColorBlack);
     if ( (~black & mask) != mask )
-      return -1;
+      return false;
 
     const uint64 & white = fmgr_.mask(Figure::ColorWhite);
     if ( (~white & mask) != mask )
-      return -1;
+      return false;
 
-    return fig.getIndex();
+    return true;
   }
 
   /// gets index of figure, attacking from given direction
@@ -616,7 +616,7 @@ private:
   int8  en_passant_;
 
   /// current state, i.e check, draw, mat, invalid, etc.
-  State state_;
+  uint8 state_;
 
   /// color to make move from this position
   Figure::Color color_;
@@ -626,6 +626,9 @@ private:
 
   /// fields array 8 x 8
   Field fields_[NumOfFields];
+
+  int8 checking_[2];
+  int8 checkingNum_;
 
   int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
   uint8 repsCounter_;
