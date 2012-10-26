@@ -616,10 +616,6 @@
 				RelativePath=".\see.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\see2.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

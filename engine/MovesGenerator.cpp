@@ -96,10 +96,11 @@ int MovesGenerator::generate()
 
         for (int i = 0; i < 2; ++i, ++table)
         {
-          if ( *table < 0 )
+          int & to = *table;
+          if ( to < 0 )
             continue;
 
-          const Field & field = board_.getField(*table);
+          const Field & field = board_.getField(to);
           bool capture = false;
           if ( (field && field.color() == ocolor) ||
                (board_.en_passant_ >= 0 && to == board_.en_passant_) )
@@ -107,16 +108,14 @@ int MovesGenerator::generate()
             capture = true;
           }
 
-          if ( rindex < 0 )
+          if ( !capture )
             continue;
 
-          const Figure & rfig = board_.getFigure(ocolor, rindex);
-
-          bool promotion = *table > 55 || *table < 8;
+          bool promotion = to > 55 || to < 8;
 
           Move & move = moves_[m++];
           move.alreadyDone_ = 0;
-          move.set(pw_pos, *table, 0, false, capture);
+          move.set(pw_pos, to, 0, capture);
           calculateSortValue(move);
 
           if ( promotion )
@@ -144,7 +143,7 @@ int MovesGenerator::generate()
           Move & move = moves_[m++];
 
           move.alreadyDone_ = 0;
-          move.set(pw_pos, *table, 0, false, false);
+          move.set(pw_pos, *table, 0, false);
           calculateSortValue(move);
 
           if ( promotion )
@@ -153,15 +152,15 @@ int MovesGenerator::generate()
 
             moves_[m] = move;
             moves_[m].new_type_ = Figure::TypeRook;
-            calculateWeight(moves_[m++]);
+            calculateSortValue(moves_[m++]);
 
             moves_[m] = move;
             moves_[m].new_type_ = Figure::TypeBishop;
-            calculateWeight(moves_[m++]);
+            calculateSortValue(moves_[m++]);
 
             moves_[m] = move;
             moves_[m].new_type_ = Figure::TypeKnight;
-            calculateWeight(moves_[m++]);
+            calculateSortValue(moves_[m++]);
           }
         }
       }
@@ -180,15 +179,16 @@ int MovesGenerator::generate()
         for (; *table >= 0; ++table)
         {
           const Field & field = board_.getField(*table);
-          int rindex = -1;
+          bool capture = false;
           if ( field )
           {
             if ( field.color() == color )
               continue;
-            rindex = field.index();
+
+            capture = true;
           }
 
-          add_move(m, kn_pos, *table, rindex, 0);
+          add(m, kn_pos, *table, 0, capture);
         }
       }
     }
@@ -211,8 +211,8 @@ int MovesGenerator::generate()
           int8 delta = packed[1];
 
           int8 p = fg_pos;
-          int rindex = -1;
-          for ( ; count && rindex < 0; --count)
+          bool capture = false;
+          for ( ; count && !capture; --count)
           {
             p += delta;
 
@@ -222,10 +222,10 @@ int MovesGenerator::generate()
               if ( field.color() == color )
                 break;
 
-              rindex = field.index();
+              capture = true;
             }
 
-            add_move(m, fg_pos, p, rindex, 0);
+            add(m, fg_pos, p, 0, capture);
           }
         }
       }
@@ -245,15 +245,16 @@ int MovesGenerator::generate()
     for (; *table >= 0; ++table)
     {
       const Field & field = board_.getField(*table);
-      int rindex = -1;
+      bool capture = false;
       if ( field )
       {
         if ( field.color() == color )
           continue;
-        rindex = field.index();
+
+        capture = true;
       }
 
-      add_move(m, ki_pos, *table, rindex, 0);
+      add(m, ki_pos, *table, 0, capture);
     }
 
     int index = board_.getField(ki_pos).index();

@@ -125,16 +125,12 @@ protected:
     const Field & fto = board_.getField(move.to_);
     const Field & ffrom = board_.getField(move.from_);
 
-    Figure::Type vtype = Figure::TypeNone;
+    Figure::Type vtype = fto.type();
 
-    if ( fto.type() > Figure::TypeNone )
-    {
-      THROW_IF(fto.color() != Figure::otherColor(board_.color_), "invalid color of captured figure");
+    THROW_IF(vtype != Figure::TypeNone && fto.color() != Figure::otherColor(board_.color_), "invalid color of captured figure");
 
-      vtype = fto.type();
-    }
     // en-passant case
-    else if ( move.to_ == board_.en_passant_ && ffrom.type() == Figure::TypePawn )
+    if ( vtype == Figure::TypeNone && move.to_ == board_.en_passant_ && ffrom.type() == Figure::TypePawn )
     {
 #ifdef NDEBUG
       Index ep_pos(board_.en_passant_);

@@ -226,6 +226,11 @@ public:
     index_ |= (y&7)<<3;
   }
 
+  int transp() const
+  {
+    return (x() << 3) | y();
+  }
+
 private:
 
   int8 index_;

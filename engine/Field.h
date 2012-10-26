@@ -20,7 +20,7 @@ public:
   inline Figure::Type  type() const { return (Figure::Type)type_; }
   inline Figure::Color color() const { return (Figure::Color)color_; }
 
-  inline void set(const Figure::Type type, const Figure::Color color)
+  inline void set(const Figure::Color color, const Figure::Type type)
   {
     THROW_IF( *this, "try to put figure to occupied field");
 

@@ -42,16 +42,11 @@ void Board::clear()
   movesCounter_ = 1;
   halfmovesCounter_ = 0;
   repsCounter_ = 0;
+  castling_ = 0;
   stages_[0] = stages_[1] = 0;
 
   for (int i = 0; i < NumOfFields; ++i)
     fields_[i].clear();
-
-  for (int i = 0; i < 2; ++i)
-  {
-    for (int j = 0; j < NumOfFigures; ++j)
-      figures_[i][j].clear();
-  }
 }
 
 bool Board::initEmpty(Figure::Color color)
@@ -111,13 +106,8 @@ bool Board::fromFEN(const char * fen)
       if ( Figure::TypeNone == ftype )
         return false;
 
-      bool firstStep = false;
-      if ( Figure::TypePawn == ftype && (6 == y && Figure::ColorBlack == color || 1 == y && Figure::ColorWhite == color) )
-        firstStep = true;
-
-      Figure fig(ftype, color, x, y, firstStep);
-
-      addFigure(fig);
+      Index p(x, y);
+      addFigure(color, ftype, p);
 
       if ( ++x > 7 )
       {
@@ -166,50 +156,24 @@ bool Board::fromFEN(const char * fen)
         switch ( *s )
         {
         case 'k':
-          fk = getField(60);
-          if ( fk.type() != Figure::TypeKing || fk.color() != Figure::ColorBlack )
-            return false;
-          fr = getField(63);
-          if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorBlack )
-            return false;
+          set_castling(Figure::ColorBlack, 0);
           break;
 
         case 'K':
-          fk = getField(4);
-          if ( fk.type() != Figure::TypeKing || fk.color() != Figure::ColorWhite )
-            return false;
-          fr = getField(7);
-          if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorWhite )
-            return false;
+          set_castling(Figure::ColorWhite, 0);
           break;
 
         case 'q':
-          fk = getField(60);
-          if ( fk.type() != Figure::TypeKing || fk.color() != Figure::ColorBlack )
-            return false;
-          fr = getField(56);
-          if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorBlack )
-            return false;
+          set_castling(Figure::ColorBlack, 1);
           break;
 
         case 'Q':
-          fk = getField(4);
-          if ( fk.type() != Figure::TypeKing || fk.color() != Figure::ColorWhite )
-            return false;
-          fr = getField(0);
-          if ( fr.type() != Figure::TypeRook || fr.color() != Figure::ColorWhite )
-            return false;
+          set_castling(Figure::ColorWhite, 1);
           break;
 
         default:
           return false;
         }
-
-        Figure & king = getFigure(fk.color(), fk.index());
-        Figure & rook = getFigure(fr.color(), fr.index());
-
-        king.setFirstStep(true);
-        rook.setFirstStep(true);
       }
 
       ++i;
@@ -332,20 +296,19 @@ bool Board::toFEN(char * fen) const
   // 3 - castling possibility
   {
     *s++ = ' ';
-	if ( !castling(Figure::ColorBlack, 0) && !castling(Figure::ColorBlack, 1) &&
-		 !castling(Figure::ColorWhite, 0) && !castling(Figure::ColorWhite, 1) )
+	  if ( !castling() )
     {
       *s++ = '-';
     }
     else
     {
-      if ( castling(Figure::ColorWhite, 0))
+      if ( castling_K() )
         *s++ = 'K';
-      if ( castling(Figure::ColorWhite, 1) )
+      if ( castling_Q() )
         *s++ = 'Q';
-      if ( castling(Figure::ColorBlack, 0) )
+      if ( castling_k() )
         *s++ = 'k';
-      if ( castling(Figure::ColorBlack, 1) )
+      if ( castling_q() )
         *s++ = 'q';
     }
   }
@@ -425,18 +388,18 @@ bool Board::invalidate()
 {
   Figure::Color ocolor = Figure::otherColor(color_);
 
-  Figure & king1 = getFigure(color_, KingIndex);
-  Figure & king2 = getFigure(ocolor, KingIndex);
+  int ki_pos = kingPos(color_);
+  int oki_pos = kingPos(ocolor);
 
   state_ = Ok;
 
-  if ( fastAttacked(color_, king2.where()) )
+  if ( fastAttacked(color_, oki_pos) )
   {
     state_ = Invalid;
     return false;
   }
 
-  if ( fastAttacked(ocolor, king1.where()) )
+  if ( fastAttacked(ocolor, ki_pos) )
     state_ = UnderCheck;
 
   verifyChessDraw();
@@ -444,7 +407,7 @@ bool Board::invalidate()
   if ( drawState() )
     return true;
 
-  int cnum = findCheckingFigures(ocolor, king1.where());
+  int cnum = findCheckingFigures(ocolor, ki_pos);
   if ( cnum > 2 )
   {
     state_ = Invalid;
@@ -514,90 +477,17 @@ void Board::verifyState()
 }
 
 //////////////////////////////////////////////////////////////////////////
-
-void Board::setFigure(const Figure & fig)
+bool Board::addFigure(const Figure::Color color, const Figure::Type type, int pos)
 {
-  getFigure(fig.getColor(), fig.getIndex()) = fig;
-  fields_[fig.where()].set(fig);
-  fmgr_.incr(fig);
-}
-
-bool Board::addFigure(const Figure & fig)
-{
-  if ( !fig || fig.where() < 0 )
+  if ( !type || (unsigned)pos > 63 )
     return false;
 
-  Field & field = getField(fig.where());
+  Field & field = getField(pos);
   if ( field )
     return false;
 
-  if ( Figure::TypePawn == fig.getType() )
-  {
-    int j = fig.where() & 7;
-    Figure & f = getFigure(fig.getColor(), j);
-    if ( !f )
-    {
-      f = fig;
-      f.setIndex(j);
-      field.set(f);
-      fmgr_.incr(f);
-      return true;
-    }
-  }
-
-  int jfrom = -1, jto = -1;
-  switch ( fig.getType() )
-  {
-  case Figure::TypePawn:
-    jfrom = PawnIndex;
-    jto = KnightIndex;
-    break;
-
-  case Figure::TypeKnight:
-    jfrom = KnightIndex;
-    jto = BishopIndex;
-    break;
-
-  case Figure::TypeBishop:
-    jfrom = BishopIndex;
-    jto = RookIndex;
-    break;
-
-  case Figure::TypeRook:
-    jfrom = RookIndex;
-    jto = QueenIndex;
-    break;
-
-  case Figure::TypeQueen:
-    jfrom = QueenIndex;
-    jto = KingIndex;
-    break;
-
-  case Figure::TypeKing:
-    jfrom = KingIndex;
-    jto = NumOfFigures;
-    break;
-  }
-
-  for (int i = 0; i < 2; ++i)
-  {
-    for (int j = jfrom; j < jto; ++j)
-    {
-      Figure & f = getFigure(fig.getColor(), j);
-      if ( !f )
-      {
-        f = fig;
-        f.setIndex(j);
-        field.set(f);
-        fmgr_.incr(f);
-        return true;
-      }
-    }
-
-    // if we haven't found empty slot yet, lets try to put anywhere :)
-    jfrom = PawnIndex;
-    jto = KingIndex;
-  }
+  fields_[pos].set(color, type);
+  fmgr_.incr(color, type, pos);
 
   return false;
 }
@@ -811,52 +701,51 @@ void Board::verifyMasks() const
 {
   for (int c = 0; c < 2; ++c)
   {
-    uint64 pawn_mask_o = 0ULL;
-    uint64 pawn_mask_t = 0ULL;
-    uint64 knight_mask = 0ULL;
-    uint64 bishop_mask = 0ULL;
-    uint64 rook_mask = 0ULL;
-    uint64 queen_mask = 0ULL;
-    uint64 king_mask = 0ULL;
-    uint64 all_mask = 0ULL;
+    BitMask pawn_mask_o = 0ULL;
+    BitMask pawn_mask_t = 0ULL;
+    BitMask knight_mask = 0ULL;
+    BitMask bishop_mask = 0ULL;
+    BitMask rook_mask = 0ULL;
+    BitMask queen_mask = 0ULL;
+    BitMask king_mask = 0ULL;
+    BitMask all_mask = 0ULL;
 
     Figure::Color color = (Figure::Color)c;
-    for (int i = 0; i < NumOfFigures; ++i)
+    for (int p = 0; p < NumOfFields; ++p)
     {
-      const Figure & f = getFigure(color, i);
-      if ( !f )
+      const Field & field = getField(p);
+      if ( !field )
         continue;
-      all_mask |= 1ULL << f.where();
 
-      switch ( f.getType() )
+      all_mask |= 1ULL << p;
+
+      switch ( field.type() )
       {
       case Figure::TypePawn:
         {
-          int x = f.where() & 7;
-          int y = f.where() >>3;
-          pawn_mask_t |= 1ULL << ((x << 3) | y);
-          pawn_mask_o |= 1ULL << f.where();
+          pawn_mask_t |= 1ULL << Index(p).transp());
+          pawn_mask_o |= 1ULL << p;
         }
         break;
 
       case Figure::TypeKnight:
-        knight_mask |= 1ULL << f.where();
+        knight_mask |= 1ULL << p;
         break;
 
       case Figure::TypeBishop:
-        bishop_mask |= 1ULL << f.where();
+        bishop_mask |= 1ULL << p;
         break;
 
       case Figure::TypeRook:
-        rook_mask |= 1ULL << f.where();
+        rook_mask |= 1ULL << p;
         break;
 
       case Figure::TypeQueen:
-        queen_mask |= 1ULL << f.where();
+        queen_mask |= 1ULL << p;
         break;
 
       case Figure::TypeKing:
-        king_mask |= 1ULL << f.where();
+        king_mask |= 1ULL << p;
         break;
       }
     }
@@ -909,5 +798,4 @@ void Board::load(const char * fname)
   g_betweenMasks = betweenMask;
   g_deltaPosCounter = deltaPos;
   g_distanceCounter = distCounter;
-
 }
