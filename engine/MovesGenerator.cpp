@@ -452,7 +452,7 @@ int EscapeGenerator::generateUsual()
   }
 
   // now try to protect king - put something between it and checking figure
-  const uint64 & protect_king_msk = board_.g_betweenMasks->between(board_.kingPos(color), ch_pos);
+  const BitMask & protect_king_msk = board_.g_betweenMasks->between(board_.kingPos(color), ch_pos);
 
   if ( protect_king_msk && Figure::TypePawn != ch_type && Figure::TypeKnight != ch_type )
   {
@@ -467,7 +467,7 @@ int EscapeGenerator::generateUsual()
 
       for (; *table >= 0 && !board_.getField(*table); ++table)
       {
-        if ( !(protect_king_msk & (1ULL << *table)) )
+        if ( (protect_king_msk & (1ULL << *table)) == 0 )
           continue;
 
         bool promotion = *table > 55 || *table < 8;

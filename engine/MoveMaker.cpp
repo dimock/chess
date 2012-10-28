@@ -5,9 +5,9 @@
 #include "Board.h"
 #include "FigureDirs.h"
 
+// unpack from hash, verify move's physical possibility
 bool Board::unpack(const PackedMove & pm, Move & move) const
 {
-  Move move;
   move.clear();
 
   move.from_ = pm.from_;
@@ -101,6 +101,7 @@ bool Board::unpack(const PackedMove & pm, Move & move) const
   return true;
 }
 
+// verify move by rules
 bool Board::validateMove(const Move & move) const
 {  
   const Field & ffrom = getField(move.from_);
@@ -113,123 +114,129 @@ bool Board::validateMove(const Move & move) const
   // validate under check
   if ( prev.checkingNum_ )
   {
+#ifdef NDEBUG
     if ( move.checkVerified_ )
       return true;
+#endif
 
     {
-      THROW_IF( !ffrom || ffrom.color() != color_, "there is nothing that can escape from check on field figure goes from" );
-
-      if ( Figure::TypeKing == ffrom.type() )
-      {
-        THROW_IF((move.from_&7)-(move.to_&7) > 1 || (move.from_&7)-(move.to_&7) < -1, "try to castle under check");
-        return !detectCheck(ocolor, move.to_, move.from_);
-      }
-
-      THROW_IF( checking_[0] < 0 || checking_[0] >= NumOfFigures, "invalid checking figure index" );
-
-      const Figure & king = getFigure(color_, KingIndex);
-
-      if ( move.rindex_ == checking_[0] )
-      {
-        const Figure & rfig = getFigure(ocolor, move.rindex_);
-        THROW_IF( !rfig, "try to remove nonexisting figure" );
-
-        // maybe attacked from direction, my figure goes from
-        uint64 clear_msk = ~(1ULL << move.from_);
-        uint64 set_msk = 1ULL << move.to_;
-        uint64 exclude_msk = ~(1ULL << rfig.where());
-
-        int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, exclude_msk);
-
-        if ( idx >= 0 )
-          return false;
-
-        // if en-passant capture, we have to check the direction from king to en-passant pawn
-        if ( move.rindex_ >= 0 && move.rindex_ == en_passant_ && Figure::TypePawn == fig.getType() )
+        if ( Figure::TypeKing == ffrom.type() )
         {
-          const Figure & epawn = getFigure(ocolor, move.rindex_);
+            THROW_IF((move.from_&7)-(move.to_&7) > 1 || (move.from_&7)-(move.to_&7) < -1, "try to castle under check");
 
-          THROW_IF( !epawn, "no en-passant pawn but index is valid" );
-
-          int epos = epawn.where();
-
-          static int delta_p[2] = { 8, -8 };
-          epos += delta_p[ocolor];
-
-          if ( epos == move.to_ )
-          {
-            clear_msk &= ~(1ULL << epawn.where());
-            int idx_ep = fastAttackedFrom(color_, epawn.where());
-            return idx_ep < 0;
-          }
+            return !detectCheck(ocolor, move.to_, move.from_);
         }
-        return true;
-      }
+        else if ( prev.checkingNum_ > 1 )
+            return false;
 
-      const Figure & afig = getFigure(ocolor, checking_[0]);
-      THROW_IF( Figure::TypeKing == afig.getType(), "king is attacking king" );
-      THROW_IF( !afig, "king is attacked by non existing figure" );
+        THROW_IF( (unsigned)prev.checking_[0] >= NumOfFields, "invalid checking figure" );
 
-      // Pawn and Knight could be only removed to escape from check
-      if ( Figure::TypeKnight == afig.getType() || Figure::TypePawn == afig.getType() )
-        return false;
+        // regular capture
+        if ( move.to_ == prev.checking_[0] )
+        {
+            // maybe moving figure discovers check
+            BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
+            mask_all |= (1ULL << move.to_);
 
-      FPos dp1 = g_deltaPosCounter->getDeltaPos(move.to_, afig.where());
-      FPos dp2 = g_deltaPosCounter->getDeltaPos(king.where(), move.to_);
+            BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
+            brq_mask &= ~(1ULL << move.to_);
 
-      // we can protect king by putting figure between it and attacking figure.
-      if ( FPos(0, 0) != dp1 && dp1 == dp2 )
-      {
-        // at the last we have to check if it's safe to move this figure
-        uint64 clear_msk = ~(1ULL << move.from_);
-        uint64 set_msk = 1ULL << move.to_;
+            int ki_pos = kingPos(color_);
 
-        int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, ((uint64)(-1LL)));
-        return idx < 0;
-      }
+            return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+        }
 
-      return false;
+        // en-passant capture. we have to check the direction from king to en-passant pawn
+        if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
+        {
+            int ep_pos = enpassantPos();
+            BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
+            mask_all |= (1ULL << move.to_);
+            mask_all ^= (1ULL << move.from_);
+            mask_all &= ~(1ULL << ep_pos);
+
+            BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
+
+            int ki_pos = kingPos(color_);
+
+            // through removed en-passant pawn's field
+            if ( discoveredCheck(ep_pos, ocolor, mask_all, brq_mask, ki_pos) )
+                return false;
+
+            // through moved pawn's field
+            return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+        }
+
+        // moving figure covers king
+        {
+            const Field & cfield = getField(prev.checking_[0]);
+            THROW_IF( Figure::TypeKing == cfield.type(), "king is attacking king" );
+            THROW_IF( !cfield, "king is attacked by non existing figure" );
+
+            // Pawn and Knight could be only removed to escape from check
+            if ( Figure::TypeKnight == cfield.type() || Figure::TypePawn == cfield.type() )
+                return false;
+
+            int ki_pos = kingPos(color_);
+            const BitMask & protect_king_msk = g_betweenMasks->between(ki_pos, prev.checking_[0]);
+            if ( (protect_king_msk & (1ULL << move.to_)) == 0 )
+                return false;
+
+            BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
+            mask_all |= (1ULL << move.to_);
+
+            BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
+            brq_mask &= ~(1ULL << move.to_);
+
+            return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+        }
     }
 
     return false;
   }
 
   // without check
-
-  // castling
-  int d = move.to_ - move.from_;
-  if ( ffrom.type() == Figure::TypeKing && (2 == d || -2 == d) )// castle
+  if ( ffrom.type() == Figure::TypeKing  )
   {
-    THROW_IF( !castling(color_, d > 0 ? 0 : 1), "castling impossible" );
-    THROW_IF( !verifyCastling(color_, d > 0 ? 0 : 1), "castling flag is invalid" );
+    // castling
+    int d = move.to_ - move.from_;
+    if ( (2 == d || -2 == d) )
+    {
+        THROW_IF( !castling(color_, d > 0 ? 0 : 1), "castling impossible" );
+        THROW_IF( !verifyCastling(color_, d > 0 ? 0 : 1), "castling flag is invalid" );
 
-    // don't do castling under check
-    THROW_IF( prev.checkingNum_ > 0, "can not castle under check" );
-    THROW_IF( move.capture_, "can't capture while castling" );
-    THROW_IF( !(move.from_ == 4 && color_ || move.from_ == 60 && !color_), "kings position is wrong" );
-    THROW_IF( getField(move.to_), "king position after castle is occupied" );
+        // don't do castling under check
+        THROW_IF( prev.checkingNum_ > 0, "can not castle under check" );
+        THROW_IF( move.capture_, "can't capture while castling" );
+        THROW_IF( !(move.from_ == 4 && color_ || move.from_ == 60 && !color_), "kings position is wrong" );
+        THROW_IF( getField(move.to_), "king position after castle is occupied" );
 
-    d >>= 1;
+        d >>= 1;
 
-    // verify if there is suitable rook for castling
-    int rook_from = move.from_ + ((d>>1) ^ 3); //d < 0 ? move.from_ - 4 : move.from_ + 3
+        // verify if there is suitable rook for castling
+        int rook_from = move.from_ + ((d>>1) ^ 3); //d < 0 ? move.from_ - 4 : move.from_ + 3
 
-    THROW_IF( (rook_from != 0 && color_ && d < 0) || (rook_from != 7 && color_ && d > 0), "invalid castle rook position" );
-    THROW_IF( (rook_from != 56 && !color_ && d < 0) || (rook_from != 63 && !color_ && d > 0), "invalid castle rook position" );
+        THROW_IF( (rook_from != 0 && color_ && d < 0) || (rook_from != 7 && color_ && d > 0), "invalid castle rook position" );
+        THROW_IF( (rook_from != 56 && !color_ && d < 0) || (rook_from != 63 && !color_ && d > 0), "invalid castle rook position" );
 
-    int rook_to = move.from_ + d;
+        int rook_to = move.from_ + d;
 
-    THROW_IF( getField(rook_to), "field, that rook is going to move to, is occupied" );
+        THROW_IF( getField(rook_to), "field, that rook is going to move to, is occupied" );
 
-    THROW_IF ( !(rook_from & 3) && getField(rook_from+1), "long castling impossible" );
+        THROW_IF ( !(rook_from & 3) && getField(rook_from+1), "long castling impossible" );
 
-    if ( detectCheck(ocolor, move.to_) || detectCheck(ocolor, rook_to) )
-      return false;
+        if ( detectCheck(ocolor, move.to_) || detectCheck(ocolor, rook_to) )
+          return false;
 
-    return true;
+        return true;
+     }
+    else
+    {
+        // other king's movements - don't put it under check
+        return detectCheck(ocolor, move.to_, move.from_);
+    }
   }
-
-  if ( ffrom.type() != Figure::TypeKing )
+  else
   {
     BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
     BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
@@ -248,9 +255,6 @@ bool Board::validateMove(const Move & move) const
 
     return true;
   }
-
-  // other figures movements
-  return detectCheck(ocolor, move.to_, move.from_);
 }
 
 void Board::undoMove()

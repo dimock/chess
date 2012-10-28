@@ -237,7 +237,7 @@ public:
   void verifyState();
 
   /// 2 means that only king's movements are valid
-  int doubleCheck() const { return checkingNum_ > 1; }
+  int doubleCheck() const { return lastMove().checkingNum_ > 1; }
 
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
@@ -357,6 +357,7 @@ public:
     return score;
   }
 
+  bool detectCheck(const Figure::Color acolor, int pos) const;
   bool detectCheck(const Figure::Color acolor, int pos, int exclude) const;
 
   /// is field 'pos' attacked by given color? figure isn't moved

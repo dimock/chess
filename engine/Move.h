@@ -197,8 +197,6 @@ struct MoveCmd : public Move
     eaten_type_ = 0;
     old_state_ = 0;
     state_ = 0;
-    rook_to_ = -1;
-    rook_from_ = -1;
     reduced_ = false;
     extended_ = false;
     checkingNum_ = 0;
