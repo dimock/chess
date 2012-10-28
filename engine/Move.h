@@ -161,12 +161,6 @@ struct MoveCmd : public Move
   /// castle: 0 - no castle, 1 - short castle, 2 - long castle
   int8 castle_;
 
-  /// old position of rook while castle
-  int8 rook_from_;
-
-  /// new position of rook while castle
-  int8 rook_to_;
-
   /// type of eaten figure to restore it in undo
   int8 eaten_type_;
 
@@ -179,20 +173,11 @@ struct MoveCmd : public Move
   /// checking figures positions
   uint8 checking_[2];
 
-  /// previous checking figures number
-  uint8 old_checkingNum_;
-
-  /// previous checking figures positions
-  uint8 old_checking_[2];
-
   /// fifty moves rule
   uint8 fifty_moves_;
 
   /// repetitions counter
   uint8 reps_counter_;
-
-  //// 1st - color, 2nd - index of castle's possibility for zobrist key. 0 - short, 1 - long
-  //bool castle_index_[2][2];
 
   bool can_win_[2];
 
@@ -212,11 +197,11 @@ struct MoveCmd : public Move
     eaten_type_ = 0;
     old_state_ = 0;
     state_ = 0;
-    checkingNum_ = 0;
     rook_to_ = -1;
     rook_from_ = -1;
     reduced_ = false;
     extended_ = false;
+    checkingNum_ = 0;
   }
 };
 

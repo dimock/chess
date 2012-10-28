@@ -34,7 +34,6 @@ void Board::clear()
   fen_[0] = 0;
 
   can_win_[0] = can_win_[1] = true;
-  checkingNum_ = 0;
   en_passant_ = -1;
   state_ = Invalid;
   color_ = Figure::ColorBlack;
@@ -302,13 +301,33 @@ bool Board::toFEN(char * fen) const
     else
     {
       if ( castling_K() )
+      {
+        if ( !verifyCastling(Figure::ColorWhite, 0) )
+          return false;
+
         *s++ = 'K';
+      }
       if ( castling_Q() )
+      {
+        if ( !verifyCastling(Figure::ColorWhite, 1) )
+          return false;
+
         *s++ = 'Q';
+      }
       if ( castling_k() )
+      {
+        if ( !verifyCastling(Figure::ColorBlack, 0) )
+          return false;
+        
         *s++ = 'k';
+      }
       if ( castling_q() )
+      {
+        if ( !verifyCastling(Figure::ColorBlack, 1) )
+          return false;
+
         *s++ = 'q';
+      }
     }
   }
 
@@ -329,7 +348,8 @@ bool Board::toFEN(char * fen) const
 
       Index pawn_pos(x, y);
       const Field & ep_field = getField(pawn_pos);
-      THROW_IF( ep_field.color() == color_ || ep_field.type() != Figure::TypePawn, "en-passant pawn is absent but has index" );
+      if ( ep_field.color() == color_ || ep_field.type() != Figure::TypePawn )
+        return false;
 
       char cx = 'a' + ep_pos.x();
       char cy = '1' + ep_pos.y();
@@ -380,6 +400,29 @@ bool Board::operator != (const Board & other) const
   }
 
   return false;
+}
+
+bool Board::verifyCastling(const Figure::Color c, int t) const
+{
+  if ( c && getField(4).type() != Figure::TypeKing )
+    return false;
+
+  if ( !c && getField(60).type() != Figure::TypeKing )
+    return false;
+
+  if ( c && t == 0 && getField(7).type() != Figure::TypeRook )
+    return false;
+
+  if ( c && t == 1 && getField(0).type() != Figure::TypeRook )
+    return false;
+
+  if ( !c && t == 0 && getField(63).type) != Figure::TypeRook )
+    return false;
+
+  if ( !c && t == 1 && getField(56).type() != Figure::TypeRook )
+    return false;
+
+  return true;
 }
 
 //////////////////////////////////////////////////////////////////////////

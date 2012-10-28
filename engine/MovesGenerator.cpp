@@ -259,11 +259,11 @@ int MovesGenerator::generate()
     if ( !board_.underCheck() )
     {
       // short castle
-      if ( board_.castling(board_.color_, 0) )
+      if ( board_.castling(board_.color_, 0) && !board_.getField(ki_pos+2) && !board_.getField(ki_pos+1) )
         add(m, ki_pos, ki_pos+2, Figure::TypeNone, false);
 
       // long castle
-      if ( board_.castling(board_.color_, 1) )
+      if ( board_.castling(board_.color_, 1) && !board_.getField(ki_pos-2) && !board_.getField(ki_pos-1) && !board_.getField(ki_pos-3) )
         add(m, ki_pos, ki_pos-2, Figure::TypeNone, false);
     }
   }

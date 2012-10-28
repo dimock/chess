@@ -237,7 +237,7 @@ public:
   void verifyState();
 
   /// 2 means that only king's movements are valid
-  int getNumOfChecking() const { return checkingNum_; }
+  int doubleCheck() const { return checkingNum_ > 1; }
 
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
@@ -290,23 +290,23 @@ public:
   }
 
   /// get i-th move from end
-  /// 0 means the last one
+  /// '0' means the last one, '-1' means 1 before last
   MoveCmd & getMoveRev(int i)
   {
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i-1];
+    return g_moves[halfmovesCounter_+i];
   }
 
   const MoveCmd & getMoveRev(int i) const
   {
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i-1];
+    return g_moves[halfmovesCounter_+i];
   }
 
   const MoveCmd & lastMove() const
   {
-    THROW_IF( halfmovesCounter_ < 1, "attempt to get last move before doing some");
-    return g_moves[halfmovesCounter_-1];
+    THROW_IF( halfmovesCounter_ < 0, "invalid halfmovesCounter");
+    return g_moves[halfmovesCounter_];
   }
 
   /// returns current move color
@@ -357,6 +357,7 @@ public:
     return score;
   }
 
+  bool detectCheck(const Figure::Color acolor, int pos, int exclude) const;
 
   /// is field 'pos' attacked by given color? figure isn't moved
   bool fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const;
@@ -483,28 +484,26 @@ private:
   ScoreType evaluateMobility(Figure::Color color, FiguresMobility & fmob) const;
   ScoreType evaluateWinnerLoser() const;
 
-  /// do move. fill undo info, don't validate
-  bool doMove();
+  bool verifyCastling(const Figure::Color , int t) const;
 
-  /// undo move. restore old state after doMove
-  void undoMove();
+  bool validateMove(const Move & mv) const;
 
   /// verify position after movement
-  inline bool wasMoveValid(const MoveCmd & move) const
-  {
-    if ( UnderCheck & move.old_state_ )
-    {
-      if ( move.checkVerified_ )
-      {
-        THROW_IF( !wasValidUnderCheck(move), "move was verified as valid, but actualy itsn't" );
-        return true;
-      }
+  //inline bool wasMoveValid(const MoveCmd & move) const
+  //{
+  //  if ( UnderCheck & move.old_state_ )
+  //  {
+  //    if ( move.checkVerified_ )
+  //    {
+  //      THROW_IF( !wasValidUnderCheck(move), "move was verified as valid, but actualy itsn't" );
+  //      return true;
+  //    }
 
-      return wasValidUnderCheck(move);
-    }
-    else
-      return wasValidWithoutCheck(move);
-  }
+  //    return wasValidUnderCheck(move);
+  //  }
+  //  else
+  //    return wasValidWithoutCheck(move);
+  //}
 
   bool verifyChessDraw();
 
@@ -583,20 +582,21 @@ private:
     return (btw_msk & inv_mask) != btw_msk;
   }
 
-  inline bool discoveredCheck(int8 pt, Figure::Color color, const uint64 & mask_all, const uint64 & brq_mask, int oki_pos) const
+  // acolor - color of attacking side, ki_pos - attacked king pos
+  inline bool discoveredCheck(int8 pt, Figure::Color acolor, const uint64 & mask_all, const uint64 & brq_mask, int ki_pos) const
   {
-    BitMask from_msk = g_betweenMasks->from(oki_pos, pt);
+    BitMask from_msk = g_betweenMasks->from(ki_pos, pt);
     BitMask mask_all_ex = mask_all & ~(1ULL << pt);
     mask_all_ex &= from_msk;
     if ( (mask_all_ex & brq_mask) == 0 )
       return false;
 
-    int index = oki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
-    const Field & afield = getField(index);
-    if ( afield.color() != color || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
+    int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    const Field & afield = getField(apos);
+    if ( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
       return false;
 
-    int dir = g_figureDir->dir(afield.type(), afield.color(), index, oki_pos);
+    int dir = g_figureDir->dir(afield.type(), afield.color(), apos, ki_pos);
     return dir >= 0;
   }
 
@@ -623,9 +623,6 @@ private:
 
   /// fields array 8 x 8
   Field fields_[NumOfFields];
-
-  int8 checking_[2];
-  int8 checkingNum_;
 
   int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
   uint8 repsCounter_;
