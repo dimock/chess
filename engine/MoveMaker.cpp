@@ -102,7 +102,7 @@ bool Board::unpack(const PackedMove & pm, Move & move) const
 }
 
 bool Board::validateMove(const Move & move) const
-{
+{  
   const Field & ffrom = getField(move.from_);
   const Field & fto   = getField(move.to_);
 
@@ -113,6 +113,84 @@ bool Board::validateMove(const Move & move) const
   // validate under check
   if ( prev.checkingNum_ )
   {
+    if ( move.checkVerified_ )
+      return true;
+
+    {
+      THROW_IF( !ffrom || ffrom.color() != color_, "there is nothing that can escape from check on field figure goes from" );
+
+      if ( Figure::TypeKing == ffrom.type() )
+      {
+        THROW_IF((move.from_&7)-(move.to_&7) > 1 || (move.from_&7)-(move.to_&7) < -1, "try to castle under check");
+        return !detectCheck(ocolor, move.to_, move.from_);
+      }
+
+      THROW_IF( checking_[0] < 0 || checking_[0] >= NumOfFigures, "invalid checking figure index" );
+
+      const Figure & king = getFigure(color_, KingIndex);
+
+      if ( move.rindex_ == checking_[0] )
+      {
+        const Figure & rfig = getFigure(ocolor, move.rindex_);
+        THROW_IF( !rfig, "try to remove nonexisting figure" );
+
+        // maybe attacked from direction, my figure goes from
+        uint64 clear_msk = ~(1ULL << move.from_);
+        uint64 set_msk = 1ULL << move.to_;
+        uint64 exclude_msk = ~(1ULL << rfig.where());
+
+        int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, exclude_msk);
+
+        if ( idx >= 0 )
+          return false;
+
+        // if en-passant capture, we have to check the direction from king to en-passant pawn
+        if ( move.rindex_ >= 0 && move.rindex_ == en_passant_ && Figure::TypePawn == fig.getType() )
+        {
+          const Figure & epawn = getFigure(ocolor, move.rindex_);
+
+          THROW_IF( !epawn, "no en-passant pawn but index is valid" );
+
+          int epos = epawn.where();
+
+          static int delta_p[2] = { 8, -8 };
+          epos += delta_p[ocolor];
+
+          if ( epos == move.to_ )
+          {
+            clear_msk &= ~(1ULL << epawn.where());
+            int idx_ep = fastAttackedFrom(color_, epawn.where());
+            return idx_ep < 0;
+          }
+        }
+        return true;
+      }
+
+      const Figure & afig = getFigure(ocolor, checking_[0]);
+      THROW_IF( Figure::TypeKing == afig.getType(), "king is attacking king" );
+      THROW_IF( !afig, "king is attacked by non existing figure" );
+
+      // Pawn and Knight could be only removed to escape from check
+      if ( Figure::TypeKnight == afig.getType() || Figure::TypePawn == afig.getType() )
+        return false;
+
+      FPos dp1 = g_deltaPosCounter->getDeltaPos(move.to_, afig.where());
+      FPos dp2 = g_deltaPosCounter->getDeltaPos(king.where(), move.to_);
+
+      // we can protect king by putting figure between it and attacking figure.
+      if ( FPos(0, 0) != dp1 && dp1 == dp2 )
+      {
+        // at the last we have to check if it's safe to move this figure
+        uint64 clear_msk = ~(1ULL << move.from_);
+        uint64 set_msk = 1ULL << move.to_;
+
+        int idx = fastAttackedFrom(color_, move.from_, clear_msk, set_msk, ((uint64)(-1LL)));
+        return idx < 0;
+      }
+
+      return false;
+    }
+
     return false;
   }
 
