@@ -257,85 +257,6 @@ bool Board::validateMove(const Move & move) const
   }
 }
 
-void Board::undoMove()
-{
-  MoveCmd & move = getMove(halfmovesCounter_);
-
-  if ( !move.need_undo_ )
-    return;
-
-  //if ( !color_ )
-  //  movesCounter_--;
-  movesCounter_ -= ~color_ & 1;
-
-  // restore hash color. we change it early for 3-fold repetition detection
-  //fmgr_.hashColor();
-
-  Figure & fig = getFigure(color_, getField(move.to_).index());
-
-  // restore figure
-
-  // restore old type
-  if ( move.new_type_ > 0 )
-  {
-    fmgr_.u_decr(fig);
-    fig.go(move.from_);
-    fig.setType(Figure::TypePawn);
-    fmgr_.u_incr(fig);
-  }
-  else
-  {
-    fmgr_.u_move(fig, move.from_);
-  }
-
-  // restore position and field
-  getField(move.to_) = move.field_to_;
-  fig.setFirstStep(move.first_move_);
-  getField(fig.where()).set(fig);
-
-  // restore en-passant hash code
-  //if ( en_passant_ >= 0 )
-  //  fmgr_.hashEnPassant(fig.where(), color_);
-
-  // restore prev. en-passant index
-  en_passant_ = move.en_passant_;
-
-  Figure::Color ocolor = Figure::otherColor(color_);
-
-  // restore eaten figure
-  if ( move.rindex_ >= 0 )
-  {
-    Figure & rfig = getFigure(ocolor, move.rindex_);
-
-    THROW_IF( move.eaten_type_ <= 0, "type of eaten figure is invalid" );
-    rfig.setType((Figure::Type)move.eaten_type_);
-    getField(rfig.where()).set(rfig);
-    fmgr_.u_incr(rfig);
-  }
-
-  // restore king and rook after castling
-  if ( move.rook_index_ >= 0 )
-  {
-    int d = (move.to_ - move.from_) >> 1;
-
-    // restore rook's field. copy old one to restore all bits
-    getField(move.rook_to_) = move.field_rook_to_;
-
-    Figure & rook = getFigure(color_, move.rook_index_);
-    fmgr_.u_move(rook, move.rook_from_);
-
-    rook.setFirstStep(true);
-    Field & rfield = getField(rook.where());
-    rfield.set(rook);
-  }
-
-  // restore figures masks
-  fmgr_.restoreMasks(move.mask_);
-
-  fiftyMovesCount_ = move.fifty_moves_;
-  repsCounter_ = move.reps_counter_;
-}
-
 bool Board::makeMove(const Move & mv)
 {
   if ( drawState() || matState() )
@@ -343,7 +264,7 @@ bool Board::makeMove(const Move & mv)
 
   THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
-  MoveCmd & prev = lastMove();
+  const MoveCmd & prev = lastMove();
 
   halfmovesCounter_++;
 
@@ -369,56 +290,60 @@ bool Board::makeMove(const Move & mv)
   if ( move.en_passant_ >= 0 )
     fmgr_.hashEnPassant(move.en_passant_, ocolor);
 
-  /// hashing castle possibility
-  int d = move.to_ - move.from_;
-  if ( fig.getType() == Figure::TypeKing && (2 == d || -2 == d) )// castle
+  const Field & ffrom = getField(move.from_);
+  const Field & fto = getField(move.to_);
+
+  // castle
+  bool castle_k = castling(color_, 0);
+  bool castle_q = castling(color_, 1);
+  bool castle_kk = castle_k, castle_qq = castle_q;
+
+  if ( ffrom.type() == Figure::TypeKing )
   {
-    // don't do castling under check
-    THROW_IF( prev.checkingNum_ > 0, "can not castle under check" );
+      int d = move.to_ - move.from_;
+      if ( (2 == d || -2 == d) )
+      {
+        // don't do castling under check
+        THROW_IF( prev.checkingNum_ > 0, "can not castle under check" );
 
-    d >>= 1;
+        d >>= 1;
+        int rook_to = move.from_ + d;
+        int rook_from = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
 
-    move.rook_to_ = move.from_ + d;
+        Field & rf_field = getField(rook_from);
+        THROW_IF( rf_field.type() != Figure::TypeRook || rf_field.color() != color_, "no rook for castle" );
+        THROW_IF( !(rook_from & 3) && getField(rook_from+1), "long castle is impossible" );
 
-    // field, that rook or king is going to move to, is occupied
-    if ( getField(move.rook_to_) || getField(move.to_) )
-      return false;
+        rf_field.clear();
+        fmgr_.move(color_, Figure::TypeRook, rook_from, rook_to);
+        Field & field_rook_to  = getField(rook_to);
+        THROW_IF( field_rook_to, "field that rook is going to move to while castling is occupied" );
+        field_rook_to.set(color_, Figure::TypeRook);
+      }
 
-    THROW_IF( isAttacked(ocolor, fig.where()), "can't do castling under check" );
-    THROW_IF( move.rindex_ >= 0, "can't eat while castling" );
-    THROW_IF( !(fig.where() == 4 && color_ || fig.where() == 60 && !color_), "kings position is wrong" );
+      castle_kk = false;
+      castle_qq = false;
+  }
+  else if ( ffrom.type() == Figure::TypeRook )
+  {
+      if ( (move.from_ & 7) == 7 ) // short castle
+          castle_kk = false;
 
-    // then verify if there is suitable rook fo castling
-    move.rook_from_ = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
+      if ( (move.from_ & 7) == 0 ) // long castle
+          castle_qq = false;
+  }
 
-    THROW_IF( (move.rook_from_ != 0 && color_ && d < 0) || (move.rook_from_ != 7 && color_ && d > 0), "invalid castle rook position" );
-    THROW_IF( (move.rook_from_ != 56 && !color_ && d < 0) || (move.rook_from_ != 63 && !color_ && d > 0), "invalid castle rook position" );
+  // hash castle and change flags
+  if ( castle_k && !castle_kk )
+  {
+      clear_castling(color_, 0);
+      fmgr_.hashCastling(color_, 0);
+  }
 
-    Field & rf_field = getField(move.rook_from_);
-    if ( rf_field.type() != Figure::TypeRook || rf_field.color() != color_ )
-      return false;
-
-    // is long castling possible
-    if ( !(move.rook_from_ & 3) && getField(move.rook_from_+1) )
-      return false;
-
-    move.rook_index_ = rf_field.index();
-    Figure & rook = getFigure(color_, move.rook_index_);
-
-    THROW_IF( rook.getType() != Figure::TypeRook || isAttacked(ocolor, move.rook_to_) != fastAttacked(ocolor, move.rook_to_), "fast attacked returned wrong result");
-
-    if ( !rook.isFirstStep() || fastAttacked(ocolor, move.rook_to_) )
-      return false;
-
-    rf_field.clear();
-    fmgr_.move(rook, move.rook_to_);
-    rook.setMoved();
-    Field & field_rook_to  = getField(rook.where());
-    move.field_rook_to_ = field_rook_to;
-    field_rook_to.set(rook);
-
-    move.castle_ = 1;
-    state_ = Castle;
+  if ( castle_q && !castle_qq )
+  {
+      clear_castling(color_, 1);
+      fmgr_.hashCastling(color_, 1);
   }
 
   en_passant_ = -1;
@@ -520,6 +445,85 @@ bool Board::makeMove(const Move & mv)
   color_ = ocolor;
 
   return true;
+}
+
+void Board::undoMove()
+{
+    MoveCmd & move = getMove(halfmovesCounter_);
+
+    if ( !move.need_undo_ )
+        return;
+
+    //if ( !color_ )
+    //  movesCounter_--;
+    movesCounter_ -= ~color_ & 1;
+
+    // restore hash color. we change it early for 3-fold repetition detection
+    //fmgr_.hashColor();
+
+    Figure & fig = getFigure(color_, getField(move.to_).index());
+
+    // restore figure
+
+    // restore old type
+    if ( move.new_type_ > 0 )
+    {
+        fmgr_.u_decr(fig);
+        fig.go(move.from_);
+        fig.setType(Figure::TypePawn);
+        fmgr_.u_incr(fig);
+    }
+    else
+    {
+        fmgr_.u_move(fig, move.from_);
+    }
+
+    // restore position and field
+    getField(move.to_) = move.field_to_;
+    fig.setFirstStep(move.first_move_);
+    getField(fig.where()).set(fig);
+
+    // restore en-passant hash code
+    //if ( en_passant_ >= 0 )
+    //  fmgr_.hashEnPassant(fig.where(), color_);
+
+    // restore prev. en-passant index
+    en_passant_ = move.en_passant_;
+
+    Figure::Color ocolor = Figure::otherColor(color_);
+
+    // restore eaten figure
+    if ( move.rindex_ >= 0 )
+    {
+        Figure & rfig = getFigure(ocolor, move.rindex_);
+
+        THROW_IF( move.eaten_type_ <= 0, "type of eaten figure is invalid" );
+        rfig.setType((Figure::Type)move.eaten_type_);
+        getField(rfig.where()).set(rfig);
+        fmgr_.u_incr(rfig);
+    }
+
+    // restore king and rook after castling
+    if ( move.rook_index_ >= 0 )
+    {
+        int d = (move.to_ - move.from_) >> 1;
+
+        // restore rook's field. copy old one to restore all bits
+        getField(move.rook_to_) = move.field_rook_to_;
+
+        Figure & rook = getFigure(color_, move.rook_index_);
+        fmgr_.u_move(rook, move.rook_from_);
+
+        rook.setFirstStep(true);
+        Field & rfield = getField(rook.where());
+        rfield.set(rook);
+    }
+
+    // restore figures masks
+    fmgr_.restoreMasks(move.mask_);
+
+    fiftyMovesCount_ = move.fifty_moves_;
+    repsCounter_ = move.reps_counter_;
 }
 
 void Board::unmakeMove()

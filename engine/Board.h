@@ -309,6 +309,12 @@ public:
     return g_moves[halfmovesCounter_];
   }
 
+  MoveCmd & lastMove()
+  {
+      THROW_IF( halfmovesCounter_ < 0, "invalid halfmovesCounter");
+      return g_moves[halfmovesCounter_];
+  }
+
   /// returns current move color
   Figure::Color getColor() const { return color_; }
 

@@ -158,9 +158,6 @@ struct MoveCmd : public Move
   /// en-passant position
   int8 en_passant_;
 
-  /// castle: 0 - no castle, 1 - short castle, 2 - long castle
-  int8 castle_;
-
   /// type of eaten figure to restore it in undo
   int8 eaten_type_;
 
@@ -193,7 +190,6 @@ struct MoveCmd : public Move
 
     rindex_ = -1;
     en_passant_ = -1;
-    castle_ = 0;
     eaten_type_ = 0;
     old_state_ = 0;
     state_ = 0;
