@@ -43,8 +43,7 @@ struct Move
 {
 #ifndef NDEBUG
   // make all values invalid
-  Move() : from_(-1), to_(-1), new_type_(10), checkVerified_(1), alreadyDone_(1), flags_(-1),
-    counter_(1), checkFlag_(1), threat_(1), vsort_(0), recapture_(1), discoveredCheck_(1), seen_(1)
+  Move() : from_(-1), to_(-1), new_type_(10), vsort_(0), flags_(-1)
   {}
 #endif
 
@@ -151,10 +150,6 @@ struct MoveCmd : public Move
   /// state of board after move
   uint8 state_;
 
-  /// fields, figure and rook moved to
-  Field field_to_;
-  Field field_rook_to_;
-
   /// en-passant position
   int8 en_passant_;
 
@@ -167,8 +162,14 @@ struct MoveCmd : public Move
   /// number of checking figures
   uint8 checkingNum_;
 
+  union
+  {
   /// checking figures positions
-  uint8 checking_[2];
+  uint8  checking_[2];
+  uint16 checking_figs_;
+  };
+
+  uint8 castling_;
 
   /// fifty moves rule
   uint8 fifty_moves_;
@@ -185,10 +186,6 @@ struct MoveCmd : public Move
   /// performs clear operation before doing movement. it clears only undo info
   void clearUndo()
   {
-    field_to_.clear();
-    field_rook_to_.clear();
-
-    rindex_ = -1;
     en_passant_ = -1;
     eaten_type_ = 0;
     old_state_ = 0;

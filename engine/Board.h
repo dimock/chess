@@ -285,6 +285,7 @@ public:
   /// get i-th move from begin
   const MoveCmd & getMove(int i) const
   {
+    THROW_IF( !g_moves, "board isn't initialized" );
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
     return g_moves[i];
   }
@@ -293,26 +294,30 @@ public:
   /// '0' means the last one, '-1' means 1 before last
   MoveCmd & getMoveRev(int i)
   {
+    THROW_IF( !g_moves, "board isn't initialized" );
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i];
+    return g_moves[halfmovesCounter_+i-1];
   }
 
   const MoveCmd & getMoveRev(int i) const
   {
+    THROW_IF( !g_moves, "board isn't initialized" );
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i];
+    return g_moves[halfmovesCounter_+i-1];
   }
 
   const MoveCmd & lastMove() const
   {
-    THROW_IF( halfmovesCounter_ < 0, "invalid halfmovesCounter");
-    return g_moves[halfmovesCounter_];
+    THROW_IF( !g_moves, "board isn't initialized" );
+    THROW_IF( halfmovesCounter_ <= 0, "invalid halfmovesCounter");
+    return g_moves[halfmovesCounter_-1];
   }
 
   MoveCmd & lastMove()
   {
-      THROW_IF( halfmovesCounter_ < 0, "invalid halfmovesCounter");
-      return g_moves[halfmovesCounter_];
+      THROW_IF( !g_moves, "board isn't initialized" );
+      THROW_IF( halfmovesCounter_ <= 0, "invalid halfmovesCounter");
+      return g_moves[halfmovesCounter_-1];
   }
 
   /// returns current move color
@@ -322,7 +327,7 @@ public:
   uint8 getState() const { return state_; }
 
   /// returns true if we are under check
-  bool underCheck() const { return state_ & UnderCheck; }
+  bool underCheck() const { return (state_ & UnderCheck) != 0; }
 
   /// just a useful method to quickly check if there is a draw
   static bool isDraw(uint8 state)
@@ -330,7 +335,7 @@ public:
     return (Stalemat & state) || (DrawReps & state) || (DrawInsuf & state) || (Draw50Moves & state);
   }
 
-  inline bool matState() const { return state_ & ChessMat; }
+  inline bool matState() const { return (state_ & ChessMat) != 0; }
   inline bool drawState() const { return isDraw(state_); }
 
   inline void setNoMoves()
@@ -363,15 +368,15 @@ public:
     return score;
   }
 
-  bool detectCheck(const Figure::Color acolor, int pos) const;
-  bool detectCheck(const Figure::Color acolor, int pos, int exclude) const;
+  bool fieldUnderCheck(const Figure::Color acolor, int pos) const;
+  bool fieldUnderCheck(const Figure::Color acolor, int pos, int exclude) const;
 
-  /// is field 'pos' attacked by given color? figure isn't moved
-  bool fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const;
+  ///// is field 'pos' attacked by given color? figure isn't moved
+  //bool fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const;
 
-  /// is field 'pos' attacked by given color?
-  bool isAttacked(const Figure::Color c, int pos) const;
-  bool fastAttacked(const Figure::Color c, int8 pos) const;
+  ///// is field 'pos' attacked by given color?
+  //bool isAttacked(const Figure::Color c, int pos) const;
+  //bool fastAttacked(const Figure::Color c, int8 pos) const;
 
 
   /// static exchange evaluation, should be called before move
@@ -430,6 +435,7 @@ private:
 
   MoveCmd & getMove(int i)
   {
+    THROW_IF( !g_moves, "board isn't initialized" );
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
     return g_moves[i];
   }
@@ -514,19 +520,22 @@ private:
 
   bool verifyChessDraw();
 
-  /// return true if current color is checking
-  /// also find all checking figures
-  bool isChecking(MoveCmd &) const;
+  /// find all checking figures, save them into 'move'
+  void detectCheck(const MoveCmd & move);
 
-  /// validate current move. set invalid state_
-  // move is already done
-  bool wasValidUnderCheck(const MoveCmd & ) const;
+  ///// return true if current color is checking
+  ///// also find all checking figures
+  //bool isChecking(MoveCmd &) const;
 
-  // move is already done
-  bool wasValidWithoutCheck(const MoveCmd & ) const;
+  ///// validate current move. set invalid state_
+  //// move is already done
+  //bool wasValidUnderCheck(const MoveCmd & ) const;
 
-  // move isn't done yet. we can call it only if 1 attacking figure
-  bool isMoveValidUnderCheck(const Move & move) const;
+  //// move is already done
+  //bool wasValidWithoutCheck(const MoveCmd & ) const;
+
+  //// move isn't done yet. we can call it only if 1 attacking figure
+  //bool isMoveValidUnderCheck(const Move & move) const;
 
   /// is king of given color attacked by given figure
   /// returns index of figure if attacked or -1 otherwise
@@ -640,6 +649,15 @@ private:
   // lower bit in block is short (K)
   // higher bit in block is long (Q)
   uint8 castling_;
+
+  // check
+  uint8 checkingNum_;
+
+  union
+  {
+  uint8  checking_[2];
+  uint16 checking_figs_;
+  };
 
   MoveCmd * g_moves;
   const MovesTable * g_movesTable;

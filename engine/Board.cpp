@@ -42,6 +42,7 @@ void Board::clear()
   halfmovesCounter_ = 0;
   repsCounter_ = 0;
   castling_ = 0;
+  checkingNum_ = 0;
 
   for (int i = 0; i < NumOfFields; ++i)
     fields_[i].clear();
@@ -465,7 +466,7 @@ bool Board::invalidate()
   return true;
 }
 
-// verify if there is draw or mat
+// verify is there draw or mat
 void Board::verifyState()
 {
   if ( matState() || drawState() )
