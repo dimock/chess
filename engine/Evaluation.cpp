@@ -280,6 +280,9 @@ ScoreType Board::evaluate() const
     return -Figure::WeightMat;
   else if ( drawState() )
     return Figure::WeightDraw;
+
+  if ( repsCount() > 1 )
+    return Figure::WeightDraw;
   
   ScoreType score = -std::numeric_limits<ScoreType>::max();
   if ( can_win_[0] != can_win_[1] )
@@ -291,9 +294,6 @@ ScoreType Board::evaluate() const
     score = -score;
 
   THROW_IF( score < -32760 || score > 32760, "invalid score" );
-
-  if ( repsCount() > 1 )
-    score >>= 1;
 
   return score;
 }
