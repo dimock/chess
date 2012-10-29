@@ -332,8 +332,8 @@ private:
       if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) &&
             hscore >= betta && hitem.move_ )
       {
-        Move hmove = board_.unpack(hitem.move_);
-        if ( hmove )
+        Move hmove;
+        if ( board_.unpack(hitem.move_, hmove) )
         {
 #ifndef NDEBUG
           Board board0 = board_;

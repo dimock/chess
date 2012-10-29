@@ -332,11 +332,17 @@ public:
   /// just a useful method to quickly check if there is a draw
   static bool isDraw(uint8 state)
   {
-    return (Stalemat & state) || (DrawReps & state) || (DrawInsuf & state) || (Draw50Moves & state);
+    return (state & (Stalemat | DrawReps | DrawInsuf | Draw50Moves)) != 0;
   }
 
   inline bool matState() const { return (state_ & ChessMat) != 0; }
   inline bool drawState() const { return isDraw(state_); }
+
+  // draw or mat
+  inline bool terminalState() const
+  {
+      return (state_ & (Stalemat | DrawReps | DrawInsuf | Draw50Moves | ChessMat)) != 0;
+  }
 
   inline void setNoMoves()
   {
@@ -376,7 +382,7 @@ public:
 
   ///// is field 'pos' attacked by given color?
   //bool isAttacked(const Figure::Color c, int pos) const;
-  //bool fastAttacked(const Figure::Color c, int8 pos) const;
+  bool fastAttacked(const Figure::Color c, int8 pos) const;
 
 
   /// static exchange evaluation, should be called before move
@@ -571,7 +577,7 @@ private:
 
   // returns number of checking figures.
   // very slow. used only for initial validation
-  int findCheckingFigures(Figure::Color color, int pos);
+  int findCheckingFigures(Figure::Color color, int ki_pos);
 
   // find 1st figure on the whole semi-line given by direction 'from' -> 'to'
   // mask gives all interesting figures

@@ -294,7 +294,6 @@ public:
 private:
 
   /// returns number of moves found
-  int push_pv();
   int generate();
   int generateUsual();
   int generateKingonly(int m);
@@ -303,14 +302,8 @@ private:
   {
     Move & move = moves_[m];
     move.set(from, to, new_type, capture);
-
-    if ( move == hmove_ )
-      return true;
-
-    if ( !board_.isMoveValidUnderCheck(move) )
-      return false;
-
     move.checkVerified_ = 1;
+
     ++m;
 
     return true;

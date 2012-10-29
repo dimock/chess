@@ -216,12 +216,8 @@ bool Board::isMoveValidUnderCheck(const Move & move) const
  
   THROW_IF( !ffrom || ffrom.color() != color_, "there is nothing that can escape from check on field figure goes from" );
 
-  const Figure & fig = getFigure(color_, ffrom.index());
-
-  THROW_IF( !fig, "there is no figure by escaping index" );
-
   Figure::Color ocolor = Figure::otherColor(color_);
-  if ( Figure::TypeKing == fig.getType() )
+  if ( Figure::TypeKing == ffrom.type() )
   {
     THROW_IF(fastAttacked(ocolor, fig.where()) != isAttacked(ocolor, fig.where()), "fast attacked returned wrong result");
 
@@ -230,7 +226,7 @@ bool Board::isMoveValidUnderCheck(const Move & move) const
     return !fastAttacked(ocolor, move.to_);
   }
 
-  THROW_IF( checking_[0] < 0 || checking_[0] >= NumOfFigures, "invalid checking figure index" );
+  THROW_IF( checking_[0] < 0 || checking_[0] >= NumOfFields, "invalid checking figure position" );
 
   const Figure & king = getFigure(color_, KingIndex);
 
@@ -580,7 +576,6 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
 
       THROW_IF( !field || field.type() != Figure::TypeQueen, "no figure but mask bit is 1" );
       THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
 
       const uint64 & btw_msk = g_betweenMasks->between(n, pos);
       if ( (figs_msk_inv & btw_msk) == btw_msk )
@@ -600,7 +595,6 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
 
       THROW_IF( !field || field.type() != Figure::TypeRook, "no figure but mask bit is 1" );
       THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
 
       const uint64 & btw_msk = g_betweenMasks->between(n, pos);
       if ( (figs_msk_inv & btw_msk) == btw_msk )
@@ -620,7 +614,6 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
 
       THROW_IF( !field || field.type() != Figure::TypeBishop, "no figure but mask bit is 1" );
       THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
 
       const uint64 & btw_msk = g_betweenMasks->between(n, pos);
       if ( (figs_msk_inv & btw_msk) == btw_msk )
@@ -649,157 +642,164 @@ bool Board::fastAttacked(const Figure::Color c, int8 pos) const
   return false;
 }
 
-bool Board::fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const
-{
-  Figure::Color ocolor = Figure::otherColor(c);
-  uint64 exclude_mask = ~(1ULL << exclude_pos);
-
-  // all long-range figures
-  const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
-  uint64 attack_msk = (fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c)) & exclude_mask;
-  attack_msk &= q_caps;
-
-  // do we have at least 1 attacking figure
-  if ( attack_msk )
-  {
-    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
-    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
-    uint64 figs_msk_inv = ~(black | white);
-
-    // exclude attacked king (of color 'c')
-    const uint64 & c_king_msk = fmgr_.king_mask(ocolor);
-    figs_msk_inv |= c_king_msk;
-
-    // queens
-    uint64 queen_msk = (fmgr_.queen_mask(c) & exclude_mask) & q_caps;
-    for ( ; queen_msk; )
-    {
-      int n = clear_lsb(queen_msk);
-
-      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
-
-      const Field & field = getField(n);
-
-      THROW_IF( !field || field.type() != Figure::TypeQueen, "no figure but mask bit is 1" );
-      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
-
-      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
-      if ( (figs_msk_inv & btw_msk) == btw_msk )
-        return true;
-    }
-
-    // rooks
-    const uint64 & r_caps = g_movesTable->caps(Figure::TypeRook, pos);
-    uint64 rook_msk = (fmgr_.rook_mask(c) & exclude_mask) & r_caps;
-    for ( ; rook_msk; )
-    {
-      int n = clear_lsb(rook_msk);
-
-      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
-
-      const Field & field = getField(n);
-
-      THROW_IF( !field || field.type() != Figure::TypeRook, "no figure but mask bit is 1" );
-      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
-
-      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
-      if ( (figs_msk_inv & btw_msk) == btw_msk )
-        return true;
-    }
-
-    // bishops
-    const uint64 & b_caps = g_movesTable->caps(Figure::TypeBishop, pos);
-    uint64 bishop_msk = (fmgr_.bishop_mask(c) & exclude_mask) & b_caps;
-    for ( ; bishop_msk; )
-    {
-      int n = clear_lsb(bishop_msk);
-
-      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
-
-      const Field & field = getField(n);
-
-      THROW_IF( !field || field.type() != Figure::TypeBishop, "no figure but mask bit is 1" );
-      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
-
-      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
-      if ( (figs_msk_inv & btw_msk) == btw_msk )
-        return true;
-    }
-  }
-
-  // knights
-  const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
-  uint64 knight_msk = fmgr_.knight_mask(c) & exclude_mask;
-  if ( n_caps & knight_msk )
-    return true;
-
-  // pawns
-  const uint64 & p_caps = g_movesTable->pawnCaps_o(ocolor, pos);
-  uint64 pawn_msk = fmgr_.pawn_mask_o(c) & exclude_mask;
-  if ( p_caps & pawn_msk )
-    return true;
-
-  // king
-  const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
-  uint64 king_msk = fmgr_.king_mask(c) & exclude_mask;
-  if ( k_caps & king_msk )
-    return true;
-
-  return false;
-}
+//bool Board::fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const
+//{
+//  Figure::Color ocolor = Figure::otherColor(c);
+//  uint64 exclude_mask = ~(1ULL << exclude_pos);
+//
+//  // all long-range figures
+//  const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
+//  uint64 attack_msk = (fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c)) & exclude_mask;
+//  attack_msk &= q_caps;
+//
+//  // do we have at least 1 attacking figure
+//  if ( attack_msk )
+//  {
+//    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
+//    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
+//    uint64 figs_msk_inv = ~(black | white);
+//
+//    // exclude attacked king (of color 'c')
+//    const uint64 & c_king_msk = fmgr_.king_mask(ocolor);
+//    figs_msk_inv |= c_king_msk;
+//
+//    // queens
+//    uint64 queen_msk = (fmgr_.queen_mask(c) & exclude_mask) & q_caps;
+//    for ( ; queen_msk; )
+//    {
+//      int n = clear_lsb(queen_msk);
+//
+//      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+//
+//      const Field & field = getField(n);
+//
+//      THROW_IF( !field || field.type() != Figure::TypeQueen, "no figure but mask bit is 1" );
+//      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+//      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
+//
+//      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+//      if ( (figs_msk_inv & btw_msk) == btw_msk )
+//        return true;
+//    }
+//
+//    // rooks
+//    const uint64 & r_caps = g_movesTable->caps(Figure::TypeRook, pos);
+//    uint64 rook_msk = (fmgr_.rook_mask(c) & exclude_mask) & r_caps;
+//    for ( ; rook_msk; )
+//    {
+//      int n = clear_lsb(rook_msk);
+//
+//      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+//
+//      const Field & field = getField(n);
+//
+//      THROW_IF( !field || field.type() != Figure::TypeRook, "no figure but mask bit is 1" );
+//      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+//      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
+//
+//      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+//      if ( (figs_msk_inv & btw_msk) == btw_msk )
+//        return true;
+//    }
+//
+//    // bishops
+//    const uint64 & b_caps = g_movesTable->caps(Figure::TypeBishop, pos);
+//    uint64 bishop_msk = (fmgr_.bishop_mask(c) & exclude_mask) & b_caps;
+//    for ( ; bishop_msk; )
+//    {
+//      int n = clear_lsb(bishop_msk);
+//
+//      THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+//
+//      const Field & field = getField(n);
+//
+//      THROW_IF( !field || field.type() != Figure::TypeBishop, "no figure but mask bit is 1" );
+//      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
+//      THROW_IF( !getFigure(c, field.index()), "no figure in occupied field" );
+//
+//      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
+//      if ( (figs_msk_inv & btw_msk) == btw_msk )
+//        return true;
+//    }
+//  }
+//
+//  // knights
+//  const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
+//  uint64 knight_msk = fmgr_.knight_mask(c) & exclude_mask;
+//  if ( n_caps & knight_msk )
+//    return true;
+//
+//  // pawns
+//  const uint64 & p_caps = g_movesTable->pawnCaps_o(ocolor, pos);
+//  uint64 pawn_msk = fmgr_.pawn_mask_o(c) & exclude_mask;
+//  if ( p_caps & pawn_msk )
+//    return true;
+//
+//  // king
+//  const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
+//  uint64 king_msk = fmgr_.king_mask(c) & exclude_mask;
+//  if ( k_caps & king_msk )
+//    return true;
+//
+//  return false;
+//}
 
 //////////////////////////////////////////////////////////////////////////
 // returns number of checking figures.
 // very slow. used only for initial validation
-int Board::findCheckingFigures(Figure::Color color, int pos)
+int Board::findCheckingFigures(Figure::Color ocolor, int ki_pos)
 {
   checkingNum_ = 0;
-  for (int i = 0; i < KingIndex; ++i)
+  for (int type = Figure::TypePawn; type < Figure::TypeKing; ++type)
   {
-    const Figure & fig = getFigure(color, i);
-    if ( !fig )
-      continue;
-
-    int dir = g_figureDir->dir(fig.getType(), color, fig.where(), pos);
-    if ( (dir < 0) || (Figure::TypePawn == fig.getType() && (2 == dir || 3 == dir)) || (Figure::TypeKing == fig.getType() && dir > 7) )
-      continue;
-
-    if ( Figure::TypePawn == fig.getType() || Figure::TypeKnight == fig.getType() )
-    {
-      if ( checkingNum_ > 1 )
-        return ++checkingNum_;
-
-      checking_[checkingNum_++] = i;
-      continue;
-    }
-
-    FPos dp = g_deltaPosCounter->getDeltaPos(fig.where(), pos);
-
-    THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
-
-    FPos p = FPosIndexer::get(pos) + dp;
-    const FPos & figp = FPosIndexer::get(fig.where());
-    bool have_figure = false;
-    for ( ; p != figp; p += dp)
-    {
-      const Field & field = getField(p.index());
-      if ( field )
+      BitMask mask = fmgr_.type_mask((Figure::Type)type, ocolor);
+      for ( ; mask; )
       {
-        have_figure = true;
-        break;
+        int n = clear_lsb(mask);
+        const Field & field = getField(n);
+
+        THROW_IF( field.color() != ocolor || field.type() != type, "invalid figures mask in check detector" );
+
+        int dir = g_figureDir->dir(field.type(), ocolor, n, ki_pos);
+        if ( (dir < 0) || (Figure::TypePawn == type && (2 == dir || 3 == dir)) )
+          continue;
+
+        THROW_IF( Figure::TypeKing == type, "king checks king" );
+
+        if ( Figure::TypePawn == type || Figure::TypeKnight == type )
+        {
+          if ( checkingNum_ > 1 )
+            return ++checkingNum_;
+
+          checking_[checkingNum_++] = n;
+          continue;
+        }
+
+        FPos dp = g_deltaPosCounter->getDeltaPos(n, ki_pos);
+
+        THROW_IF( FPos(0, 0) == dp, "invalid attacked position" );
+
+        FPos p = FPosIndexer::get(ki_pos) + dp;
+        const FPos & figp = FPosIndexer::get(n);
+        bool have_figure = false;
+        for ( ; p != figp; p += dp)
+        {
+          const Field & field = getField(p.index());
+          if ( field )
+          {
+            have_figure = true;
+            break;
+          }
+        }
+
+        if ( !have_figure )
+        {
+          if ( checkingNum_ > 1 )
+            return ++checkingNum_;
+
+          checking_[checkingNum_++] = i;
+        }
       }
-    }
-
-    if ( !have_figure )
-    {
-      if ( checkingNum_ > 1 )
-        return ++checkingNum_;
-
-      checking_[checkingNum_++] = i;
-    }
   }
 
   return checkingNum_;

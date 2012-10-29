@@ -276,26 +276,8 @@ int MovesGenerator::generate()
 EscapeGenerator::EscapeGenerator(const Move & hmove, Board & board) :
   MovesGeneratorBase(board), hmove_(hmove)
 {
-  numOfMoves_ = push_pv();
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
-}
-
-int EscapeGenerator::push_pv()
-{
-  int m = 0;
-  if ( hmove_ && board_.validMove(hmove_) && board_.isMoveValidUnderCheck(hmove_) )
-  {
-    Move & move = moves_[m];
-    move = hmove_;
-    move.checkVerified_ = 1;
-    move.alreadyDone_ = 0;
-    ++m;
-  }
-  else
-    hmove_.clear();
-
-  return m;
 }
 
 int EscapeGenerator::generate()
@@ -321,10 +303,13 @@ int EscapeGenerator::generateUsual()
   THROW_IF( !ch_type, "there is no checking figure" );
   THROW_IF( ch_type == Figure::TypeKing, "king is attacking king" );
 
+  int ki_pos = board_.kingPos(color);
   const uint64 & black = board_.fmgr_.mask(Figure::ColorBlack);
   const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
   const uint64 & pawn_msk = board_.fmgr_.pawn_mask_o(board_.color_);
-  uint64 mask_all_inv = ~(white | black);
+  BitMask mask_all = white | black;
+  uint64 mask_all_inv = ~mask_all;
+  BitMask brq_mask = board_.fmgr_.bishop_mask(ocolor) | board_.fmgr_.rook_mask(ocolor) | board_.fmgr_.queen_mask(ocolor);
 
   static int pw_delta[] = { -8, 8 };
 
@@ -361,16 +346,25 @@ int EscapeGenerator::generateUsual()
     // en-passant
     if ( ep_capture )
     {
-      int8 to = board_.enpassantPos();
-      const uint64 & opawn_caps_ep = board_.g_movesTable->pawnCaps_o(ocolor, to);
+      int8 ep_pos = board_.enpassantPos();
+      const uint64 & opawn_caps_ep = board_.g_movesTable->pawnCaps_o(ocolor, board_.en_passant_);
       uint64 eat_msk_ep = pawn_msk & opawn_caps_ep;
 
       for ( ; eat_msk_ep; )
       {
         int n = clear_lsb(eat_msk_ep);
+        
         const Field & fpawn = board_.getField(n);
         THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
-        add(m, n, to, Figure::TypeNone, true);
+        
+        BitMask mask_all_ep = mask_all ^ (1ULL << n);
+        mask_all |= 1ULL << board_.en_passant_;
+        
+        if ( !board_.discoveredCheck(n, ocolor, mask_all, brq_mask, ki_pos) &&
+             !board_.discoveredCheck(ep_pos, ocolor, mask_all_ep, brq_mask, ki_pos) )
+        {
+            add(m, n, board_.en_passant_, Figure::TypeNone, true);
+        }
       }
     }
 
@@ -388,21 +382,24 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
 
-      if ( add(m, n, ch_pos, promotion ? Figure::TypeQueen : Figure::TypeNone, true) && promotion )
+      if ( !board_.discoveredCheck(n, ocolor, mask_all | (1ULL << ch_pos), brq_mask & ~(1ULL << ch_pos), ki_pos) )
       {
-        // firstly decrease m because it was increased in add()
-        Move & move = moves_[--m];
+          if ( add(m, n, ch_pos, promotion ? Figure::TypeQueen : Figure::TypeNone, true) && promotion )
+          {
+            // firstly decrease m because it was increased in add()
+            Move & move = moves_[--m];
 
-        // increase m before take move
-        moves_[++m] = move;
-        moves_[m++].new_type_ = Figure::TypeRook;
+            // increase m before take move
+            moves_[++m] = move;
+            moves_[m++].new_type_ = Figure::TypeRook;
 
-        moves_[m] = move;
-        moves_[m++].new_type_ = Figure::TypeBishop;
+            moves_[m] = move;
+            moves_[m++].new_type_ = Figure::TypeBishop;
 
-        moves_[m] = move;
-        moves_[m++].new_type_ = Figure::TypeKnight;
-      }
+            moves_[m] = move;
+            moves_[m++].new_type_ = Figure::TypeKnight;
+          }
+        }
     }
   }
 
@@ -420,7 +417,8 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fknight || fknight.type() != Figure::TypeKnight || fknight.color() != board_.color_, "no knight on field we are going to do capture from" );
 
-      add(m, n, ch_pos, Figure::TypeNone, true);
+      if ( !board_.discoveredCheck(n, ocolor, mask_all | (1ULL << ch_pos), brq_mask & ~(1ULL << ch_pos), ki_pos) )
+        add(m, n, ch_pos, Figure::TypeNone, true);
     }
   }
 
@@ -447,7 +445,8 @@ int EscapeGenerator::generateUsual()
       if ( (btw_msk & mask_all_inv) != btw_msk )
         continue;
 
-      add(m, n, ch_pos, Figure::TypeNone, true);
+      if ( !board_.discoveredCheck(n, ocolor, mask_all | (1ULL << ch_pos), brq_mask & ~(1ULL << ch_pos), ki_pos) )
+        add(m, n, ch_pos, Figure::TypeNone, true);
     }
   }
 
@@ -461,6 +460,9 @@ int EscapeGenerator::generateUsual()
     for ( ; pw_mask; )
     {
       int pw_pos = clear_msb(pw_mask);
+
+      if ( board_.discoveredCheck(pw_pos, ocolor, mask_all, brq_mask, ki_pos) )
+          continue;
 
       // +2 - skip captures
       const int8 * table = board_.g_movesTable->pawn(color, pw_pos) + 2;
@@ -495,6 +497,9 @@ int EscapeGenerator::generateUsual()
     {
       int kn_pos = clear_msb(kn_mask);
 
+      if ( board_.discoveredCheck(kn_pos, ocolor, mask_all, brq_mask, ki_pos) )
+          continue;
+
       const uint64 & knight_msk = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos);
       uint64 msk_protect = protect_king_msk & knight_msk;
       for ( ; msk_protect; )
@@ -516,6 +521,9 @@ int EscapeGenerator::generateUsual()
       for ( ; fg_mask; )
       {
         int fg_pos = clear_msb(fg_mask);
+
+        if ( board_.discoveredCheck(fg_pos, ocolor, mask_all, brq_mask, ki_pos) )
+            continue;
 
         const uint64 & figure_msk = board_.g_movesTable->caps(type, fg_pos);
         uint64 msk_protect = protect_king_msk & figure_msk;
@@ -568,7 +576,7 @@ int EscapeGenerator::generateKingonly(int m)
 
     Move & move = moves_[m];
     move.set(king_pos, *table, Figure::TypeNone, capture);
-    if ( move == hmove_ || !board_.isMoveValidUnderCheck(move) )
+    if ( board_.fieldUnderCheck(ocolor, move.to_, move.from_) )
       continue;
 
     move.checkVerified_ = 1;
