@@ -438,7 +438,7 @@ bool Board::makeMove(const Move & mv)
 
 void Board::unmakeMove()
 {
-  THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
+  THROW_IF(halfmovesCounter_ <= 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
   MoveCmd & move = lastMove();
   halfmovesCounter_--;
