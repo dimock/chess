@@ -231,7 +231,7 @@ int ChecksGenerator::generate()
           // add another moves of this pawn if discovered check
           // and we haven't already processed this pawn
           if ( discovered && !(looked_up & (1ULL << from)) )
-            add_other_moves(m, from, to, oki_pos);
+            add_other_pawn_moves(m, from, to, oki_pos);
         }
 
         looked_up |= pw_from_save;
@@ -257,7 +257,7 @@ int ChecksGenerator::generate()
           // add other moves if pawn discovers check
           bool discovered = board_.discoveredCheck(from, color, mask_all, brq_mask, oki_pos);
           if ( discovered )
-            add_other_moves(m, from, to, oki_pos);
+            add_other_pawn_moves(m, from, to, oki_pos);
         }
 
         looked_up |= pw_from_save;
@@ -351,7 +351,7 @@ int ChecksGenerator::generate()
         if ( discovered )
         {
           add(m, from, ep_pos, Figure::TypeNone, true, true);
-          add_other_moves(m, from, ep_pos, oki_pos);
+          add_other_pawn_moves(m, from, ep_pos, oki_pos);
         }
         else
         {
@@ -378,7 +378,7 @@ int ChecksGenerator::generate()
         int from = clear_lsb(disc_mask);
         bool discovered = board_.discoveredCheck(from, color, mask_all, brq_mask, oki_pos);
         if ( discovered )
-          add_other_moves(m, from, -1, oki_pos);
+          add_other_pawn_moves(m, from, -1, oki_pos);
       }
     }
   }

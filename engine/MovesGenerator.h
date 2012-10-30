@@ -381,7 +381,7 @@ private:
   }
 
   // add non-processed moves of pawn if it discovers check in caps-loop
-  inline void add_other_moves(int & m, int from, int to, int oki_pos)
+  inline void add_other_pawn_moves(int & m, int from, int to, int oki_pos)
   {
     const BitMask & from_oki_mask = board_.g_betweenMasks->from(oki_pos, from);
 

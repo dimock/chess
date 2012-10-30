@@ -332,8 +332,8 @@ bool Board::toFEN(char * fen) const
     }
   }
 
-  // 4 - en passant
   {
+    // 4 - en passant
     *s++ = ' ';
     if ( en_passant_ >= 0 )
     {
