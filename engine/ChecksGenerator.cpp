@@ -79,7 +79,8 @@ int ChecksGenerator::generate()
 
     if ( board_.castling(board_.color_, 1) && !board_.getField(ki_pos-2) ) // long
     {
-      int r_pos = board_.color_ ? 0 : 56;
+      static int rook_positions[] = { 56, 0 };
+      int r_pos = rook_positions[board_.color_];//board_.color_ ? 0 : 56;
       const Field & rfield = board_.getField(r_pos);
       THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
       int r_pos_to = r_pos + 3;
