@@ -4,7 +4,6 @@
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
-#include "Player.h"
 
 //////////////////////////////////////////////////////////////////////////
 CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type minimalType) :

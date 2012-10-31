@@ -4,7 +4,6 @@
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
-#include "Player.h"
 
 //////////////////////////////////////////////////////////////////////////
 ChecksGenerator::ChecksGenerator(const Move & hmove, Board & board, Figure::Type minimalType) :
@@ -21,16 +20,13 @@ int ChecksGenerator::generate()
   Figure::Color color  = board_.getColor();
   Figure::Color ocolor = Figure::otherColor(color);
 
-  const BitMask & oki_mask = board_.fmgr().king_mask(ocolor);
-  int oki_pos = find_lsb(oki_mask);
+  int oki_pos = board_.kingPos(ocolor);
 
   BitMask brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
   const BitMask & knight_check_mask = board_.g_movesTable->caps(Figure::TypeKnight, oki_pos);
   const BitMask & black = board_.fmgr_.mask(Figure::ColorBlack);
   const BitMask & white = board_.fmgr_.mask(Figure::ColorWhite);
   BitMask mask_all = white | black;
-
-  const BitMask & kn_check_mask = board_.g_movesTable->caps(Figure::TypeKnight, oki_pos);
 
 
   // 1. King
@@ -66,7 +62,7 @@ int ChecksGenerator::generate()
     if ( board_.castling(board_.color_, 0) && !board_.getField(ki_pos+2) ) // short
     {
       static int rook_positions[] = { 63, 7 };
-      int & r_pos = rook_positions[board_.color_];//board_.color_ ? 7 : 63;
+      int & r_pos = rook_positions[board_.color_];
       const Field & rfield = board_.getField(r_pos);
       THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
       int r_pos_to = r_pos - 2;
@@ -80,7 +76,7 @@ int ChecksGenerator::generate()
     if ( board_.castling(board_.color_, 1) && !board_.getField(ki_pos-2) ) // long
     {
       static int rook_positions[] = { 56, 0 };
-      int r_pos = rook_positions[board_.color_];//board_.color_ ? 0 : 56;
+      int & r_pos = rook_positions[board_.color_];
       const Field & rfield = board_.getField(r_pos);
       THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
       int r_pos_to = r_pos + 3;
@@ -230,7 +226,7 @@ int ChecksGenerator::generate()
 
           add(m, from, to, Figure::TypeNone, discovered, true);
 
-          // add another moves of this pawn if discovered check
+          // add another moves of this pawn if there is discovered check
           // and we haven't already processed this pawn
           if ( discovered && !(looked_up & (1ULL << from)) )
             add_other_pawn_moves(m, from, to, oki_pos);
@@ -320,7 +316,7 @@ int ChecksGenerator::generate()
               }
             }
 
-            // promotion to checking knight
+            // promotion to checking knight without capture
             if ( knight_check_mask & (1ULL << to) )
               add(m, from, to, Figure::TypeKnight, discovered, false);
           }

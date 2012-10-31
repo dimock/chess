@@ -254,7 +254,7 @@ private:
 
   inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
-    THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
+    THROW_IF( !board_.getField(from), "no figure on field we move from" );
     
     Move & move = moves_[m];    
     move.set(from, to, new_type, capture);

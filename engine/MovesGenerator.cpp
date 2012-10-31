@@ -1,13 +1,13 @@
+/*************************************************************
+  MovesGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+ *************************************************************/
+
 #include "MovesGenerator.h"
 #include "MovesTable.h"
-#include "Player.h"
 
 //////////////////////////////////////////////////////////////////////////
 
 History MovesGeneratorBase::history_[64][64];
-/*************************************************************
-  MovesGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
- *************************************************************/
 
 unsigned History::history_max_;
 
