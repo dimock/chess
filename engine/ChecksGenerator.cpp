@@ -65,7 +65,8 @@ int ChecksGenerator::generate()
     BitMask all_but_king_mask = ~mask_all | (1ULL << ki_pos);
     if ( board_.castling(board_.color_, 0) && !board_.getField(ki_pos+2) ) // short
     {
-      int r_pos = board_.color_ ? 7 : 63;
+      static int rook_positions[] = { 63, 7 };
+      int & r_pos = rook_positions[board_.color_];//board_.color_ ? 7 : 63;
       const Field & rfield = board_.getField(r_pos);
       THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
       int r_pos_to = r_pos - 2;
