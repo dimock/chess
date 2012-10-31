@@ -7,6 +7,30 @@
 #include "FigureDirs.h"
 
 //////////////////////////////////////////////////////////////////////////
+void Board::detectCheck(const MoveCmd & move)
+{
+  checkingNum_ = 0;
+  Figure::Color ocolor = Figure::otherColor(color_);
+  const Field & ffrom = getField(move.from_);
+  const Field & fto = getField(move.to_);
+
+  int d = move.to_ - move.from_;
+  if ( fto.type() == Figure::TypeKing && ((2 == d || -2 == d)) ) // castle with check
+  {
+    d >>= 1;
+    int rook_to = move.from_ + d;
+    if ( isAttackedBy(color_, ocolor, fto.type(), rook_to) )
+      checking_[checkingNum_++] = rook_to;
+  }
+  else
+  {
+    if ( fto.type() == Figure::TypePawn || fto.type() == Figure::TypeKnight )
+    {
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
 bool Board::isChecking(MoveCmd & move) const
 {
   int8 ch_pos0 = -1;

@@ -177,7 +177,7 @@ public:
   }
 
   /// get index of figure of color 'ocolor', which attacks field 'pt'
-  /// returns -1 if 'pt' was already attacked from this direction (independently of figure)
+  /// returns -1 if 'pt' was already attacked from this direction (independently on figure)
   int getAttackedFrom(Figure::Color ocolor, int8 pt, int8 from) const;
 
   const FiguresManager & fmgr() const
@@ -544,11 +544,10 @@ private:
   //bool isMoveValidUnderCheck(const Move & move) const;
 
   /// is king of given color attacked by given figure
-  /// returns index of figure if attacked or -1 otherwise
-  inline bool isAttackedBy(Figure::Color color, const Figure::Color c, const Figure::Type t, int p) const
+  inline bool isAttackedBy(Figure::Color color, const Figure::Color acolor, const Figure::Type t, int p) const
   {
     int king_pos = kingPos(color);
-    int dir = g_figureDir->dir(t, c, p, king_pos);
+    int dir = g_figureDir->dir(t, acolor, p, king_pos);
     if ( dir < 0 || Figure::TypeKing == t && dir > 7 )
       return false;
 

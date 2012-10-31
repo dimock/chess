@@ -304,6 +304,9 @@ private:
     move.set(from, to, new_type, capture);
     move.checkVerified_ = 1;
 
+    if ( move == hmove_ && m > 0 )
+      std::swap(move, moves_[0]);
+
     ++m;
 
     return true;

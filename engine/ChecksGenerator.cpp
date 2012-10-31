@@ -31,8 +31,7 @@ int ChecksGenerator::generate()
 
   // 1. King
   {
-    const BitMask & ki_mask = board_.fmgr().king_mask(color);
-    int ki_pos = find_lsb(ki_mask);
+    int ki_pos = board_.kingPos(color);
 
     // figure opens line between attacker and king
     bool discovered = board_.discoveredCheck(ki_pos, color, mask_all, brq_mask, oki_pos);

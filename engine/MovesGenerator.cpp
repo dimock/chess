@@ -388,16 +388,15 @@ int EscapeGenerator::generateUsual()
           {
             // firstly decrease m because it was increased in add()
             Move & move = moves_[--m];
-
             // increase m before take move
-            moves_[++m] = move;
-            moves_[m++].new_type_ = Figure::TypeRook;
+            m++;
 
-            moves_[m] = move;
-            moves_[m++].new_type_ = Figure::TypeBishop;
+            // add promotion to knight only if it gives check and we don't lost it immediately
+            Move nmove = move;
+            nmove.new_type_ = Figure::TypeKnight;
 
-            moves_[m] = move;
-            moves_[m++].new_type_ = Figure::TypeKnight;
+            if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(color)) && board_.see(nmove) >= 0 )
+              moves_[m++] = nmove;
           }
         }
     }
@@ -477,15 +476,14 @@ int EscapeGenerator::generateUsual()
         if ( add(m, pw_pos, *table, promotion ? Figure::TypeQueen : Figure::TypeNone, false) && promotion )
         {
           Move & move = moves_[--m];
-
           moves_[++m] = move;
-          moves_[m++].new_type_ = Figure::TypeRook;
 
-          moves_[m] = move;
-          moves_[m++].new_type_ = Figure::TypeBishop;
+          // add promotion to knight only if it gives check and we don't lost it immediately
+          Move nmove = move;
+          nmove.new_type_ = Figure::TypeKnight;
 
-          moves_[m] = move;
-          moves_[m++].new_type_ = Figure::TypeKnight;
+          if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(color)) && board_.see(nmove) >= 0 )
+            moves_[m++] = nmove;
         }
       }
     }
@@ -578,6 +576,9 @@ int EscapeGenerator::generateKingonly(int m)
     move.set(king_pos, *table, Figure::TypeNone, capture);
     if ( board_.fieldUnderCheck(ocolor, move.to_, move.from_) )
       continue;
+
+    if ( move == hmove_ && m > 0 )
+      std::swap(move, moves_[0]);
 
     move.checkVerified_ = 1;
     m++;

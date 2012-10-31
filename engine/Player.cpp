@@ -1436,7 +1436,7 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
 bool Player::isRealThreat(const Move & move)
 {
   // don't need to forbid if our answer is capture or check ???
-  if ( move.rindex_ >= 0 || move.checkFlag_ )
+  if ( move.capture_ >= 0 || move.checkFlag_ )
     return false;
 
   const MoveCmd & prev = board_.getMoveRev(0);
@@ -1444,8 +1444,6 @@ bool Player::isRealThreat(const Move & move)
 
   const Field & pfield = board_.getField(prev.to_);
   THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
-  const Figure & pfig = board_.getFigure(ocolor, pfield.index());
-  THROW_IF( !pfig, "field is occupied but there is no figure in the list in threat detector" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
   if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) /*|| pawnBeforePromotion(prev)*/)
@@ -1459,7 +1457,7 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !cfig, "field is occupied but there is no figure in the list in threat detector" );
 
   // we have to put figure under attack
-  if ( board_.ptAttackedBy(move.to_, pfig) 
+  if ( board_.ptAttackedBy(move.to_, prev.to_) 
 #ifdef ONLY_LEQ_THREAT
     && typeLEQ(pfig.getType(), cfig.getType())
 #endif
