@@ -20,6 +20,31 @@ inline int pop_count(uint64 n)
   return (int)n;
 }
 
+/*
+GCC asm version
+inline int find_lsb(const BitMask & mask)
+{
+  int n;
+  const BitMask * pmask = &mask;
+  asm
+    (
+    "movl %1, %%edi;"
+    "movl (%%edi), %%eax;"
+    "bsf %%eax, %%ecx;"
+    "jnz end;"
+    "movl 4(%%edi), %%eax;"
+    "bsf %%eax, %%ecx;"
+    "add $32, %%ecx;"
+"end:"\
+    "mov %%ecx, %0"
+    :"=r"(n)
+    :"r"(pmask)
+    :"%eax", "%edi", "%ecx"
+    );
+  return n;
+}
+*/
+
 #ifndef _M_X64
 
 // ALL OF THESE FUNCTIONS BELIEVE THAT mask ISN'T ZERO
