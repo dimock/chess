@@ -35,8 +35,8 @@ public:
   bool fromFEN(xCmd & cmd);
 	void editCmd(xCmd & cmd);
 
-	bool move(xCmd & moveCmd, Board::State & state, bool & white);
-	bool reply(char (&)[256], Board::State & state, bool & white);
+	bool move(xCmd & moveCmd, uint8 & state, bool & white);
+	bool reply(char (&)[256], uint8 & state, bool & white);
   void analyze();
   void stop();
 

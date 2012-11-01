@@ -417,7 +417,7 @@ bool Board::verifyCastling(const Figure::Color c, int t) const
   if ( c && t == 1 && getField(0).type() != Figure::TypeRook )
     return false;
 
-  if ( !c && t == 0 && getField(63).type) != Figure::TypeRook )
+  if ( !c && t == 0 && getField(63).type() != Figure::TypeRook )
     return false;
 
   if ( !c && t == 1 && getField(56).type() != Figure::TypeRook )
@@ -752,7 +752,7 @@ void Board::verifyMasks() const
       {
       case Figure::TypePawn:
         {
-          pawn_mask_t |= 1ULL << Index(p).transp());
+          pawn_mask_t |= 1ULL << Index(p).transp();
           pawn_mask_o |= 1ULL << p;
         }
         break;

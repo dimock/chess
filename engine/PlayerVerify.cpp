@@ -27,7 +27,7 @@ void Player::saveHash(const char * fname) const
 #endif
 
   board_.save(bfname);
-  MovesGenerator::save_history(hfname);
+  MovesGeneratorBase::save_history(hfname);
 }
 
 void Player::loadHash(const char * fname)

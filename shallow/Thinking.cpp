@@ -199,7 +199,7 @@ void Thinking::stop()
   player_.pleaseStop();
 }
 
-bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
+bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
 {
   if ( is_thinking() )
     return false;
@@ -240,7 +240,7 @@ bool Thinking::reply(char (& smove)[256], Board::State & state, bool & white)
 	return true;
 }
 
-bool Thinking::move(xCmd & moveCmd, Board::State & state, bool & white)
+bool Thinking::move(xCmd & moveCmd, uint8 & state, bool & white)
 {
   if ( is_thinking() )
     return false;

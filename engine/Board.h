@@ -464,7 +464,7 @@ private:
     return (castling_ >> 2) & 1;
   }
 
-  bool castling_Q(Figure::Color c) const
+  bool castling_Q() const
   {
     return (castling_ >> 3) & 1;
   }
@@ -475,7 +475,7 @@ private:
     return castling_ & 1;
   }
 
-  bool castling_q(Figure::Color c) const
+  bool castling_q() const
   {
     return (castling_ >> 1) & 1;
   }

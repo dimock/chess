@@ -244,7 +244,7 @@ void Player::printPV(Board & pv_board, SearchResult & sres)
     Move pv = sres.pv_[i];
     pv.clearFlags();
 
-    if ( !pv_board.validMove(pv) || !pv_board.makeMove(pv) )
+    if ( /*!pv_board.validMove(pv) ||*/ !pv_board.makeMove(pv) )
       break;
 
     pv_board.unmakeMove();

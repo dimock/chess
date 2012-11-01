@@ -45,13 +45,14 @@ class MovesGeneratorBase
 {
   static History history_[Board::NumOfFields][Board::NumOfFields];
 
+public:
+
   static void clear_history();
   static void normalize_history(int n);
 
   static void save_history(const char * fname);
   static void load_history(const char * fname);
 
-public:
 
   static inline History & history(int from, int to)
   {

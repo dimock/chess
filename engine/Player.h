@@ -388,7 +388,7 @@ private:
 
     if ( hitem.hcode_ == board_.hashCode() )
     {
-      hmove = board_.unpack(hitem.move_);
+      board_.unpack(hitem.move_, hmove);
 
       // ensure that we already verified checking moves
       if ( depth < 0 || !(hitem.depth_ & 32) /* HACK */ || board_.underCheck() )
@@ -429,7 +429,7 @@ private:
       GeneralHItem & ghitem = ghash_[board_.hashCode()];
       if ( ghitem.move_ && ghitem.hcode_ == board_.hashCode() )
       {
-        hmove = board_.unpack(ghitem.move_);
+        board_.unpack(ghitem.move_, hmove);
         if ( !board_.underCheck() && board_.getField(hmove.to_).type() < minimalType )
           hmove.clear();
       }
