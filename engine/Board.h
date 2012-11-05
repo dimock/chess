@@ -526,7 +526,7 @@ private:
 
   bool verifyChessDraw();
 
-  /// find all checking figures, save them into 'move'
+  /// find all checking figures, save them into board
   void detectCheck(const MoveCmd & move);
 
   ///// return true if current color is checking
@@ -544,23 +544,15 @@ private:
   //bool isMoveValidUnderCheck(const Move & move) const;
 
   /// is king of given color attacked by given figure
-  inline bool isAttackedBy(Figure::Color color, const Figure::Color acolor, const Figure::Type t, int p) const
+  inline bool isAttackedBy(Figure::Color color, const Figure::Color acolor, const Figure::Type type, int from) const
   {
     int king_pos = kingPos(color);
-    int dir = g_figureDir->dir(t, acolor, p, king_pos);
-    if ( dir < 0 || Figure::TypeKing == t && dir > 7 )
+    int dir = g_figureDir->dir(type, acolor, from, king_pos);
+    if ( dir < 0 || Figure::TypeKing == type && dir > 7 )
       return false;
 
-    const uint64 & mask = g_betweenMasks->between(p, king_pos);
-    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
-    if ( (~black & mask) != mask )
-      return false;
-
-    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
-    if ( (~white & mask) != mask )
-      return false;
-
-    return true;
+    BitMask inv_mask_all = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
+    return !is_something_between(from, king_pos, inv_mask_all);
   }
 
   /// gets index of figure, attacking from given direction

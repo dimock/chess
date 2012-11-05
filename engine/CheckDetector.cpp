@@ -10,6 +10,7 @@
 void Board::detectCheck(const MoveCmd & move)
 {
   checkingNum_ = 0;
+  const Figure::Color color = color_;
   Figure::Color ocolor = Figure::otherColor(color_);
   const Field & ffrom = getField(move.from_);
   const Field & fto = getField(move.to_);
@@ -19,13 +20,21 @@ void Board::detectCheck(const MoveCmd & move)
   {
     d >>= 1;
     int rook_to = move.from_ + d;
-    if ( isAttackedBy(color_, ocolor, fto.type(), rook_to) )
+    if ( isAttackedBy(color, ocolor, fto.type(), rook_to) )
       checking_[checkingNum_++] = rook_to;
   }
   else
   {
-    if ( fto.type() == Figure::TypePawn || fto.type() == Figure::TypeKnight )
+    const BitMask & king_mask = fmgr_.king_mask(color);
+    if ( fto.type() == Figure::TypePawn )
     {
+        const BitMask & pw_mask = g_movesTable->pawnCaps_o(color, move.to_);
+        if ( pw_mask & king_mask )
+            checking_[checkingNum_++] = move.to_;
+    }
+    else if ( fto.type() == Figure::TypeKnight )
+    {
+        const BitMask & kn_mask = g_movesTable->caps
     }
   }
 }

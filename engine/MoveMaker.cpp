@@ -411,13 +411,14 @@ bool Board::makeMove(const Move & mv)
     fiftyMovesCount_++;
   }
 
+  movesCounter_ += ~color_ & 1;
+
   // add hash color key
   fmgr_.hashColor();
+  color_ = ocolor;
 
   // put new hash code to detect threefold repetition
   move.zcode_ = fmgr_.hashCode();
-
-  movesCounter_ += ~color_ & 1;
 
   move.can_win_[0] = can_win_[0];
   move.can_win_[1] = can_win_[1];
@@ -429,9 +430,6 @@ bool Board::makeMove(const Move & mv)
   move.state_ = state_;
 
   //THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))) && !underCheck(), "check isn't detected" );
-
-  // now change color
-  color_ = ocolor;
 
   return true;
 }
