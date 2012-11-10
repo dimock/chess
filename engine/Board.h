@@ -176,9 +176,17 @@ public:
     return true;
   }
 
-  /// get index of figure of color 'ocolor', which attacks field 'pt'
+  /// get position of figure of color 'acolor', which attacks field 'pt'
   /// returns -1 if 'pt' was already attacked from this direction (independently on figure)
-  int getAttackedFrom(Figure::Color ocolor, int8 pt, int8 from) const;
+  inline int getAttackedFrom(Figure::Color acolor, int8 pt, int8 from) const
+  {
+    BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
+    BitMask brq_mask = fmgr_.bishop_mask(acolor) | fmgr_.rook_mask(acolor) | fmgr_.queen_mask(acolor);
+    const BitMask & btw_mask = g_betweenMasks->between(pt, from);
+    brq_mask &= ~btw_mask;
+
+    return findDiscovered(from, acolor, mask_all, brq_mask, pt);
+  }
 
   const FiguresManager & fmgr() const
   {
@@ -249,6 +257,7 @@ public:
   /// very slow. should be used only while initialization
   bool invalidate();
 
+  // position of pawn, to be captured by en-passant
   inline int enpassantPos() const
   {
     if ( en_passant_ < 0 )
@@ -374,22 +383,17 @@ public:
     return score;
   }
 
-  bool fieldUnderCheck(const Figure::Color acolor, int pos) const;
+  // will be 'pos' under check after moving figure from 'exclude' position
   bool fieldUnderCheck(const Figure::Color acolor, int pos, int exclude) const;
 
-  ///// is field 'pos' attacked by given color? figure isn't moved
-  //bool fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const;
-
-  ///// is field 'pos' attacked by given color?
-  //bool isAttacked(const Figure::Color c, int pos) const;
-  bool fastAttacked(const Figure::Color c, int8 pos) const;
-
+  /// is field 'pos' attacked by given color?
+  bool isAttacked(const Figure::Color c, int8 pos) const;
 
   /// static exchange evaluation, should be called before move
   int see(const Move & move) const;
 
   /// find king's position
-  int kingPos(Figure::Color c) const
+  inline int kingPos(Figure::Color c) const
   {
     return find_lsb(fmgr_.king_mask(c));
   }
@@ -447,10 +451,7 @@ private:
   }
 
   /// return short/long castle possibility
-  bool castling() const
-  {
-    return castling_ != 0;
-  }
+  bool castling() const { return castling_ != 0; }
 
   bool castling(Figure::Color c, int t /* 0 - short (K), 1 - long (Q) */) const
   {
@@ -459,26 +460,12 @@ private:
   }
 
   // white
-  bool castling_K() const
-  {
-    return (castling_ >> 2) & 1;
-  }
-
-  bool castling_Q() const
-  {
-    return (castling_ >> 3) & 1;
-  }
+  bool castling_K() const { return (castling_ >> 2) & 1; }
+  bool castling_Q() const { return (castling_ >> 3) & 1; }
 
   // black
-  bool castling_k() const
-  {
-    return castling_ & 1;
-  }
-
-  bool castling_q() const
-  {
-    return (castling_ >> 1) & 1;
-  }
+  bool castling_k() const { return castling_ & 1; }
+  bool castling_q() const { return (castling_ >> 1) & 1; }
 
   /// set short/long castle
   void set_castling(Figure::Color c, int t)
@@ -507,41 +494,10 @@ private:
 
   bool validateMove(const Move & mv) const;
 
-  /// verify position after movement
-  //inline bool wasMoveValid(const MoveCmd & move) const
-  //{
-  //  if ( UnderCheck & move.old_state_ )
-  //  {
-  //    if ( move.checkVerified_ )
-  //    {
-  //      THROW_IF( !wasValidUnderCheck(move), "move was verified as valid, but actualy itsn't" );
-  //      return true;
-  //    }
-
-  //    return wasValidUnderCheck(move);
-  //  }
-  //  else
-  //    return wasValidWithoutCheck(move);
-  //}
-
   bool verifyChessDraw();
 
   /// find all checking figures, save them into board
   void detectCheck(const MoveCmd & move);
-
-  ///// return true if current color is checking
-  ///// also find all checking figures
-  //bool isChecking(MoveCmd &) const;
-
-  ///// validate current move. set invalid state_
-  //// move is already done
-  //bool wasValidUnderCheck(const MoveCmd & ) const;
-
-  //// move is already done
-  //bool wasValidWithoutCheck(const MoveCmd & ) const;
-
-  //// move isn't done yet. we can call it only if 1 attacking figure
-  //bool isMoveValidUnderCheck(const Move & move) const;
 
   /// is king of given color attacked by given figure
   inline bool isAttackedBy(Figure::Color color, const Figure::Color acolor, const Figure::Type type, int from) const
@@ -554,17 +510,6 @@ private:
     BitMask inv_mask_all = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
     return !is_something_between(from, king_pos, inv_mask_all);
   }
-
-  /// gets index of figure, attacking from given direction
-  /// check only bishops, rook and queens
-  int getAttackedFrom(Figure::Color color, int apt) const;
-  int fastAttackedFrom(Figure::Color color, int apt) const;
-
-  /// special case - figure isn't moved yet
-  int fastAttackedFrom(Figure::Color color, int apt,
-    const uint64 & clear_msk /* figure goes from */,
-    const uint64 & set_msk /* figure goes to */,
-    const uint64 & exclude_msk /* removed figure - can't attack anymore */) const;
 
   // returns number of checking figures.
   // very slow. used only for initial validation
@@ -596,9 +541,9 @@ private:
   }
 
   // acolor - color of attacking side, ki_pos - attacked king pos
-  inline bool discoveredCheck(int8 pt, Figure::Color acolor, const uint64 & mask_all, const uint64 & brq_mask, int ki_pos) const
+  inline bool discoveredCheck(int pt, Figure::Color acolor, const BitMask & mask_all, const BitMask & brq_mask, int ki_pos) const
   {
-    BitMask from_msk = g_betweenMasks->from(ki_pos, pt);
+    const BitMask & from_msk = g_betweenMasks->from(ki_pos, pt);
     BitMask mask_all_ex = mask_all & ~(1ULL << pt);
     mask_all_ex &= from_msk;
     if ( (mask_all_ex & brq_mask) == 0 )
@@ -613,6 +558,28 @@ private:
     return dir >= 0;
   }
 
+  /// returns field index of checking figure or -1 if not found
+  /// mask_all is completely prepared, all figures are on their places
+  inline int findDiscovered(int pt, Figure::Color acolor, const BitMask & mask_all, const BitMask & brq_mask, int ki_pos) const
+  {
+    const BitMask & from_msk = g_betweenMasks->from(ki_pos, pt);
+    BitMask mask_all_ex = mask_all & from_msk;
+    if ( (mask_all & brq_mask) == 0 )
+      return -1;
+
+    int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    const Field & afield = getField(apos);
+    if ( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
+      return -1;
+
+    int dir = g_figureDir->dir(afield.type(), afield.color(), apos, ki_pos);
+    if ( dir < 0 )
+      return -1;
+
+    return apos;
+  }
+
+
   /// data
 private:
 
@@ -622,7 +589,9 @@ private:
   /// for chess draw detector
   bool can_win_[2];
 
-  /// en-passant pawn index. must be cleared (set to -1) after move. it has color different from "color_"
+  /// en-passant field index. must be cleared (set to -1) after move
+  /// this is the field, where capturing pawn will go, it's written in FEN
+  /// it has color different from "color_"
   int8  en_passant_;
 
   /// current state, i.e check, draw, mat, invalid, etc.

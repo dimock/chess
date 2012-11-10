@@ -221,7 +221,7 @@ bool Board::validateMove(const Move & move) const
 
         THROW_IF ( !(rook_from & 3) && getField(rook_from+1), "long castling impossible" );
 
-        if ( fieldUnderCheck(ocolor, move.to_) || fieldUnderCheck(ocolor, rook_to) )
+        if ( isAttacked(ocolor, move.to_) || isAttacked(ocolor, rook_to) )
           return false;
 
         return true;
@@ -429,7 +429,8 @@ bool Board::makeMove(const Move & mv)
 
   move.state_ = state_;
 
-  //THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))) && !underCheck(), "check isn't detected" );
+  THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))) && !underCheck(), "check isn't detected" );
+  THROW_IF( isAttacked(ocolor, kingPos(color_)), "our king is under check after move" );
 
   return true;
 }
