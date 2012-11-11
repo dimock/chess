@@ -134,9 +134,6 @@ struct MoveCmd : public Move
   }
 
 
-  /// index of eaten figure
-  int8 rindex_;
-
   /// Zobrist key - used in fifty-move-rule detector
   uint64 zcode_;
   uint64 zcode_old_;
@@ -182,6 +179,7 @@ struct MoveCmd : public Move
   /// reduced || extended flags
   bool reduced_;
   bool extended_;
+  bool castle_;
 
   /// performs clear operation before doing movement. it clears only undo info
   void clearUndo()
@@ -192,6 +190,7 @@ struct MoveCmd : public Move
     state_ = 0;
     reduced_ = false;
     extended_ = false;
+    castle_ = false;
     checkingNum_ = 0;
   }
 };

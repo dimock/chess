@@ -347,17 +347,18 @@ private:
             totalNodes_++;
             nodesCount_++;
 
-            if ( board_.makeMove(hmove) )
+            if ( board_.validateMove(hmove) )
             {
+              board_.makeMove(hmove);
               checking = board_.underCheck();
-              retBetta = (board_.drawState() && 0 >= betta) || board_.repsCount() < 2;
-            }
+              retBetta = (board_.drawState() && betta <= 0) || board_.repsCount() < 2;
 
 #ifndef NDEBUG
-            board_.verifyMasks();
+              board_.verifyMasks();
 #endif
 
-            board_.unmakeMove();
+              board_.unmakeMove();
+            }
 
             THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
 
@@ -486,7 +487,4 @@ private:
 
   // do we need additional check extension
   int extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alpha, ScoreType betta);
-
-  public:
-  bool see_cc(const Move & move) const;
 };

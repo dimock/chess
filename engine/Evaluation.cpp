@@ -5,10 +5,6 @@
 #include "Figure.h"
 #include "Board.h"
 
-// TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-ScoreType Figure::figureWeight_[7] = { 0, 100, 325, 335, 505, 975, 0 };
-ScoreType Figure::figureWeightSEE_[7]  = { 0, 100, 330, 330, 505, 975, 0 };
-
 enum {
   A1, B1, C1, D1, E1, F1, G1, H1,
   A2, B2, C2, D2, E2, F2, G2, H2,
@@ -20,6 +16,7 @@ enum {
   A8, B8, C8, D8, E8, F8, G8, H8,
 };
 
+extern const
 ScoreType Figure::positionEvaluations_[2][8][64] = {
   // begin
   {
@@ -147,7 +144,7 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 };
 
 // king position eval for BN-mat
-ScoreType Figure::bishopKnightMat_[64] =
+extern const ScoreType Figure::bishopKnightMat_[64] =
 {
   16,   10,  6,  1, -2, -5,  -12,  -16,
   10,   12,  5, -1, -3, -6,  -14,  -12,
@@ -159,34 +156,34 @@ ScoreType Figure::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-ScoreType Figure::pawnDoubled_  = -10;
-ScoreType Figure::pawnIsolated_ = -10;
-ScoreType Figure::pawnBackward_ = -10;
-ScoreType Figure::openRook_     =  8;
-ScoreType Figure::semiopenRook_ =  4;
-ScoreType Figure::winloseBonus_ =  20;
-ScoreType Figure::kingbishopPressure_ = 10;
-ScoreType Figure::fianchettoBonus_ = 4;
-ScoreType Figure::queenMobilityBonus_[32] = { -15/* blocked */, -6/* immobile */, 0, 0, 1, 2, 2, 2, 3 };
-ScoreType Figure::knightMobilityBonus_[16] = { -12 /* blocked */, -5 /* immobile */, 1, 1, 2, 3, 4, 4, 5 };
-ScoreType Figure::bishopMobilityBonus_[16] = { -8 /* blocked */, -4 /* immobile */, 1, 2 };
-ScoreType Figure::rookMobilityBonus_[16] = { -5, 0, 1, 2, 3 };
-ScoreType Figure::knightDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
-ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
-ScoreType Figure::rookDistBonus_[8] = { 0, 10, 8, 6, 2, 1, 0, 0 };
-ScoreType Figure::queenDistBonus_[8] = { 0, 24, 18, 16, 12, 4, 1, 0 };
-ScoreType Figure::queenToMyKingDistPenalty_[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-ScoreType Figure::fakecastlePenalty_ = 10;
-ScoreType Figure::castleImpossiblePenalty_ = 10;
+extern const ScoreType Figure::pawnDoubled_  = -10;
+extern const ScoreType Figure::pawnIsolated_ = -10;
+extern const ScoreType Figure::pawnBackward_ = -10;
+extern const ScoreType Figure::openRook_     =  8;
+extern const ScoreType Figure::semiopenRook_ =  4;
+extern const ScoreType Figure::winloseBonus_ =  20;
+extern const ScoreType Figure::kingbishopPressure_ = 10;
+extern const ScoreType Figure::fianchettoBonus_ = 4;
+extern const ScoreType Figure::queenMobilityBonus_[32] = { -15/* blocked */, -6/* immobile */, 0, 0, 1, 2, 2, 2, 3 };
+extern const ScoreType Figure::knightMobilityBonus_[16] = { -12 /* blocked */, -5 /* immobile */, 1, 1, 2, 3, 4, 4, 5 };
+extern const ScoreType Figure::bishopMobilityBonus_[16] = { -8 /* blocked */, -4 /* immobile */, 1, 2 };
+extern const ScoreType Figure::rookMobilityBonus_[16] = { -5, 0, 1, 2, 3 };
+extern const ScoreType Figure::knightDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
+extern const ScoreType Figure::bishopDistBonus_[8] = { 0, 2, 8, 6, 2, 1, 0, 0 };
+extern const ScoreType Figure::rookDistBonus_[8] = { 0, 10, 8, 6, 2, 1, 0, 0 };
+extern const ScoreType Figure::queenDistBonus_[8] = { 0, 24, 18, 16, 12, 4, 1, 0 };
+extern const ScoreType Figure::queenToMyKingDistPenalty_[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+extern const ScoreType Figure::fakecastlePenalty_ = 10;
+extern const ScoreType Figure::castleImpossiblePenalty_ = 10;
 
 #define MAX_PASSED_SCORE 60
 
-ScoreType Figure::pawnPassed_[2][8] = {
+extern const ScoreType Figure::pawnPassed_[2][8] = {
   { 0, MAX_PASSED_SCORE, 40, 25, 15, 10, 5, 0 },
   { 0, 5, 10, 15, 25, 40, MAX_PASSED_SCORE, 0 }
 };
 
-ScoreType Figure::pawnGuarded_[2][8] = {
+extern const ScoreType Figure::pawnGuarded_[2][8] = {
   { 0, 16, 12, 10, 6, 4, 0, 0 },
   { 0, 0, 4, 6, 10, 12, 16, 0 },
 };

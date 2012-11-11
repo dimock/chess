@@ -4,7 +4,12 @@
 
 #include "Figure.h"
 
-uint8 Figure::mirrorIndex_[] =
+// TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
+extern const ScoreType Figure::figureWeight_[7] = { 0, 100, 325, 335, 505, 975, 0 };
+extern const ScoreType Figure::figureWeightSEE_[7]  = { 0, 100, 330, 330, 505, 975, 0 };
+
+
+extern const uint8 Figure::mirrorIndex_[64] =
 {
   56, 57, 58, 59, 60, 61, 62, 63,
   48, 49, 50, 51, 52, 53, 54, 55,
@@ -16,7 +21,9 @@ uint8 Figure::mirrorIndex_[] =
    0,  1,  2,  3,  4,  5,  6,  7
 };
 
-const uint64 Figure::pawnCutoffMasks_[2] = { 0xfefefefefefefefe /* left */, 0x7f7f7f7f7f7f7f7f /* right */ };
+extern const uint64 Figure::pawnCutoffMasks_[2] = { 0xfefefefefefefefe /* left */, 0x7f7f7f7f7f7f7f7f /* right */ };
+
+extern const ScoreType Figure::positionGain_ = 70;
 
 Figure::Type toFtype(char c)
 {
@@ -61,7 +68,7 @@ char fromFtype(Figure::Type t)
   return Figure::TypeNone;
 }
 
-const char * Figure::name(Type type) const
+const char * Figure::name(Type type)
 {
 	switch ( type )
 	{

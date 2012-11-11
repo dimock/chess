@@ -15,13 +15,25 @@ namespace Figure
   enum Type  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
   enum Color { ColorBlack, ColorWhite };
   
-  static ScoreType figureWeight_[7], figureWeightSEE_[7];
-
-  static const BitMask pawnCutoffMasks_[2];
+  extern const ScoreType figureWeight_[7], figureWeightSEE_[7];
+  extern const ScoreType positionGain_;
+  extern const BitMask pawnCutoffMasks_[2];
 
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
-  static ScoreType positionEvaluations_[2][8][64];
-  static uint8     mirrorIndex_[64];
+  extern const ScoreType positionEvaluations_[2][8][64];
+  extern const ScoreType bishopKnightMat_[64];
+  extern const ScoreType figureWeight_[7], figureWeightSEE_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
+  extern const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
+  extern const ScoreType knightMobilityBonus_[16], bishopMobilityBonus_[16], queenMobilityBonus_[32], rookMobilityBonus_[16];
+  extern const ScoreType knightDistBonus_[8], bishopDistBonus_[8], rookDistBonus_[8], queenDistBonus_[8];
+  extern const ScoreType queenToMyKingDistPenalty_[8];
+  extern const ScoreType fianchettoBonus_;
+  extern const ScoreType fakecastlePenalty_, castleImpossiblePenalty_;
+  extern const ScoreType kingbishopPressure_;
+  extern const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
+  extern const ScoreType tempoBonus_ = 5;
+  extern const BitMask pawnCutoffMasks_[2];
+  extern const uint8 mirrorIndex_[64];
 
   inline Figure::Color otherColor(Figure::Color color)
   {
@@ -49,25 +61,9 @@ namespace Figure
 //public:
 //#endif
 //
-//  // position evaluation. 0 - opening, 1 - endgame; color,type,pos
-//  static ScoreType positionEvaluations_[2][8][64];
-//  static uint8 mirrorIndex_[64];
 //
 //public:
 //
-//  static ScoreType bishopKnightMat_[64];
-//  static ScoreType figureWeight_[7], figureWeightSEE_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-//  static ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
-//  static ScoreType knightMobilityBonus_[16], bishopMobilityBonus_[16], queenMobilityBonus_[32], rookMobilityBonus_[16];
-//  static ScoreType knightDistBonus_[8], bishopDistBonus_[8], rookDistBonus_[8], queenDistBonus_[8];
-//  static ScoreType queenToMyKingDistPenalty_[8];
-//  static ScoreType fianchettoBonus_;
-//  static ScoreType fakecastlePenalty_, castleImpossiblePenalty_;
-//  static ScoreType kingbishopPressure_;
-//  static ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
-//  static const ScoreType positionGain_ = 70;
-//  static const ScoreType tempoBonus_ = 5;
-//  static const BitMask pawnCutoffMasks_[2];
 //
 //  static inline ScoreType positionEvaluation(uint8 stage, uint8 color, uint8 type, int8 pos)
 //  {

@@ -18,6 +18,8 @@ void Board::detectCheck(const MoveCmd & move)
   int d = move.to_ - move.from_;
   if ( fto.type() == Figure::TypeKing && ((2 == d || -2 == d)) ) // castle with check
   {
+    THROW_IF( !move.castle_, "castle flag wasn't set" );
+
     d >>= 1;
     int rook_to = move.from_ + d;
     if ( isAttackedBy(color, ocolor, Figure::TypeRook, rook_to) )
@@ -72,99 +74,82 @@ void Board::detectCheck(const MoveCmd & move)
 
 //////////////////////////////////////////////////////////////////////////
 /// is field 'pos' attacked by given color?
-bool Board::isAttacked(const Figure::Color c, int8 pos) const
+bool Board::fieldAttacked(const Figure::Color c, int8 pos, const BitMask & mask_all_inv) const
 {
   Figure::Color ocolor = Figure::otherColor(c);
 
   {
     // knights
-    const uint64 & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
-    const uint64 & knight_msk = fmgr_.knight_mask(c);
+    const BitMask & n_caps = g_movesTable->caps(Figure::TypeKnight, pos);
+    const BitMask & knight_msk = fmgr_.knight_mask(c);
     if ( n_caps & knight_msk )
       return true;
 
     // pawns
-    const uint64 & p_caps = g_movesTable->pawnCaps_o(ocolor, pos);
-    const uint64 & pawn_msk = fmgr_.pawn_mask_o(c);
+    const BitMask & p_caps = g_movesTable->pawnCaps_o(ocolor, pos);
+    const BitMask & pawn_msk = fmgr_.pawn_mask_o(c);
     if ( p_caps & pawn_msk )
       return true;
 
     // king
-    const uint64 & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
-    const uint64 & king_msk = fmgr_.king_mask(c);
+    const BitMask & k_caps = g_movesTable->caps(Figure::TypeKing, pos);
+    const BitMask & king_msk = fmgr_.king_mask(c);
     if ( k_caps & king_msk )
       return true;
   }
 
   // all long-range figures
-  const uint64 & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
-  uint64 attack_msk = fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c);
-  attack_msk &= q_caps;
+  const BitMask & q_caps = g_movesTable->caps(Figure::TypeQueen, pos);
+  BitMask mask_brq = fmgr_.bishop_mask(c) | fmgr_.rook_mask(c) | fmgr_.queen_mask(c);
+  mask_brq &= q_caps;
 
   // do we have at least 1 attacking figure
-  if ( attack_msk )
+  if ( mask_brq )
   {
-    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
-    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
-    uint64 figs_msk_inv = ~(black | white);
-
-    // exclude attacked king (of color 'c')
-    const uint64 & c_king_msk = fmgr_.king_mask(ocolor);
-    figs_msk_inv |= c_king_msk;
+    const BitMask & black = fmgr_.mask(Figure::ColorBlack);
+    const BitMask & white = fmgr_.mask(Figure::ColorWhite);
 
     // rooks
-    const uint64 & r_caps = g_movesTable->caps(Figure::TypeRook, pos);
-    uint64 rook_msk = fmgr_.rook_mask(c) & r_caps;
+    const BitMask & r_caps = g_movesTable->caps(Figure::TypeRook, pos);
+    BitMask rook_msk = fmgr_.rook_mask(c) & r_caps;
     for ( ; rook_msk; )
     {
       int n = clear_lsb(rook_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+      THROW_IF( !getField(n) || getField(n).type() != Figure::TypeRook, "no figure but mask bit is 1" );
+      THROW_IF( getField(n).color() != c, "invalid figure color in attack detector" );
 
-      const Field & field = getField(n);
-
-      THROW_IF( !field || field.type() != Figure::TypeRook, "no figure but mask bit is 1" );
-      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-
-      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
-      if ( (figs_msk_inv & btw_msk) == btw_msk )
+      if ( is_nothing_between(n, pos, mask_all_inv) )
         return true;
     }
 
     // bishops
-    const uint64 & b_caps = g_movesTable->caps(Figure::TypeBishop, pos);
-    uint64 bishop_msk = fmgr_.bishop_mask(c) & b_caps;
+    const BitMask & b_caps = g_movesTable->caps(Figure::TypeBishop, pos);
+    BitMask bishop_msk = fmgr_.bishop_mask(c) & b_caps;
     for ( ; bishop_msk; )
     {
       int n = clear_lsb(bishop_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+      THROW_IF( !getField(n) || getField(n).type() != Figure::TypeBishop, "no figure but mask bit is 1" );
+      THROW_IF( getField(n).color() != c, "invalid figure color in attack detector" );
 
-      const Field & field = getField(n);
-
-      THROW_IF( !field || field.type() != Figure::TypeBishop, "no figure but mask bit is 1" );
-      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-
-      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
-      if ( (figs_msk_inv & btw_msk) == btw_msk )
+      if ( is_nothing_between(n, pos, mask_all_inv) )
         return true;
     }
 
     // queens
-    uint64 queen_msk = fmgr_.queen_mask(c) & q_caps;
+    BitMask queen_msk = fmgr_.queen_mask(c) & q_caps;
     for ( ; queen_msk; )
     {
       int n = clear_lsb(queen_msk);
 
       THROW_IF( (unsigned)n > 63, "invalid bit found in attack detector" );
+      THROW_IF( !getField(n) || getField(n).type() != Figure::TypeQueen, "no figure but mask bit is 1" );
+      THROW_IF( getField(n).color() != c, "invalid figure color in attack detector" );
 
-      const Field & field = getField(n);
-
-      THROW_IF( !field || field.type() != Figure::TypeQueen, "no figure but mask bit is 1" );
-      THROW_IF( field.color() != c, "invalid figure color in attack detector" );
-
-      const uint64 & btw_msk = g_betweenMasks->between(n, pos);
-      if ( (figs_msk_inv & btw_msk) == btw_msk )
+      if ( is_nothing_between(n, pos, mask_all_inv) )
         return true;
     }
   }

@@ -484,12 +484,8 @@ void Board::verifyState()
     if ( !m )
       break;
 
-    if ( makeMove(m) )
+    if ( validateMove(m) )
       found = true;
-
-    unmakeMove();
-
-    THROW_IF(board0 != *this, "board is not restored by undo move method");
   }
 
   if ( !found )
@@ -643,11 +639,8 @@ bool Board::load(Board & board, std::istream & is)
     //Move mv;
     //strToMove(str, board, mv);
 
-    if ( !board.makeMove(move) )
-    {
-      board.unmakeMove();
+    if ( !board.validateMove(move) )
       return false;
-    }
   }
 
   board.verifyState();
@@ -703,8 +696,10 @@ bool Board::save(const Board & board, std::ostream & os)
       return false;
 
     // now apply move
-    if ( !sboard.makeMove(move) )
+    if ( !sboard.validateMove(move) )
       return false;
+
+    sboard.makeMove(move);
 
     if ( color || !i )
       os << moveNum << ". ";

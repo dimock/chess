@@ -574,10 +574,12 @@ int EscapeGenerator::generateKingonly(int m)
 
     Move & move = moves_[m];
     move.set(king_pos, *table, Figure::TypeNone, capture);
-    if ( board_.fieldUnderCheck(ocolor, move.to_, move.from_) )
+    if ( board_.isAttacked(ocolor, move.to_, move.from_) )
       continue;
 
     if ( move == hmove_ && m > 0 )
+      std::swap(move, moves_[0]);
+    else if ( moves_[0] != hmove_ && move.capture_ )
       std::swap(move, moves_[0]);
 
     move.checkVerified_ = 1;

@@ -26,7 +26,7 @@ int Board::see(const Move & move) const
   // en-passant
   else if ( !tfield && ffield.type() == Figure::TypePawn && move.to_ == en_passant_ )
   {
-    THROW_IF(board_.getField(enpassantPos()).type() != Figure::TypePawn || board_.getField(enpassantPos()).color() == color_, "no en-passant pawn");
+    THROW_IF(getField(enpassantPos()).type() != Figure::TypePawn || getField(enpassantPos()).color() == color_, "no en-passant pawn");
     return 0;
   }
 

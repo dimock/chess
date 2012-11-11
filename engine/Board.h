@@ -89,9 +89,22 @@ public:
   /*! movements
    */
 
-  /// unpack from hash
-  bool unpack(const PackedMove &, Move & move) const;
+  /// unpack from hash, verify move's physical possibility
+  bool unpack(const PackedMove & pm, Move & move) const
+  {
+    move.clear();
 
+    move.from_ = pm.from_;
+    move.to_ = pm.to_;
+    move.new_type_ = pm.new_type_;
+
+    if ( getField(move.to_) || (en_passant_ == move.to_ && getField(move.from_).type() == Figure::TypePawn) )
+      move.capture_ = true;
+
+    return possibleMove(move);
+  }
+
+  /// put move to hash
   PackedMove pack(const Move & move) const
   {
     PackedMove pm;
@@ -193,13 +206,6 @@ public:
     return fmgr_;
   }
 
-  /// verify is this move is physically possible. it could be invalid anyway
-  bool verifyMove(const Move &) const;
-
-  /// null-move
-  void makeNullMove(MoveCmd & move);
-  void unmakeNullMove(MoveCmd & move);
-
   inline bool allowNullMove() const
   {
     if ( (fmgr_.knights(color_)+fmgr_.bishops(color_)+fmgr_.rooks(color_)+fmgr_.queens(color_) == 0) ||
@@ -234,12 +240,19 @@ public:
     return can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
   }
 
-  /// really make move. perform validation
-  bool makeMove(const Move & );
+  /// is move physically possible
+  bool possibleMove(const Move & mv) const;
 
-  /// called after makeMove
+  /// is move meet rules
+  bool validateMove(const Move & mv) const;
+
+  /// make move
+  void makeMove(const Move & );
   void unmakeMove();
-  /*! end of movements */
+
+  /// null-move
+  void makeNullMove(MoveCmd & move);
+  void unmakeNullMove(MoveCmd & move);
 
   /// verify if there is draw or mat
   void verifyState();
@@ -257,7 +270,13 @@ public:
   /// very slow. should be used only while initialization
   bool invalidate();
 
-  // position of pawn, to be captured by en-passant
+  /// position, where capturing pawn goes to
+  inline int enpassant() const
+  {
+    return en_passant_;
+  }
+
+  /// position of pawn, to be captured by en-passant
   inline int enpassantPos() const
   {
     if ( en_passant_ < 0 )
@@ -383,11 +402,20 @@ public:
     return score;
   }
 
-  // will be 'pos' under check after moving figure from 'exclude' position
-  bool fieldUnderCheck(const Figure::Color acolor, int pos, int exclude) const;
+  // will be 'pos' under check after removing figure from 'exclude' position
+  bool isAttacked(const Figure::Color c, int pos, int exclude) const
+  {
+    BitMask mask_all_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
+    mask_all_inv |= (1ULL << exclude);
+    return fieldAttacked(c, pos, mask_all_inv);
+  }
 
   /// is field 'pos' attacked by given color?
-  bool isAttacked(const Figure::Color c, int8 pos) const;
+  bool isAttacked(const Figure::Color c, int8 pos) const
+  {
+    BitMask mask_all_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
+    return fieldAttacked(c, pos, mask_all_inv);
+  }
 
   /// static exchange evaluation, should be called before move
   int see(const Move & move) const;
@@ -492,8 +520,6 @@ private:
 
   bool verifyCastling(const Figure::Color , int t) const;
 
-  bool validateMove(const Move & mv) const;
-
   bool verifyChessDraw();
 
   /// find all checking figures, save them into board
@@ -510,6 +536,9 @@ private:
     BitMask inv_mask_all = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
     return !is_something_between(from, king_pos, inv_mask_all);
   }
+
+  // is field 'pos' attacked by color 'c'. mask_all - all figures, mask is inverted
+  bool fieldAttacked(const Figure::Color c, int8 pos, const BitMask & mask_all_inv) const;
 
   // returns number of checking figures.
   // very slow. used only for initial validation
@@ -538,6 +567,14 @@ private:
   {
     const BitMask & btw_msk = g_betweenMasks->between(from, to);
     return (btw_msk & inv_mask) != btw_msk;
+  }
+
+  // check if there is nothing between 'from' and 'to'
+  // inv_mask - inverted mask of all interesting figures
+  inline bool is_nothing_between(int from, int to, const BitMask & inv_mask) const
+  {
+    const BitMask & btw_msk = g_betweenMasks->between(from, to);
+    return (btw_msk & inv_mask) == btw_msk;
   }
 
   // acolor - color of attacking side, ki_pos - attacked king pos

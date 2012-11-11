@@ -391,16 +391,11 @@ bool parseSAN(Board & board, const char * str, Move & move)
     if ( !m )
       break;
 
-    bool valid = false;
-    if ( board.makeMove(m) )
-      valid = true;
-    board.unmakeMove();
-
-    if ( !valid )
+    if ( !board.validateMove(m) )
       continue;
 
     const Field & field = board.getField(m.from_);
-    if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && ((m.rindex_ >= 0) == capture) &&
+    if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && ((m.capture_ != 0) == capture) &&
         (from > 0 && from == m.from_ || xfrom >= 0 && (m.from_ & 7) == xfrom || yfrom >= 0 && (m.from_ >>3) == yfrom || xfrom < 0 && yfrom < 0))
     {
       move = m;
@@ -413,7 +408,6 @@ bool parseSAN(Board & board, const char * str, Move & move)
 bool printSAN(Board & board, const Move & move, char * str)
 {
   Field field = board.getField(move.from_);
-  Board::State state = Board::Invalid;
 
   bool found = false;
   int disambiguations = 0;
@@ -422,6 +416,7 @@ bool printSAN(Board & board, const Move & move, char * str)
   int yfrom = move.from_ >>3;
   int xto = move.to_ & 7;
   int yto = move.to_ >>3;
+  uint8 state = Board::Invalid;
 
 #ifndef NDEBUG
   Board board0(board);
@@ -434,25 +429,24 @@ bool printSAN(Board & board, const Move & move, char * str)
     if ( !m )
       break;
 
-    bool valid = false;
-    if ( board.makeMove(m) )
-      valid = true;
+    if ( !board.validateMove(m) )
+    {
+      THROW_IF(move == m, "invalid move given to printSAN");
+      continue;
+    }
 
     if ( m == move )
     {
-      THROW_IF(!valid, "invalid move given to printSAN");
       board.verifyState();
       state = board.getState();
       found = true;
     }
 
-    board.unmakeMove();
-
     THROW_IF(board0 != board, "board is not restored by undo move method");
 
     const Field & f = board.getField(m.from_);
 
-    if ( !valid || m.to_ != move.to_ || f.type() != field.type() || m.new_type_ != move.new_type_ )
+    if ( m.to_ != move.to_ || f.type() != field.type() || m.new_type_ != move.new_type_ )
       continue;
 
     // check for disambiguation in 'from' position
@@ -490,7 +484,7 @@ bool printSAN(Board & board, const Move & move, char * str)
       ++s;
     }
     
-    if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.rindex_ >= 0) )
+    if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.capture_) )
     {
       if ( same_x <= 1 )
       {
@@ -514,7 +508,7 @@ bool printSAN(Board & board, const Move & move, char * str)
       }
     }
     // capture
-    if ( move.rindex_ >= 0 )
+    if ( move.capture_ )
     {
       *s = 'x';
       ++s;
@@ -642,26 +636,16 @@ bool strToMove(char * str, const Board & board, Move & move)
     return false;
 
   // maybe en-passant
-  if ( ffrom.type() == Figure::TypePawn && board.getEnPassant() >= 0 )
+  if ( ffrom.type() == Figure::TypePawn && board.enpassant() == move.to_ )
   {
-    int dy = (move.to_ >>3) - (move.from_ >>3);
     int dx = (move.to_ & 7) - (move.from_ & 7);
     if ( dx != 0 )
-    {
-      int yto = (move.to_ >> 3) - dy;
-      int epos = (move.to_ & 7) | (yto << 3);
-      const Figure & epawn = board.getFigure(ocolor, board.getEnPassant());
-      if ( epawn.where() == epos )
-        to = epos;
-    }
+      to = board.enpassantPos();
   }
 
   const Field & fto = board.getField(to);
   if ( fto && fto.color() == ocolor )
-    move.rindex_ = fto.index();
+    move.capture_ = 1;
 
-	if ( !board.validMove(move) )
-		return false;
-
-	return true;
+	return board.validateMove(move);
 }

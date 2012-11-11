@@ -5,15 +5,9 @@
 #include "Board.h"
 #include "FigureDirs.h"
 
-// unpack from hash, verify move's physical possibility
-bool Board::unpack(const PackedMove & pm, Move & move) const
+// physically possible
+bool Board::possibleMove(const Move & move) const
 {
-  move.clear();
-
-  move.from_ = pm.from_;
-  move.to_ = pm.to_;
-  move.new_type_ = pm.new_type_;
-
   THROW_IF( (unsigned)move.to_ > 63 || (unsigned)move.from_ > 63, "invalid move given" );
 
   const Field & fto = getField(move.to_);
@@ -34,9 +28,6 @@ bool Board::unpack(const PackedMove & pm, Move & move) const
   int dir = g_figureDir->dir(ffrom.type(), color_, move.from_, move.to_);
   if ( dir < 0 )
     return false;
-
-  if ( fto || (en_passant_ == move.to_ && ffrom.type() == Figure::TypePawn) )
-    move.capture_ = true;
 
   // castle
   if ( ffrom.type() == Figure::TypeKing && (8 == dir || 9 == dir) )
@@ -102,6 +93,9 @@ bool Board::unpack(const PackedMove & pm, Move & move) const
 // verify move by rules
 bool Board::validateMove(const Move & move) const
 {  
+  if ( drawState() || matState() )
+    return false;
+
   const Field & ffrom = getField(move.from_);
   const Field & fto   = getField(move.to_);
 
@@ -120,7 +114,7 @@ bool Board::validateMove(const Move & move) const
         {
             THROW_IF((move.from_&7)-(move.to_&7) > 1 || (move.from_&7)-(move.to_&7) < -1, "try to castle under check");
 
-            return !fieldUnderCheck(ocolor, move.to_, move.from_);
+            return !isAttacked(ocolor, move.to_, move.from_);
         }
         else if ( checkingNum_ > 1 )
             return false;
@@ -188,6 +182,8 @@ bool Board::validateMove(const Move & move) const
         }
     }
 
+    THROW_IF(move.checkVerified_, "check verificaton in escape generator failed");
+
     return false;
   }
 
@@ -229,7 +225,7 @@ bool Board::validateMove(const Move & move) const
     else
     {
         // other king's movements - don't put it under check
-        return fieldUnderCheck(ocolor, move.to_, move.from_);
+        return isAttacked(ocolor, move.to_, move.from_);
     }
   }
   else
@@ -253,11 +249,8 @@ bool Board::validateMove(const Move & move) const
   }
 }
 
-bool Board::makeMove(const Move & mv)
+void Board::makeMove(const Move & mv)
 {
-  if ( drawState() || matState() )
-    return false;
-
   THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
   halfmovesCounter_++;
@@ -297,6 +290,8 @@ bool Board::makeMove(const Move & mv)
       int d = move.to_ - move.from_;
       if ( (2 == d || -2 == d) )
       {
+        move.castle_ = true;
+
         // don't do castling under check
         THROW_IF( checkingNum_ > 0, "can not castle under check" );
 
@@ -430,9 +425,7 @@ bool Board::makeMove(const Move & mv)
   move.state_ = state_;
 
   THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))) && !underCheck(), "check isn't detected" );
-  THROW_IF( isAttacked(ocolor, kingPos(color_)), "our king is under check after move" );
-
-  return true;
+  THROW_IF( isAttacked(Figure::otherColor(color_), kingPos(color_)), "our king is under check after move" );
 }
 
 void Board::unmakeMove()

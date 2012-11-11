@@ -244,14 +244,14 @@ void Player::printPV(Board & pv_board, SearchResult & sres)
     Move pv = sres.pv_[i];
     pv.clearFlags();
 
-    if ( /*!pv_board.validMove(pv) ||*/ !pv_board.makeMove(pv) )
+    if (!pv_board.possibleMove(pv) )
       break;
-
-    pv_board.unmakeMove();
 
     char str[64];
     if ( !printSAN(pv_board, pv, str) )
       break;
+
+    THROW_IF( !pv_board.validateMove(pv), "move is invalid but it is not detected by printSAN()");
 
     pv_board.makeMove(pv);
 
@@ -311,15 +311,14 @@ bool Player::search(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
     int counter = 0;
-    MovesGenerator mg(board_, 1, 0, this, alpha, betta, counter);
+    MovesGenerator mg(board_);
     for ( ;; )
     {
       const Move & move = mg.move();
       if ( !move )
         break;
-      if ( board_.makeMove(move) )
+      if ( board_.validateMove(move) )
         numOfMoves_++;
-      board_.unmakeMove();
     }
   }
 
@@ -469,19 +468,9 @@ void Player::processPosted(int t)
       if ( !mv )
         mv = before_;
       mv.clearFlags();
-      
-      if ( mv && pv_board_.validMove(mv) )
-      {
-        if ( !pv_board_.makeMove(mv) )
-          mv.clear();
-
-        pv_board_.unmakeMove();
-      }
-      else
-        mv.clear();
 
       char str[64];
-      if ( mv && printSAN(pv_board_, mv, str) )
+      if ( mv && pv_board_.validateMove(mv) && printSAN(pv_board_, mv, str) )
       {
         strcat(outstr, " ");
         strcat(outstr, str);
@@ -604,10 +593,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         pv = contexts_[0].pv_[ply];
         pv.checkVerified_ = 0;
 
-        if ( !board_.validMove(pv) )
+        if ( !board_.possibleMove(pv) )
           pv.clear();
-
-        THROW_IF( pv.rindex_ == 100, "invalid pv move" );
       }
     }
 
@@ -716,7 +703,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   if ( board_.underCheck() )
   {
-    EscapeGenerator eg(hmoves[0], board_, depth, ply, *this, alpha, betta, counter);
+    EscapeGenerator eg(hmoves[0], board_);
 
     // additional check extension
     depth += extend_check(depth, ply, eg, alpha, betta);
@@ -762,7 +749,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       return alpha;
     }
 
-    MovesGenerator mg(board_, depth, ply, this, alpha, betta, counter);
+    MovesGenerator mg(board_);
 
     for ( ; !stop_ && alpha < betta ; )
     {
@@ -835,6 +822,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 //////////////////////////////////////////////////////////////////////////
 bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move)
 {
+  if ( !board_.validateMove(move) )
+    return false;
+
   totalNodes_++;
   nodesCount_++;
 
@@ -853,7 +843,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
   bool was_winnerloser = board_.isWinnerLoser();
   int initial_balance = board_.fmgr().weight();
 
-  if ( board_.makeMove(move) )
+  board_.makeMove(move);
   {
     MoveCmd & mv_cmd = board_.getMoveRev(0);
     mv_cmd.extended_ = false;
@@ -943,7 +933,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         updateGeneralHash(move, depth0, ply, score, betta, hcode, color);
 #endif
 
-        if ( move.rindex_ < 0 && !move.new_type_ )
+        if ( !move.capture_ && !move.new_type_ )
         {
           hist.score_ ++;
           if ( hist.score_ > History::history_max_ )
@@ -968,7 +958,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         ghash_[hcode].tmove_ = board_.pack(move);
       }
 #endif
-      if ( move.rindex_ < 0 && !move.new_type_ )
+      if ( !move.capture_ && !move.new_type_ )
       {
         if ( alpha >= betta )
           hist.good_count_++;
@@ -1068,7 +1058,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( board_.underCheck() )
   {
 #ifdef USE_HASH_TABLE_CAPTURE
-    EscapeGenerator eg(hcap, board_, 0, ply, *this, alpha, betta, counter);
+    EscapeGenerator eg(hcap, board_);
 #else
     EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
 #endif
@@ -1086,7 +1076,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( stop_ )
         break;
 
-      THROW_IF( !board_.validMove(move), "move validation failed" );
+      THROW_IF( !board_.possibleMove(move), "move validation failed" );
 
       capture(depth, ply, alpha, betta, move, counter);
     }
@@ -1125,7 +1115,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       return alpha;
 
     // generate only suitable captures
-    CapsGenerator cg(hcap, board_, minimalType, ply, *this, alpha, betta, counter);
+    CapsGenerator cg(hcap, board_, minimalType);
     for ( ; !stop_ && alpha < betta; )
     {
       const Move & cap = cg.capture();
@@ -1137,7 +1127,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( stop_ )
         break;
 
-      THROW_IF( !board_.validMove(cap), "move validation failed" );
+      THROW_IF( !board_.possibleMove(cap), "move validation failed" );
 
       capture(depth, ply, alpha, betta, cap, counter);
     }
@@ -1146,8 +1136,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     // generate check only on 1st iteration under horizon
     if ( depth >= 0 && !stop_ && alpha < betta )
     {
-      //ChecksGenerator ckg(&cg, board_, ply, *this, alpha, betta, minimalType, counter);
-      ChecksGenerator2 ckg(hcap, board_, ply, *this, minimalType);
+      ChecksGenerator ckg(hcap, board_, minimalType);
 
       for ( ; !stop_ && alpha < betta ; )
       {
@@ -1160,10 +1149,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         if ( stop_ )
           break;
 
-        THROW_IF( !board_.validMove(check), "move validation failed" );
-
-        //if ( !see_cc(check) )
-        //  continue;
+        THROW_IF( !board_.possibleMove(check), "move validation failed" );
 
         capture(depth, ply, alpha, betta, check, counter);
       }
@@ -1186,6 +1172,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 //////////////////////////////////////////////////////////////////////////
 void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter)
 {
+  if ( !board_.validateMove(cap) )
+    return;
+
   totalNodes_++;
   nodesCount_++;
 
@@ -1196,7 +1185,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
   uint64 hcode = board_.hashCode();
   Figure::Color color = board_.getColor();
 
-  if ( board_.makeMove(cap) )
+  board_.makeMove(cap);
   {
     History & hist = MovesGenerator::history(cap.from_, cap.to_);
 
@@ -1234,7 +1223,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
       updateCaptureHash(depth, ply, cap, s, betta, hcode, color);
 #endif
 
-      if ( cap.rindex_ < 0 && !cap.new_type_ )
+      if ( !cap.capture_ && !cap.new_type_ )
       {
         hist.score_++;
         if ( hist.score_ > History::history_max_ )
@@ -1242,7 +1231,7 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
       }
     }
 
-    if ( cap.rindex_ < 0 && !cap.new_type_ )
+    if ( !cap.capture_ && !cap.new_type_ )
     {
       if ( alpha >= betta )
         hist.good_count_++;
@@ -1281,7 +1270,10 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
   {
     GeneralHItem & hgitem = ghash_[board_.hashCode()];
     if ( hgitem.move_ && hgitem.hcode_ == board_.hashCode() )
-      pv = board_.unpack(hgitem.move_);
+    {
+      if ( !board_.unpack(hgitem.move_, pv) )
+        pv.clear();
+    }
 
 #if (defined USE_HASH_TABLE_ADV) && (defined USE_HASH_TABLE_CAPTURE)
     // if we haven't found pv in general hash, lets try captures hash
@@ -1289,7 +1281,10 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
     {
       CaptureHItem & hcitem = chash_[board_.hashCode()];
       if ( hcitem.move_ && hcitem.hcode_ == board_.hashCode() )
-        pv = board_.unpack(hcitem.move_);
+      {
+        if ( !board_.unpack(hcitem.move_, pv) )
+          pv.clear();
+      }
     }
 #endif // USE_HASH_TABLE_ADV
   }
@@ -1306,14 +1301,20 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
     ScoreType score = alphaBetta(depth, ply+1, alpha, alpha+1, false);
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.move_ && hitem.hcode_ == board_.hashCode() )
-      pv = board_.unpack(hitem.move_);
+    {
+      if ( !board_.unpack(hitem.move_, pv) )
+        pv.clear();
+    }
 
 #ifdef USE_HASH_TABLE_CAPTURE
     else
     {
       CaptureHItem & citem = chash_[board_.hashCode()];
       if ( citem.move_ && citem.hcode_ == board_.hashCode() )
-        pv = board_.unpack(citem.move_);
+      {
+        if ( !board_.unpack(citem.move_, pv) )
+          pv.clear();
+      }
     }
 #endif
   }
@@ -1340,8 +1341,8 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
   // extra moves from hash
     for (int i = 0; i < 2; ++i)
     {
-      Move hmove_ex = board_.unpack(hitem.move_ex_[i]);
-      if ( !hmove_ex || find_move(moves, num, hmove_ex) )
+      Move hmove_ex;
+      if ( !board_.unpack(hitem.move_ex_[i], hmove_ex) || find_move(moves, num, hmove_ex) )
         continue;
 
       moves[num++] = hmove_ex;
@@ -1350,8 +1351,8 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
 
 #ifdef USE_THREAT_MOVE
     // threat move, if we have one
-    Move htmove = board_.unpack(hitem.tmove_);
-    if ( htmove && !find_move(moves, num, htmove) )
+    Move htmove;
+    if ( board_.unpack(hitem.tmove_, htmove) && !find_move(moves, num, htmove) )
     {
       htmove.threat_ = 1;
       moves[num++] = htmove;
@@ -1393,7 +1394,8 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
   if ( chitem.move_ && chitem.hcode_ == board_.hashCode() )
   {
     THROW_IF( (Figure::Color)chitem.color_ != board_.getColor(), "identical hash code but different color in captures" );
-    hmove = board_.unpack(chitem.move_);
+    if ( !board_.unpack(chitem.move_, hmove) )
+      hmove.clear();
   }
 
 #if ((defined USE_GENERAL_HASH_IN_CAPS) && (defined USE_HASH_TABLE_GENERAL))
@@ -1402,8 +1404,7 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
     GeneralHItem & ghitem = ghash_[board_.hashCode()];
     if ( ghitem.move_ && ghitem.hcode_ == board_.hashCode() )
     {
-      hmove = board_.unpack(ghitem.move_);
-      if ( hmove.rindex_ < 0 || board_.getFigure(Figure::otherColor(board_.getColor()), hmove.rindex_).getType() < minimalType )
+      if ( !board_.unpack(ghitem.move_, hmove) || !hmove.capture_ || board_.getField(hmove.to_).type() < minimalType )
         hmove.clear();
     }
   }
@@ -1446,15 +1447,13 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.rindex_ >= 0 || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) /*|| pawnBeforePromotion(prev)*/)
+  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) /*|| pawnBeforePromotion(prev)*/)
   {
     return false;
   }
 
   const Field & cfield = board_.getField(move.from_);
   THROW_IF( !cfield || cfield.color() != board_.getColor(), "no figure of required color in while detecting threat" );
-  const Figure & cfig = board_.getFigure(cfield.color(), cfield.index());
-  THROW_IF( !cfig, "field is occupied but there is no figure in the list in threat detector" );
 
   // we have to put figure under attack
   if ( board_.ptAttackedBy(move.to_, prev.to_) 
@@ -1476,7 +1475,7 @@ bool Player::isRealThreat(const Move & move)
   }
 
   // prev move was attack, and we should escape from it
-  if ( board_.ptAttackedBy(move.from_, pfig) 
+  if ( board_.ptAttackedBy(move.from_, prev.to_) 
 #ifdef ONLY_LEQ_THREAT
     && typeLEQ(cfig.getType(), pfig.getType())
 #endif
@@ -1517,14 +1516,10 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
     initial_balance = -initial_balance;
 
 #ifdef EXTEND_PROMOTION
-  if ( pawnBeforePromotion(move) || move.new_type_ == Figure::TypeQueen )
+  if ( move.new_type_ == Figure::TypeQueen && move.vsort_ >= 5000000 )
   {
-    Move next;
-    int rdepth = 0;
-    int score_see = board_.see(initial_balance, next, rdepth);
-    if ( score_see >= 0 )
-        return 1;
-    }
+    return 1;
+  }
 #endif
 
 #ifdef EXTEND_PASSED_PAWN
@@ -1562,61 +1557,20 @@ int Player::extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alp
     return 0;
   }
 
-  const Move & first = eg[0];
-  MoveCmd & move = board_.getMoveRev(0);
-
   // one reply - always extend
   if ( eg.count() == 1 )
     return 1;
 
+  const Move & first = eg[0];
+  MoveCmd & move = board_.getMoveRev(0);
+
   // double check and first move isn't capture of checking figure
-  if ( move.checkingNum_ == 2 && first.rindex_ != move.checking_[0] && first.rindex_ != move.checking_[1] )
+  if ( move.checkingNum_ == 2 && first.to_ != move.checking_[0] && first.to_ != move.checking_[1] )
     return 1;
 
   return 0;
 }
 //#include <fstream>
-
-bool Player::see_cc(const Move & move) const
-{
-  // certainly discovered check
-  if ( move.discoveredCheck_ )
-    return true;
-
-  // victim >= attacker
-  if ( move.rindex_ >= 0 )
-  {
-    Figure::Type atype = board_.getField(move.from_).type();
-    Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-    if ( typeLEQ(atype, vtype) )
-      return true;
-  }
-
-  // we look from side, that goes to move. we should adjust sing of initial mat-balance
-  int initial_balance = board_.fmgr().weight();//initial_material_balance_;
-  if ( !board_.getColor() )
-    initial_balance = -initial_balance;
-
-  // do winning capture/check
-  int score_see = board_.see_before(initial_balance, move);
-
-//#ifndef NDEBUG
-//  int score_see1 = board_.see_before2(initial_balance, move);
-//  //if ( score_see1 != score_see )
-//  //{
-//  //  char fen[256];
-//  //  board_.toFEN(fen);
-//  //  std::ofstream of("see.bug.fen");
-//  //  of << std::string(fen) << std::endl;
-//  //}
-//  THROW_IF(score_see != score_see1, "see_before2() failed" );
-//#endif
-
-  if ( score_see >= 0 )
-    return true;
-
-  return false;
-}
 
 #ifdef RECAPTURE_EXTENSION
 bool Player::recapture(int ply, int depth, int initial_balance)
@@ -1625,7 +1579,7 @@ bool Player::recapture(int ply, int depth, int initial_balance)
     return false;
 
   const MoveCmd & move = board_.getMoveRev(0);
-  if ( move.rindex_ < 0 )
+  if ( !move.capture_ )
     return false;
 
   // this is not a recapture (?) but capture of strong figure by weaker one.
@@ -1633,8 +1587,7 @@ bool Player::recapture(int ply, int depth, int initial_balance)
   if ( board_.halfmovesCount() > 1 )
   {
     const MoveCmd & prev = board_.getMoveRev(-1);
-    if ( prev.rindex_ < 0 &&
-      !typeLEQ( (Figure::Type)board_.getField(move.to_).type(), (Figure::Type)move.eaten_type_) )
+    if ( !prev.capture_&& !typeLEQ( (Figure::Type)board_.getField(move.to_).type(), (Figure::Type)move.eaten_type_) )
     {
       //char fen[256];
       //board_.toFEN(fen);
@@ -1642,24 +1595,8 @@ bool Player::recapture(int ply, int depth, int initial_balance)
     }
   }
 
-  Move next;
-  int rdepth = 0;
-  int score_see = board_.see(initial_balance, next, rdepth);
-
-  if ( score_see >= 0 )
-  {
-    contexts_[ply].ext_data_.recap_curr_ = move;
-    contexts_[ply].ext_data_.recap_next_ = next;
-
-    // do recapture only for node, that goes under horizon
-    return depth-rdepth <= 1;
-  }
-  else if ( ply > 0 )
-  {
-    const MoveCmd & prev = board_.getMoveRev(-1);
-    if ( contexts_[ply-1].ext_data_.recap_curr_ == prev && contexts_[ply-1].ext_data_.recap_next_ == move )
-      return depth-rdepth <= 1;
-  }
+  if ( move.vsort_ >= 5000000 ) // good recapture
+    return true;
 
   return false;
 }

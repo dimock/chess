@@ -292,6 +292,11 @@ public:
     return moves_[current_++];
   }
 
+  const Move & operator [] (int i) const
+  {
+    return moves_[i];
+  }
+
 private:
 
   /// returns number of moves found
