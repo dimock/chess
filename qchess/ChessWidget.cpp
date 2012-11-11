@@ -363,7 +363,7 @@ void ChessWidget::drawState()
 {
   const Board & board = cpos_.getBoard();
   Figure::Color color = board.getColor();
-  Board::State state = board.getState();
+  uint8 state = board.getState();
 
   QString stateText = color == Figure::ColorBlack ? tr("Black") : tr("White");
   stateText += tr(" have ");
@@ -371,8 +371,14 @@ void ChessWidget::drawState()
     stateText += tr("Mat");
   else if ( board.underCheck() )
     stateText += tr("Check");
-  else if ( Board::isDraw(state) )
-    stateText = tr("Draw");
+  else if ( state & Board::DrawInsuf )
+    stateText = tr("Material insufficient");
+  else if ( state & Board::DrawReps )
+    stateText = tr("Threefold repetition");
+  else if ( state & Board::Draw50Moves )
+    stateText = tr("50 moves rule");
+  else if ( state & Board::Stalemat )
+    stateText = tr("Stalemat");
   else
     return;
 
@@ -390,8 +396,8 @@ void ChessWidget::drawInfo()
   QString infoText;
 
   int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
-  int ticksN = Board::ticks_;
-  int hscore = Board::tcounter_;
+  //int ticksN = Board::ticks_;
+  //int hscore = Board::tcounter_;
   //infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, LMR-errors = %d, hist. score(avg) = %d\n{ %s }",
   //  cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
 
@@ -494,10 +500,8 @@ void ChessWidget::findMove()
 
   for (int i = 0; i < sres_.depth_ && sres_.pv_[i]; ++i)
   {
-    if ( !pv_board.validMove(sres_.pv_[i]) || !pv_board.makeMove(sres_.pv_[i]) )
+    if ( !pv_board.possibleMove(sres_.pv_[i]) || !pv_board.validateMove(sres_.pv_[i]) )
       break;
-
-    pv_board.unmakeMove();
 
     char str[32];
     if ( !printSAN(pv_board, sres_.pv_[i], str) )
@@ -561,8 +565,8 @@ void ChessWidget::keyReleaseEvent(QKeyEvent * e)
 //////////////////////////////////////////////////////////////////////////
 bool OpenBook::load(const char * fname, const Board & i_board)
 {
-  FILE * f = fopen(fname, "rt");
-  if ( !f )
+  FILE * f;
+  if ( fopen_s(&f, fname, "rt") != 0 )
     return false;
 
   QTextStream sbook(f, QIODevice::ReadOnly);
@@ -587,11 +591,12 @@ bool OpenBook::load(const char * fname, const Board & i_board)
     for (QStringList::iterator it = slist.begin(); it != slist.end(); ++it)
     {
       char str[256];
-      strncpy(str, it->toAscii().data(), sizeof(str));
+      strncpy_s(str, it->size(), it->toAscii().data(), sizeof(str));
       Move move;
-      if ( !strToMove(str, board, move) || !board.makeMove(move) )
+      if ( !strToMove(str, board, move) || !board.validateMove(move) )
         break;
 
+      board.makeMove(move);
       moves.push_back(move);
     }
 
@@ -628,10 +633,10 @@ Move OpenBook::nextMove(const Board & board)
   for (size_t i = 0; i < mtable_.size(); ++i)
   {
     MovesLine & mline = mtable_[i];
-    int j = 0;
+    size_t j = 0;
     for ( ; j < board.halfmovesCount() && j < mline.size(); ++j)
     {
-      Move mv = board.getMove(j);
+      Move mv = board.getMove((int)j);
       if ( mv != mline[j] )
         j = mline.size();
     }
@@ -649,7 +654,7 @@ Move OpenBook::nextMove(const Board & board)
   if ( valid_moves.empty() )
     return mres;
 
-  int n = xorshf96() % valid_moves.size();
+  size_t n = xorshf96() % valid_moves.size();
   mres = valid_moves[n];
 
   return mres;

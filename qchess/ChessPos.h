@@ -61,11 +61,10 @@ private:
 	bool doLoad();
 
   QPoint coordByField(int) const;
-  bool getFigureOnPt(const QPoint & pt, Figure & fig) const;
+  bool getFieldByPt(const QPoint & pt, Field & field) const;
   int  getPositionOnPt(const QPoint & pt) const;
 
   const QImage * figImage(Figure::Type, Figure::Color) const;
-  const QImage * figImage(const Figure &) const;
 
 	void drawBoard(QPainter *, QSize & ) const;
 	void drawFigures(QPainter *, QSize & ) const;
@@ -78,7 +77,7 @@ private:
   Move  vmove_;
   int halfmovesNumber_;
 
-  mutable Figure selectedFigure_;
+  mutable int selectedPos_;
   mutable QPoint upleft_;
   int diff_hei_, diff_margin_;
 
