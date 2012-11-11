@@ -647,5 +647,5 @@ bool strToMove(char * str, const Board & board, Move & move)
   if ( fto && fto.color() == ocolor )
     move.capture_ = 1;
 
-	return board.validateMove(move);
+	return board.possibleMove(move);
 }

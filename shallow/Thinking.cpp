@@ -210,7 +210,7 @@ bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
 	white = Figure::ColorWhite == board.getColor();
   state = board.getState();
 
-  if ( Board::isDraw(state) || (Board::ChessMat & state) )
+  if ( board.drawState() || board.matState() )
     return true;
 
 	SearchResult sres;
@@ -221,13 +221,12 @@ bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
   givetimeCounter_ = 0;
   if ( player_.findMove(sres, post_ ? &cout : 0) )
   {
-    if ( board.makeMove(sres.best_) )
-      board.verifyState();
-    else
+    if ( board.validateMove(sres.best_) )
     {
-      board.unmakeMove();
-      sres.best_.clear();
+      board.makeMove(sres.best_);
+      board.verifyState();
     }
+    sres.best_.clear();
   }
   thinking_ = false;
   player_.setGiveTimeCbk(0);
@@ -253,7 +252,7 @@ bool Thinking::move(xCmd & moveCmd, uint8 & state, bool & white)
 	Figure::Color ocolor = Figure::otherColor(color);
   state = board.getState();
 
-  if ( Board::isDraw(state) || (Board::ChessMat & state) )
+  if ( board.drawState() || board.matState() )
     return true;
 
 	white = Figure::ColorWhite == color;
@@ -262,14 +261,11 @@ bool Thinking::move(xCmd & moveCmd, uint8 & state, bool & white)
 	if ( !strToMove(moveCmd.str(), board, move) )
 		return false;
 
-  if ( board.makeMove(move) )
-    board.verifyState();
-  else
-  {
-    board.unmakeMove();
+  if ( !board.validateMove(move) )
     return false;
-  }
 
+  board.makeMove(move);
+  board.verifyState();
 	state = board.getState();
   updateTiming();
 	return true;
@@ -439,9 +435,8 @@ void Thinking::setFigure(xCmd & cmd)
 			firstStep = Figure::ColorWhite == figureColor_ && '1' == str[2] || Figure::ColorBlack == figureColor_ && '8' == str[2];
 	}
 
-	Figure fig(ftype, figureColor_, x, y, firstStep);
-
-	player_.getBoard().addFigure(fig);
+  Index pos(x, y);
+	player_.getBoard().addFigure(figureColor_, ftype, pos);
 }
 
 //////////////////////////////////////////////////////////////////////////

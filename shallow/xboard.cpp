@@ -82,7 +82,7 @@ bool xBoardMgr::peekInput()
 }
 
 
-void xBoardMgr::out_state(ostream & os, Board::State state, bool white)
+void xBoardMgr::out_state(ostream & os, uint8 state, bool white)
 {
   if ( Board::ChessMat & state )
   {
@@ -308,7 +308,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
     {
       force_ = false;
       char str[256];
-      Board::State state = Board::Invalid;
+      uint8 state = Board::Invalid;
       bool white;
       bool b = thk_.reply(str, state, white);
       if ( b )
@@ -347,7 +347,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
         ofs_log_ << " can't move - thinking" << endl;
 #endif
 
-      Board::State state;
+      uint8 state;
       bool white;
       if ( thk_.move(cmd, state, white) )
       {

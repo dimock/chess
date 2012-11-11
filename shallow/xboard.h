@@ -28,7 +28,7 @@ public:
 
 private:
 
-  void out_state(std::ostream & os, Board::State state, bool white);
+  void out_state(std::ostream & os, uint8 state, bool white);
 
 private:
 
