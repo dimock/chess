@@ -591,7 +591,8 @@ bool OpenBook::load(const char * fname, const Board & i_board)
     for (QStringList::iterator it = slist.begin(); it != slist.end(); ++it)
     {
       char str[256];
-      strncpy_s(str, it->size(), it->toAscii().data(), sizeof(str));
+      size_t n = it->size();
+      strncpy_s(str, sizeof(str), it->toAscii().data(), it->size());
       Move move;
       if ( !strToMove(str, board, move) || !board.validateMove(move) )
         break;

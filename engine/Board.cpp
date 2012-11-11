@@ -738,7 +738,7 @@ void Board::verifyMasks() const
     for (int p = 0; p < NumOfFields; ++p)
     {
       const Field & field = getField(p);
-      if ( !field )
+      if ( !field || field.color() != color )
         continue;
 
       all_mask |= 1ULL << p;

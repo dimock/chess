@@ -23,7 +23,10 @@ void Board::detectCheck(const MoveCmd & move)
     d >>= 1;
     int rook_to = move.from_ + d;
     if ( isAttackedBy(color, ocolor, Figure::TypeRook, rook_to) )
+    {
       checking_[checkingNum_++] = rook_to;
+      state_ |= UnderCheck;
+    }
 
     // no more checking figures
     return;
@@ -33,7 +36,7 @@ void Board::detectCheck(const MoveCmd & move)
     const BitMask & king_mask = fmgr_.king_mask(color);
     if ( fto.type() == Figure::TypePawn )
     {
-      const BitMask & pw_mask = g_movesTable->pawnCaps_o(color, move.to_);
+      const BitMask & pw_mask = g_movesTable->pawnCaps_o(ocolor, move.to_);
       if ( pw_mask & king_mask )
         checking_[checkingNum_++] = move.to_;
     }
@@ -60,16 +63,16 @@ void Board::detectCheck(const MoveCmd & move)
     // 1. through en-passant pawn field
     int apos = findDiscovered(ep_pos, color, mask_all, brq_mask, king_pos);
     if ( apos >= 0 )
-    {
       checking_[checkingNum_++] = apos;
-      return;
-    }
   }
 
   // 2. through move.from_ field
   int apos = findDiscovered(move.from_, color, mask_all, brq_mask, king_pos);
   if ( apos >= 0 )
     checking_[checkingNum_++] = apos;
+
+  if ( checkingNum_ > 0 )
+    state_ |= UnderCheck;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -225,7 +225,7 @@ bool Board::validateMove(const Move & move) const
     else
     {
         // other king's movements - don't put it under check
-        return isAttacked(ocolor, move.to_, move.from_);
+        return !isAttacked(ocolor, move.to_, move.from_);
     }
   }
   else
@@ -424,8 +424,8 @@ void Board::makeMove(const Move & mv)
 
   move.state_ = state_;
 
-  THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))) && !underCheck(), "check isn't detected" );
-  THROW_IF( isAttacked(Figure::otherColor(color_), kingPos(color_)), "our king is under check after move" );
+  THROW_IF( isAttacked(Figure::otherColor(color_), kingPos(color_)) && !underCheck(), "check isn't detected" );
+  THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))), "our king is under check after move" );
 }
 
 void Board::unmakeMove()
@@ -445,10 +445,6 @@ void Board::unmakeMove()
   castling_ = move.castling_;
 
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color_);
-
-  // store masks - don't undo it to save time
-  move.mask_[0] = fmgr_.mask(Figure::ColorBlack);
-  move.mask_[1] = fmgr_.mask(Figure::ColorWhite);
 
   can_win_[0] = move.can_win_[0];
   can_win_[1] = move.can_win_[1];

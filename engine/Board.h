@@ -90,7 +90,13 @@ public:
     if ( getField(move.to_) || (en_passant_ == move.to_ && getField(move.from_).type() == Figure::TypePawn) )
       move.capture_ = true;
 
-    return possibleMove(move);
+    if ( !possibleMove(move) )
+    {
+      move.clear();
+      return false;
+    }
+
+    return true;
   }
 
   /// put move to hash
@@ -472,7 +478,7 @@ private:
 
   bool castling(Figure::Color c, int t /* 0 - short (K), 1 - long (Q) */) const
   {
-    int offset = 1 << ((c<<1) | t);
+    int offset = ((c<<1) | t);
     return (castling_ >> offset) & 1;
   }
 
@@ -487,13 +493,13 @@ private:
   /// set short/long castle
   void set_castling(Figure::Color c, int t)
   {
-    int offset = 1 << ((c<<1) | t);
+    int offset = ((c<<1) | t);
     castling_ |= 1 << offset;
   }
 
   void clear_castling(Figure::Color c, int t)
   {
-    int offset = 1 << ((c<<1) | t);
+    int offset = ((c<<1) | t);
     castling_ &= ~(1 << offset);
   }
 
@@ -589,7 +595,7 @@ private:
   {
     const BitMask & from_msk = g_betweenMasks->from(ki_pos, pt);
     BitMask mask_all_ex = mask_all & from_msk;
-    if ( (mask_all & brq_mask) == 0 )
+    if ( (mask_all_ex & brq_mask) == 0 )
       return -1;
 
     int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);

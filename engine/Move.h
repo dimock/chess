@@ -59,16 +59,19 @@ struct Move
   /// flags
   union
   {
-  uint8  checkVerified_ : 1,
-         alreadyDone_ : 1,
-		     capture_ : 1,
-         checkFlag_ : 1,
-         threat_ : 1,
-         recapture_ : 1,
-         discoveredCheck_ : 1,
-         seen_ : 1;
+    struct
+    {
+    uint8  checkVerified_ : 1,
+           alreadyDone_ : 1,
+		       capture_ : 1,
+           checkFlag_ : 1,
+           threat_ : 1,
+           recapture_ : 1,
+           discoveredCheck_ : 1,
+           seen_ : 1;
+    };
 
-  uint8  flags_;
+    uint8  flags_;
   };
 
   unsigned vsort_;

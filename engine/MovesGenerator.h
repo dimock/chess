@@ -145,7 +145,7 @@ public:
       if ( !*move )
         return *move;
 
-      if ( (move->capture_ >= 0 || move->new_type_ > 0) && !move->seen_ )
+      if ( (move->capture_ || move->new_type_ > 0) && !move->seen_ )
       {
         move->seen_ = 1;
 

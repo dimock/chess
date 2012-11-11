@@ -1271,8 +1271,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
     GeneralHItem & hgitem = ghash_[board_.hashCode()];
     if ( hgitem.move_ && hgitem.hcode_ == board_.hashCode() )
     {
-      if ( !board_.unpack(hgitem.move_, pv) )
-        pv.clear();
+      board_.unpack(hgitem.move_, pv);
     }
 
 #if (defined USE_HASH_TABLE_ADV) && (defined USE_HASH_TABLE_CAPTURE)
@@ -1282,8 +1281,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
       CaptureHItem & hcitem = chash_[board_.hashCode()];
       if ( hcitem.move_ && hcitem.hcode_ == board_.hashCode() )
       {
-        if ( !board_.unpack(hcitem.move_, pv) )
-          pv.clear();
+        board_.unpack(hcitem.move_, pv);
       }
     }
 #endif // USE_HASH_TABLE_ADV
@@ -1302,8 +1300,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
     GeneralHItem & hitem = ghash_[board_.hashCode()];
     if ( hitem.move_ && hitem.hcode_ == board_.hashCode() )
     {
-      if ( !board_.unpack(hitem.move_, pv) )
-        pv.clear();
+      board_.unpack(hitem.move_, pv);
     }
 
 #ifdef USE_HASH_TABLE_CAPTURE
@@ -1312,8 +1309,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
       CaptureHItem & citem = chash_[board_.hashCode()];
       if ( citem.move_ && citem.hcode_ == board_.hashCode() )
       {
-        if ( !board_.unpack(citem.move_, pv) )
-          pv.clear();
+        board_.unpack(citem.move_, pv);
       }
     }
 #endif
@@ -1516,7 +1512,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
     initial_balance = -initial_balance;
 
 #ifdef EXTEND_PROMOTION
-  if ( move.new_type_ == Figure::TypeQueen && move.vsort_ >= 5000000 )
+  if ( move.new_type_ == Figure::TypeQueen && move.recapture_ )
   {
     return 1;
   }
@@ -1595,7 +1591,7 @@ bool Player::recapture(int ply, int depth, int initial_balance)
     }
   }
 
-  if ( move.vsort_ >= 5000000 ) // good recapture
+  if ( move.recapture_ ) // good recapture
     return true;
 
   return false;

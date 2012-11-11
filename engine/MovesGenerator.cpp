@@ -274,7 +274,7 @@ int MovesGenerator::generate()
 
 //////////////////////////////////////////////////////////////////////////
 EscapeGenerator::EscapeGenerator(const Move & hmove, Board & board) :
-  MovesGeneratorBase(board), hmove_(hmove)
+  MovesGeneratorBase(board), hmove_(hmove), current_(0)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();

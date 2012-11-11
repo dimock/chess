@@ -553,7 +553,7 @@ ScoreType Board::evaluatePawns(Figure::Color color) const
   const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
 
   BitMask pawn_mask = fmgr_.pawn_mask_o(color);
-  for ( ;; )
+  for ( ; pawn_mask; )
   {
     int n = clear_lsb(pawn_mask);
 
