@@ -21,17 +21,6 @@ class ChecksGenerator2;
 class Player;
 #endif
 
-struct FiguresMobility
-{
-  FiguresMobility() :
-    knightMob_(0), bishopMob_(0), rookMob_(0), queenMob_(0),
-    knightDist_(0), bishopDist_(0), rookDist_(0), queenDist_(0)
-  {}
-
-  int knightMob_, bishopMob_, rookMob_, queenMob_;
-  int knightDist_, bishopDist_, rookDist_, queenDist_;
-};
-
 /*! board representation
  */
 class Board
@@ -510,12 +499,11 @@ private:
 
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
-  inline ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob) const;
+  inline ScoreType evaluateKing(Figure::Color color) const;
   inline ScoreType evaluateFianchetto() const;
   ScoreType evaluatePawns(Figure::Color color) const;
   ScoreType evalPawnsEndgame(Figure::Color color) const;
   ScoreType evaluateRooks(Figure::Color color) const;
-  ScoreType evaluateMobility(Figure::Color color, FiguresMobility & fmob) const;
   ScoreType evaluateWinnerLoser() const;
 
   bool verifyCastling(const Figure::Color , int t) const;
