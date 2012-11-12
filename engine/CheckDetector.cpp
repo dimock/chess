@@ -58,16 +58,16 @@ void Board::detectCheck(const MoveCmd & move)
   if ( move.en_passant_ == move.to_ && fto.type() == Figure::TypePawn )
   {
     static int pw_delta[2] = { -8, 8 };
-    int ep_pos = move.en_passant_ + pw_delta[color];
+    int ep_pos = move.en_passant_ + pw_delta[color]; // color == color of captured pawn
 
     // 1. through en-passant pawn field
-    int apos = findDiscovered(ep_pos, color, mask_all, brq_mask, king_pos);
+    int apos = findDiscovered(ep_pos, ocolor, mask_all, brq_mask, king_pos);
     if ( apos >= 0 )
       checking_[checkingNum_++] = apos;
   }
 
   // 2. through move.from_ field
-  int apos = findDiscovered(move.from_, color, mask_all, brq_mask, king_pos);
+  int apos = findDiscovered(move.from_, ocolor, mask_all, brq_mask, king_pos);
   if ( apos >= 0 )
     checking_[checkingNum_++] = apos;
 

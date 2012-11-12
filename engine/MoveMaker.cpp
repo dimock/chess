@@ -343,13 +343,20 @@ void Board::makeMove(const Move & mv)
     move.eaten_type_ = fto.type();
     fmgr_.decr(fto.color(), fto.type(), move.to_);
     fto.clear();
+    THROW_IF( !move.capture_, "capture flag isn't set" );
   }
-  else if ( move.to_ == en_passant_ )
+  else if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
   {
     int ep_pos = enpassantPos();
     Field & epfield = getField(ep_pos);
     THROW_IF( epfield.color() != ocolor || epfield.type() != Figure::TypePawn, "en-passant pawn is invalid" );
     fmgr_.decr(epfield.color(), epfield.type(), ep_pos);
+    epfield.clear();
+    THROW_IF( !move.capture_, "en-passant isn't detected as capture" );
+  }
+  else
+  {
+    THROW_IF(move.capture_, "capture flag set but no figure to eat");
   }
 
   // clear en-passant hash code
@@ -471,11 +478,12 @@ void Board::unmakeMove()
 
   // restore en-passant
   en_passant_ = move.en_passant_;
-  if ( en_passant_ == move.to_ )
+  if ( en_passant_ == move.to_ && Figure::TypePawn == ffrom.type() )
   {
     int ep_pos = enpassantPos();
     Field & epfield = getField(ep_pos);
     epfield.set(ocolor, Figure::TypePawn);
+    fmgr_.u_incr(epfield.color(), epfield.type(), ep_pos);
   }
 
   // restore eaten figure
