@@ -595,13 +595,17 @@ bool moveToStr(const Move & move, char * str, bool full)
 	return true;
 }
 
-bool strToMove(char * str, const Board & board, Move & move)
+bool strToMove(const char * i_str, const Board & board, Move & move)
 {
-	if ( !str || strlen(str) < 4 )
+  size_t sz = 0;
+	if ( !i_str || (sz = strlen(i_str)) < 4 )
 		return false;
 
+  char str[16];
+  strncpy_s(str, sizeof(str), i_str, sz);
 	_strlwr(str);
-	move.clear();
+
+  move.clear();
 
 	Figure::Color color = board.getColor();
 	Figure::Color ocolor = Figure::otherColor(color);

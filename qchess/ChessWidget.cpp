@@ -565,11 +565,11 @@ void ChessWidget::keyReleaseEvent(QKeyEvent * e)
 //////////////////////////////////////////////////////////////////////////
 bool OpenBook::load(const char * fname, const Board & i_board)
 {
-  FILE * f;
-  if ( fopen_s(&f, fname, "rt") != 0 )
+  QFile qf(fname);
+  if ( !qf.open(QIODevice::ReadOnly) )
     return false;
 
-  QTextStream sbook(f, QIODevice::ReadOnly);
+  QTextStream sbook(&qf);
 
   if ( sbook.status() != QTextStream::Ok )
     return false;
@@ -590,11 +590,8 @@ bool OpenBook::load(const char * fname, const Board & i_board)
     QStringList slist = sline.split( QObject::tr(" "), QString::SkipEmptyParts);
     for (QStringList::iterator it = slist.begin(); it != slist.end(); ++it)
     {
-      char str[256];
-      size_t n = it->size();
-      strncpy_s(str, sizeof(str), it->toAscii().data(), it->size());
       Move move;
-      if ( !strToMove(str, board, move) || !board.validateMove(move) )
+      if ( !strToMove(it->toAscii().data(), board, move) || !board.validateMove(move) )
         break;
 
       board.makeMove(move);
@@ -603,9 +600,6 @@ bool OpenBook::load(const char * fname, const Board & i_board)
 
     mtable_.push_back(moves);
   }
-  fclose(f);
-
-//  qsrand( QTime::currentTime().msec() );
 
   return true;
 }

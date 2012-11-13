@@ -460,7 +460,7 @@ public:
 struct Move;
 
 bool moveToStr(const Move & move, char * str, bool full);
-bool strToMove(char * str, const Board & board, Move & move);
+bool strToMove(const char * i_str, const Board & board, Move & move);
 
 bool parseSAN(Board & board, const char * str, Move & move);
 bool printSAN(Board & board, const Move & move, char * str);

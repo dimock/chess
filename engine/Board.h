@@ -185,13 +185,14 @@ public:
   }
 
   /// get position of figure of color 'acolor', which attacks field 'pt'
-  /// returns -1 if 'pt' was already attacked from this direction (independently on figure)
+  /// returns -1 if 'pt' was already attacked from this direction
+  /// even if it is attacked by figure that occupies field 'from'
   inline int getAttackedFrom(Figure::Color acolor, int8 pt, int8 from) const
   {
     BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
     BitMask brq_mask = fmgr_.bishop_mask(acolor) | fmgr_.rook_mask(acolor) | fmgr_.queen_mask(acolor);
     const BitMask & btw_mask = g_betweenMasks->between(pt, from);
-    brq_mask &= ~btw_mask;
+    brq_mask &= ~btw_mask; // exclude all figures, that are between 'pt' and 'from'
 
     return findDiscovered(from, acolor, mask_all, brq_mask, pt);
   }
@@ -528,7 +529,7 @@ private:
       return false;
 
     BitMask inv_mask_all = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
-    return !is_something_between(from, king_pos, inv_mask_all);
+    return is_nothing_between(from, king_pos, inv_mask_all);
   }
 
   // is field 'pos' attacked by color 'c'. mask_all - all figures, mask is inverted
@@ -591,14 +592,14 @@ private:
 
   /// returns field index of checking figure or -1 if not found
   /// mask_all is completely prepared, all figures are on their places
-  inline int findDiscovered(int pt, Figure::Color acolor, const BitMask & mask_all, const BitMask & brq_mask, int ki_pos) const
+  inline int findDiscovered(int from, Figure::Color acolor, const BitMask & mask_all, const BitMask & brq_mask, int ki_pos) const
   {
-    const BitMask & from_msk = g_betweenMasks->from(ki_pos, pt);
+    const BitMask & from_msk = g_betweenMasks->from(ki_pos, from);
     BitMask mask_all_ex = mask_all & from_msk;
     if ( (mask_all_ex & brq_mask) == 0 )
       return -1;
 
-    int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    int apos = ki_pos < from ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
     const Field & afield = getField(apos);
     if ( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
       return -1;

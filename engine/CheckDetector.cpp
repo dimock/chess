@@ -53,6 +53,7 @@ void Board::detectCheck(const MoveCmd & move)
   int king_pos = kingPos(color);
   BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
   BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
+  mask_all &= ~(1ULL << move.to_); // exclude moved figure from calculation because it is already precessed
 
   // check through en-passant field
   if ( move.en_passant_ == move.to_ && fto.type() == Figure::TypePawn )
@@ -70,6 +71,9 @@ void Board::detectCheck(const MoveCmd & move)
   int apos = findDiscovered(move.from_, ocolor, mask_all, brq_mask, king_pos);
   if ( apos >= 0 )
     checking_[checkingNum_++] = apos;
+
+  THROW_IF( checkingNum_ > 2, "more than 2 figures give check" );
+  THROW_IF( checkingNum_ > 1 && checking_[0] == checking_[1], "wrong double check detected" );
 
   if ( checkingNum_ > 0 )
     state_ |= UnderCheck;
