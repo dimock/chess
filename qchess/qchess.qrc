@@ -12,5 +12,6 @@
 	<file>images/queen_b.png</file>
 	<file>images/king_w.png</file>
 	<file>images/king_b.png</file>
+  <file>images/chess.png</file>
 </qresource>
 </RCC>

@@ -57,6 +57,8 @@ ChessWidget::ChessWidget(QWidget * parent) :
   pv_str_[0] = 0;
   setAttribute(Qt::WA_DeleteOnClose);
 
+  setWindowIcon(QIcon(":/images/chess.png"));
+
   upleft_.setY(cpos_.getDiffHeight() + 50);
   cpos_.setUpLeft(upleft_);
 
