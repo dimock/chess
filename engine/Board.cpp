@@ -641,6 +641,8 @@ bool Board::load(Board & board, std::istream & is)
 
     if ( !board.validateMove(move) )
       return false;
+
+    board.makeMove(move);
   }
 
   board.verifyState();
