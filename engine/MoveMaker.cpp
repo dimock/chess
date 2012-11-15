@@ -1,6 +1,6 @@
 /*************************************************************
-  MoveMaker.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
- *************************************************************/
+MoveMaker.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+*************************************************************/
 
 #include "Board.h"
 #include "FigureDirs.h"
@@ -110,76 +110,76 @@ bool Board::validateMove(const Move & move) const
 #endif
 
     {
-        if ( Figure::TypeKing == ffrom.type() )
-        {
-            THROW_IF((move.from_&7)-(move.to_&7) > 1 || (move.from_&7)-(move.to_&7) < -1, "try to castle under check");
+      if ( Figure::TypeKing == ffrom.type() )
+      {
+        THROW_IF((move.from_&7)-(move.to_&7) > 1 || (move.from_&7)-(move.to_&7) < -1, "try to castle under check");
 
-            return !isAttacked(ocolor, move.to_, move.from_);
-        }
-        else if ( checkingNum_ > 1 )
-            return false;
+        return !isAttacked(ocolor, move.to_, move.from_);
+      }
+      else if ( checkingNum_ > 1 )
+        return false;
 
-        THROW_IF( (unsigned)checking_[0] >= NumOfFields, "invalid checking figure" );
+      THROW_IF( (unsigned)checking_[0] >= NumOfFields, "invalid checking figure" );
 
-        // regular capture
-        if ( move.to_ == checking_[0] )
-        {
-            // maybe moving figure discovers check
-            BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
-            mask_all |= (1ULL << move.to_);
+      // regular capture
+      if ( move.to_ == checking_[0] )
+      {
+        // maybe moving figure discovers check
+        BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
+        mask_all |= (1ULL << move.to_);
 
-            BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
-            brq_mask &= ~(1ULL << move.to_);
+        BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
+        brq_mask &= ~(1ULL << move.to_);
 
-            int ki_pos = kingPos(color_);
+        int ki_pos = kingPos(color_);
 
-            return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
-        }
+        return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+      }
 
-        // en-passant capture. we have to check the direction from king to en-passant pawn
-        if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
-        {
-            int ep_pos = enpassantPos();
-            BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
-            mask_all |= (1ULL << move.to_);
-            mask_all ^= (1ULL << move.from_);
-            mask_all &= ~(1ULL << ep_pos);
+      // en-passant capture. we have to check the direction from king to en-passant pawn
+      if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
+      {
+        int ep_pos = enpassantPos();
+        BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
+        mask_all |= (1ULL << move.to_);
+        mask_all ^= (1ULL << move.from_);
+        mask_all &= ~(1ULL << ep_pos);
 
-            BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
+        BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
 
-            int ki_pos = kingPos(color_);
+        int ki_pos = kingPos(color_);
 
-            // through removed en-passant pawn's field
-            if ( discoveredCheck(ep_pos, ocolor, mask_all, brq_mask, ki_pos) )
-                return false;
+        // through removed en-passant pawn's field
+        if ( discoveredCheck(ep_pos, ocolor, mask_all, brq_mask, ki_pos) )
+          return false;
 
-            // through moved pawn's field
-            return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
-        }
+        // through moved pawn's field
+        return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+      }
 
-        // moving figure covers king
-        {
-            const Field & cfield = getField(checking_[0]);
-            THROW_IF( Figure::TypeKing == cfield.type(), "king is attacking king" );
-            THROW_IF( !cfield, "king is attacked by non existing figure" );
+      // moving figure covers king
+      {
+        const Field & cfield = getField(checking_[0]);
+        THROW_IF( Figure::TypeKing == cfield.type(), "king is attacking king" );
+        THROW_IF( !cfield, "king is attacked by non existing figure" );
 
-            // Pawn and Knight could be only removed to escape from check
-            if ( Figure::TypeKnight == cfield.type() || Figure::TypePawn == cfield.type() )
-                return false;
+        // Pawn and Knight could be only removed to escape from check
+        if ( Figure::TypeKnight == cfield.type() || Figure::TypePawn == cfield.type() )
+          return false;
 
-            int ki_pos = kingPos(color_);
-            const BitMask & protect_king_msk = g_betweenMasks->between(ki_pos, checking_[0]);
-            if ( (protect_king_msk & (1ULL << move.to_)) == 0 )
-                return false;
+        int ki_pos = kingPos(color_);
+        const BitMask & protect_king_msk = g_betweenMasks->between(ki_pos, checking_[0]);
+        if ( (protect_king_msk & (1ULL << move.to_)) == 0 )
+          return false;
 
-            BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
-            mask_all |= (1ULL << move.to_);
+        BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
+        mask_all |= (1ULL << move.to_);
 
-            BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
-            brq_mask &= ~(1ULL << move.to_);
+        BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
+        brq_mask &= ~(1ULL << move.to_);
 
-            return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
-        }
+        return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+      }
     }
 
     THROW_IF(move.checkVerified_, "check verificaton in escape generator failed");
@@ -194,38 +194,38 @@ bool Board::validateMove(const Move & move) const
     int d = move.to_ - move.from_;
     if ( (2 == d || -2 == d) )
     {
-        THROW_IF( !castling(color_, d > 0 ? 0 : 1), "castling impossible" );
-        THROW_IF( !verifyCastling(color_, d > 0 ? 0 : 1), "castling flag is invalid" );
+      THROW_IF( !castling(color_, d > 0 ? 0 : 1), "castling impossible" );
+      THROW_IF( !verifyCastling(color_, d > 0 ? 0 : 1), "castling flag is invalid" );
 
-        // don't do castling under check
-        THROW_IF( checkingNum_ > 0, "can not castle under check" );
-        THROW_IF( move.capture_, "can't capture while castling" );
-        THROW_IF( !(move.from_ == 4 && color_ || move.from_ == 60 && !color_), "kings position is wrong" );
-        THROW_IF( getField(move.to_), "king position after castle is occupied" );
+      // don't do castling under check
+      THROW_IF( checkingNum_ > 0, "can not castle under check" );
+      THROW_IF( move.capture_, "can't capture while castling" );
+      THROW_IF( !(move.from_ == 4 && color_ || move.from_ == 60 && !color_), "kings position is wrong" );
+      THROW_IF( getField(move.to_), "king position after castle is occupied" );
 
-        d >>= 1;
+      d >>= 1;
 
-        // verify if there is suitable rook for castling
-        int rook_from = move.from_ + ((d>>1) ^ 3); //d < 0 ? move.from_ - 4 : move.from_ + 3
+      // verify if there is suitable rook for castling
+      int rook_from = move.from_ + ((d>>1) ^ 3); //d < 0 ? move.from_ - 4 : move.from_ + 3
 
-        THROW_IF( (rook_from != 0 && color_ && d < 0) || (rook_from != 7 && color_ && d > 0), "invalid castle rook position" );
-        THROW_IF( (rook_from != 56 && !color_ && d < 0) || (rook_from != 63 && !color_ && d > 0), "invalid castle rook position" );
+      THROW_IF( (rook_from != 0 && color_ && d < 0) || (rook_from != 7 && color_ && d > 0), "invalid castle rook position" );
+      THROW_IF( (rook_from != 56 && !color_ && d < 0) || (rook_from != 63 && !color_ && d > 0), "invalid castle rook position" );
 
-        int rook_to = move.from_ + d;
+      int rook_to = move.from_ + d;
 
-        THROW_IF( getField(rook_to), "field, that rook is going to move to, is occupied" );
+      THROW_IF( getField(rook_to), "field, that rook is going to move to, is occupied" );
 
-        THROW_IF ( !(rook_from & 3) && getField(rook_from+1), "long castling impossible" );
+      THROW_IF ( !(rook_from & 3) && getField(rook_from+1), "long castling impossible" );
 
-        if ( isAttacked(ocolor, move.to_) || isAttacked(ocolor, rook_to) )
-          return false;
+      if ( isAttacked(ocolor, move.to_) || isAttacked(ocolor, rook_to) )
+        return false;
 
-        return true;
-     }
+      return true;
+    }
     else
     {
-        // other king's movements - don't put it under check
-        return !isAttacked(ocolor, move.to_, move.from_);
+      // other king's movements - don't put it under check
+      return !isAttacked(ocolor, move.to_, move.from_);
     }
   }
   else
@@ -271,68 +271,89 @@ void Board::makeMove(const Move & mv)
 
   state_ = Ok;
 
-  Figure::Color ocolor = Figure::otherColor((Figure::Color)color_);
+  const Figure::Color & color = color_;
+  Figure::Color ocolor = Figure::otherColor(color);
 
   // store masks - don't undo it to save time
   move.mask_[0] = fmgr_.mask(Figure::ColorBlack);
   move.mask_[1] = fmgr_.mask(Figure::ColorWhite);
 
   Field & ffrom = getField(move.from_);
-  Field & fto = getField(move.to_);
+  Field & fto   = getField(move.to_);
 
   // castle
-  bool castle_k = castling(color_, 0);
-  bool castle_q = castling(color_, 1);
+  bool castle_k = castling(color, 0);
+  bool castle_q = castling(color, 1);
   bool castle_kk = castle_k, castle_qq = castle_q;
 
   if ( ffrom.type() == Figure::TypeKing )
   {
-      int d = move.to_ - move.from_;
-      if ( (2 == d || -2 == d) )
-      {
-        move.castle_ = true;
+    int d = move.to_ - move.from_;
+    if ( (2 == d || -2 == d) )
+    {
+      move.castle_ = true;
 
-        // don't do castling under check
-        THROW_IF( checkingNum_ > 0, "can not castle under check" );
+      // don't do castling under check
+      THROW_IF( checkingNum_ > 0, "can not castle under check" );
 
-        d >>= 1;
-        int rook_to = move.from_ + d;
-        int rook_from = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
+      d >>= 1;
+      int rook_to = move.from_ + d;
+      int rook_from = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
 
-        Field & rf_field = getField(rook_from);
-        THROW_IF( rf_field.type() != Figure::TypeRook || rf_field.color() != color_, "no rook for castle" );
-        THROW_IF( !(rook_from & 3) && getField(rook_from+1), "long castle is impossible" );
+      Field & rf_field = getField(rook_from);
+      THROW_IF( rf_field.type() != Figure::TypeRook || rf_field.color() != color_, "no rook for castle" );
+      THROW_IF( !(rook_from & 3) && getField(rook_from+1), "long castle is impossible" );
 
-        rf_field.clear();
-        fmgr_.move(color_, Figure::TypeRook, rook_from, rook_to);
-        Field & field_rook_to  = getField(rook_to);
-        THROW_IF( field_rook_to, "field that rook is going to move to while castling is occupied" );
-        field_rook_to.set(color_, Figure::TypeRook);
-      }
+      rf_field.clear();
+      fmgr_.move(color_, Figure::TypeRook, rook_from, rook_to);
+      Field & field_rook_to  = getField(rook_to);
+      THROW_IF( field_rook_to, "field that rook is going to move to while castling is occupied" );
+      field_rook_to.set(color_, Figure::TypeRook);
+    }
 
+    castle_kk = false;
+    castle_qq = false;
+  }
+  // castling of current color is still possible
+  else if ( (castle_k || castle_q) && (ffrom.type() == Figure::TypeRook) )
+  {
+    // short castle
+    if ( (move.from_ == 7 && color == Figure::ColorWhite) || (move.from_ == 63 && color == Figure::ColorBlack) )
       castle_kk = false;
+
+    // long castle
+    if ( (move.from_ == 0 && color == Figure::ColorWhite) || (move.from_ == 56 && color == Figure::ColorBlack) )
       castle_qq = false;
   }
-  else if ( ffrom.type() == Figure::TypeRook )
+  // eat rook of another side
+  else if ( castling() && fto.type() == Figure::TypeRook )
   {
-      if ( (move.from_ & 7) == 7 ) // short castle
-          castle_kk = false;
+    bool ocastle_k = castling(ocolor, 0);
+    bool ocastle_q = castling(ocolor, 1);
 
-      if ( (move.from_ & 7) == 0 ) // long castle
-          castle_qq = false;
+    if ( ocastle_k && (move.to_ == 7 && ocolor == Figure::ColorWhite || move.to_ == 63 && ocolor == Figure::ColorBlack) )
+    {
+      clear_castling(ocolor, 0);
+      fmgr_.hashCastling(ocolor, 0);
+    }
+    else if ( ocastle_q && (move.to_ == 0 && ocolor == Figure::ColorWhite || move.to_ == 56 && ocolor == Figure::ColorBlack) )
+    {
+      clear_castling(ocolor, 1);
+      fmgr_.hashCastling(ocolor, 1);
+    }
   }
 
   // hash castle and change flags
   if ( castle_k && !castle_kk )
   {
-      clear_castling(color_, 0);
-      fmgr_.hashCastling(color_, 0);
+    clear_castling(color_, 0);
+    fmgr_.hashCastling(color_, 0);
   }
 
   if ( castle_q && !castle_qq )
   {
-      clear_castling(color_, 1);
-      fmgr_.hashCastling(color_, 1);
+    clear_castling(color_, 1);
+    fmgr_.hashCastling(color_, 1);
   }
 
   // remove captured figure
@@ -532,12 +553,12 @@ bool Board::verifyChessDraw()
   }
 
   can_win_[0] = ( fmgr_.pawns(Figure::ColorBlack) || fmgr_.rooks(Figure::ColorBlack) || fmgr_.queens(Figure::ColorBlack) ) ||
-                ( fmgr_.knights(Figure::ColorBlack) && fmgr_.bishops(Figure::ColorBlack) ) ||
-                ( fmgr_.bishops_b(Figure::ColorBlack) && fmgr_.bishops_w(Figure::ColorBlack) );
+    ( fmgr_.knights(Figure::ColorBlack) && fmgr_.bishops(Figure::ColorBlack) ) ||
+    ( fmgr_.bishops_b(Figure::ColorBlack) && fmgr_.bishops_w(Figure::ColorBlack) );
 
   can_win_[1] = ( fmgr_.pawns(Figure::ColorWhite) || fmgr_.rooks(Figure::ColorWhite) || fmgr_.queens(Figure::ColorWhite) ) ||
-                ( fmgr_.knights(Figure::ColorWhite) && fmgr_.bishops(Figure::ColorWhite) ) ||
-                ( fmgr_.bishops_b(Figure::ColorWhite) && fmgr_.bishops_w(Figure::ColorWhite) );
+    ( fmgr_.knights(Figure::ColorWhite) && fmgr_.bishops(Figure::ColorWhite) ) ||
+    ( fmgr_.bishops_b(Figure::ColorWhite) && fmgr_.bishops_w(Figure::ColorWhite) );
 
   if ( !can_win_[0] && !can_win_[1] )
   {
@@ -558,15 +579,15 @@ bool Board::verifyChessDraw()
 
   // may be we forget to test initial position?
   if ( reps < 3 && i == -1 && fmgr_.hashCode() == getMove(0).zcode_old_ )
-	  reps++;
+    reps++;
 
   if ( reps > repsCounter_ )
-	  repsCounter_ = reps;
+    repsCounter_ = reps;
 
   if ( reps >= 3 )
   {
-	  state_ |= DrawReps;
-	  return true;
+    state_ |= DrawReps;
+    return true;
   }
 
   return false;

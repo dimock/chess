@@ -4,6 +4,7 @@
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
+#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -531,6 +532,12 @@ int EscapeGenerator::generateUsual()
           int n = clear_lsb(msk_protect);
 
           const Field & field = board_.getField(n);
+
+          //if ( field )
+          //{
+          //  std::ofstream ofs("D:\\Projects\\git_tests\\temp\\crash.pgn");
+          //  Board::save(board_, ofs);
+          //}
 
           THROW_IF( field, "there is something between king and checking figure" );
 
