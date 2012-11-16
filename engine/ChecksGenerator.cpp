@@ -58,7 +58,7 @@ int ChecksGenerator::generate()
 
     // castling also could be with check
     BitMask all_but_king_mask = ~mask_all | (1ULL << ki_pos);
-    if ( board_.castling(board_.color_, 0) && !board_.getField(ki_pos+2) ) // short
+    if ( board_.castling(board_.color_, 0) && !board_.getField(ki_pos+1) && !board_.getField(ki_pos+2) ) // short
     {
       static int rook_positions[] = { 63, 7 };
       int & r_pos = rook_positions[board_.color_];
@@ -72,7 +72,7 @@ int ChecksGenerator::generate()
       }
     }
 
-    if ( board_.castling(board_.color_, 1) && !board_.getField(ki_pos-2) ) // long
+    if ( board_.castling(board_.color_, 1) && !board_.getField(ki_pos-1) && !board_.getField(ki_pos-2) && !board_.getField(ki_pos-3) ) // long
     {
       static int rook_positions[] = { 56, 0 };
       int & r_pos = rook_positions[board_.color_];

@@ -79,7 +79,7 @@ public:
   /*! movements
    */
 
-  /// unpack from hash, verify move's physical possibility
+  /// unpack from hash, move have to be physically possible
   bool unpack(const PackedMove & pm, Move & move) const
   {
     move.clear();
@@ -94,14 +94,7 @@ public:
     if ( getField(move.to_) || (en_passant_ == move.to_ && getField(move.from_).type() == Figure::TypePawn) )
       move.capture_ = true;
 
-    if ( !possibleMove(move) )
-    {
-      std::ofstream ofs("D:\\Projects\\git_tests\\temp\\crash.pgn");
-      Board::save(*this, ofs);
-      //THROW_IF(true, "move in hash is impossible");
-      move.clear();
-      return false;
-    }
+    THROW_IF ( !possibleMove(move), "move in hash is impossible" );
 
     return true;
   }

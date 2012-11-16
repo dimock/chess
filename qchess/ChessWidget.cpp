@@ -16,6 +16,7 @@
 #include <QSettings>
 #include <QClipboard>
 #include <QTextStream>
+#include <QFile>
 #include "setparamsdlg.h"
 
 

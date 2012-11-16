@@ -54,10 +54,6 @@ void Board::detectCheck(const MoveCmd & move)
   BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
   BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
 
-  // exclude long-range figure because it is already processed
-  if ( fto.type() == Figure::TypeBishop || fto.type() == Figure::TypeRook || fto.type() == Figure::TypeQueen )
-    mask_all &= ~(1ULL << move.to_);
-
   // check through en-passant field
   if ( move.en_passant_ == move.to_ && fto.type() == Figure::TypePawn )
   {
@@ -72,7 +68,7 @@ void Board::detectCheck(const MoveCmd & move)
 
   // 2. through move.from_ field
   int apos = findDiscovered(move.from_, ocolor, mask_all, brq_mask, king_pos);
-  if ( apos >= 0 )
+  if ( apos >= 0 && apos != move.to_ ) // exclude figure, that's made current move
     checking_[checkingNum_++] = apos;
 
   THROW_IF( checkingNum_ > 2, "more than 2 figures give check" );

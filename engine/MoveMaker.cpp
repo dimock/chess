@@ -285,6 +285,7 @@ void Board::makeMove(const Move & mv)
   bool castle_k = castling(color, 0);
   bool castle_q = castling(color, 1);
   bool castle_kk = castle_k, castle_qq = castle_q;
+  static int castle_rook_pos[2][2] = { {63, 7}, {56, 0} }; // 0 - short, 1 - long
 
   if ( ffrom.type() == Figure::TypeKing )
   {
@@ -318,12 +319,10 @@ void Board::makeMove(const Move & mv)
   else if ( (castle_k || castle_q) && (ffrom.type() == Figure::TypeRook) )
   {
     // short castle
-    if ( (move.from_ == 7 && color == Figure::ColorWhite) || (move.from_ == 63 && color == Figure::ColorBlack) )
-      castle_kk = false;
+    castle_kk = move.from_ != castle_rook_pos[0][color];
 
     // long castle
-    if ( (move.from_ == 0 && color == Figure::ColorWhite) || (move.from_ == 56 && color == Figure::ColorBlack) )
-      castle_qq = false;
+    castle_qq = move.from_ != castle_rook_pos[1][color];
   }
   // eat rook of another side
   else if ( castling() && fto.type() == Figure::TypeRook )
@@ -331,12 +330,12 @@ void Board::makeMove(const Move & mv)
     bool ocastle_k = castling(ocolor, 0);
     bool ocastle_q = castling(ocolor, 1);
 
-    if ( ocastle_k && (move.to_ == 7 && ocolor == Figure::ColorWhite || move.to_ == 63 && ocolor == Figure::ColorBlack) )
+    if ( ocastle_k && move.to_ == castle_rook_pos[0][ocolor] )
     {
       clear_castling(ocolor, 0);
       fmgr_.hashCastling(ocolor, 0);
     }
-    else if ( ocastle_q && (move.to_ == 0 && ocolor == Figure::ColorWhite || move.to_ == 56 && ocolor == Figure::ColorBlack) )
+    else if ( ocastle_q && move.to_ == castle_rook_pos[1][ocolor] )
     {
       clear_castling(ocolor, 1);
       fmgr_.hashCastling(ocolor, 1);
