@@ -156,18 +156,22 @@ bool Board::fromFEN(const char * fen)
         {
         case 'k':
           set_castling(Figure::ColorBlack, 0);
+          fmgr_.hashCastling(Figure::ColorBlack, 0);
           break;
 
         case 'K':
           set_castling(Figure::ColorWhite, 0);
+          fmgr_.hashCastling(Figure::ColorWhite, 0);
           break;
 
         case 'q':
           set_castling(Figure::ColorBlack, 1);
+          fmgr_.hashCastling(Figure::ColorBlack, 1);
           break;
 
         case 'Q':
           set_castling(Figure::ColorWhite, 1);
+          fmgr_.hashCastling(Figure::ColorWhite, 1);
           break;
 
         default:
@@ -205,6 +209,7 @@ bool Board::fromFEN(const char * fen)
         return false;
 
       en_passant_ = enpassant;
+      fmgr_.hashEnPassant(en_passant_, fp.color());
       continue;
     }
 

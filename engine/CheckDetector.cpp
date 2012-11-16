@@ -53,7 +53,10 @@ void Board::detectCheck(const MoveCmd & move)
   int king_pos = kingPos(color);
   BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
   BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
-  mask_all &= ~(1ULL << move.to_); // exclude moved figure from calculation because it is already precessed
+
+  // exclude long-range figure because it is already processed
+  if ( fto.type() == Figure::TypeBishop || fto.type() == Figure::TypeRook || fto.type() == Figure::TypeQueen )
+    mask_all &= ~(1ULL << move.to_);
 
   // check through en-passant field
   if ( move.en_passant_ == move.to_ && fto.type() == Figure::TypePawn )

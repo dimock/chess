@@ -4,7 +4,6 @@
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
-#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -533,14 +532,7 @@ int EscapeGenerator::generateUsual()
 
           const Field & field = board_.getField(n);
 
-          //if ( field )
-          //{
-          //  std::ofstream ofs("D:\\Projects\\git_tests\\temp\\crash.pgn");
-          //  Board::save(board_, ofs);
-          //}
-
           THROW_IF( field, "there is something between king and checking figure" );
-
           THROW_IF( board_.g_figureDir->dir((Figure::Type)type, color, fg_pos, n) < 0, "figure can't go to required field" );
 
           const uint64 & btw_msk = board_.g_betweenMasks->between(fg_pos, n);

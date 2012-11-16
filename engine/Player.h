@@ -9,6 +9,7 @@
 #include "Board.h"
 #include "HashTable.h"
 #include <time.h>
+#include <fstream>
 
 class SearchResult
 {
@@ -291,6 +292,11 @@ private:
 #ifdef USE_HASH_TABLE_GENERAL
   void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
+    //if ( hcode == 376545212832384022 && move.from_ == 36 && move.to_ == 45 )
+    //{
+    //    std::ofstream ofs("D:\\Projects\\git_tests\\temp\\crash.pgn");
+    //    Board::save(board_, ofs);
+    //}
     PackedMove pm = board_.pack(move);
     ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1,
       color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
@@ -431,6 +437,12 @@ private:
       if ( ghitem.move_ && ghitem.hcode_ == board_.hashCode() )
       {
         board_.unpack(ghitem.move_, hmove);
+        //if ( !board_.unpack(ghitem.move_, hmove) )
+        //{
+        //  std::ofstream ofs("D:\\Projects\\git_tests\\temp\\crash.pgn");
+        //  Board::save(board_, ofs);
+        //  board_.unpack(ghitem.move_, hmove);
+        //}
         if ( !board_.underCheck() && board_.getField(hmove.to_).type() < minimalType )
           hmove.clear();
       }

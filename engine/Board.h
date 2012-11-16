@@ -9,6 +9,7 @@
 #include "Move.h"
 #include "MovesTable.h"
 #include "FigureDirs.h"
+#include <fstream>
 
 class MovesGeneratorBase;
 class MovesGenerator;
@@ -83,6 +84,9 @@ public:
   {
     move.clear();
 
+    if ( !pm )
+      return false;
+
     move.from_ = pm.from_;
     move.to_ = pm.to_;
     move.new_type_ = pm.new_type_;
@@ -92,6 +96,9 @@ public:
 
     if ( !possibleMove(move) )
     {
+      std::ofstream ofs("D:\\Projects\\git_tests\\temp\\crash.pgn");
+      Board::save(*this, ofs);
+      //THROW_IF(true, "move in hash is impossible");
       move.clear();
       return false;
     }

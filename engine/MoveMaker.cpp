@@ -382,7 +382,7 @@ void Board::makeMove(const Move & mv)
 
   // clear en-passant hash code
   if ( en_passant_ >= 0 )
-    fmgr_.hashEnPassant(move.en_passant_, ocolor);
+    fmgr_.hashEnPassant(en_passant_, ocolor);
 
   // save en-passant field
   move.en_passant_ = en_passant_;
@@ -396,7 +396,7 @@ void Board::makeMove(const Move & mv)
     if ( 3 == dir )
     {
       en_passant_ = (move.to_ + move.from_) >> 1;
-      fmgr_.hashEnPassant(move.to_, color_);
+      fmgr_.hashEnPassant(en_passant_, color_);
     }
   }
 
@@ -453,6 +453,7 @@ void Board::makeMove(const Move & mv)
   move.state_ = state_;
 
   THROW_IF( isAttacked(Figure::otherColor(color_), kingPos(color_)) && !underCheck(), "check isn't detected" );
+  THROW_IF( !isAttacked(Figure::otherColor(color_), kingPos(color_)) && underCheck(), "detected check, that doesn't exist" );
   THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))), "our king is under check after move" );
 }
 
