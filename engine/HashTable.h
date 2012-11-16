@@ -213,10 +213,6 @@ public:
     }
     //else
     //  hitem.threat_ = 0;
-    if ( hitem.hcode_ == 7303289716703264955 && hitem.move_.from_ == 5 && hitem.move_.to_ == 13 )
-    {
-      bool t = true;
-    }
   }
 };
 

@@ -9,7 +9,6 @@
 #include "Move.h"
 #include "MovesTable.h"
 #include "FigureDirs.h"
-#include <fstream>
 
 class MovesGeneratorBase;
 class MovesGenerator;
