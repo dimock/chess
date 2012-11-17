@@ -92,9 +92,14 @@ bool Board::possibleMove(const Move & move) const
 
 // verify move by rules
 bool Board::validateMove(const Move & move) const
-{  
+{
   if ( drawState() || matState() )
     return false;
+
+#ifdef DEBUG_NULLMOVE
+  if ( !move ) // null-move
+    return true;
+#endif
 
   const Field & ffrom = getField(move.from_);
   const Field & fto   = getField(move.to_);
@@ -251,6 +256,15 @@ bool Board::validateMove(const Move & move) const
 
 void Board::makeMove(const Move & mv)
 {
+#ifdef DEBUG_NULLMOVE
+  if ( !mv )
+  {
+    MoveCmd x;
+    makeNullMove(x);
+    return;
+  }
+#endif
+
   THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
   halfmovesCounter_++;
@@ -324,8 +338,9 @@ void Board::makeMove(const Move & mv)
     // long castle
     castle_qq = move.from_ != castle_rook_pos[1][color];
   }
+  
   // eat rook of another side
-  else if ( castling() && fto.type() == Figure::TypeRook )
+  if ( castling() && fto.type() == Figure::TypeRook )
   {
     bool ocastle_k = castling(ocolor, 0);
     bool ocastle_q = castling(ocolor, 1);
@@ -461,6 +476,16 @@ void Board::unmakeMove()
   THROW_IF(halfmovesCounter_ <= 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
   MoveCmd & move = lastMove();
+
+#ifdef DEBUG_NULLMOVE
+  if ( !move )
+  {
+    MoveCmd x;
+    unmakeNullMove(x);
+    return;
+  }
+#endif
+
   halfmovesCounter_--;
 
   color_ = Figure::otherColor(color_);
@@ -595,6 +620,48 @@ bool Board::verifyChessDraw()
 
 //////////////////////////////////////////////////////////////////////////
 // NULL MOVE
+#ifdef DEBUG_NULLMOVE
+
+void Board::makeNullMove(MoveCmd & )
+{
+  THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
+
+  halfmovesCounter_++;
+
+  MoveCmd & move = lastMove();
+  move.clear();
+  move.clearUndo();
+
+  move.zcode_old_ = hashCode();
+  move.state_ = state_;
+
+  if ( en_passant_ >= 0 )
+  {
+    fmgr_.hashEnPassant(en_passant_, color_);
+    move.en_passant_ = en_passant_;
+    en_passant_ = -1;
+  }
+  else
+    move.en_passant_ = -1;
+
+  color_ = Figure::otherColor(color_);
+  fmgr_.hashColor();
+}
+
+void Board::unmakeNullMove(MoveCmd & )
+{
+  THROW_IF(halfmovesCounter_ <= 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
+
+  MoveCmd & move = lastMove();
+  halfmovesCounter_--;
+
+  color_ = Figure::otherColor(color_);
+  en_passant_ = move.en_passant_;
+  fmgr_.restoreHash(move.zcode_old_);
+  state_ = (State)move.state_;
+}
+
+#else
 
 void Board::makeNullMove(MoveCmd & move)
 {
@@ -621,3 +688,5 @@ void Board::unmakeNullMove(MoveCmd & move)
   fmgr_.restoreHash(move.zcode_old_);
   state_ = (State)move.state_;
 }
+
+#endif

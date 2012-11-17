@@ -528,7 +528,11 @@ bool Board::load(Board & board, std::istream & is)
   const int N = 1024;
   char str[N];
   const char * sepr  = " \t\n\r";
+#ifdef DEBUG_NULLMOVE
+  const char * strmv = "123456789abcdefgh+-OxPNBRQKnul=#";
+#else
   const char * strmv = "123456789abcdefgh+-OxPNBRQK=#";
+#endif
   bool fen_expected = false, fen_init = false;
 
   const int ML = 16;

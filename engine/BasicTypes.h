@@ -97,6 +97,8 @@ namespace nst
 
 #undef  DO_CHECK_IMMEDIATELY
 
+#undef DEBUG_NULLMOVE
+
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF
 #else
@@ -237,4 +239,3 @@ private:
 };
 
 #pragma pack (pop)
-
