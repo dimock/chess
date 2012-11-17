@@ -302,8 +302,8 @@ ScoreType Board::calculateEval() const
   score += (stage_coef * fmgr_.eval(Figure::ColorWhite, 0) + (256-stage_coef) * fmgr_.eval(Figure::ColorWhite, 1)) >> 8;
 
   // king's safety
-  score -= (stage_coef * evaluateKing(Figure::ColorBlack) + (256-stage_coef) * stage_coef * evalPawnsEndgame(Figure::ColorBlack)) >> 8;
-  score += (stage_coef * evaluateKing(Figure::ColorWhite) + (256-stage_coef) * stage_coef * evalPawnsEndgame(Figure::ColorWhite)) >> 8;
+  score -= (stage_coef * evaluateKing(Figure::ColorBlack) + (256-stage_coef) * evalPawnsEndgame(Figure::ColorBlack)) >> 8;
+  score += (stage_coef * evaluateKing(Figure::ColorWhite) + (256-stage_coef) * evalPawnsEndgame(Figure::ColorWhite)) >> 8;
 
   // fianchetto
   score += evaluateFianchetto();

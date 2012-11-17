@@ -4,6 +4,7 @@
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
+#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////
 ChecksGenerator::ChecksGenerator(const Move & hmove, Board & board, Figure::Type minimalType) :
@@ -63,6 +64,14 @@ int ChecksGenerator::generate()
       static int rook_positions[] = { 63, 7 };
       int & r_pos = rook_positions[board_.color_];
       const Field & rfield = board_.getField(r_pos);
+      if(rfield.type() != Figure::TypeRook)
+      {
+        char fen[256];
+        board_.toFEN(fen);
+
+        std::ofstream ofs("D:\\Projects\\git_proj\\temp\\crash.pgn");
+        Board::save(board_, ofs);
+      }
       THROW_IF( rfield.type() != Figure::TypeRook || rfield.color() != board_.color_, "no rook for castling, but castle is possible" );
       int r_pos_to = r_pos - 2;
       BitMask rk_mask = board_.g_betweenMasks->between(r_pos_to, oki_pos);
