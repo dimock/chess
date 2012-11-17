@@ -281,7 +281,7 @@ int ChecksGenerator::generate()
         {
           int from = clear_lsb(pw_from);
           if ( board_.is_something_between(from, to, inv_mask_all) )
-            break;
+            continue;
 
           add(m, from, to, Figure::TypeNone, false, false);
         }

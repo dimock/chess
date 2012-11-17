@@ -17,7 +17,7 @@ class EscapeGenerator;
 class ChecksGenerator;
 class ChecksGenerator2;
 
-#ifdef VERIFY_CHECKS_GENERATOR
+#if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) )
 class Player;
 #endif
 
@@ -32,7 +32,7 @@ class Board
   friend class ChecksGenerator;
   friend class ChecksGenerator2;
 
-#ifdef VERIFY_CHECKS_GENERATOR
+#if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) )
   friend class Player;
 #endif
 
@@ -240,6 +240,8 @@ public:
 
   /// is move meet rules
   bool validateMove(const Move & mv) const;
+  bool validateMove2(const Move & mv) const;
+  bool validateValidator(const Move & mv);
 
   /// make move
   void makeMove(const Move & );
@@ -353,9 +355,9 @@ public:
   bool underCheck() const { return (state_ & UnderCheck) != 0; }
 
   /// just a useful method to quickly check if there is a draw
-  static bool isDraw(uint8 state)
+  static bool isDraw(uint8 s)
   {
-    return (state & (Stalemat | DrawReps | DrawInsuf | Draw50Moves)) != 0;
+    return (s & (Stalemat | DrawReps | DrawInsuf | Draw50Moves)) != 0;
   }
 
   inline bool matState() const { return (state_ & ChessMat) != 0; }
@@ -581,6 +583,9 @@ private:
       return false;
 
     int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    if ( ((1ULL<<apos) & brq_mask) == 0 ) // no BRQ on this field
+      return false;
+
     const Field & afield = getField(apos);
     if ( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
       return false;

@@ -7,7 +7,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type minimalType) :
-  MovesGeneratorBase(board), hcap_(hcap)
+  MovesGeneratorBase(board), hcap_(hcap), minimalType_(minimalType)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();

@@ -384,18 +384,19 @@ int EscapeGenerator::generateUsual()
 
       if ( !board_.discoveredCheck(n, ocolor, mask_all | (1ULL << ch_pos), brq_mask & ~(1ULL << ch_pos), ki_pos) )
       {
-          if ( add(m, n, ch_pos, promotion ? Figure::TypeQueen : Figure::TypeNone, true) && promotion )
+          add(m, n, ch_pos, promotion ? Figure::TypeQueen : Figure::TypeNone, true);
+          if ( promotion )
           {
             // firstly decrease m because it was increased in add()
             Move & move = moves_[--m];
             // increase m before take move
             m++;
 
-            // add promotion to knight only if it gives check and we don't lost it immediately
+            // add promotion to knight only if it gives check
             Move nmove = move;
             nmove.new_type_ = Figure::TypeKnight;
 
-            if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(color)) && board_.see(nmove) >= 0 )
+            if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(ocolor)) )
               moves_[m++] = nmove;
           }
         }
@@ -473,7 +474,8 @@ int EscapeGenerator::generateUsual()
 
         bool promotion = *table > 55 || *table < 8;
 
-        if ( add(m, pw_pos, *table, promotion ? Figure::TypeQueen : Figure::TypeNone, false) && promotion )
+        add(m, pw_pos, *table, promotion ? Figure::TypeQueen : Figure::TypeNone, false);
+        if ( promotion )
         {
           Move & move = moves_[--m];
           moves_[++m] = move;
@@ -482,7 +484,7 @@ int EscapeGenerator::generateUsual()
           Move nmove = move;
           nmove.new_type_ = Figure::TypeKnight;
 
-          if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(color)) && board_.see(nmove) >= 0 )
+          if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(ocolor)) && board_.see(nmove) >= 0 )
             moves_[m++] = nmove;
         }
       }

@@ -450,16 +450,15 @@ private:
 #endif // USE_HASH_TABLE_CAPTURE
 
 #ifdef VERIFY_ESCAPE_GENERATOR
-  void verifyEscapeGen(int depth, int ply, ScoreType alpha, ScoreType betta);
+  void verifyEscapeGen();
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
-  void verifyChecksGenerator(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType);
-  void verifyChecksGenerator2(int depth, int ply, ScoreType alpha, ScoreType betta, Figure::Type minimalType);
+  void verifyChecksGenerator(Figure::Type minimalType);
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR
-  void verifyCapsGenerator(int ply, ScoreType alpha, ScoreType betta, int delta);
+  void verifyCapsGenerator();
 #endif
 
 #ifdef RECAPTURE_EXTENSION

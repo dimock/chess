@@ -607,17 +607,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef VERIFY_ESCAPE_GENERATOR
   if ( board_.underCheck() )
-    verifyEscapeGen(depth, ply, alpha, betta);
+    verifyEscapeGen();
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
   if ( !board_.underCheck() )
-    verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
+    verifyChecksGenerator(Figure::TypeKing);
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR
   if ( !board_.underCheck() )
-    verifyCapsGenerator(ply, alpha, betta, 0);
+    verifyCapsGenerator();
 #endif
 
   // first of all try null-move
@@ -1018,20 +1018,19 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 #ifdef VERIFY_CAPS_GENERATOR
   if ( !board_.underCheck() )
-    verifyCapsGenerator(ply, alpha, betta, delta);
+    verifyCapsGenerator();
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
   if ( !board_.underCheck() )
   {
-    verifyChecksGenerator(depth, ply, alpha, betta, Figure::TypeKing);
-    verifyChecksGenerator2(depth, ply, alpha, betta, Figure::TypeKing);
+    verifyChecksGenerator(delta2type(delta));
   }
 #endif
 
 #ifdef VERIFY_ESCAPE_GENERATOR
   if ( board_.underCheck() )
-    verifyEscapeGen(depth, ply, alpha, betta);
+    verifyEscapeGen();
 #endif
 
   int counter = 0;

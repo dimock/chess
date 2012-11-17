@@ -74,10 +74,16 @@ public:
     return numOfMoves_;
   }
 
-  const Move (&moves() const)[Board::MovesMax]
+  const Move & operator [] (int i) const
   {
-    return moves_;
+    THROW_IF( (unsigned)i >= (unsigned)numOfMoves_ || numOfMoves_ >= Board::MovesMax, "index of move is out of range" );
+    return moves_[i];
   }
+
+  //const Move (&moves() const)[Board::MovesMax]
+  //{
+  //  return moves_;
+  //}
 
   bool find(const Move & m) const;
   bool has_duplicates() const;
@@ -304,7 +310,7 @@ private:
   int generateUsual();
   int generateKingonly(int m);
 
-  bool add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
+  void add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
     Move & move = moves_[m];
     move.set(from, to, new_type, capture);
@@ -314,8 +320,6 @@ private:
       std::swap(move, moves_[0]);
 
     ++m;
-
-    return true;
   }
 
   int current_;

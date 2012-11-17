@@ -13,18 +13,6 @@ class FigureDir
 
 public:
 
-	//static inline int dir(Figure::Type type, Figure::Color color, const Pos8 & dp)
-	//{
-	//	THROW_IF( (unsigned)type > Figure::TypeKing || (unsigned)color > 1, "try to get invalid direction" );
-	//	return *(s_dirs_ + ((type<<9) | (color<<8) | dp.to_byte()));
-	//}
-
- // static inline int dir(Figure::Type type, Figure::Color color, uint8 u)
- // {
- //   THROW_IF( (unsigned)type > Figure::TypeKing || (unsigned)color > 1, "try to get invalid direction" );
- //   return *(s_dirs_ + ((type<<9) | (color<<8) | u));
- // }
-
   // from 'figure' with 'pos' to 'p'
   inline int dir(const Figure::Type type, const Figure::Color color, int pos, int p) const
 	{
