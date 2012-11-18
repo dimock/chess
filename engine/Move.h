@@ -92,11 +92,12 @@ struct Move
 
   inline void set(int from, int to, Figure::Type new_type, bool capture)
   {
+    clearFlags();
+
     from_ = from;
     to_ = to;
     new_type_ = new_type;
     vsort_ = 0;
-    flags_ = 0;
     capture_ = capture;
     checkVerified_ = false;
   }

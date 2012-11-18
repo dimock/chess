@@ -80,11 +80,6 @@ public:
     return moves_[i];
   }
 
-  //const Move (&moves() const)[Board::MovesMax]
-  //{
-  //  return moves_;
-  //}
-
   bool find(const Move & m) const;
   bool has_duplicates() const;
 
@@ -219,12 +214,83 @@ private:
   Move killer_;
 };
 
+/// generate all moves but captures and promotion to queen. could generate only promotion to knight if it checks
+/// couldn't be called under check !!!
+class UsualGenerator : public MovesGeneratorBase
+{
+public:
+
+  UsualGenerator(Board & );
+
+  /// returns number of moves found
+  int generate(const Move & killer);
+
+  Move & move()
+  {
+    for ( ;; )
+    {
+      Move * move = moves_ + numOfMoves_;
+      Move * mv = moves_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+        return *move;
+
+      move->alreadyDone_ = 1;
+      return *move;
+    }
+  }
+
+private:
+
+  inline void add(int & index, int8 from, int8 to, Figure::Type new_type, bool capture)
+  {
+    Move & move = moves_[index++];
+    move.set(from, to, new_type, capture);
+
+    calculateSortValue(move);
+  }
+
+  void calculateSortValue(Move & move)
+  {
+    const Field & ffield = board_.getField(move.from_);
+    THROW_IF( !ffield, "no figure on field we move from" );
+
+    //if ( move.new_type_ )
+    //{
+    //  move.vsort_ = Figure::figureWeight_[move.new_type_] + 5000000;
+    //  return;
+    //}
+    //else
+#ifdef USE_KILLER
+    if ( move == killer_ )
+    {
+      move.vsort_ = 3000000;
+      return;
+    }
+#endif
+
+    const History & hist = history(move.from_, move.to_);
+    move.vsort_ = hist.score_ + 10000;
+  }
+
+  Move killer_;
+};
+
 /// generate captures and promotions to queen only, don't detect checks
 class CapsGenerator : public MovesGeneratorBase
 {
 public:
 
+  CapsGenerator(Board & );
   CapsGenerator(const Move & hcap, Board & , Figure::Type minimalType);
+
+  int generate(const Move & hcap, Figure::Type minimalType);
 
   inline Move & capture()
   {
@@ -285,6 +351,32 @@ private:
   Move hcap_;
 };
 
+
+/// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves
+class FastGenerator
+{
+  FastGenerator(Board & board, const Move & hmove, const Move & killer);
+
+  Move & move();
+
+private:
+
+  enum GOrder
+  {
+    oHash, oStart, oCaps, oUsual, oWeak
+  } order_;
+
+  CapsGenerator cg_;
+  UsualGenerator ug_;
+
+  Move caps_[Board::MovesMax];
+  Move weak_[Board::MovesMax];
+
+  int numCaps_, numWeak_;
+
+  Move hmove_, killer_, fake_;
+  Board & board_;
+};
 
 /// generate all moves, that escape from check
 class EscapeGenerator : public MovesGeneratorBase

@@ -13,6 +13,23 @@ CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type mini
   moves_[numOfMoves_].clear();
 }
 
+CapsGenerator::CapsGenerator(Board & board) :
+  MovesGeneratorBase(board), minimalType_(Figure::TypeNone)
+{
+  hcap_.clear();
+}
+
+int CapsGenerator::generate(const Move & hcap, Figure::Type minimalType)
+{
+  hcap_ = hcap;
+  minimalType_ = minimalType;
+
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
+
+  return numOfMoves_;
+}
+
 int CapsGenerator::generate()
 {
   int m = 0;
