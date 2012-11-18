@@ -590,7 +590,7 @@ private:
       return false;
 
     const Field & afield = getField(apos);
-    THROW_IF( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen, "attacking figure isn't BRQ" );
+    THROW_IF( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen, "discoveredCheck() - attacking figure isn't BRQ" );
 
     int dir = g_figureDir->dir(afield.type(), afield.color(), apos, ki_pos);
     return dir >= 0;
@@ -606,9 +606,11 @@ private:
       return -1;
 
     int apos = ki_pos < from ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
-    const Field & afield = getField(apos);
-    if ( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
+    if ( ((1ULL<<apos) & brq_mask) == 0 ) // no BRQ on this field
       return -1;
+
+    const Field & afield = getField(apos);
+    THROW_IF( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen, "findDiscovered() - attacking figure isn't BRQ" )
 
     int dir = g_figureDir->dir(afield.type(), afield.color(), apos, ki_pos);
     if ( dir < 0 )
