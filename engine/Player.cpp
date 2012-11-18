@@ -469,7 +469,9 @@ void Player::processPosted(int t)
       Move mv = best_;
       if ( !mv )
         mv = before_;
+      uint8 captured = mv.capture_;
       mv.clearFlags();
+      mv.capture_ = captured;
 
       char str[64];
       if ( mv && pv_board_.validateMove(mv) && printSAN(pv_board_, mv, str) )
