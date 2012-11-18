@@ -18,7 +18,8 @@ Move & FastGenerator::move()
   if ( order_ == oHash )
   {
     order_ = oStart;
-    return hmove_;
+    if ( hmove_ )
+      return hmove_;
   }
 
   if ( order_ == oStart )
@@ -80,13 +81,8 @@ Move & FastGenerator::move()
     order_ = oWeak;
   }
 
-  if ( order_ == oWeak )
-  {
-    if ( numWeak_ <= 0 )
-      return fake_;
-
+  if ( order_ == oWeak && numWeak_ >= 0)
     return weak_[numWeak_--];
-  }
 
-  return weak_[0];
+  return fake_;
 }

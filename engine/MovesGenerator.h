@@ -261,12 +261,6 @@ private:
     const Field & ffield = board_.getField(move.from_);
     THROW_IF( !ffield, "no figure on field we move from" );
 
-    //if ( move.new_type_ )
-    //{
-    //  move.vsort_ = Figure::figureWeight_[move.new_type_] + 5000000;
-    //  return;
-    //}
-    //else
 #ifdef USE_KILLER
     if ( move == killer_ )
     {

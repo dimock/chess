@@ -461,6 +461,10 @@ private:
   void verifyCapsGenerator();
 #endif
 
+#ifdef VERIFY_FAST_GENERATOR
+  void verifyFastGenerator(const Move & hmove, const Move & killer);
+#endif
+
 #ifdef RECAPTURE_EXTENSION
   bool recapture(int ply, int depth, int initial_balance);
 #endif //RECAPTURE_EXTENSION

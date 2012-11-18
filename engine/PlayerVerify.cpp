@@ -438,3 +438,12 @@ void Player::verifyCapsGenerator()
   }
 }
 #endif
+
+
+#ifdef VERIFY_FAST_GENERATOR
+void Player::verifyFastGenerator(const Move & hmove, const Move & killer)
+{
+  MovesGenerator mg(board_, killer);
+  FastGenerator fg(board_, hmove, killer);
+}
+#endif
