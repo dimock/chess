@@ -34,7 +34,7 @@ int UsualGenerator::generate(const Move & killer)
       int y = Index(pw_pos).y();
       bool promotion = ((y == 1 && !color) || (y == 6 && color));
 
-      BitMask pw_caps = board_.g_movesTable->pawnCaps_o(color, pw_pos) * omask;
+      BitMask pw_caps = board_.g_movesTable->pawnCaps_o(color, pw_pos) & omask;
       if ( promotion && (pw_caps != 0) )
       {
         for ( ; pw_caps; )
@@ -89,7 +89,7 @@ int UsualGenerator::generate(const Move & killer)
 
       for ( ; kn_caps; )
       {
-        int to = clear_lsb(kn_mask);
+        int to = clear_lsb(kn_caps);
 
         const Field & field = board_.getField(to);
         THROW_IF( field, "try to generate capture" );

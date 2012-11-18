@@ -45,7 +45,10 @@ Move & FastGenerator::move()
     if ( numCaps_ > 0 )
       order_ = oCaps;
     else
+    {
+      ug_.generate(killer_);
       order_ = oUsual;
+    }
   }
 
   if ( order_ == oCaps )
@@ -81,8 +84,8 @@ Move & FastGenerator::move()
     order_ = oWeak;
   }
 
-  if ( order_ == oWeak && numWeak_ >= 0)
-    return weak_[numWeak_--];
+  if ( order_ == oWeak && numWeak_ > 0)
+    return weak_[--numWeak_];
 
   return fake_;
 }

@@ -731,6 +731,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
+    Move killer = contexts_[ply].killer_;
+
+#ifdef VERIFY_FAST_GENERATOR
+    verifyFastGenerator(hmoves[0], killer);
+#endif
+
     // first of all try moves, collected from hash
     for (Move * m = hmoves; !stop_ && alpha < betta && *m; ++m)
     {
@@ -753,7 +759,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       return alpha;
     }
 
-    MovesGenerator mg(board_);
+    MovesGenerator mg(board_, killer);
 
     for ( ; !stop_ && alpha < betta ; )
     {

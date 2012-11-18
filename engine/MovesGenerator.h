@@ -349,6 +349,7 @@ private:
 /// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves
 class FastGenerator
 {
+public:
   FastGenerator(Board & board, const Move & hmove, const Move & killer);
 
   Move & move();
