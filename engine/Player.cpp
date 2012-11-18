@@ -242,7 +242,9 @@ void Player::printPV(Board & pv_board, SearchResult & sres)
     *out_ << " ";
 
     Move pv = sres.pv_[i];
+    uint8 captured = pv.capture_;
     pv.clearFlags();
+    pv.capture_ = captured;
 
     if (!pv_board.possibleMove(pv) )
       break;
