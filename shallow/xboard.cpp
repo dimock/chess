@@ -46,7 +46,7 @@ xBoardMgr::xBoardMgr() :
     in_pipe_ = !GetConsoleMode(hinput_, &mode);
     if ( !in_pipe_ )
     {
-      SetConsoleMode(hinput_, mode & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
+      BOOL ok = SetConsoleMode(hinput_, mode & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
       FlushConsoleInputBuffer(hinput_);
     }
   }
@@ -76,7 +76,14 @@ bool xBoardMgr::peekInput()
   {
     DWORD num = 0;
     if ( GetNumberOfConsoleInputEvents(hinput_, &num) )
-      return num > 0;
+    {
+      if ( num == 0 )
+        return false;
+      INPUT_RECORD irecords[256];
+      DWORD nread = 0;
+      if ( PeekConsoleInput(hinput_, irecords, num, &nread) && nread > 0 && (irecords[0].EventType & KEY_EVENT) )
+        return true;
+    }
     return false;
   }
 }

@@ -4,7 +4,7 @@
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
-#include <fstream>
+//#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////
 ChecksGenerator::ChecksGenerator(const Move & hmove, Board & board, Figure::Type minimalType) :

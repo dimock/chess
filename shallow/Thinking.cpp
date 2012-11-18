@@ -226,7 +226,8 @@ bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
       board.makeMove(sres.best_);
       board.verifyState();
     }
-    sres.best_.clear();
+    else
+      sres.best_.clear();
   }
   thinking_ = false;
   player_.setGiveTimeCbk(0);
