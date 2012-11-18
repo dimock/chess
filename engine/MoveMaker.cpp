@@ -90,8 +90,12 @@ bool Board::possibleMove(const Move & move) const
   return true;
 }
 
+#ifdef VALIDATE_VALIDATOR
 // verify move by rules
 bool Board::validateMove2(const Move & move) const
+#else
+bool Board::validateMove(const Move & move) const
+#endif
 {
   if ( drawState() || matState() )
     return false;
@@ -145,21 +149,24 @@ bool Board::validateMove2(const Move & move) const
       if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
       {
         int ep_pos = enpassantPos();
-        BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
-        mask_all |= (1ULL << move.to_);
-        mask_all ^= (1ULL << move.from_);
-        mask_all &= ~(1ULL << ep_pos);
+        if ( ep_pos == checking_[0] )
+        {
+          BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
+          mask_all |= (1ULL << move.to_);
+          mask_all ^= (1ULL << move.from_);
+          mask_all &= ~(1ULL << ep_pos);
 
-        BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
+          BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
 
-        int ki_pos = kingPos(color_);
+          int ki_pos = kingPos(color_);
 
-        // through removed en-passant pawn's field
-        if ( discoveredCheck(ep_pos, ocolor, mask_all, brq_mask, ki_pos) )
-          return false;
+          // through removed en-passant pawn's field
+          if ( discoveredCheck(ep_pos, ocolor, mask_all, brq_mask, ki_pos) )
+            return false;
 
-        // through moved pawn's field
-        return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+          // through moved pawn's field
+          return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
+        }
       }
 
       // moving figure covers king
@@ -694,6 +701,9 @@ void Board::unmakeNullMove(MoveCmd & move)
 
 #endif
 
+
+#ifdef VALIDATE_VALIDATOR
+
 bool Board::validateMove(const Move & mv) const
 {
   bool ok = validateMove2(mv);
@@ -919,3 +929,5 @@ bool Board::validateValidator(const Move & mv)
 
   return true;
 }
+
+#endif

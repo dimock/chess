@@ -240,8 +240,11 @@ public:
 
   /// is move meet rules
   bool validateMove(const Move & mv) const;
+
+#ifdef VALIDATE_VALIDATOR
   bool validateMove2(const Move & mv) const;
   bool validateValidator(const Move & mv);
+#endif
 
   /// make move
   void makeMove(const Move & );
@@ -587,8 +590,7 @@ private:
       return false;
 
     const Field & afield = getField(apos);
-    if ( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
-      return false;
+    THROW_IF( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen, "attacking figure isn't BRQ" );
 
     int dir = g_figureDir->dir(afield.type(), afield.color(), apos, ki_pos);
     return dir >= 0;
