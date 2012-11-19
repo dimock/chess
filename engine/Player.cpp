@@ -737,6 +737,32 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
   else
   {
+#ifdef USE_FAST_GENERATOR
+
+    FastGenerator fg(board_, hmoves[0], killer);
+
+    for ( ; !stop_ && alpha < betta ; )
+    {
+      Move & move = fg.move();
+      if ( !move )
+        break;
+
+      checkForStop();
+
+      if ( stop_ )
+        break;
+
+      if ( movement(depth, ply, alpha, betta, move, counter, null_move) )
+      {
+        THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
+        return betta - 1;
+      }
+
+      if ( ply == 0 )
+        counter_ = counter;
+    }
+
+#else
     // first of all try moves, collected from hash
     for (Move * m = hmoves; !stop_ && alpha < betta && *m; ++m)
     {
@@ -784,6 +810,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( ply == 0 )
         counter_ = counter;
     }
+#endif
+
   }
 
   if ( stop_ )

@@ -94,11 +94,13 @@ namespace nst
 #undef VERIFY_ESCAPE_GENERATOR
 #undef VERIFY_CHECKS_GENERATOR
 #undef VERIFY_CAPS_GENERATOR
-#define VERIFY_FAST_GENERATOR
+#undef VERIFY_FAST_GENERATOR
 
-#define VALIDATE_VALIDATOR
+#undef VALIDATE_VALIDATOR
 
 #undef  DO_CHECK_IMMEDIATELY
+
+#define USE_FAST_GENERATOR
 
 #ifndef NDEBUG
   #define DEBUG_NULLMOVE
@@ -119,7 +121,7 @@ static const int MaxPly = 50;
 static const int LMR_PlyReduce = 2;
 static const int LMR_DepthLimit = 3;
 static const int LMR_MinDepthLimit = 5;
-static const int LMR_Counter = 3;
+static const int LMR_Counter = 1;
 static const int NullMove_PlyReduce = 4;
 static const int NullMove_DepthStart = 4;
 static const int NullMove_DepthMin = 1;
