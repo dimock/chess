@@ -79,10 +79,17 @@ bool xBoardMgr::peekInput()
     {
       if ( num == 0 )
         return false;
+
       INPUT_RECORD irecords[256];
       DWORD nread = 0;
-      if ( PeekConsoleInput(hinput_, irecords, num, &nread) && nread > 0 && (irecords[0].EventType & KEY_EVENT) )
-        return true;
+      if ( PeekConsoleInput(hinput_, irecords, num, &nread) )
+      {
+        for (DWORD i = 0; i < nread; ++i)
+        {
+          if ( irecords[i].EventType & KEY_EVENT )
+            return true;
+        }
+      }
     }
     return false;
   }
@@ -123,14 +130,15 @@ void xBoardMgr::write_error(const std::exception * e /*= 0*/)
     ofs_log_ << "exception: " << e->what() << endl;
   else
     ofs_log_ << "exception" << endl;
- 
+#endif
+
+#ifdef WRITE_ERROR_PGN 
   time_t curtime;
   time(&curtime);
   tm * t = localtime(&curtime);
-  char fen_fname[MAX_PATH];
-  strftime(fen_fname, MAX_PATH, "fen_%d-%m-%Y_%H-%M-%S.txt", t);
-  thk_.fen2file(fen_fname);
-//  thk_.hash2file("hash");
+  char pgn_fname[MAX_PATH];
+  strftime(pgn_fname, MAX_PATH, "fen_%d-%m-%Y_%H-%M-%S.pgn", t);
+  thk_.pgn2file(pgn_fname);
 #endif
 }
 

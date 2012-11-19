@@ -9,6 +9,7 @@
 #include <Windows.h>
 
 #undef WRITE_LOG_FILE_
+#define WRITE_ERROR_PGN
 
 class Thinking
 {
@@ -29,6 +30,7 @@ public:
 
 	void save();
   void fen2file(const char * fname);
+  void pgn2file(const char * fname);
   void hash2file(const char * fname);
   void toFEN(char * );
 

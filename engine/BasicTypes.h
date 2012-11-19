@@ -100,7 +100,11 @@ namespace nst
 
 #undef  DO_CHECK_IMMEDIATELY
 
-#undef DEBUG_NULLMOVE
+#ifndef NDEBUG
+  #define DEBUG_NULLMOVE
+#else
+  #undef DEBUG_NULLMOVE
+#endif
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF

@@ -16,11 +16,9 @@ using namespace std;
 
 void main_loop(xBoardMgr & xbrd)
 {
-#ifdef WRITE_LOG_FILE_
-#ifndef NDEBUG
+#if ( (defined WRITE_ERROR_PGN) && (defined _DEBUG) )
   __try
   {
-#endif
 #endif
 
     cout.setf(ios_base::unitbuf);
@@ -28,15 +26,12 @@ void main_loop(xBoardMgr & xbrd)
     for ( ; xbrd.do_cmd(); );
 
 
-#ifdef WRITE_LOG_FILE_
-    //  xbrd.get_log() << "   LMR-errors count = " << (int)Board::ticks_ << endl;
-#ifndef NDEBUG
+#if ( (defined WRITE_ERROR_PGN) && (defined _DEBUG) )
   }
-  __except ( TopLevelFilter(GetExceptionInformation()) )//catch ( const std::exception & e )
+  __except ( TopLevelFilter(GetExceptionInformation()) )
   {
     xbrd.write_error();
   }
-#endif
 #endif
 
 }
