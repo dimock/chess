@@ -1,5 +1,5 @@
 /*************************************************************
-  MovesGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+  UsualGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
  *************************************************************/
 
 #include "MovesGenerator.h"
@@ -10,11 +10,13 @@
 UsualGenerator::UsualGenerator(Board & board) :
   MovesGeneratorBase(board)
 {
+  hmove_.clear();
   killer_.clear();
 }
 
-int UsualGenerator::generate(const Move & killer)
+int UsualGenerator::generate(const Move & hmove, const Move & killer)
 {
+  hmove_  = hmove;
   killer_ = killer;
   numOfMoves_ = 0;
 
@@ -60,17 +62,12 @@ int UsualGenerator::generate(const Move & killer)
           if ( !(board_.g_movesTable->caps(Figure::TypeKnight, *table) & board_.fmgr_.king_mask(ocolor)) )
             continue;
 
-          Move move;
-          move.clear();
-          move.clearFlags();
-          move.from_ = pw_pos;
-          move.to_ = *table;
-          move.new_type_ = Figure::TypeKnight;
-
-          if ( board_.see(move) < 0 )
+          if ( !add(numOfMoves_, pw_pos, *table, Figure::TypeKnight, false) )
             continue;
 
-          moves_[numOfMoves_++] = move;
+          const Move & move = moves_[numOfMoves_-1];
+          if ( board_.see(move) < 0 )
+            numOfMoves_--;
         }
         else
           add(numOfMoves_, pw_pos, *table, promotion ? Figure::TypeKnight : Figure::TypeNone, false);

@@ -223,7 +223,7 @@ public:
   UsualGenerator(Board & );
 
   /// returns number of moves found
-  int generate(const Move & killer);
+  int generate(const Move & hmove, const Move & killer);
 
   Move & move()
   {
@@ -248,12 +248,17 @@ public:
 
 private:
 
-  inline void add(int & index, int8 from, int8 to, Figure::Type new_type, bool capture)
+  inline bool add(int & index, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
-    Move & move = moves_[index++];
+    Move & move = moves_[index];
     move.set(from, to, new_type, capture);
 
+    if ( move == hmove_ )
+      return false;
+
+    index++;
     calculateSortValue(move);
+    return true;
   }
 
   void calculateSortValue(Move & move)
@@ -273,7 +278,7 @@ private:
     move.vsort_ = hist.score_ + 10000;
   }
 
-  Move killer_;
+  Move hmove_, killer_;
 };
 
 /// generate captures and promotions to queen only, don't detect checks
@@ -345,40 +350,15 @@ private:
   Move hcap_;
 };
 
-
-/// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves
-class FastGenerator
-{
-public:
-  FastGenerator(Board & board, const Move & hmove, const Move & killer);
-
-  Move & move();
-
-private:
-
-  enum GOrder
-  {
-    oHash, oStart, oCaps, oUsual, oWeak
-  } order_;
-
-  CapsGenerator cg_;
-  UsualGenerator ug_;
-
-  Move caps_[Board::MovesMax];
-  Move weak_[Board::MovesMax];
-
-  int numCaps_, numWeak_;
-
-  Move hmove_, killer_, fake_;
-  Board & board_;
-};
-
 /// generate all moves, that escape from check
 class EscapeGenerator : public MovesGeneratorBase
 {
 public:
 
+  EscapeGenerator(Board &);
   EscapeGenerator(const Move & hmove, Board & );
+
+  int generate(const Move & hmove);
 
   Move & escape()
   {
@@ -411,6 +391,40 @@ private:
 
   int current_;
   Move hmove_;
+};
+
+/// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves
+/// generates all valid moves if under check
+class FastGenerator
+{
+public:
+  FastGenerator(Board & board, const Move & hmove, const Move & killer);
+
+  Move & move();
+
+  int count() const
+  {
+    return eg_.count();
+  }
+
+private:
+
+  enum GOrder
+  {
+    oHash, oEscapes, oGenCaps, oCaps, oGenUsual, oUsual, oWeak
+  } order_;
+
+  CapsGenerator cg_;
+  UsualGenerator ug_;
+  EscapeGenerator eg_;
+
+  Move caps_[Board::MovesMax];
+  Move weak_[Board::MovesMax];
+
+  int numCaps_, numWeak_;
+
+  Move hmove_, killer_, fake_;
+  Board & board_;
 };
 
 //////////////////////////////////////////////////////////////////////////

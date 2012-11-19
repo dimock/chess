@@ -443,9 +443,6 @@ void Player::verifyCapsGenerator()
 #ifdef VERIFY_FAST_GENERATOR
 void Player::verifyFastGenerator(const Move & hmove, const Move & killer)
 {
-  if ( board_.underCheck() )
-    return;
-
   MovesGenerator mg(board_, killer);
   FastGenerator fg(board_, hmove, killer);
 

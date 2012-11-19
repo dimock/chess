@@ -1,5 +1,5 @@
 /*************************************************************
-  MovesGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+  FastGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
  *************************************************************/
 
 #include "MovesGenerator.h"
@@ -8,21 +8,29 @@
 //////////////////////////////////////////////////////////////////////////
 
 FastGenerator::FastGenerator(Board & board, const Move & hmove, const Move & killer) :
-  cg_(board), ug_(board), hmove_(hmove), killer_(killer), order_(oHash), board_(board), numCaps_(0), numWeak_(0)
+  cg_(board), ug_(board), eg_(board), hmove_(hmove), killer_(killer), order_(oHash), board_(board), numCaps_(0), numWeak_(0)
 {
   fake_.clear();
+
+  if ( board_.underCheck() )
+    eg_.generate(hmove);
 }
 
 Move & FastGenerator::move()
 {
   if ( order_ == oHash )
   {
-    order_ = oStart;
+    order_ = board_.underCheck() ? oEscapes : oGenCaps;
     if ( hmove_ )
       return hmove_;
   }
 
-  if ( order_ == oStart )
+  if ( order_ == oEscapes )
+  {
+    return eg_.escape();
+  }
+
+  if ( order_ == oGenCaps )
   {
     cg_.generate(hmove_, Figure::TypePawn);
 
@@ -42,13 +50,7 @@ Move & FastGenerator::move()
     caps_[numCaps_].clear();
     weak_[numWeak_].clear();
 
-    if ( numCaps_ > 0 )
-      order_ = oCaps;
-    else
-    {
-      ug_.generate(killer_);
-      order_ = oUsual;
-    }
+    order_ = numCaps_ > 0 ? oCaps : oGenUsual;
   }
 
   if ( order_ == oCaps )
@@ -71,7 +73,12 @@ Move & FastGenerator::move()
       return *move;
     }
 
-    ug_.generate(killer_);
+    order_ = oGenUsual;
+  }
+
+  if ( order_ == oGenUsual )
+  {
+    ug_.generate(hmove_, killer_);
     order_ = oUsual;
   }
 
