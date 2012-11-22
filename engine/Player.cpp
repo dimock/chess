@@ -5,6 +5,8 @@
 
 #include "Player.h"
 #include "MovesGenerator.h"
+#include <fstream>
+#include <sstream>
 
 //////////////////////////////////////////////////////////////////////////
 inline Figure::Type delta2type(int delta)
@@ -855,6 +857,61 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
   if ( board_.makeMove(move) )
   {
+    {
+      bool identical = false;
+      static Move sequence[] = {
+        {(int8)31, (int8)55},
+        {(int8)62, (int8)55},
+        {(int8)13, (int8)29},
+        {(int8)46, (int8)38},
+        {(int8)29, (int8)31},
+        {(int8)38, (int8)31},
+        {(int8)27, (int8)3},
+        {(int8)55, (int8)47},
+        {(int8)3, (int8)11},
+        {(int8)47, (int8)55},
+        {(int8)11, (int8)38},
+        {(int8)36, (int8)46},
+        {(int8)38, (int8)39},
+        {(int8)55, (int8)62},
+        {(int8)39, (int8)47},
+        {(int8)31, (int8)22},
+        {(int8)47, (int8)54} };
+
+        if ( ply < 17 && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
+        {
+          for (int i = ply; i >= 0; --i)
+          {
+            identical = true;
+            int j = i-ply;
+            if ( j >= board_.halfmovesCount() )
+              break;
+            MoveCmd & mc = board_.getMoveRev(j);
+            if ( mc.from_ != sequence[i].from_ || mc.to_ != sequence[i].to_ )
+            {
+              identical = false;
+              break;
+            }
+          }
+        }
+
+        if ( identical )
+        {
+          std::stringstream sstm;
+          Board::save(board_, sstm, false);
+          std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
+          ofs << "PLY: " << ply << std::endl;
+          //std::istream_iterator<char> isi(sstm);
+          //std::istream_iterator<char> eos;
+          //std::ostream_iterator<char> osi(ofs);
+          //std::copy(isi, eos, osi);
+          std::string s = sstm.str();
+          ofs << s;
+          ofs << "depth_ = " << depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
+          ofs << "===================================================================" << std::endl << std::endl;
+        }
+    }
+
     MoveCmd & mv_cmd = board_.getMoveRev(0);
     mv_cmd.extended_ = false;
     History & hist = MovesGenerator::history(move.from_, move.to_);
