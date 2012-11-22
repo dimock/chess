@@ -897,6 +897,10 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
         if ( identical )
         {
+          if ( depth_ == 13 )
+          {
+            bool bb = false;
+          }
           std::stringstream sstm;
           Board::save(board_, sstm, false);
           std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
