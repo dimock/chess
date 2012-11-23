@@ -925,7 +925,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               depth > LMR_DepthLimit &&
               board_.canBeReduced(move) &&
               !move.threat_ &&
-               mv_cmd.castle_ &&
+              !mv_cmd.castle_ &&
               !haveCheck &&
               !check_esc &&
               !null_move &&
