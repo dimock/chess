@@ -38,7 +38,6 @@ class CapsGenerator;
 class MovesGenerator;
 class EscapeGenerator;
 class ChecksGenerator;
-class ChecksGenerator2;
 
 // implementation isn't perfect )) have to rewrite
 typedef void (* PLAYER_CALLBACK)();
@@ -130,7 +129,6 @@ class Player
   friend class MovesGenerator;
   friend class EscapeGenerator;
   friend class ChecksGenerator;
-  friend class ChecksGenerator2;
 
 
   // analyze move support
@@ -291,6 +289,9 @@ private:
 #ifdef USE_HASH_TABLE_GENERAL
   void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
+    if ( board_.repsCount() > 1 )
+      return;
+
     PackedMove pm = board_.pack(move);
     ghash_.push(hcode, score, depth, ply, board_.halfmovesCount()-1,
       color, score >= betta ? GeneralHashTable::Betta : GeneralHashTable::AlphaBetta, pm);
@@ -415,7 +416,8 @@ private:
         }
 
 #ifdef RETURN_IF_BETTA
-        if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) && hitem.move_ && hscore >= betta )
+        if ( (GeneralHashTable::Betta == hitem.flag_ || GeneralHashTable::AlphaBetta == hitem.flag_) &&
+              hmove && (hmove.capture_ || hmove.new_type_) && hscore >= betta )
         {
           THROW_IF( !stop_ && (betta < -32760 || betta > 32760), "invalid score" );
           return CapturesHashTable::Betta;
@@ -444,8 +446,11 @@ private:
 #ifdef USE_HASH_TABLE_CAPTURE
   void updateCaptureHash(int depth, int ply, const Move & move, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
-    PackedMove pm = board_.pack(move);
-    chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, depth, ply, pm);
+    if ( board_.repsCount() < 2 )
+    {
+      PackedMove pm = board_.pack(move);
+      chash_.push(hcode, score, color, score >= betta ? CapturesHashTable::Betta : CapturesHashTable::AlphaBetta, depth, ply, pm);
+    }
   }
 #endif // USE_HASH_TABLE_CAPTURE
 

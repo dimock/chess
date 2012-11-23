@@ -848,7 +848,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // we haven't found best move
 #ifdef USE_HASH_TABLE_GENERAL
-  if ( alpha == savedAlpha && !stop_ )
+  if ( alpha == savedAlpha && !stop_ && board_.repsCount() < 2 )
   {
     ghash_.push(board_.hashCode(), alpha, depth, ply, board_.halfmovesCount(), board_.getColor(), GeneralHashTable::Alpha, PackedMove());
   }
@@ -1129,14 +1129,18 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
         s += ply;
 
 #ifdef USE_HASH_TABLE_CAPTURE
-      CapturesHashTable::Flag flag;
-      if ( s <= saveAlpha )
-        flag = CapturesHashTable::Alpha;
-      else if ( s >= betta )
-        flag = CapturesHashTable::Betta;
-      else
-        flag = CapturesHashTable::AlphaBetta;
-      chash_.push(board_.hashCode(), s, board_.getColor(), flag, depth, ply, PackedMove());
+
+      if ( board_.repsCount() < 2 )
+      {
+        CapturesHashTable::Flag flag;
+        if ( s <= saveAlpha )
+          flag = CapturesHashTable::Alpha;
+        else if ( s >= betta )
+          flag = CapturesHashTable::Betta;
+        else
+          flag = CapturesHashTable::AlphaBetta;
+        chash_.push(board_.hashCode(), s, board_.getColor(), flag, depth, ply, PackedMove());
+      }
 #endif
 
       THROW_IF( !stop_ && (s < -32760 || s > 32760), "invalid score" );
@@ -1196,7 +1200,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
 
 #ifdef USE_HASH_TABLE_CAPTURE
-  if ( alpha == saveAlpha && !stop_ )
+  if ( alpha == saveAlpha && !stop_ && board_.repsCount() < 2 )
   {
     chash_.push(board_.hashCode(), alpha, board_.getColor(), CapturesHashTable::Alpha, depth, ply, PackedMove());
   }

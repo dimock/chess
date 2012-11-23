@@ -169,7 +169,9 @@ public:
       //bool overwrite = (int)(hitem.halfmovesCount_+hitem.depth_) < halfmovesCount+depth-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
 
       //if ( !overwrite )
-        return;
+      if ( s < hitem.score_ )
+        hitem.score_ = s;
+      return;
     }
 
     THROW_IF(s > 32760, "wrong value to hash");
@@ -228,7 +230,11 @@ public:
     CaptureHItem & hitem = operator [] (hcode);
 
     if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
+    {
+      if ( s < hitem.score_ )
+        hitem.score_ = s;
       return;
+    }
 
     if ( hitem.hcode_ != hcode )
       hitem.eval_ = -std::numeric_limits<ScoreType>::max();
