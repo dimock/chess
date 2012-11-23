@@ -1385,7 +1385,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
 #ifdef USE_THREAT_MOVE
     // threat move, if we have one
     Move htmove;
-    if ( board_.unpack(hitem.tmove_, htmove) && !find_move(moves, num, htmove) )
+    if ( board_.unpack(hitem.tmove_, htmove) && !find_move(moves, num, htmove) && board_.possibleMove(htmove) )
     {
       htmove.threat_ = 1;
       moves[num++] = htmove;
@@ -1470,7 +1470,7 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
 bool Player::isRealThreat(const Move & move)
 {
   // don't need to forbid if our answer is capture or check ???
-  if ( move.capture_ >= 0 || move.checkFlag_ )
+  if ( move.capture_ || move.checkFlag_ )
     return false;
 
   const MoveCmd & prev = board_.getMoveRev(0);
@@ -1558,10 +1558,10 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
 #ifdef EXTEND_PASSED_PAWN
    if ( board_.pawnPassed(move) )
    {
-     Move next;
-     int rdepth = 0;
-     int score_see = board_.see(initial_balance, next, rdepth);
-     if ( score_see >= 0 )
+     //Move next;
+     //int rdepth = 0;
+     //int score_see = board_.see(initial_balance, next, rdepth);
+     //if ( score_see >= 0 )
        return 1;
    }
 #endif
