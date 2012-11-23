@@ -290,6 +290,10 @@ ScoreType Board::evaluate() const
 ScoreType Board::calculateEval() const
 {
   ScoreType score = fmgr_.weight();
+  score -= fmgr_.eval(Figure::ColorBlack, 0);
+  score += fmgr_.eval(Figure::ColorWhite, 0);
+
+  return score;
 
   static const ScoreType fweight_max = Figure::figureWeight_[Figure::TypeQueen] + 2*Figure::figureWeight_[Figure::TypeRook] + 2*Figure::figureWeight_[Figure::TypeBishop] + 2*Figure::figureWeight_[Figure::TypeKnight];
 
