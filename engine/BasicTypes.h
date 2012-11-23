@@ -21,9 +21,6 @@
   #define ONE_SIZE_T 1
 #endif
 
-#undef DONT_USE_EXTS_
-#undef USE_EXTRA_QUIS_
-
 #ifndef NDEBUG
   #define THROW_IF(v, msg) if ( v ) throw std::runtime_error(msg); else;
 #else
@@ -70,7 +67,7 @@ namespace nst
 #define USE_DELTA_PRUNING_
 #define USE_HASH_TABLE_GENERAL
 #undef USE_HASH_MOVE_EX
-#define USE_THREAT_MOVE
+#undef USE_THREAT_MOVE
 #define USE_HASH_TABLE_ADV
 #define USE_HASH_TABLE_CAPTURE
 #define RETURN_IF_ALPHA_BETTA_CAPTURES

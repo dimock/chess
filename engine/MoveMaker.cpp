@@ -656,6 +656,7 @@ void Board::makeNullMove(MoveCmd & )
 
   color_ = Figure::otherColor(color_);
   fmgr_.hashColor();
+  move.zcode_ = hashCode();
 }
 
 void Board::unmakeNullMove(MoveCmd & )

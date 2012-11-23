@@ -345,27 +345,17 @@ private:
 
           if ( !retBetta )
           {
-            totalNodes_++;
-            nodesCount_++;
-
-            if ( board_.validateMove(hmove) )
+            int reps = board_.repsCount();
+            for (int i = 1; reps < 2 && i < board_.halfmovesCount()-1; i += 2)
             {
-              board_.makeMove(hmove);
-              checking = board_.underCheck();
-              retBetta = (board_.drawState() && betta <= 0) || board_.repsCount() < 2;
+              const MoveCmd & mv = board_.getMoveRev(-i);
+              if ( mv.irreversible_ )
+                break;
 
-#ifndef NDEBUG
-              board_.verifyMasks();
-#endif
-
-              board_.unmakeMove();
+              if ( mv.from_ == hmove.to_ && mv.to_ == hmove.from_ )
+                reps++;
             }
-
-            THROW_IF( board0 != board_, "board unmake wasn't correctly applied" );
-
-#ifndef NDEBUG
-            board_.verifyMasks();
-#endif
+            retBetta = reps < 2;
           }
 
           if ( retBetta )

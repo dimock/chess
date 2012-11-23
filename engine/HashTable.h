@@ -160,17 +160,13 @@ public:
     Figure::Color color, Flag flag, const PackedMove & move)
   {
     GeneralHItem & hitem = (*this)[hcode];
-    //if ( depth < hitem.depth_ || (Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_)) )
 
 	  if ( (depth < (int)hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
 		     (depth == (int)hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
     {
-      //// we are going to skip this item, check is it to old so we could overwrite it
-      //bool overwrite = (int)(hitem.halfmovesCount_+hitem.depth_) < halfmovesCount+depth-HalfnodesCountToOverwrite && hitem.hcode_ != hcode;
+      //if ( s < hitem.score_ && hitem.hcode_ == hcode )
+      //  hitem.score_ = s;
 
-      //if ( !overwrite )
-      if ( s < hitem.score_ )
-        hitem.score_ = s;
       return;
     }
 
@@ -231,8 +227,9 @@ public:
 
     if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
     {
-      if ( s < hitem.score_ )
+      if ( s < hitem.score_ && hitem.hcode_ == hcode )
         hitem.score_ = s;
+
       return;
     }
 
