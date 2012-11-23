@@ -206,6 +206,9 @@ k2r3q/2p4p/ppn2b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1
 6b1/2K5/4bk2/2N2b2/8/1Q6/B7/5R2 w - - 0 1 
 6k1/1Q6/8/6n1/4B2r/3P4/K7/8 b - - 0 1 
 
+see test. black pawn deiscovers check?
+3rn2q/ppkn3p/3p3b/4p3/8/PP1N2B1/2P1R1BP/K3Q3 w - - 0 1 
+
 see test with check:
 8/3r4/8/8/4n1k1/8/1K1B4/5N2 b - - 0 1 
 8/3r4/8/8/4n1k1/8/1K6/5N2 b - - 0 1 
@@ -214,6 +217,7 @@ see test with check:
 8/8/1K2k3/8/1N1P4/8/8/8 w - - 0 1 
 
 recapture tests:
+1k1r3q/1pp4p/pn3b2/4p3/1P6/P1PN2P1/1K2R1BP/4Q3 w - - 0 1 : Nxe5 is bad
 k2rn2q/ppp4p/5b1b/4p3/1B6/PP1N2P1/2P1R1BP/K3Q3 w - - 0 1 
 k2rn2q/pppn3p/7b/4p3/1B6/PP1N2P1/2P1R1BP/K3Q3 w - - 0 1 
 k2rn2q/pppn3p/7b/4p3/8/PP1N2P1/2P1R1BP/K3Q1N1 w - - 0 1 

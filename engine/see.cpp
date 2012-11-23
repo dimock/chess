@@ -16,12 +16,11 @@ int Board::see(const Move & move) const
 
   int score_gain = 0;
 
-  // victim >= attacker
   if ( tfield.type() )
   {
-    score_gain = Figure::figureWeightSEE_[tfield.type()] - Figure::figureWeightSEE_[ffield.type()];
-    if ( score_gain >= 0 )
-      return score_gain;
+    // victim >= attacker
+    if ( Figure::figureWeightSEE_[tfield.type()] >= Figure::figureWeightSEE_[ffield.type()] )
+      return Figure::figureWeightSEE_[tfield.type()] - Figure::figureWeightSEE_[ffield.type()];
   }
   // en-passant
   else if ( !tfield && ffield.type() == Figure::TypePawn && move.to_ == en_passant_ )
