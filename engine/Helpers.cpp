@@ -456,8 +456,10 @@ bool printSAN(Board & board, const Move & move, char * str)
 
     if ( m == move )
     {
+      board.makeMove(move);
       board.verifyState();
       state = board.getState();
+      board.unmakeMove();
       found = true;
     }
 
