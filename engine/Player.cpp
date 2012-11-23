@@ -859,24 +859,43 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
   {
     {
       bool identical = false;
+      //static Move sequence[] = {
+      //  {(int8)31, (int8)55},
+      //  {(int8)62, (int8)55},
+      //  {(int8)13, (int8)29},
+      //  {(int8)46, (int8)38},
+      //  {(int8)29, (int8)31},
+      //  {(int8)38, (int8)31},
+      //  {(int8)27, (int8)3},
+      //  {(int8)55, (int8)47},
+      //  {(int8)3, (int8)11},
+      //  {(int8)47, (int8)55},
+      //  {(int8)11, (int8)38},
+      //  {(int8)36, (int8)46},
+      //  {(int8)38, (int8)39},
+      //  {(int8)55, (int8)62},
+      //  {(int8)39, (int8)47},
+      //  {(int8)31, (int8)22},
+      //  {(int8)47, (int8)54} };
+
       static Move sequence[] = {
         {(int8)31, (int8)55},
         {(int8)62, (int8)55},
         {(int8)13, (int8)29},
+        {(int8)36, (int8)21},
+        {(int8)14, (int8)21},
         {(int8)46, (int8)38},
         {(int8)29, (int8)31},
         {(int8)38, (int8)31},
-        {(int8)27, (int8)3},
-        {(int8)55, (int8)47},
-        {(int8)3, (int8)11},
-        {(int8)47, (int8)55},
-        {(int8)11, (int8)38},
-        {(int8)36, (int8)46},
-        {(int8)38, (int8)39},
+        {(int8)28, (int8)36},
+        {(int8)49, (int8)40}/*,
+        {(int8)7, (int8)6},
         {(int8)55, (int8)62},
-        {(int8)39, (int8)47},
-        {(int8)31, (int8)22},
-        {(int8)47, (int8)54} };
+        {(int8)27, (int8)31},
+        {(int8)21, (int8)39},
+        {(int8)31, (int8)39},
+        {(int8)43, (int8)36},
+        {(int8)39, (int8)63}*/ };
 
         if ( ply < 17 && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
         {
@@ -897,7 +916,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 
         if ( identical )
         {
-          if ( depth_ == 13 )
+          if ( depth_ == 13 && ply == 9 )
           {
             bool bb = false;
           }
