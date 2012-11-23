@@ -659,7 +659,7 @@ bool Board::load(Board & board, std::istream & is)
   return true;
 }
 
-bool Board::save(const Board & board, std::ostream & os)
+bool Board::save(const Board & board, std::ostream & os, bool write_prefix)
 {
   const char * sres = "*";
   if ( board.matState() )
@@ -683,16 +683,19 @@ bool Board::save(const Board & board, std::ostream & os)
   while ( sboard.halfmovesCount() > 0 )
     sboard.unmakeMove();
 
-  char fen[FENsize];
-  if ( sboard.toFEN(fen) && strcmp(fen, stdFEN_) != 0 )
+  if ( write_prefix )
   {
-    os << "[SetUp \"1\"] " << std::endl;
-    os << "[FEN \"" << fen << "\"]" << std::endl;
-  }
+    char fen[FENsize];
+    if ( sboard.toFEN(fen) && strcmp(fen, stdFEN_) != 0 )
+    {
+      os << "[SetUp \"1\"] " << std::endl;
+      os << "[FEN \"" << fen << "\"]" << std::endl;
+    }
 
-  os << "[Result \"";
-  os << sres;
-  os << "\"]" << std::endl;
+    os << "[Result \"";
+    os << sres;
+    os << "\"]" << std::endl;
+  }
 
   for (int i = 0; i < num; ++i)
   {

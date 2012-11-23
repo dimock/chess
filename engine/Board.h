@@ -51,7 +51,7 @@ public:
   Board();
 
   static bool load(Board & , std::istream &);
-  static bool save(const Board & , std::ostream &);
+  static bool save(const Board & , std::ostream &, bool = true);
 
   // only for debugging purposes, saves complete board memory dump
   void save(const char * fname) const;
