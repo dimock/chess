@@ -29,10 +29,18 @@ inline Figure::Type delta2type(int delta)
 
 inline int nullMove_depth(int depth)
 {
-  int depth1 = depth - NullMove_PlyReduce;
-  depth >>= 1;
-  if ( depth > depth1 )
-    depth = depth1;
+  if ( depth < 6 )
+    depth -= 2;
+  else if ( depth < 8 )
+    depth -= 3;
+  else if ( depth < 12 )
+    depth -= 4;
+  else
+    depth -= 6;
+  //int depth1 = depth - NullMove_PlyReduce;
+  //depth >>= 1;
+  //if ( depth > depth1 )
+  //  depth = depth1;
 
   if ( depth < NullMove_DepthMin )
     depth = NullMove_DepthMin;
@@ -627,17 +635,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   // first of all try null-move
 #ifdef USE_NULL_MOVE
   if ( !null_move 
-#ifndef MAT_THREAT_EXTENSION
-    && betta == alpha+1
-#endif
+//#ifndef MAT_THREAT_EXTENSION
+//    && betta == alpha+1
+//#endif
     )
   {
     ScoreType nullScore = nullMove(depth, ply, alpha, betta);
 
     if ( nullScore >= betta
-#ifdef MAT_THREAT_EXTENSION
-      && betta == alpha+1
-#endif
+//#ifdef MAT_THREAT_EXTENSION
+//      && betta == alpha+1
+//#endif
       )
     {
       if ( board_.shortNullMoveReduction() )
@@ -656,9 +664,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       if ( depth < NullMove_DepthMin )
         depth = NullMove_DepthMin;
     }
-    // mat threat extension
 #ifdef MAT_THREAT_EXTENSION
-    else if ( betta > alpha+1 && ply > 1 && contexts_[ply].ext_data_.mat_threats_found_ > 1 &&
+    else if ( /*betta > alpha+1 && ply > 1 &&*/ contexts_[ply].ext_data_.mat_threats_found_ > 0 &&
               contexts_[ply].ext_data_.mat_threat_count_ < MatThreatExtension_Limit )
     {
       contexts_[ply].ext_data_.mat_threat_count_++;
