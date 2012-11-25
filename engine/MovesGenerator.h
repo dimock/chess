@@ -85,7 +85,7 @@ public:
 
 protected:
 
-  void sortValueOfCap(Move & move)
+  inline void sortValueOfCap(Move & move)
   {
     const Field & fto = board_.getField(move.to_);
     const Field & ffrom = board_.getField(move.from_);
@@ -103,13 +103,21 @@ protected:
       vtype = Figure::TypePawn;
     }
 
-    THROW_IF( !vtype, "no captured figure" );
+    // capture, prefer stronger opponent's figure
+    if ( vtype != Figure::TypeNone )
+    {
+      Figure::Type atype = ffrom.type();
+      move.vsort_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + (Figure::figureWeight_[vtype] >> 2);
+    }
 
-    Figure::Type atype = ffrom.type();
-    move.vsort_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype];
+    // pawn promotion
+    if ( move.new_type_ > Figure::TypeNone && move.new_type_ < Figure::TypeKing )
+    {
+      move.vsort_ += Figure::figureWeight_[move.new_type_];
+    }
 
-    // we prefer to eat last moved figure at first
-    if ( board_.halfmovesCount() > 1 )
+    // at first we try to eat recently moved opponent's figure
+    if ( move.capture_ && board_.halfmovesCount() > 1 )
     {
       MoveCmd & prev = board_.getMoveRev(-1);
       if ( prev.to_ == move.to_ )
@@ -188,15 +196,10 @@ private:
     const Field & ffield = board_.getField(move.from_);
     THROW_IF( !ffield, "no figure on field we move from" );
 
-    if ( move.capture_ )
+    if ( move.capture_ || move.new_type_ )
     {
       sortValueOfCap(move);
       move.vsort_ += 10000000;
-      return;
-    }
-    else if ( move.new_type_ )
-    {
-      move.vsort_ = Figure::figureWeight_[move.new_type_] + 5000000;
       return;
     }
 #ifdef USE_KILLER
@@ -261,7 +264,7 @@ private:
     return true;
   }
 
-  void calculateSortValue(Move & move)
+  inline void calculateSortValue(Move & move)
   {
     const Field & ffield = board_.getField(move.from_);
     THROW_IF( !ffield, "no figure on field we move from" );
@@ -333,15 +336,8 @@ private:
     if ( move == hcap_ )
       return;
 
-    if ( capture )
-    {
-      sortValueOfCap(move);
-      move.vsort_ += 1000000;
-    }
-    else if ( move.new_type_ > 0 )
-    {
-      move.vsort_ = 500000;
-    }
+    sortValueOfCap(move);
+    move.vsort_ += 10000; // to prevent negative values
     m++;
  }
 
@@ -476,14 +472,10 @@ private:
 
     move.discoveredCheck_ = discovered;
 
-    if ( move.capture_ )
+    if ( move.capture_ || move.new_type_ )
     {
       sortValueOfCap(move);
       move.vsort_ += 10000000;
-    }
-    else if ( move.new_type_ )
-    {
-      move.vsort_ = Figure::figureWeight_[move.new_type_] + 5000000;
     }
     else
     {

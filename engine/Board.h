@@ -551,12 +551,7 @@ private:
     if ( !mask_from )
       return -1;
 
-    int index = -1;
-    if ( from < to ) // use LSB
-      index = find_lsb(mask_from);
-    else // MSB
-      index = find_msb(mask_from);
-
+    int index = from < to ?  find_lsb(mask_from) : find_msb(mask_from);
     return index;
   }
 
