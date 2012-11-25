@@ -9,7 +9,7 @@
 
 History MovesGeneratorBase::history_[64][64];
 
-unsigned History::history_max_;
+//unsigned History::history_max_;
 
 
 void MovesGeneratorBase::clear_history()
@@ -17,20 +17,20 @@ void MovesGeneratorBase::clear_history()
   for (int i = 0; i < 64; ++i)
     for (int j = 0; j < 64; ++j)
       history_[i][j].clear();
-  History::history_max_ = 0;
+  //History::history_max_ = 0;
 }
 
 void MovesGeneratorBase::normalize_history(int n)
 {
-  History::history_max_ = 0;
+//  History::history_max_ = 0;
   for (int i = 0; i < 64; ++i)
   {
     for (int j = 0; j < 64; ++j)
     {
       History & hist = history_[i][j];
       hist.normalize(n);
-      if ( hist.score_ > History::history_max_ )
-        History::history_max_ = hist.score_;
+      //if ( hist.score_ > History::history_max_ )
+      //  History::history_max_ = hist.score_;
     }
   }
 }
@@ -278,7 +278,7 @@ void MovesGeneratorBase::save_history(const char * fname)
   if ( !f )
     return;
   
-  fwrite(&History::history_max_, sizeof(History::history_max_), 1, f);
+//  fwrite(&History::history_max_, sizeof(History::history_max_), 1, f);
   fwrite((char*)history_, sizeof(History), 64*64, f);
 
   fclose(f);
@@ -290,7 +290,7 @@ void MovesGeneratorBase::load_history(const char * fname)
   if ( !f )
     return;
 
-  fread(&History::history_max_, sizeof(History::history_max_), 1, f);
+  //fread(&History::history_max_, sizeof(History::history_max_), 1, f);
   fread((char*)history_, sizeof(History), 64*64, f);
 
   fclose(f);

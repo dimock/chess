@@ -24,6 +24,7 @@ struct History
 
   unsigned score() const
   {
+    //return score_;//((unsigned long long)score_ * good_count_) / (bad_count_ + good_count_ + 1);//
     return mul_div(score_, good_count_, bad_count_);
   }
 
@@ -34,9 +35,38 @@ struct History
     bad_count_ >>= n;
   }
 
+  unsigned good() const
+  {
+    return good_count_;
+  }
+
+  unsigned bad() const
+  {
+    return bad_count_;
+  }
+
+  void inc_good()
+  {
+    good_count_++;
+  }
+
+  void inc_bad()
+  {
+    bad_count_++;
+  }
+
+  void inc_score(int ds)
+  {
+    score_ += ds;
+    //if ( score_ > history_max_ )
+    //  history_max_ = score_;
+  }
+
+protected:
+
   unsigned score_;
   unsigned good_count_, bad_count_;
-  static unsigned history_max_;
+  //static unsigned history_max_;
 };
 
 
@@ -211,7 +241,7 @@ private:
 #endif
 
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = hist.score_ + 10000;
+    move.vsort_ = hist.score() + 10000;
   }
 
   Move killer_;
@@ -278,7 +308,7 @@ private:
 #endif
 
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = hist.score_ + 10000;
+    move.vsort_ = hist.score() + 10000;
   }
 
   Move hmove_, killer_;
@@ -352,41 +382,127 @@ class EscapeGenerator : public MovesGeneratorBase
 public:
 
   EscapeGenerator(Board &);
-  EscapeGenerator(const Move & hmove, Board & );
+  EscapeGenerator(const Move & hmove, const Move & killer, Board & );
 
   int generate(const Move & hmove);
 
-  Move & escape()
+  // count() is valid only before 1st call of escape() !!!
+  int count() const
   {
-    return moves_[current_++];
+    return numOfMoves_ + takeHash_;
   }
 
-  const Move & operator [] (int i) const
+  bool find(const Move & m) const
   {
-    return moves_[i];
+    if ( m && m == hmove_ )
+      return true;
+
+    return MovesGeneratorBase::find(m); 
+  }
+
+  inline Move & escape()
+  {
+    if ( takeHash_ )
+    {
+      takeHash_ = 0;
+
+      if ( hmove_ )
+        return hmove_;
+    }
+
+    for ( ;; )
+    {
+      Move * move = moves_ + numOfMoves_;
+      Move * mv = moves_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+        return *move;
+
+      move->alreadyDone_ = 1;
+      return *move;
+    }
   }
 
 private:
+
+  inline void sortValue(Move & move)
+  {
+    const Field & fto = board_.getField(move.to_);
+    const Field & ffrom = board_.getField(move.from_);
+
+    Figure::Type vtype = fto.type();
+    Figure::Type atype = ffrom.type();
+
+    THROW_IF(vtype != Figure::TypeNone && fto.color() != Figure::otherColor(board_.color_), "invalid color of captured figure");
+
+    // en-passant case
+    if ( vtype == Figure::TypeNone && move.to_ == board_.en_passant_ && ffrom.type() == Figure::TypePawn )
+    {
+      THROW_IF( board_.getField(board_.enpassantPos()).type() != Figure::TypePawn ||
+        board_.getField(board_.enpassantPos()).color() == board_.color_, "no en-passant pawn" );
+
+      vtype = Figure::TypePawn;
+    }
+
+    // capture
+    if ( vtype != Figure::TypeNone )
+    {
+      move.vsort_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + 1000;
+    }
+
+    // pawn promotion
+    if ( move.new_type_ > Figure::TypeNone && move.new_type_ < Figure::TypeKing )
+      move.vsort_ += Figure::figureWeight_[move.new_type_];
+
+    // at first we try to eat checking figure by weaker one
+    if ( board_.checking_[0] == move.to_ || (board_.checkingNum_ > 1 && board_.checking_[1] == move.to_) )
+      move.vsort_ += 1000 - Figure::figureWeight_[atype];
+  }
 
   /// returns number of moves found
   int generate();
   int generateUsual();
   int generateKingonly(int m);
 
-  void add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
+  inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
     Move & move = moves_[m];
     move.set(from, to, new_type, capture);
     move.checkVerified_ = 1;
 
-    if ( move == hmove_ && m > 0 )
-      std::swap(move, moves_[0]);
+    if ( move == hmove_ )
+    {
+      takeHash_ = 1;
+      return;
+    }
+
+    if ( capture || move.new_type_ )
+    {
+      sortValue(move);
+      move.vsort_ += 10000000;
+    }
+    //else if ( move == killer_ )
+    //{
+    //  move.vsort_ = 3000000;
+    //}
+    else
+    {
+      const History & hist = history(move.from_, move.to_);
+      move.vsort_ = hist.score();
+    }
 
     ++m;
   }
 
   int current_;
-  Move hmove_;
+  Move hmove_, killer_;
+  int takeHash_;
 };
 
 /// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves
@@ -480,7 +596,7 @@ private:
     else
     {
       const History & hist = history(move.from_, move.to_);
-      move.vsort_ = hist.score_;
+      move.vsort_ = hist.score();
     }
 
     m++;

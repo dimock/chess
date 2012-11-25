@@ -445,7 +445,7 @@ private:
 #endif // USE_HASH_TABLE_CAPTURE
 
 #ifdef VERIFY_ESCAPE_GENERATOR
-  void verifyEscapeGen();
+  void verifyEscapeGen(const Move & hmove, const Move & killer);
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR

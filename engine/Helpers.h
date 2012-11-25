@@ -266,7 +266,7 @@ inline int log2(int n)
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
   unsigned long long r = (unsigned long long)v * n;
-  r >>= log2(d);
+  r >>= log2(d+n);
   unsigned x = *((unsigned*)&r);
   return x;
 }

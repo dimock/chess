@@ -7,13 +7,14 @@
 
 //////////////////////////////////////////////////////////////////////////
 EscapeGenerator::EscapeGenerator(Board & board) :
-  MovesGeneratorBase(board), current_(0)
+  MovesGeneratorBase(board), current_(0), takeHash_(0)
 {
   hmove_.clear();
+  killer_.clear();
 }
 
-EscapeGenerator::EscapeGenerator(const Move & hmove, Board & board) :
-  MovesGeneratorBase(board), hmove_(hmove), current_(0)
+EscapeGenerator::EscapeGenerator(const Move & hmove, const Move & killer, Board & board) :
+  MovesGeneratorBase(board), hmove_(hmove), killer_(killer), current_(0), takeHash_(0)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
@@ -108,7 +109,7 @@ int EscapeGenerator::generateUsual()
         mask_all |= 1ULL << board_.en_passant_;
 
         if ( !board_.discoveredCheck(n, ocolor, mask_all, brq_mask, ki_pos) &&
-          !board_.discoveredCheck(ep_pos, ocolor, mask_all_ep, brq_mask, ki_pos) )
+             !board_.discoveredCheck(ep_pos, ocolor, mask_all_ep, brq_mask, ki_pos) )
         {
           add(m, n, board_.en_passant_, Figure::TypeNone, true);
         }
@@ -134,17 +135,8 @@ int EscapeGenerator::generateUsual()
         add(m, n, ch_pos, promotion ? Figure::TypeQueen : Figure::TypeNone, true);
         if ( promotion )
         {
-          // firstly decrease m because it was increased in add()
-          Move & move = moves_[--m];
-          // increase m before take move
-          m++;
-
-          // add promotion to knight only if it gives check
-          Move nmove = move;
-          nmove.new_type_ = Figure::TypeKnight;
-
           if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(ocolor)) )
-            moves_[m++] = nmove;
+            add(m, n, ch_pos, Figure::TypeKnight, true);
         }
       }
     }
@@ -224,15 +216,12 @@ int EscapeGenerator::generateUsual()
         add(m, pw_pos, *table, promotion ? Figure::TypeQueen : Figure::TypeNone, false);
         if ( promotion )
         {
-          Move & move = moves_[--m];
-          moves_[++m] = move;
-
           // add promotion to knight only if it gives check and we don't lost it immediately
-          Move nmove = move;
-          nmove.new_type_ = Figure::TypeKnight;
+          Move nmove;
+          nmove.set(pw_pos, *table, Figure::TypeKnight, false);
 
           if ( (board_.g_movesTable->caps(Figure::TypeKnight, ch_pos) & board_.fmgr_.king_mask(ocolor)) && board_.see(nmove) >= 0 )
-            moves_[m++] = nmove;
+            add(m, pw_pos, *table, Figure::TypeKnight, false);
         }
       }
     }
@@ -305,33 +294,31 @@ int EscapeGenerator::generateKingonly(int m)
   Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
 
-  int king_pos = board_.kingPos(color);
-  const int8 * table = board_.g_movesTable->king(king_pos);
+  int from = board_.kingPos(color);
 
-  for (; *table >= 0; ++table)
+  const BitMask & mask = board_.fmgr_.mask(color);
+  const BitMask & o_mask = board_.fmgr_.mask(ocolor);
+
+  // captures
+  BitMask ki_mask = board_.g_movesTable->caps(Figure::TypeKing, from) & o_mask;
+  for ( ; ki_mask; )
   {
-    const Field & field = board_.getField(*table);
-    bool capture = false;
-    if ( field )
-    {
-      if ( field.color() == color )
-        continue;
+    int to = clear_lsb(ki_mask);
 
-      capture = true;
-    }
+    THROW_IF( !board_.getField(to) || board_.getField(to).color() == color, "escape generator: try to put king to occupied field" );
+    if ( !board_.isAttacked(ocolor, to, from) )
+      add(m, from, to, Figure::TypeNone, true);
+  }
 
-    Move & move = moves_[m];
-    move.set(king_pos, *table, Figure::TypeNone, capture);
-    if ( board_.isAttacked(ocolor, move.to_, move.from_) )
-      continue;
+  // other moves
+  ki_mask = board_.g_movesTable->caps(Figure::TypeKing, from) & ~(mask | o_mask);
+  for ( ; ki_mask; )
+  {
+    int to = clear_lsb(ki_mask);
 
-    if ( move == hmove_ && m > 0 )
-      std::swap(move, moves_[0]);
-    else if ( moves_[0] != hmove_ && move.capture_ )
-      std::swap(move, moves_[0]);
-
-    move.checkVerified_ = 1;
-    m++;
+    THROW_IF( board_.getField(to), "escape generator: try to put king to occupied field" );
+    if ( !board_.isAttacked(ocolor, to, from) )
+      add(m, from, to, Figure::TypeNone, false);
   }
 
   return m;

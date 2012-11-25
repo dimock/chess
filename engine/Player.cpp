@@ -617,11 +617,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       contexts_[ply].ext_data_.copy_counters(contexts_[ply-1].ext_data_);
   }
 
-#ifdef VERIFY_ESCAPE_GENERATOR
-  if ( board_.underCheck() )
-    verifyEscapeGen();
-#endif
-
 #ifdef VERIFY_CHECKS_GENERATOR
   if ( !board_.underCheck() )
     verifyChecksGenerator(Figure::TypeKing);
@@ -718,9 +713,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   verifyFastGenerator(hmoves[0], killer);
 #endif
 
+#ifdef VERIFY_ESCAPE_GENERATOR
+  if ( board_.underCheck() )
+    verifyEscapeGen(hmoves[0], killer);
+#endif
+
   if ( board_.underCheck() )
   {
-    EscapeGenerator eg(hmoves[0], board_);
+    EscapeGenerator eg(hmoves[0], killer, board_);
 
     // additional check extension
     depth += extend_check(depth, ply, eg, alpha, betta);
@@ -938,7 +938,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
               !null_move &&
               !mv_cmd.extended_ &&
               alpha > -Figure::WeightMat+MaxPly &&
-              ((hist.good_count_<<4) <= hist.bad_count_) )
+              ((hist.good()<<4) <= hist.bad()) )
         {
           R = LMR_PlyReduce;
           mv_cmd.reduced_ = true;
@@ -979,11 +979,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 #endif
 
         if ( !move.capture_ && !move.new_type_ )
-        {
-          hist.score_ ++;
-          if ( hist.score_ > History::history_max_ )
-            History::history_max_ = hist.score_;
-        }
+          hist.inc_score(depth);
 
         if ( 0 == ply )
         {
@@ -1006,9 +1002,9 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
       if ( !move.capture_ && !move.new_type_ )
       {
         if ( alpha >= betta )
-          hist.good_count_++;
+          hist.inc_good();
         else
-          hist.bad_count_++;
+          hist.inc_bad();
       }
     }
   }
@@ -1073,11 +1069,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
 #endif
 
-#ifdef VERIFY_ESCAPE_GENERATOR
-  if ( board_.underCheck() )
-    verifyEscapeGen();
-#endif
-
   int counter = 0;
   ScoreType saveAlpha = alpha;
 
@@ -1099,10 +1090,21 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   hcap.clear();
 #endif //USE_HASH_TABLE_CAPTURE
 
+#ifdef VERIFY_ESCAPE_GENERATOR
+  if ( board_.underCheck() )
+  {
+    Move killer;
+    killer.clear();
+    verifyEscapeGen(hcap, killer);
+  }
+#endif
+
   if ( board_.underCheck() )
   {
 #ifdef USE_HASH_TABLE_CAPTURE
-    EscapeGenerator eg(hcap, board_);
+    Move killer;
+    killer.clear();
+    EscapeGenerator eg(hcap, killer, board_);
 #else
     EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
 #endif
@@ -1272,19 +1274,15 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 #endif
 
       if ( !cap.capture_ && !cap.new_type_ )
-      {
-        hist.score_++;
-        if ( hist.score_ > History::history_max_ )
-          History::history_max_ = hist.score_;
-      }
+        hist.inc_score(depth);
     }
 
     if ( !cap.capture_ && !cap.new_type_ )
     {
       if ( alpha >= betta )
-        hist.good_count_++;
+        hist.inc_good();
       else
-        hist.bad_count_++;
+        hist.inc_bad();
     }
 
   }
@@ -1578,7 +1576,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
 #endif
 
 #ifdef RECAPTURE_EXTENSION
-  if ( alpha < Figure::figureWeight_[Figure::TypeKnight] && recapture(ply, depth, initial_balance) )
+  if ( alpha < Figure::figureWeight_[Figure::TypeRook] && recapture(ply, depth, initial_balance) )
       return 1;
 #endif
 

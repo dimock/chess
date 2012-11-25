@@ -51,16 +51,12 @@ void Player::loadHash(const char * fname)
 }
 //////////////////////////////////////////////////////////////////////////
 #ifdef VERIFY_ESCAPE_GENERATOR
-void Player::verifyEscapeGen()
+void Player::verifyEscapeGen(const Move & hmove, const Move & killer)
 {
   if ( !board_.underCheck() )
     return;
 
-  Move hmove;
-  Move killer;
-  hmove.clear();
-  killer.clear();
-  EscapeGenerator eg(hmove, board_);
+  EscapeGenerator eg(hmove, killer, board_);
   MovesGenerator mg(board_, killer);
   THROW_IF( mg.has_duplicates(), "move generator generates some move twice" );
   THROW_IF( eg.has_duplicates(), "escape generator generates some move twice" );
@@ -107,7 +103,7 @@ void Player::verifyEscapeGen()
     {
       char fen[256];
       board_.toFEN(fen);
-      EscapeGenerator eg1(hmove, board_);
+      EscapeGenerator eg1(hmove, killer, board_);
       {
         if ( move.new_type_ && move.new_type_ != Figure::TypeQueen )
         {
