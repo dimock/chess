@@ -329,7 +329,7 @@ void Player::verifyChecksGenerator(Figure::Type minimalType)
 void Player::verifyCapsGenerator()
 {
 
-  Figure::Type minimalType = Figure::TypePawn;
+  const Figure::Type minimalType = Figure::TypePawn;
 
   Move hmove, killer;
   hmove.clear();
