@@ -199,8 +199,8 @@ int CapsGenerator::generate()
     }
   }
 
-  // 3. Bishops + Rooks
-  for (int type = Figure::TypeBishop; type < Figure::TypeQueen; ++type)
+  // 3. Bishops + Rooks + Queens
+  for (int type = Figure::TypeBishop; type <= Figure::TypeQueen; ++type)
   {
     BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, board_.color_);
     for ( ; fg_mask; )
@@ -210,59 +210,17 @@ int CapsGenerator::generate()
       BitMask f_caps = board_.g_movesTable->caps((Figure::Type)type, from) & oppenent_mask;
       for ( ; f_caps; )
       {
-        int8 to = clear_lsb(f_caps);
-
-        const Field & field = board_.getField(to);
-        THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
-
-        THROW_IF( field.type() < minimalType_, "try to capture figure " );
-
-        // can't go here
-        const BitMask & btw_msk = board_.g_betweenMasks->between(from, to);
-        if ( (btw_msk & mask_all_inv) == btw_msk )
-          add(m, from, to, Figure::TypeNone, true);
-
-        nst::dirs d = board_.g_figureDir->dir(from, to);
-        const BitMask & from_msk  =board_.g_betweenMasks->from_dir(to, d);
-        f_caps &= ~from_msk;
-      }
-    }
-  }
-
-  // 4. Queens
-  {
-    BitMask q_mask = board_.fmgr().queen_mask(board_.color_);
-    for ( ; q_mask; )
-    {
-      int from = clear_lsb(q_mask);
-
-      BitMask f_caps = board_.g_movesTable->caps(Figure::TypeQueen, from) & oppenent_mask;
-      for ( ; f_caps; )
-      {
         int8 to = find_lsb(f_caps);
         int pos = board_.find_first_index(from, to, mask_all);
         if ( (1ULL << pos) & oppenent_mask )
           add(m, from, pos, Figure::TypeNone, true);
 
         f_caps &= ~board_.g_betweenMasks->from(from, to);
-
-
-        //const Field & field = board_.getField(to);
-        //THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
-
-        //THROW_IF( field.type() < minimalType_, "try to capture figure " );
-
-        //// can't go here
-        //const BitMask & btw_msk = board_.g_betweenMasks->between(fg_pos, to);
-        //if ( (btw_msk & mask_all_inv) != btw_msk )
-        //  continue;
-
-        //add(m, fg_pos, to, Figure::TypeNone, true);
       }
     }
   }
 
-  // 5. King
+  // 4. King
   {
     BitMask ki_mask = board_.fmgr().king_mask(board_.color_);
 
