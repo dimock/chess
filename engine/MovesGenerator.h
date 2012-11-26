@@ -286,7 +286,7 @@ private:
     Move & move = moves_[index];
     move.set(from, to, new_type, capture);
 
-    if ( move == hmove_ )
+    if ( move == hmove_ || move == killer_ )
       return false;
 
     index++;
@@ -296,19 +296,9 @@ private:
 
   inline void calculateSortValue(Move & move)
   {
-    const Field & ffield = board_.getField(move.from_);
-    THROW_IF( !ffield, "no figure on field we move from" );
-
-#ifdef USE_KILLER
-    if ( move == killer_ )
-    {
-      move.vsort_ = 3000000;
-      return;
-    }
-#endif
-
+    THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = hist.score() + 10000;
+    move.vsort_ = hist.score();
   }
 
   Move hmove_, killer_;
@@ -523,7 +513,7 @@ private:
 
   enum GOrder
   {
-    oHash, oEscapes, oGenCaps, oCaps, oGenUsual, oUsual, oWeak
+    oHash, oEscapes, oGenCaps, oCaps, oKiller, oGenUsual, oUsual, oWeak
   } order_;
 
   CapsGenerator cg_;

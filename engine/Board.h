@@ -78,6 +78,23 @@ public:
   /*! movements
    */
 
+  bool extractKiller(const Move & ki, const Move & hmove, Move & killer) const
+  {
+    if ( !ki || 
+        (getField(ki.to_) ||
+        (en_passant_ == ki.to_ && getField(ki.from_).type() == Figure::TypePawn) ||
+        ki.new_type_) ||
+        (hmove == ki) )
+    {
+      return false;
+    }
+
+    killer = ki;
+    killer.clearFlags();
+
+    return possibleMove(killer);
+  }
+
   /// unpack from hash, move have to be physically possible
   bool unpack(const PackedMove & pm, Move & move) const
   {

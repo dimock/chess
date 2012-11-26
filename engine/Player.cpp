@@ -378,7 +378,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
 	    sres.plyMax_ = plyMax_;
       sres.dt_ = dt;
 
-      if ( before_ != best_ && before_ )
+      if ( before_ != best_ && before_ && !before_.capture_ && !before_.new_type_ )
         contexts_[0].killer_ = before_;
       else
         contexts_[0].killer_.clear();
@@ -707,7 +707,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   else
     hmoves[0].clear();
 
-  Move killer = contexts_[ply].killer_;
+  Move killer;
+  if ( !board_.extractKiller(contexts_[ply].killer_, hmoves[0], killer) )
+    killer.clear();
 
 #ifdef VERIFY_FAST_GENERATOR
   verifyFastGenerator(hmoves[0], killer);
@@ -989,8 +991,11 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         }
 
 #ifdef USE_KILLER
-        Move & killer = contexts_[ply].killer_;
-        killer = move;
+        if ( !move.capture_ && !move.new_type_ )
+        {
+          Move & killer = contexts_[ply].killer_;
+          killer = move;
+        }
 #endif
       }
 #if ((defined USE_HASH_TABLE_GENERAL) && (defined USE_THREAT_MOVE))

@@ -13,14 +13,17 @@ FastGenerator::FastGenerator(Board & board, const Move & hmove, const Move & kil
   fake_.clear();
 
   if ( board_.underCheck() )
+  {
+    order_ = oEscapes;
     eg_.generate(hmove);
+  }
 }
 
 Move & FastGenerator::move()
 {
   if ( order_ == oHash )
   {
-    order_ = board_.underCheck() ? oEscapes : oGenCaps;
+    order_ = oGenCaps;
     if ( hmove_ )
       return hmove_;
   }
@@ -50,7 +53,7 @@ Move & FastGenerator::move()
     caps_[numCaps_].clear();
     weak_[numWeak_].clear();
 
-    order_ = numCaps_ > 0 ? oCaps : oGenUsual;
+    order_ = numCaps_ > 0 ? oCaps : oKiller;
   }
 
   if ( order_ == oCaps )
@@ -73,7 +76,14 @@ Move & FastGenerator::move()
       return *move;
     }
 
+    order_ = oKiller;
+  }
+
+  if ( order_ == oKiller )
+  {
     order_ = oGenUsual;
+    if ( killer_ )
+      return killer_;
   }
 
   if ( order_ == oGenUsual )
@@ -91,8 +101,26 @@ Move & FastGenerator::move()
     order_ = oWeak;
   }
 
-  if ( order_ == oWeak && numWeak_ > 0)
-    return weak_[--numWeak_];
+  if ( order_ == oWeak )
+  {
+    for ( ;; )
+    {
+      Move * move = weak_ + numWeak_;
+      Move * mv = weak_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+        break;
+
+      move->alreadyDone_ = 1;
+      return *move;
+    }
+  }
 
   return fake_;
 }
