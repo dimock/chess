@@ -755,35 +755,35 @@ void Board::verifyMasks() const
       if ( !field || field.color() != color )
         continue;
 
-      all_mask |= 1ULL << p;
+      all_mask |= set_mask_bit(p);
 
       switch ( field.type() )
       {
       case Figure::TypePawn:
         {
-          pawn_mask_t |= 1ULL << Index(p).transp();
-          pawn_mask_o |= 1ULL << p;
+          pawn_mask_t |= set_mask_bit(Index(p).transp());
+          pawn_mask_o |= set_mask_bit(p);
         }
         break;
 
       case Figure::TypeKnight:
-        knight_mask |= 1ULL << p;
+        knight_mask |= set_mask_bit(p);
         break;
 
       case Figure::TypeBishop:
-        bishop_mask |= 1ULL << p;
+        bishop_mask |= set_mask_bit(p);
         break;
 
       case Figure::TypeRook:
-        rook_mask |= 1ULL << p;
+        rook_mask |= set_mask_bit(p);
         break;
 
       case Figure::TypeQueen:
-        queen_mask |= 1ULL << p;
+        queen_mask |= set_mask_bit(p);
         break;
 
       case Figure::TypeKing:
-        king_mask |= 1ULL << p;
+        king_mask |= set_mask_bit(p);
         break;
       }
     }

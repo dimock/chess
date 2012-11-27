@@ -20,6 +20,16 @@ inline int pop_count(uint64 n)
   return (int)n;
 }
 
+inline BitMask set_mask_bit(int bit)
+{
+  return 1ULL << bit;
+}
+
+inline int set_bit(int bit)
+{
+  return 1 << bit;
+}
+
 /*
 GCC asm version
 inline int find_lsb(const BitMask & mask)
@@ -229,7 +239,7 @@ inline int clear_msb(uint64 & mask)
 #endif
     _BitScanReverse64(&n, mask);
   THROW_IF( !b, "no bit found in nonzero number" );
-  mask ^= 1ULL << n;
+  mask ^= set_mask_bit(n);
   return n;
 }
 

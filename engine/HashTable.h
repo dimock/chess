@@ -97,13 +97,13 @@ public:
 
     THROW_IF((unsigned)size > 24, "hash table size if too large");
 
-    buffer_ = new ITEM[ONE_SIZE_T<<size_];
-    szMask_ = (ONE_SIZE_T<<size_) - 1;
+    buffer_ = new ITEM[((size_t)1) << size_];
+    szMask_ = (((size_t)1) << size_) - 1;
   }
 
   int size() const
   {
-    return (ONE_SIZE_T<<size_) - 1;
+    return (((size_t)1) << size_) - 1;
   }
 
   ITEM & operator [] (const uint64 & code)
@@ -120,8 +120,8 @@ public:
     if ( fread(&size_, sizeof(size_), 1, f) == 1 && size_ > 0 && size_ <= 24 )
     {
       delete [] buffer_;
-      buffer_ = new ITEM[ONE_SIZE_T<<size_];
-      szMask_ = (ONE_SIZE_T<<size_) - 1;
+      buffer_ = new ITEM[((size_t)1) << size_];
+      szMask_ = (((size_t)1) << size_) - 1;
       n = (int)fread(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);

@@ -33,10 +33,10 @@ MovesTable::MovesTable()
       int pp = x | (y << 3);
 
       // fill ordinary promotion mask
-      s_pawnPromotions_o_[color] |= 1ULL << pp;
+      s_pawnPromotions_o_[color] |= set_mask_bit(pp);
 
       // fill transposed promotion mask
-      s_pawnPromotions_t_[color] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
+      s_pawnPromotions_t_[color] |= set_mask_bit(FiguresCounter::s_transposeIndex_[pp]);
     }
   }
 }
@@ -103,8 +103,8 @@ void MovesTable::initPawns(int pos)
       if ( s_tablePawn_[color][pos][i] >= 0 )
       {
         int8 & pp = s_tablePawn_[color][pos][i];
-        s_pawnsCaps_o_[color][pos] |= 1ULL << pp;
-        s_pawnsCaps_t_[color][pos] |= 1ULL << FiguresCounter::s_transposeIndex_[pp];
+        s_pawnsCaps_o_[color][pos] |= set_mask_bit(pp);
+        s_pawnsCaps_t_[color][pos] |= set_mask_bit(FiguresCounter::s_transposeIndex_[pp]);
       }
     }
 
@@ -112,7 +112,7 @@ void MovesTable::initPawns(int pos)
     int8 * ptable  = s_tablePawn_[color][pos] + 2;
     for ( ; *ptable >= 0; ++ptable)
     {
-      s_pawnsMoves_[color][pos] |= 1ULL << *ptable;
+      s_pawnsMoves_[color][pos] |= set_mask_bit(*ptable);
     }
 
     // fill 'from' mask
@@ -146,7 +146,7 @@ void MovesTable::initPawns(int pos)
         if ( y_from[i] >= 0 )
         {
           int index = p.x() | (y_from[i] << 3);
-          s_pawnsFrom_[color][pos] |= 1ULL << index;
+          s_pawnsFrom_[color][pos] |= set_mask_bit(index);
         }
       }
     }
@@ -170,7 +170,7 @@ void MovesTable::initKnights(int pos)
 
   // fill captures masks
   for (int i = 0; i < 8 && s_tableKnight_[pos][i] >= 0; ++i)
-    s_otherCaps_[Figure::TypeKnight][pos] |= 1ULL << s_tableKnight_[pos][i];
+    s_otherCaps_[Figure::TypeKnight][pos] |= set_mask_bit(s_tableKnight_[pos][i]);
 }
 
 void MovesTable::initKings(int pos)
@@ -190,7 +190,7 @@ void MovesTable::initKings(int pos)
 
   // fill captures masks
   for (int i = 0; i < 8 && s_tableKing_[pos][i] >= 0; ++i)
-    s_otherCaps_[Figure::TypeKing][pos] |= 1ULL << s_tableKing_[pos][i];
+    s_otherCaps_[Figure::TypeKing][pos] |= set_mask_bit(s_tableKing_[pos][i]);
 }
 
 void MovesTable::initBishops(int pos)
@@ -206,7 +206,7 @@ void MovesTable::initBishops(int pos)
     for (FPos q = p + d; q; ++n, q += d)
     {
       // fill captures mask
-      s_otherCaps_[Figure::TypeBishop][pos] |= 1ULL << q.index();
+      s_otherCaps_[Figure::TypeBishop][pos] |= set_mask_bit(q.index());
     }
 
     if ( !n )
@@ -215,7 +215,7 @@ void MovesTable::initBishops(int pos)
     s_tableOther_[Figure::TypeBishop-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
 
     int poffset = (p + d).index();
-    s_bishopMob_[pos] |= 1ULL << poffset;
+    s_bishopMob_[pos] |= set_mask_bit(poffset);
   }
 }
 
@@ -232,7 +232,7 @@ void MovesTable::initRooks(int pos)
     for (FPos q = p + d; q; ++n, q += d)
     {
       // fill captures masks
-      s_otherCaps_[Figure::TypeRook][pos] |= 1ULL << q.index();
+      s_otherCaps_[Figure::TypeRook][pos] |= set_mask_bit(q.index());
     }
     
     if ( !n )
@@ -241,7 +241,7 @@ void MovesTable::initRooks(int pos)
     s_tableOther_[Figure::TypeRook-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
 
     int poffset = (p + d).index();
-    s_rookMob_[pos] |= 1ULL << poffset;
+    s_rookMob_[pos] |= set_mask_bit(poffset);
   }
 }
 
@@ -258,7 +258,7 @@ void MovesTable::initQueens(int pos)
     for (FPos q = p + d; q; ++n, q += d)
     {
       // fill captures masks
-      s_otherCaps_[Figure::TypeQueen][pos] |= 1ULL << q.index();
+      s_otherCaps_[Figure::TypeQueen][pos] |= set_mask_bit(q.index());
     }
 
     if ( !n )

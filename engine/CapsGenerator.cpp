@@ -56,9 +56,9 @@ int CapsGenerator::generate()
     return m;
   }
 
-  const BitMask exclude_mask = 0xffffffffffff00;//72057594037927680;
+  const BitMask exclude_pp_mask = 0xffffffffffff00;//72057594037927680; // all but promotion lines
   BitMask oppenent_mask = board_.fmgr_.mask(ocolor) ^ board_.fmgr_.king_mask(ocolor);
-  BitMask oppenent_mask_p = oppenent_mask;
+  BitMask oppenent_mask_p = oppenent_mask; // for pawns
 
   if ( minimalType_ > Figure::TypePawn)
   {
@@ -68,17 +68,17 @@ int CapsGenerator::generate()
   if ( minimalType_ > Figure::TypeKnight )
   {
     oppenent_mask ^= board_.fmgr_.knight_mask(ocolor);
-    oppenent_mask_p ^= board_.fmgr_.knight_mask(ocolor) & exclude_mask;
+    oppenent_mask_p ^= board_.fmgr_.knight_mask(ocolor) & exclude_pp_mask; // allow captures on pawn promotion
   }
   if ( minimalType_ > Figure::TypeBishop )
   {
     oppenent_mask ^= board_.fmgr_.bishop_mask(ocolor);
-    oppenent_mask_p ^= board_.fmgr_.bishop_mask(ocolor) & exclude_mask;
+    oppenent_mask_p ^= board_.fmgr_.bishop_mask(ocolor) & exclude_pp_mask;
   }
   if ( minimalType_ > Figure::TypeRook )
   {
     oppenent_mask ^= board_.fmgr_.rook_mask(ocolor);
-    oppenent_mask_p ^= board_.fmgr_.rook_mask(ocolor) & exclude_mask;
+    oppenent_mask_p ^= board_.fmgr_.rook_mask(ocolor) & exclude_pp_mask;
   }
 
   const BitMask & black = board_.fmgr_.mask(Figure::ColorBlack);
@@ -116,7 +116,7 @@ int CapsGenerator::generate()
     }
   }
 
-  // firstly check if have at least 1 attacking pawn
+  // firstly check if we have at least 1 attacking pawn
   bool pawns_eat = false;
 
   BitMask pawn_eat_msk = 0;
@@ -128,7 +128,7 @@ int CapsGenerator::generate()
   pawns_eat = (pawn_eat_msk & oppenent_mask_p) != 0;
 
   if ( !pawns_eat && board_.en_passant_ >= 0 && (minimalType_ <= Figure::TypePawn) )
-    pawns_eat = (pawn_eat_msk & (1ULL << board_.en_passant_)) != 0;
+    pawns_eat = (pawn_eat_msk & set_mask_bit(board_.en_passant_)) != 0;
 
   // generate captures
 
@@ -212,7 +212,7 @@ int CapsGenerator::generate()
       {
         int8 to = find_lsb(f_caps);
         int pos = board_.find_first_index(from, to, mask_all);
-        if ( (1ULL << pos) & oppenent_mask )
+        if ( set_mask_bit(pos) & oppenent_mask )
           add(m, from, pos, Figure::TypeNone, true);
 
         f_caps &= ~board_.g_betweenMasks->from(from, to);

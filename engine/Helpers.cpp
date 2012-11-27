@@ -52,9 +52,9 @@ PawnMasks::PawnMasks()
       if ( y > 0 && y < 7 )
       {
         if ( x < 7 )
-          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x+1) << 3));
+          pmasks_guarded_[color][i] |= set_mask_bit((y+dy) | ((x+1) << 3));
         if ( x > 0 )
-          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x-1) << 3));
+          pmasks_guarded_[color][i] |= set_mask_bit((y+dy) | ((x-1) << 3));
       }
 
       uint8 pm = 0;
@@ -62,10 +62,10 @@ PawnMasks::PawnMasks()
       if ( color )
       {
         for (int j = y+1; j < 7; ++j)
-          pm |= 1 << j;
+          pm |= set_bit(j);
 
         if ( y < 6 )
-          bm = (1<<y) | (1<<(y+1));
+          bm = set_bit(y) | set_bit(y+1);
       }
       else
       {
@@ -73,7 +73,7 @@ PawnMasks::PawnMasks()
           pm |= 1 << j;
 
         if ( y > 1 )
-          bm = (1<<y) | (1<<(y-1));
+          bm = set_bit(y) | set_bit(y-1);
       }
 
       uint8 * ppmask = (uint8*)&pmasks_passed_[color][i];
@@ -100,7 +100,7 @@ PawnMasks::PawnMasks()
           for (int l = x0; l <= x1; ++l)
           {
             int kp = l | (j<<3);
-            kpk_mask |= 1ULL << kp;
+            kpk_mask |= set_mask_bit(kp);
           }
         }
       }
@@ -111,7 +111,7 @@ PawnMasks::PawnMasks()
           for (int l = x0; l <= x1; ++l)
           {
             int kp = l | (j<<3);
-            kpk_mask |= 1ULL << kp;
+            kpk_mask |= set_mask_bit(kp);
           }
         }
       }
@@ -127,20 +127,20 @@ PawnMasks::PawnMasks()
 
 	  if ( x > 0 )
 	  {
-		  bkmask[x-1] |= 1 << y;
+		  bkmask[x-1] |= set_bit(y);
 		  if ( y > 0 )
-			  bkmask[x-1] |= 1 << (y-1);
+			  bkmask[x-1] |= set_bit(y-1);
 		  if ( y < 7 )
-			  bkmask[x-1] |= 1 << (y+1);
+			  bkmask[x-1] |= set_bit(y+1);
 	  }
 
 	  if ( x < 7 )
 	  {
-		  bkmask[x+1] |= 1 << y;
+		  bkmask[x+1] |= set_bit(y);
 		  if ( y > 0 )
-			  bkmask[x+1] |= 1 << (y-1);
+			  bkmask[x+1] |= set_bit(y-1);
 		  if ( y < 7 )
-			  bkmask[x+1] |= 1 << (y+1);
+			  bkmask[x+1] |= set_bit(y+1);
 	  }
   }
 
@@ -212,14 +212,14 @@ BetweenMask::BetweenMask(DeltaPosCounter * deltaPoscounter)
         FPos q = FPosIndexer::get(j);
 
         for ( ; p && p != q; p += dp)
-          s_between_[i][j] |= 1ULL << p.index();
+          s_between_[i][j] |= set_mask_bit(p.index());
       }
 
       {
         FPos p = FPosIndexer::get(i) + dp;
 
         for ( ; p; p += dp)
-          s_from_[i][j] |= 1ULL << p.index();
+          s_from_[i][j] |= set_mask_bit(p.index());
       }
     }
 
@@ -265,7 +265,7 @@ BetweenMask::BetweenMask(DeltaPosCounter * deltaPoscounter)
 
       FPos p = FPosIndexer::get(i) + dp;
       for ( ; p; p += dp)
-        s_from_dir_[j][i] |= 1ULL << p.index();
+        s_from_dir_[j][i] |= set_mask_bit(p.index());
     }
   }
 }
@@ -403,8 +403,10 @@ bool parseSAN(Board & board, const char * str, Move & move)
       continue;
 
     const Field & field = board.getField(m.from_);
+
     if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && ((m.capture_ != 0) == capture) &&
-        (from > 0 && from == m.from_ || xfrom >= 0 && (m.from_ & 7) == xfrom || yfrom >= 0 && (m.from_ >>3) == yfrom || xfrom < 0 && yfrom < 0))
+        (from > 0 && from == m.from_ || xfrom >= 0 && Index(m.from_).x() == xfrom || yfrom >= 0 &&
+        Index(m.from_).y() == yfrom || xfrom < 0 && yfrom < 0))
     {
       move = m;
       return true;
@@ -431,10 +433,10 @@ bool printSAN(Board & board, const Move & move, char * str)
   bool found = false;
   int disambiguations = 0;
   int same_x = 0, same_y = 0;
-  int xfrom = move.from_ & 7;
-  int yfrom = move.from_ >>3;
-  int xto = move.to_ & 7;
-  int yto = move.to_ >>3;
+  int xfrom = Index(move.from_).x();
+  int yfrom = Index(move.from_).y();
+  int xto = Index(move.to_).x();
+  int yto = Index(move.to_).y();
   uint8 state = Board::Invalid;
 
 #ifndef NDEBUG
@@ -471,10 +473,10 @@ bool printSAN(Board & board, const Move & move, char * str)
       continue;
 
     // check for disambiguation in 'from' position
-    if ( (m.from_ & 7) == xfrom )
+    if ( Index(m.from_).x() == xfrom )
       same_x++;
     
-    if ( (m.from_ >>3) == yfrom )
+    if ( Index(m.from_).y() == yfrom )
       same_y++;
 
     disambiguations++;
@@ -663,7 +665,7 @@ bool strToMove(const char * i_str, const Board & board, Move & move)
   // maybe en-passant
   if ( ffrom.type() == Figure::TypePawn && board.enpassant() == move.to_ )
   {
-    int dx = (move.to_ & 7) - (move.from_ & 7);
+    int dx = Index(move.to_).x() - Index(move.from_).x();
     if ( dx != 0 )
       to = board.enpassantPos();
   }

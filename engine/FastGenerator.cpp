@@ -1,6 +1,6 @@
 /*************************************************************
-  FastGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
- *************************************************************/
+FastGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+*************************************************************/
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
@@ -8,9 +8,11 @@
 //////////////////////////////////////////////////////////////////////////
 
 FastGenerator::FastGenerator(Board & board, const Move & hmove, const Move & killer) :
-  cg_(board), ug_(board), eg_(board), hmove_(hmove), killer_(killer), order_(oHash), board_(board), numCaps_(0), numWeak_(0)
+  cg_(board), ug_(board), eg_(board), hmove_(hmove), killer_(killer), order_(oHash),
+  board_(board), weakN_(0)
 {
   fake_.clear();
+  weak_[0].clear();
 
   if ( board_.underCheck() )
   {
@@ -36,32 +38,15 @@ Move & FastGenerator::move()
   if ( order_ == oGenCaps )
   {
     cg_.generate(hmove_, Figure::TypePawn);
-
-    for (int i = 0; i < cg_.count(); ++i)
-    {
-      const Move & move = cg_[i];
-      if ( board_.see(move) >= 0 )
-      {
-        caps_[numCaps_] = move;
-        caps_[numCaps_].recapture_ = 1;
-        numCaps_++;
-      }
-      else
-        weak_[numWeak_++] = move;
-    }
-
-    caps_[numCaps_].clear();
-    weak_[numWeak_].clear();
-
-    order_ = numCaps_ > 0 ? oCaps : oKiller;
+    order_ = oCaps;
   }
 
   if ( order_ == oCaps )
   {
     for ( ;; )
     {
-      Move * move = caps_ + numCaps_;
-      Move * mv = caps_;
+      Move * move = cg_.moves() + cg_.count();
+      Move * mv = cg_.moves();
       for ( ; *mv; ++mv)
       {
         if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
@@ -72,10 +57,20 @@ Move & FastGenerator::move()
       if ( !*move )
         break;
 
+
+      if ( board_.see(*move) < 0 )
+      {
+        weak_[weakN_++] = *move;
+        move->alreadyDone_ = 1;
+        continue;
+      }
+
       move->alreadyDone_ = 1;
+      move->recapture_ = 1;
       return *move;
     }
 
+    weak_[weakN_].clear();
     order_ = oKiller;
   }
 
@@ -105,7 +100,7 @@ Move & FastGenerator::move()
   {
     for ( ;; )
     {
-      Move * move = weak_ + numWeak_;
+      Move * move = weak_ + weakN_;
       Move * mv = weak_;
       for ( ; *mv; ++mv)
       {

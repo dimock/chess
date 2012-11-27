@@ -104,6 +104,11 @@ public:
     return numOfMoves_;
   }
 
+  Move * moves()
+  {
+    return moves_;
+  }
+
   const Move & operator [] (int i) const
   {
     THROW_IF( (unsigned)i >= (unsigned)numOfMoves_ || numOfMoves_ >= Board::MovesMax, "index of move is out of range" );
@@ -330,14 +335,11 @@ public:
       if ( !*move )
         return *move;
 
-      if ( !move->seen_ && board_.see(*move) < 0 )
-      {
-        move->seen_ = 1;
-        move->alreadyDone_ = 1;
-        continue;
-      }
-
       move->alreadyDone_ = 1;
+
+      if ( board_.see(*move) < 0 )
+        continue;
+
       return *move;
     }
   }
@@ -520,10 +522,8 @@ private:
   UsualGenerator ug_;
   EscapeGenerator eg_;
 
-  Move caps_[Board::MovesMax];
   Move weak_[Board::MovesMax];
-
-  int numCaps_, numWeak_;
+  int  weakN_;
 
   Move hmove_, killer_, fake_;
   Board & board_;
@@ -553,14 +553,11 @@ public:
       if ( !*move )
         return *move;
 
-      if ( !move->discoveredCheck_ && !move->seen_ && board_.see(*move) < 0 )
-      {
-        move->seen_ = 1;
-        move->alreadyDone_ = 1;
-        continue;
-      }
-
       move->alreadyDone_ = 1;
+
+      if ( !move->discoveredCheck_ && board_.see(*move) < 0 )
+        continue;
+
       return *move;
     }
   }
@@ -609,7 +606,7 @@ private:
         continue;
 
       // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      if ( (from_oki_mask & (1ULL << *table)) )
+      if ( (from_oki_mask & set_mask_bit(*table)) )
         continue;
 
       // don't add checking pawn's capture, because we add it another way
@@ -624,7 +621,7 @@ private:
     for ( ; *table >= 0 && !board_.getField(*table); ++table)
     {
       // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      if ( from_oki_mask & (1ULL << *table) )
+      if ( from_oki_mask & set_mask_bit(*table) )
         break;
 
       add(m, from, *table, Figure::TypeNone, true /* discovered */, false/*no cap*/);

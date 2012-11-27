@@ -110,10 +110,10 @@ public:
     weight_ += Figure::figureWeight_[t] & xscore[t];
     count_  += xincr[t];
 
-    tmask_[t] |= 1ULL << p;
+    tmask_[t] |= set_mask_bit(p);
 
     if ( t == Figure::TypePawn )
-      pmask_t_ |= 1ULL << s_transposeIndex_[p];
+      pmask_t_ |= set_mask_bit(s_transposeIndex_[p]);
 
     eval_[0] += Figure::positionEvaluation(0, c, t, p);
     eval_[1] += Figure::positionEvaluation(1, c, t, p);
@@ -134,12 +134,12 @@ public:
     weight_ -= Figure::figureWeight_[t] & xscore[t];
     count_  -= xdecr[t];
 
-    tmask_[t] ^= 1ULL << p;
+    tmask_[t] ^= set_mask_bit(p);
 
     if ( t == Figure::TypePawn )
-      pmask_t_ ^= 1ULL << s_transposeIndex_[p];
+      pmask_t_ ^= set_mask_bit(s_transposeIndex_[p]);
 
-    THROW_IF( tmask_[t] & (1ULL << p), "invalid mask" );
+    THROW_IF( tmask_[t] & set_mask_bit(p), "invalid mask" );
 
     eval_[0] -= Figure::positionEvaluation(0, c, t, p);
     eval_[1] -= Figure::positionEvaluation(1, c, t, p);
@@ -156,13 +156,13 @@ public:
     eval_[1] -= Figure::positionEvaluation(1, c, t, from);
     eval_[1] += Figure::positionEvaluation(1, c, t, to);
 
-    tmask_[t] ^= 1ULL << from;
-    tmask_[t] |= 1ULL << to;
+    tmask_[t] ^= set_mask_bit(from);
+    tmask_[t] |= set_mask_bit(to);
 
     if ( t == Figure::TypePawn )
     {
-      pmask_t_ ^= (1ULL << s_transposeIndex_[from]);
-      pmask_t_ |= (1ULL << s_transposeIndex_[to]);
+      pmask_t_ ^= set_mask_bit(s_transposeIndex_[from]);
+      pmask_t_ |= set_mask_bit(s_transposeIndex_[to]);
     }
   }
 
@@ -222,7 +222,7 @@ public:
     fcounter_[c].incr(c, t, p);
     const BitMask & uc = code(c, t, p);
     hashCode_ ^= uc;
-    mask_[c] |= 1ULL << p;
+    mask_[c] |= set_mask_bit(p);
   }
 
   inline void decr(const Figure::Color c, const Figure::Type t, int p)
@@ -230,7 +230,7 @@ public:
     fcounter_[c].decr(c, t, p);
     const BitMask & uc = code(c, t, p);
     hashCode_ ^= uc;
-    mask_[c] ^= 1ULL << p;
+    mask_[c] ^= set_mask_bit(p);
   }
 
   inline void move(const Figure::Color c, const Figure::Type t, int from, int to)
@@ -242,10 +242,10 @@ public:
 
     fcounter_[c].move(c, t, from, to);
 
-    mask_[c] ^= 1ULL << from;
-    mask_[c] |= 1ULL << to;
+    mask_[c] ^= set_mask_bit(from);
+    mask_[c] |= set_mask_bit(to);
 
-    THROW_IF(mask_[c] & (1ULL << from), "invalid figures mask");
+    THROW_IF(mask_[c] & set_mask_bit(from), "invalid figures mask");
   }
 
   // the same as original versions, except of skipped mask & zcode

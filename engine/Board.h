@@ -423,7 +423,7 @@ public:
   bool isAttacked(const Figure::Color c, int pos, int exclude) const
   {
     BitMask mask_all_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
-    mask_all_inv |= (1ULL << exclude);
+    mask_all_inv |= set_mask_bit(exclude);
     return fieldAttacked(c, pos, mask_all_inv);
   }
 
@@ -460,7 +460,7 @@ private:
       return false;
 
     // is there some figure between king and field that we move from
-    BitMask all_mask_inv2 = (all_mask_inv | (1ULL << from));
+    BitMask all_mask_inv2 = (all_mask_inv | set_mask_bit(from));
 
     if ( is_something_between(ki_pos, from, all_mask_inv2) )
       return false;
@@ -476,7 +476,7 @@ private:
       return false;
 
     // figure have to be in updated BRQ mask
-    if ( !((1ULL<<index) & a_brq_mask) )
+    if ( !(set_mask_bit(index) & a_brq_mask) )
       return false;
 
     THROW_IF( field.type() < Figure::TypeBishop || field.type() > Figure::TypeQueen, "see: not appropriate attacker type" );
@@ -516,13 +516,13 @@ private:
   void set_castling(Figure::Color c, int t)
   {
     int offset = ((c<<1) | t);
-    castling_ |= 1 << offset;
+    castling_ |= set_bit(offset);
   }
 
   void clear_castling(Figure::Color c, int t)
   {
     int offset = ((c<<1) | t);
-    castling_ &= ~(1 << offset);
+    castling_ &= ~set_bit(offset);
   }
 
   /// calculates absolute position evaluation
@@ -592,13 +592,13 @@ private:
   inline bool discoveredCheck(int pt, Figure::Color acolor, const BitMask & mask_all, const BitMask & brq_mask, int ki_pos) const
   {
     const BitMask & from_msk = g_betweenMasks->from(ki_pos, pt);
-    BitMask mask_all_ex = mask_all & ~(1ULL << pt);
+    BitMask mask_all_ex = mask_all & ~set_mask_bit(pt);
     mask_all_ex &= from_msk;
     if ( (mask_all_ex & brq_mask) == 0 )
       return false;
 
     int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
-    if ( ((1ULL<<apos) & brq_mask) == 0 ) // no BRQ on this field
+    if ( (set_mask_bit(apos) & brq_mask) == 0 ) // no BRQ on this field
       return false;
 
     const Field & afield = getField(apos);
@@ -618,7 +618,7 @@ private:
       return -1;
 
     int apos = ki_pos < from ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
-    if ( ((1ULL<<apos) & brq_mask) == 0 ) // no BRQ on this field
+    if ( (set_mask_bit(apos) & brq_mask) == 0 ) // no BRQ on this field
       return -1;
 
     const Field & afield = getField(apos);

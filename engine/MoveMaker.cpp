@@ -135,10 +135,10 @@ bool Board::validateMove(const Move & move) const
       {
         // maybe moving figure discovers check
         BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
-        mask_all |= (1ULL << move.to_);
+        mask_all |= set_mask_bit(move.to_);
 
         BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
-        brq_mask &= ~(1ULL << move.to_);
+        brq_mask &= ~set_mask_bit(move.to_);
 
         int ki_pos = kingPos(color_);
 
@@ -152,9 +152,9 @@ bool Board::validateMove(const Move & move) const
         if ( ep_pos == checking_[0] )
         {
           BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
-          mask_all |= (1ULL << move.to_);
-          mask_all ^= (1ULL << move.from_);
-          mask_all &= ~(1ULL << ep_pos);
+          mask_all |= set_mask_bit(move.to_);
+          mask_all ^= set_mask_bit(move.from_);
+          mask_all &= ~set_mask_bit(ep_pos);
 
           BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
 
@@ -181,14 +181,14 @@ bool Board::validateMove(const Move & move) const
 
         int ki_pos = kingPos(color_);
         const BitMask & protect_king_msk = g_betweenMasks->between(ki_pos, checking_[0]);
-        if ( (protect_king_msk & (1ULL << move.to_)) == 0 )
+        if ( (protect_king_msk & set_mask_bit(move.to_)) == 0 )
           return false;
 
         BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
-        mask_all |= (1ULL << move.to_);
+        mask_all |= set_mask_bit(move.to_);
 
         BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
-        brq_mask &= ~(1ULL << move.to_);
+        brq_mask &= ~set_mask_bit(move.to_);
 
         return !discoveredCheck(move.from_, ocolor, mask_all, brq_mask, ki_pos);
       }
@@ -245,7 +245,7 @@ bool Board::validateMove(const Move & move) const
     BitMask mask_all = fmgr_.mask(Figure::ColorWhite) | fmgr_.mask(Figure::ColorBlack);
     BitMask brq_mask = fmgr_.bishop_mask(ocolor) | fmgr_.rook_mask(ocolor) | fmgr_.queen_mask(ocolor);
     int ki_pos = kingPos(color_);
-    BitMask to_mask = 1ULL << move.to_;
+    BitMask to_mask = set_mask_bit(move.to_);
     mask_all |= to_mask;
     brq_mask &= ~to_mask;
 
@@ -256,7 +256,7 @@ bool Board::validateMove(const Move & move) const
     if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
     {
       int ep_pos = enpassantPos();
-      BitMask mask_all_ep = (mask_all ^ (1ULL << move.from_)) | (1ULL << en_passant_);
+      BitMask mask_all_ep = (mask_all ^ set_mask_bit(move.from_)) | set_mask_bit(en_passant_);
       return !discoveredCheck(ep_pos, ocolor, mask_all_ep, brq_mask, ki_pos);
     }
 

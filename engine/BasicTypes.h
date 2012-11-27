@@ -16,9 +16,6 @@
 #ifdef _M_X64
   #include <intrin.h>
   #pragma intrinsic(__rdtsc)
-  #define ONE_SIZE_T 1ULL
-#else
-  #define ONE_SIZE_T 1
 #endif
 
 #ifndef NDEBUG
@@ -94,8 +91,6 @@ namespace nst
 #undef VERIFY_FAST_GENERATOR
 
 #undef VALIDATE_VALIDATOR
-
-#undef  DO_CHECK_IMMEDIATELY
 
 #define USE_FAST_GENERATOR
 

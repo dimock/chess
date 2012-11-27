@@ -73,7 +73,7 @@ int EscapeGenerator::generateUsual()
       pawn_eat_msk = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
 
     // mask of attacking figure
-    uint64 checking_fig_mask = 1ULL << ch_pos;
+    uint64 checking_fig_mask = set_mask_bit(ch_pos);
 
     pawns_eat = (pawn_eat_msk & checking_fig_mask) != 0;
 
@@ -82,7 +82,7 @@ int EscapeGenerator::generateUsual()
       int ep_pos = board_.enpassantPos();
       THROW_IF( !board_.getField(ep_pos), "en-passant pown doesnt exist" );
 
-      ep_capture = (ch_pos == ep_pos) && (pawn_eat_msk & (1ULL << board_.en_passant_));
+      ep_capture = (ch_pos == ep_pos) && (pawn_eat_msk & set_mask_bit(board_.en_passant_));
     }
 
     pawns_eat = pawns_eat || ep_capture;
@@ -105,8 +105,8 @@ int EscapeGenerator::generateUsual()
         const Field & fpawn = board_.getField(n);
         THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
 
-        BitMask mask_all_ep = mask_all ^ (1ULL << n);
-        mask_all |= 1ULL << board_.en_passant_;
+        BitMask mask_all_ep = mask_all ^ set_mask_bit(n);
+        mask_all |= set_mask_bit(board_.en_passant_);
 
         if ( !board_.discoveredCheck(n, ocolor, mask_all, brq_mask, ki_pos) &&
              !board_.discoveredCheck(ep_pos, ocolor, mask_all_ep, brq_mask, ki_pos) )
@@ -130,7 +130,7 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fpawn || fpawn.type() != Figure::TypePawn || fpawn.color() != board_.color_, "no pawn on field we are going to do capture from" );
 
-      if ( !board_.discoveredCheck(n, ocolor, mask_all | (1ULL << ch_pos), brq_mask & ~(1ULL << ch_pos), ki_pos) )
+      if ( !board_.discoveredCheck(n, ocolor, mask_all | set_mask_bit(ch_pos), brq_mask & ~set_mask_bit(ch_pos), ki_pos) )
       {
         add(m, n, ch_pos, promotion ? Figure::TypeQueen : Figure::TypeNone, true);
         if ( promotion )
@@ -156,7 +156,7 @@ int EscapeGenerator::generateUsual()
 
       THROW_IF( !fknight || fknight.type() != Figure::TypeKnight || fknight.color() != board_.color_, "no knight on field we are going to do capture from" );
 
-      if ( !board_.discoveredCheck(n, ocolor, mask_all | (1ULL << ch_pos), brq_mask & ~(1ULL << ch_pos), ki_pos) )
+      if ( !board_.discoveredCheck(n, ocolor, mask_all | set_mask_bit(ch_pos), brq_mask & ~set_mask_bit(ch_pos), ki_pos) )
         add(m, n, ch_pos, Figure::TypeNone, true);
     }
   }
@@ -184,7 +184,7 @@ int EscapeGenerator::generateUsual()
       if ( (btw_msk & mask_all_inv) != btw_msk )
         continue;
 
-      if ( !board_.discoveredCheck(n, ocolor, mask_all | (1ULL << ch_pos), brq_mask & ~(1ULL << ch_pos), ki_pos) )
+      if ( !board_.discoveredCheck(n, ocolor, mask_all | set_mask_bit(ch_pos), brq_mask & ~set_mask_bit(ch_pos), ki_pos) )
         add(m, n, ch_pos, Figure::TypeNone, true);
     }
   }
@@ -208,7 +208,7 @@ int EscapeGenerator::generateUsual()
 
       for (; *table >= 0 && !board_.getField(*table); ++table)
       {
-        if ( (protect_king_msk & (1ULL << *table)) == 0 )
+        if ( (protect_king_msk & set_mask_bit(*table)) == 0 )
           continue;
 
         bool promotion = *table > 55 || *table < 8;

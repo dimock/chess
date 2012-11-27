@@ -4,6 +4,25 @@
 
 #include "Board.h"
 
+//////////////////////////////////////////////////////////////////////////
+static const uint16 see_tp_endl = (uint16)-1;
+
+inline uint16 see_pack_tp(const Figure::Type t, int p)
+{
+  return t | (p << 8);
+}
+
+inline Figure::Type see_unpack_t(uint16 v)
+{
+  return (Figure::Type)(v & 255);
+}
+
+inline uint8 see_unpack_p(uint16 v)
+{
+  return (v >> 8) & 255;
+}
+//////////////////////////////////////////////////////////////////////////
+
 // static exchange evaluation
 // have to be called before doing move
 int Board::see(const Move & move) const
@@ -48,21 +67,21 @@ int Board::see(const Move & move) const
   int ki_pos[2] = { -1, -1 };
 
   // push 1st move
-  attackers[color][figsN[color]++] = ffield.type() | (move.from_ << 8);
+  attackers[color][figsN[color]++] = see_pack_tp(ffield.type(), move.from_);
 
   for (int c = 0; c < 2; ++c)
   {
     int & num = figsN[c];
     brq_masks[c] = fmgr_.bishop_mask((Figure::Color)c) | fmgr_.rook_mask((Figure::Color)c) | fmgr_.queen_mask((Figure::Color)c);
-    brq_masks[c] &= ~(1ULL << move.to_);
+    brq_masks[c] &= ~set_mask_bit(move.to_);
 
     // pawns
-    uint64 pmask = fmgr_.pawn_mask_o((Figure::Color)c) & g_movesTable->pawnCaps_o((Figure::Color)((c+1)&1), move.to_);
+    uint64 pmask = fmgr_.pawn_mask_o((Figure::Color)c) & g_movesTable->pawnCaps_o(Figure::otherColor((Figure::Color)c), move.to_);
     for ( ; pmask; )
     {
       int n = clear_lsb(pmask);
       if ( n != move.from_ )
-        attackers[c][num++] = Figure::TypePawn | (n << 8);
+        attackers[c][num++] = see_pack_tp(Figure::TypePawn, n);
     }
 
     // knights
@@ -71,7 +90,7 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(nmask);
       if ( n != move.from_ )
-        attackers[c][num++] = Figure::TypeKnight | (n << 8);
+        attackers[c][num++] = see_pack_tp(Figure::TypeKnight, n);
     }
 
     // bishops
@@ -80,7 +99,7 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(bmask);
       if ( n != move.from_ )
-        attackers[c][num++] = Figure::TypeBishop | (n << 8);
+        attackers[c][num++] = see_pack_tp(Figure::TypeBishop, n);
     }
 
     // rooks
@@ -89,7 +108,7 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(rmask);
       if ( n != move.from_ )
-        attackers[c][num++] = Figure::TypeRook | (n << 8);
+        attackers[c][num++] = see_pack_tp(Figure::TypeRook, n);
     }
 
     // queens
@@ -98,7 +117,7 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(qmask);
       if ( n != move.from_ )
-        attackers[c][num++] = Figure::TypeQueen | (n << 8);
+        attackers[c][num++] = see_pack_tp(Figure::TypeQueen, n);
     }
 
     // king
@@ -112,7 +131,7 @@ int Board::see(const Move & move) const
 
       if ( n != move.from_ )
       {
-        attackers[c][num++] = Figure::TypeKing | (n << 8);
+        attackers[c][num++] = see_pack_tp(Figure::TypeKing, n);
         king_found[c] = true;
       }
       else
@@ -127,22 +146,22 @@ int Board::see(const Move & move) const
       ki_pos[c] = kingPos((Figure::Color)c);
     }
 
-    attackers[c][num] = (uint16)-1;
+    attackers[c][num] = see_tp_endl;
   }
 
   // if there are both kings they can't capture
   if ( king_found[0] && king_found[1] )
   {
     THROW_IF( figsN[0] < 1 || figsN[1] < 1 , "see: no figures but both kings found?" );
-    attackers[0][--figsN[0]] = (uint16)-1;
-    attackers[1][--figsN[1]] = (uint16)-1;
+    attackers[0][--figsN[0]] = see_tp_endl;
+    attackers[1][--figsN[1]] = see_tp_endl;
   }
 
   if ( figsN[color] < 1 )
     return score_gain;
 
   // starting calculation
-  int col = color;
+  Figure::Color col = color;
   uint64 all_mask_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
   bool promotion = (move.to_ >> 3) == 0 || (move.to_ >> 3) == 7;
 
@@ -155,15 +174,17 @@ int Board::see(const Move & move) const
       if ( !attackers[col][i] )
         continue;
 
-      Figure::Type t =  (Figure::Type)(attackers[col][i] & 255);
-      uint8 pos = (attackers[col][i] >> 8) & 255;
+      Figure::Type t = see_unpack_t( attackers[col][i] );
+      uint8 pos = see_unpack_p( attackers[col][i] );
 
       switch ( t )
       {
       case Figure::TypePawn:
       case Figure::TypeKnight:
         {
-          bool is_checking = see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, ki_pos[col], all_mask_inv, brq_masks[(col+1)&1]);
+          bool is_checking = see_check(col, see_unpack_p(attackers[col][i]),
+            ki_pos[col], all_mask_inv, brq_masks[Figure::otherColor(col)]);
+
           if ( !is_checking )
           {
             attc = attackers[col][i];
@@ -184,7 +205,9 @@ int Board::see(const Move & move) const
           if ( is_something_between(pos, move.to_, all_mask_inv) )
             continue;
 
-          bool is_checking = see_check((Figure::Color)col, (attackers[col][i] >> 8) & 255, ki_pos[col], all_mask_inv, brq_masks[(col+1)&1]);
+          bool is_checking = see_check(col, see_unpack_p(attackers[col][i]),
+            ki_pos[col], all_mask_inv, brq_masks[Figure::otherColor(col)]);
+
           if ( !is_checking )
           {
             attc = attackers[col][i];
@@ -206,8 +229,8 @@ int Board::see(const Move & move) const
             if ( !attackers[oc][j] )
               continue;
 
-            Figure::Type ot = (Figure::Type)(attackers[oc][j] & 255);
-            uint8 opos = (attackers[oc][j] >> 8) & 255;
+            Figure::Type ot = see_unpack_t(attackers[oc][j]);
+            uint8 opos = see_unpack_p(attackers[oc][j]);
             if ( ot == Figure::TypePawn || ot == Figure::TypeKnight )
               check = true;
             else
@@ -229,8 +252,8 @@ int Board::see(const Move & move) const
     if ( !attc )
       break;
 
-    Figure::Type t =  (Figure::Type)(attc & 255);
-    uint8 pos = (attc >> 8) & 255;
+    Figure::Type t = see_unpack_t(attc);
+    uint8 pos = see_unpack_p(attc);
 
     score_gain += fscore;
     if ( t == Figure::TypePawn && promotion )
@@ -249,22 +272,22 @@ int Board::see(const Move & move) const
       break;
 
     // if we give check we don't need to continue
-    int ki_col = (col+1) & 1;
-    bool give_check = see_check( (Figure::Color)ki_col, pos, ki_pos[ki_col], all_mask_inv, brq_masks[col]);
+    Figure::Color ki_col = Figure::otherColor(col);
+    bool give_check = see_check(ki_col, pos, ki_pos[ki_col], all_mask_inv, brq_masks[col]);
     if ( give_check )
       break;
 
     // remove from (inverted) mask
-    all_mask_inv |= (1ULL << pos);
+    all_mask_inv |= set_mask_bit(pos);
 
     // add to move.to_ field
-    all_mask_inv &= ~(1ULL << move.to_);
+    all_mask_inv &= ~set_mask_bit(move.to_);
 
     // remove from brq mask
-    brq_masks[col] &= ~(1ULL << pos);
+    brq_masks[col] &= ~set_mask_bit(pos);
 
     // change color
-    col = (col + 1) & 1;
+    col = Figure::otherColor(col);
   }
 
   return score_gain;
