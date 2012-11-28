@@ -1111,15 +1111,16 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   if ( board_.underCheck() )
   {
-#ifdef USE_HASH_TABLE_CAPTURE
-    EscapeGenerator eg(hcap, board_);
-#endif
+//#ifdef USE_HASH_TABLE_CAPTURE
+    EscapeGeneratorLimited eg(hcap, board_, minimalType, depth >= 0);
+//#endif
 
-    depth += extend_check(depth, ply, eg, alpha, betta);
+    if ( depth >= 0 && eg.singleReply() )
+      depth++;// += extend_check(depth, ply, eg, alpha, betta);
 
     for ( ; !stop_ && alpha < betta ; )
     {
-      const Move & move = eg.escape();
+      const Move & move = eg.next();
       if ( !move )
         break;
 
@@ -1137,6 +1138,12 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       return alpha;
 
     if ( !counter )
+    {
+      if ( alpha < -Figure::WeightMat-MaxPly )
+        alpha = board_.evaluate();
+    }
+
+    if ( eg.realMovesCount() == 0 )
     {
       board_.setNoMoves();
       ScoreType s = board_.evaluate();
