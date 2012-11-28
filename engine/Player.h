@@ -445,7 +445,11 @@ private:
 #endif // USE_HASH_TABLE_CAPTURE
 
 #ifdef VERIFY_ESCAPE_GENERATOR
-  void verifyEscapeGen(const Move & hmove, const Move & killer);
+  void verifyEscapeGen(const Move & hmove);
+#endif
+
+#ifdef VERIFY_ESCAPE_GENERATOR_LIMITED
+  void verifyEscapeGenLimited(const Move & hmove, Figure::Type minimalType);
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR

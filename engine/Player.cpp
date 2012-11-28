@@ -717,12 +717,12 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef VERIFY_ESCAPE_GENERATOR
   if ( board_.underCheck() )
-    verifyEscapeGen(hmoves[0], killer);
+    verifyEscapeGen(hmoves[0]);
 #endif
 
   if ( board_.underCheck() )
   {
-    EscapeGenerator eg(hmoves[0], killer, board_);
+    EscapeGenerator eg(hmoves[0], board_);
 
     // additional check extension
     depth += extend_check(depth, ply, eg, alpha, betta);
@@ -1098,20 +1098,21 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #ifdef VERIFY_ESCAPE_GENERATOR
   if ( board_.underCheck() )
   {
-    Move killer;
-    killer.clear();
-    verifyEscapeGen(hcap, killer);
+    verifyEscapeGen(hcap);
+  }
+#endif
+
+#ifdef VERIFY_ESCAPE_GENERATOR_LIMITED
+  if ( board_.underCheck() )
+  {
+    verifyEscapeGenLimited(hcap, minimalType);
   }
 #endif
 
   if ( board_.underCheck() )
   {
 #ifdef USE_HASH_TABLE_CAPTURE
-    Move killer;
-    killer.clear();
-    EscapeGenerator eg(hcap, killer, board_);
-#else
-    EscapeGenerator eg(board_, 0, ply, *this, alpha, betta, counter);
+    EscapeGenerator eg(hcap, board_);
 #endif
 
     depth += extend_check(depth, ply, eg, alpha, betta);

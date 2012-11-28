@@ -7,25 +7,25 @@
 
 //////////////////////////////////////////////////////////////////////////
 EscapeGenerator::EscapeGenerator(Board & board) :
-  MovesGeneratorBase(board), current_(0), takeHash_(0)
+  MovesGeneratorBase(board), takeHash_(0), movesCount_(0)
 {
   hmove_.clear();
-  killer_.clear();
 }
 
-EscapeGenerator::EscapeGenerator(const Move & hmove, const Move & killer, Board & board) :
-  MovesGeneratorBase(board), hmove_(hmove), killer_(killer), current_(0), takeHash_(0)
+EscapeGenerator::EscapeGenerator(const Move & hmove, Board & board) :
+  MovesGeneratorBase(board), hmove_(hmove), takeHash_(0), movesCount_(0)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
+  movesCount_ = numOfMoves_ + takeHash_;
 }
 
-int EscapeGenerator::generate(const Move & hmove)
+void EscapeGenerator::generate(const Move & hmove)
 {
   hmove_ = hmove;
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
-  return numOfMoves_;
+  movesCount_ = numOfMoves_ + takeHash_;
 }
 
 int EscapeGenerator::generate()
@@ -322,4 +322,79 @@ int EscapeGenerator::generateKingonly(int m)
   }
 
   return m;
+}
+
+//////////////////////////////////////////////////////////////////////////
+/// Limited version of Escape generator. Used after horizon only
+//////////////////////////////////////////////////////////////////////////
+
+EscapeGeneratorLimited::EscapeGeneratorLimited(const Move & hmove, Board & board,
+                                               Figure::Type minimalType, bool with_checks) :
+  EscapeGenerator(hmove, board),
+  minimalType_(minimalType),
+  withChecks_(with_checks),
+  singleReply_(false),
+  generatedMovesCount_(0)
+{
+  generatedMovesCount_ = count();
+  singleReply_ = count() == 1;
+
+  const Figure::Color & color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
+  mask_all_ = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
+  mask_brq_ = board_.fmgr().bishop_mask(color) | board_.fmgr().rook_mask(color) | board_.fmgr().queen_mask(color);
+  oking_pos_ = board_.kingPos(ocolor);
+}
+
+bool EscapeGeneratorLimited::detectCheck(const Move & move) const
+{
+  const Field & ffield = board_.getField(move.from_);
+  const Field & tfield = board_.getField(move.to_);
+
+  const Figure::Color & color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
+
+  const BitMask mask_all = mask_all_ | set_mask_bit(move.to_);
+  if ( board_.discoveredCheck(move.from_, color, mask_all, mask_brq_, oking_pos_) )
+    return true;
+
+  if ( ffield.type() == Figure::TypeKing )
+    return false;
+
+  const BitMask & oki_mask = board_.fmgr().king_mask(ocolor);
+
+  THROW_IF( !ffield, "no moved figure" );
+
+  if ( ffield.type() == Figure::TypePawn )
+  {
+    const BitMask & pw_caps = board_.g_movesTable->pawnCaps_o(color, move.to_);
+    if ( pw_caps & oki_mask )
+      return true;
+
+    // en-passant discovered check
+    if ( board_.en_passant_ == move.to_ )
+    {
+      int ep_pos = board_.enpassantPos();
+      THROW_IF( board_.getField(ep_pos).type() != Figure::TypePawn || board_.getField(ep_pos).color() != ocolor, "no pawn for en-passant capture" );
+
+      if ( board_.discoveredCheck(ep_pos, color, mask_all ^ set_mask_bit(ep_pos), mask_brq_, oking_pos_) )
+        return true;
+    }
+
+    return false;
+  }
+
+  if ( ffield.type() == Figure::TypeKnight )
+  {
+    const BitMask & kn_caps = board_.g_movesTable->caps(Figure::TypeKnight, move.to_);
+    return (kn_caps & oki_mask) != 0;
+  }
+
+  THROW_IF( ffield.type() < Figure::TypeBishop || ffield.type() > Figure::TypeQueen, "wrong attacking figure type" );
+
+  // at the last bishop rook queen
+  if ( board_.g_figureDir->dir(ffield.type(), ffield.color(), move.to_, oking_pos_) < 0 )
+    return false;
+
+  return board_.is_nothing_between(move.to_, oking_pos_, ~mask_all_);
 }

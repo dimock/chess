@@ -374,14 +374,13 @@ class EscapeGenerator : public MovesGeneratorBase
 public:
 
   EscapeGenerator(Board &);
-  EscapeGenerator(const Move & hmove, const Move & killer, Board & );
+  EscapeGenerator(const Move & hmove, Board & );
 
-  int generate(const Move & hmove);
+  void generate(const Move & hmove);
 
-  // count() is valid only before 1st call of escape() !!!
   int count() const
   {
-    return numOfMoves_ + takeHash_;
+    return movesCount_;
   }
 
   bool find(const Move & m) const
@@ -421,7 +420,7 @@ public:
     }
   }
 
-private:
+protected:
 
   inline void sortValue(Move & move)
   {
@@ -479,10 +478,6 @@ private:
       sortValue(move);
       move.vsort_ += 10000000;
     }
-    //else if ( move == killer_ )
-    //{
-    //  move.vsort_ = 3000000;
-    //}
     else
     {
       const History & hist = history(move.from_, move.to_);
@@ -492,9 +487,66 @@ private:
     ++m;
   }
 
-  int current_;
-  Move hmove_, killer_;
+  Move hmove_;
   int takeHash_;
+  int movesCount_;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+/// After horizon only
+class EscapeGeneratorLimited : public EscapeGenerator
+{
+public:
+
+  EscapeGeneratorLimited(const Move & hmove, Board & , Figure::Type minimalType, bool with_checks);
+
+  inline Move & next()
+  {
+    for ( ;; )
+    {
+      Move & move = escape();
+      if ( !move || filter(move) )
+        return move;
+    }
+  }
+
+  inline int realMovesCount() const
+  {
+    return generatedMovesCount_;
+  }
+
+  inline bool singleReply() const
+  {
+    return singleReply_;
+  }
+
+protected:
+
+  inline bool filter(const Move & move) const
+  {
+    const Field & ffield = board_.getField(move.from_);
+    const Field & tfield = board_.getField(move.to_);
+    bool strong_cap = move.capture_ &&
+      ( (tfield && tfield.type() >= minimalType_) ||
+        (ffield.type() == Figure::TypePawn && Figure::TypePawn >= minimalType_ && board_.en_passant_ == move.to_) );
+
+    if ( !strong_cap && (!withChecks_ || !detectCheck(move)) )
+      return false;
+
+    return board_.see(move) >= 0;
+  }
+
+  bool detectCheck(const Move & move) const;
+
+  bool withChecks_;
+  Figure::Type minimalType_;
+  bool singleReply_;
+  int  generatedMovesCount_;
+
+  // for checks detector
+  BitMask mask_all_, mask_brq_;
+  int oking_pos_;
 };
 
 /// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves

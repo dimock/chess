@@ -16,6 +16,7 @@ class CapsGenerator;
 class EscapeGenerator;
 class ChecksGenerator;
 class UsualGenerator;
+class EscapeGeneratorLimited;
 
 #if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) || (defined VERIFY_FAST_GENERATOR) )
 class Player;
@@ -31,6 +32,7 @@ class Board
   friend class EscapeGenerator;
   friend class ChecksGenerator;
   friend class UsualGenerator;
+  friend class EscapeGeneratorLimited;
 
 #if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) || (defined VERIFY_FAST_GENERATOR) )
   friend class Player;
