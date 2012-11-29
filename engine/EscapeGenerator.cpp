@@ -334,7 +334,10 @@ EscapeGeneratorLimited::EscapeGeneratorLimited(const Move & hmove, Board & board
   minimalType_(minimalType),
   withChecks_(with_checks),
   singleReply_(false),
-  generatedMovesCount_(0)
+  generatedMovesCount_(0),
+  movesDone_(0),
+  first_(0),
+  fake_(0)
 {
   generatedMovesCount_ = count();
   singleReply_ = count() == 1;

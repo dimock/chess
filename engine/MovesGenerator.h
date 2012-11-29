@@ -506,9 +506,26 @@ public:
     for ( ;; )
     {
       Move & move = escape();
-      if ( !move || filter(move) )
+      if ( !move )
+        break;
+
+      if ( !first_ )
+        first_ = move;
+
+      if ( filter(move) )
+      {
+        movesDone_++;
         return move;
+      }
     }
+
+    if ( !movesDone_ )
+    {
+      movesDone_++;
+      return first_;
+    }
+
+    return fake_;
   }
 
   inline int realMovesCount() const
@@ -525,13 +542,13 @@ protected:
 
   inline bool filter(const Move & move) const
   {
-    const Field & ffield = board_.getField(move.from_);
-    const Field & tfield = board_.getField(move.to_);
-    bool strong_cap = move.capture_ &&
-      ( (tfield && tfield.type() >= minimalType_) ||
-        (ffield.type() == Figure::TypePawn && Figure::TypePawn >= minimalType_ && board_.en_passant_ == move.to_) );
+    //const Field & ffield = board_.getField(move.from_);
+    //const Field & tfield = board_.getField(move.to_);
+    //bool strong_cap = move.capture_ &&
+    //  ( (tfield && tfield.type() >= minimalType_) ||
+    //    (ffield.type() == Figure::TypePawn && Figure::TypePawn >= minimalType_ && board_.en_passant_ == move.to_) );
 
-    if ( !strong_cap && (!withChecks_ || !detectCheck(move)) )
+    if ( !move.capture_ && (!withChecks_ || !detectCheck(move)) )
       return false;
 
     return board_.see(move) >= 0;
@@ -543,6 +560,8 @@ protected:
   Figure::Type minimalType_;
   bool singleReply_;
   int  generatedMovesCount_;
+  int  movesDone_;
+  Move first_, fake_;
 
   // for checks detector
   BitMask mask_all_, mask_brq_;

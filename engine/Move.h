@@ -45,7 +45,10 @@ struct Move
   // make all values invalid
   Move() : from_(-1), to_(-1), new_type_(10), vsort_(0), flags_(-1)
   {}
+#else
+  Move() {}
 #endif
+  Move(int) { clear(); }
 
   /// index of field go from
   int8 from_;

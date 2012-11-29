@@ -81,7 +81,7 @@ namespace nst
 
 #undef EXTENDED_THREAT_DETECTION
 #undef MARKOFF_BOTVINNIK_EXTENSION
-#undef MAT_THREAT_EXTENSION
+#define MAT_THREAT_EXTENSION
 
 #undef ONLY_LEQ_THREAT
 
@@ -121,7 +121,7 @@ static const int NullMove_DepthMin = 1;
 static const int HashedMoves_Size = 8;
 static const int MatThreatExtension_Limit = 1;
 static const int MbeExtension_Limit = 1;
-static const int SingularExtension_Limit = 1;
+static const int SingularExtension_Limit = 0;
 static const int RecaptureExtension_Limit = 1;
 static const int ChecksExtension_Limit = 16;
 static const int DoubleChecksExtension_Limit = 8;

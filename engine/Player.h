@@ -214,7 +214,7 @@ private:
   bool search(SearchResult & , std::ostream * out = 0);
 
   // core of search algorithm
-  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move);
+  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, int singularCount);
 
   // only tactical moves (captures + winning checks) after horizon
   ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, int delta);
@@ -263,7 +263,7 @@ private:
 
   //////////////////////////////////////////////////////////////////////////
   // return true if we have to return betta-1 to recalculate with full depth
-  bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move);
+  bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move, int singularCount);
 
   void capture(int depth, int ply, ScoreType & alpha, ScoreType betta, const Move & cap, int & counter);
   int collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha, ScoreType betta, Move (&moves)[HashedMoves_Size]);
