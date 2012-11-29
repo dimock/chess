@@ -289,7 +289,7 @@ private:
 #ifdef USE_HASH_TABLE_GENERAL
   void updateGeneralHash(const Move & move, int depth, int ply, const ScoreType score, const ScoreType betta, const uint64 & hcode, Figure::Color color)
   {
-    if ( board_.repsCount() > 1 )
+    if ( board_.repsCount() > 2 )
       return;
 
     PackedMove pm = board_.pack(move);

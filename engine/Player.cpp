@@ -877,7 +877,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   // we haven't found best move
 #ifdef USE_HASH_TABLE_GENERAL
-  if ( alpha == savedAlpha && !stop_ && board_.repsCount() < 2 )
+  if ( alpha == savedAlpha && !stop_ && board_.repsCount() < 3 )
   {
     ghash_.push(board_.hashCode(), alpha, depth, ply, board_.halfmovesCount(), board_.getColor(), GeneralHashTable::Alpha, PackedMove());
   }
@@ -1574,6 +1574,10 @@ bool Player::isRealThreat(const Move & move)
     return false;
   }
 
+  /// we have to move king even if there a lot of figures
+  if ( board_.getField(move.from_).type() == Figure::TypeKing && board_.fmgr().weight(board_.getColor()) > Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] )
+    return true;
+
   const Field & cfield = board_.getField(move.from_);
   THROW_IF( !cfield || cfield.color() != board_.getColor(), "no figure of required color in while detecting threat" );
 
@@ -1665,6 +1669,39 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
   if (  betta > alpha+1 && depth <= 1 && !was_winnerloser && board_.isWinnerLoser() )
     return 1;
 #endif
+
+  if ( depth == 1 ) // going to captures
+  {
+    Figure::Color color = board_.getColor();
+    Figure::Color ocolor = Figure::otherColor(color);
+    BitMask pawn_eat_msk = 0;
+    const BitMask & pawn_msk = board_.fmgr().pawn_mask_o(ocolor);
+    if ( ocolor )
+      pawn_eat_msk = ((pawn_msk << 9) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk << 7) & Figure::pawnCutoffMasks_[1]);
+    else
+      pawn_eat_msk = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
+
+    BitMask my_fig_mask = board_.fmgr().mask(color) ^ board_.fmgr().pawn_mask_o(color);
+    BitMask attacked_by_pawn = my_fig_mask & pawn_eat_msk;
+    int bypawn = pop_count(attacked_by_pawn);
+    if ( bypawn > 1 )
+      return 1;
+
+    BitMask kn_mask = board_.fmgr().knight_mask(ocolor);
+    BitMask kn_att = 0;
+    for ( ; kn_mask; )
+    {
+      int n = clear_lsb(kn_mask);
+      const BitMask & kn_cap = board_.g_movesTable->caps(Figure::TypeKnight, n);
+      kn_att |= kn_cap;
+    }
+
+    my_fig_mask = board_.fmgr().rook_mask(color) | board_.fmgr().queen_mask(color);
+    BitMask attacked_by_knight = my_fig_mask & kn_att;
+    int byknight = pop_count(attacked_by_knight);
+    if ( byknight + bypawn > 1 )
+      return 1;
+  }
 
   return 0;
 }
