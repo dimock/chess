@@ -49,7 +49,7 @@ Move & FastGenerator::move()
       Move * mv = cg_.moves();
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
           continue;
 
         move = mv;
@@ -104,7 +104,7 @@ Move & FastGenerator::move()
       Move * mv = weak_;
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
           continue;
 
         move = mv;

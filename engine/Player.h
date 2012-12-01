@@ -259,8 +259,6 @@ private:
   CapturesHashTable chash_;
 #endif
 
-  bool use_pv_;
-
   //////////////////////////////////////////////////////////////////////////
   // return true if we have to return betta-1 to recalculate with full depth
   bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move, int singularCount);

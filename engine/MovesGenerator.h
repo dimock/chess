@@ -136,13 +136,15 @@ protected:
         board_.getField(board_.enpassantPos()).color() == board_.color_, "no en-passant pawn" );
 
       vtype = Figure::TypePawn;
+      move.vsort_ = Figure::figureWeight_[vtype];
+      return;
     }
 
     // capture, prefer stronger opponent's figure
     if ( vtype != Figure::TypeNone )
     {
       Figure::Type atype = ffrom.type();
-      move.vsort_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + (Figure::figureWeight_[vtype] >> 2);
+      move.vsort_ = (Figure::figureWeight_[vtype] << 1) - Figure::figureWeight_[atype];
     }
 
     // pawn promotion
@@ -237,13 +239,11 @@ private:
       move.vsort_ += 10000000;
       return;
     }
-#ifdef USE_KILLER
     else if ( move == killer_ )
     {
       move.vsort_ = 3000000;
       return;
     }
-#endif
 
     const History & hist = history(move.from_, move.to_);
     move.vsort_ = hist.score() + 10000;
@@ -271,7 +271,7 @@ public:
       Move * mv = moves_;
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
           continue;
 
         move = mv;
@@ -303,7 +303,7 @@ private:
   {
     THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = hist.score();
+    move.vsort_ = hist.score() + 10;
   }
 
   Move hmove_, killer_;
@@ -327,7 +327,7 @@ public:
       Move * mv = moves_;
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
           continue;
 
         move = mv;
@@ -337,7 +337,7 @@ public:
 
       move->alreadyDone_ = 1;
 
-      if ( board_.see(*move) < 0 )
+      if ( !filter(*move) )
         continue;
 
       return *move;
@@ -361,11 +361,43 @@ private:
     sortValueOfCap(move);
     move.vsort_ += 10000; // to prevent negative values
     m++;
- }
+  }
 
+  inline bool filter(const Move & move) const
+  {
+    if ( move.capture_ && move.new_type_ )
+      return true;
+
+    bool discovered;
+    bool check = detectCheck(move, discovered);
+
+    if ( discovered )
+      return true; // always ok
+
+    Figure::Type type = Figure::TypeNone;
+    const Field & tfield = board_.getField(move.to_);
+    if ( tfield )
+      type = tfield.type();
+    else if ( move.new_type_ )
+      type = (Figure::Type)move.new_type_;
+    else if ( board_.en_passant_ == move.to_ && board_.getField(move.from_).type() == Figure::TypePawn ) // en-passant capture
+      type = Figure::TypePawn;
+
+    if ( !check && type < minimalType_ )
+      return false;
+
+    int s = board_.see(move);
+    return s >= 0;
+  }
+
+  bool detectCheck(const Move & move, bool & discovered) const;
 
   Figure::Type minimalType_;
   Move hcap_;
+
+  // for checks detector
+  BitMask mask_all_, mask_brq_;
+  int oking_pos_;
 };
 
 /// generate all moves, that escape from check
@@ -401,23 +433,62 @@ public:
         return hmove_;
     }
 
-    for ( ;; )
+    for ( ; !do_weak_; )
     {
       Move * move = moves_ + numOfMoves_;
       Move * mv = moves_;
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
           continue;
 
         move = mv;
       }
       if ( !*move )
-        return *move;
+      {
+        do_weak_ = true;
+        break;
+        //return *move;
+      }
+
+      if ( move->capture_ && !move->seen_ && numOfMoves_ > 1 )
+      {
+        move->seen_ = 1;
+        if ( board_.see(*move) < 0 )
+        {
+          weak_[weakN_++] = *move;
+          move->alreadyDone_ = 1;
+          continue;
+        }
+      }
 
       move->alreadyDone_ = 1;
       return *move;
     }
+
+    if ( do_weak_ && weakN_ > 0 )
+    {
+      weak_[weakN_].clear();
+      for ( ;; )
+      {
+        Move * move = weak_ + weakN_;
+        Move * mv = weak_;
+        for ( ; *mv; ++mv)
+        {
+          if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
+            continue;
+
+          move = mv;
+        }
+        if ( !*move )
+          return *move;
+
+        move->alreadyDone_ = 1;
+        return *move;
+      }
+    }
+
+    return fake_;
   }
 
 protected:
@@ -475,13 +546,13 @@ protected:
 
     if ( capture || move.new_type_ )
     {
-      sortValue(move);
+      sortValueOfCap(move);
       move.vsort_ += 10000000;
     }
     else
     {
       const History & hist = history(move.from_, move.to_);
-      move.vsort_ = hist.score();
+      move.vsort_ = hist.score()+10;
     }
 
     ++m;
@@ -490,6 +561,11 @@ protected:
   Move hmove_;
   int takeHash_;
   int movesCount_;
+
+  Move weak_[Board::MovesMax];
+  int weakN_;
+  bool do_weak_;
+  Move fake_;
 };
 
 
@@ -616,7 +692,7 @@ public:
       Move * mv = moves_;
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
           continue;
 
         move = mv;
@@ -654,7 +730,7 @@ private:
     else
     {
       const History & hist = history(move.from_, move.to_);
-      move.vsort_ = hist.score();
+      move.vsort_ = hist.score()+10;
     }
 
     m++;

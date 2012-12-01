@@ -90,15 +90,12 @@ Player::Player() :
   depthMax_(2),
   depth_(0),
   plyMax_(0),
-  initial_material_balance_(0),
+  initial_material_balance_(0)
 #ifdef USE_HASH_TABLE_CAPTURE
-  chash_(20),
+  ,chash_(20)
 #endif
 #ifdef USE_HASH_TABLE_GENERAL
-  ghash_(20),
-  use_pv_(false)
-#else
-  use_pv_(true)
+  ,ghash_(20)
 #endif
 {
   posted_fen_[0] = 0;
@@ -184,7 +181,6 @@ void Player::postHint()
 
 void Player::setMemory(int mb)
 {
-  use_pv_ = true;
   if ( mb < 1 )
     return;
 
@@ -198,12 +194,10 @@ void Player::setMemory(int mb)
 
 #ifdef USE_HASH_TABLE_GENERAL
   ghash_.resize(hsize-1);
-  use_pv_ = false;
 #endif
 
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_.resize(hsize+1);
-  use_pv_ = false;
 #endif
 
 }
@@ -570,7 +564,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   int goodCount = 0;
 
 #ifdef USE_HASH_TABLE_GENERAL
-  if ( !use_pv_ ) // use hash table
   {
     GeneralHashTable::Flag flag = getGeneralHashFlag(depth, ply, alpha, betta);
     if ( GeneralHashTable::Alpha == flag )
@@ -590,26 +583,10 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 #endif // USE_HASH_TABLE_GENERAL
 
-  Move pv;
-  pv.clear();
-
   // clear context for current ply
   // copy extensions counters from prev.ply context
   if ( ply < MaxPly-1 )
   {
-    if ( use_pv_ )
-    {
-      // we use PV only up to max-depth
-      if ( ply < depthMax_ )
-      {
-        pv = contexts_[0].pv_[ply];
-        pv.checkVerified_ = 0;
-
-        if ( !board_.possibleMove(pv) )
-          pv.clear();
-      }
-    }
-
     contexts_[ply+1].killer_.clear();
     contexts_[ply].clear(ply);
 
@@ -696,16 +673,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   Move hmoves[HashedMoves_Size];
   int hmovesN = 0;
   
-  if ( !use_pv_ )
-    hmovesN = collectHashMoves(depth, ply, null_move, alpha, betta, hmoves);
-  else if ( pv )
-  {
-    hmoves[0] = pv;
-    hmoves[1].clear();
-    hmovesN = 1;
-  }
-  else
-    hmoves[0].clear();
+  hmovesN = collectHashMoves(depth, ply, null_move, alpha, betta, hmoves);
 
   Move killer;
   if ( !board_.extractKiller(contexts_[ply].killer_, hmoves[0], killer) )
@@ -1010,14 +978,13 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
             beforeFound_ = true;
         }
 
-#ifdef USE_KILLER
         if ( !move.capture_ && !move.new_type_ )
         {
           Move & killer = contexts_[ply].killer_;
           killer = move;
         }
-#endif
       }
+
 #if ((defined USE_HASH_TABLE_GENERAL) && (defined USE_THREAT_MOVE))
       else if ( contexts_[ply].threat_ )
       {
@@ -1133,16 +1100,13 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   if ( board_.underCheck() )
   {
-//#ifdef USE_HASH_TABLE_CAPTURE
-    EscapeGeneratorLimited eg(hcap, board_, minimalType, depth >= 0);
-//#endif
+    EscapeGenerator eg(hcap, board_);
 
-    if ( eg.singleReply() )
-      depth++;// += extend_check(depth, ply, eg, alpha, betta);
+    depth += extend_check(depth, ply, eg, alpha, betta);
 
     for ( ; !stop_ && alpha < betta ; )
     {
-      const Move & move = eg.next();
+      const Move & move = eg.escape();
       if ( !move )
         break;
 
@@ -1155,60 +1119,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
       capture(depth, ply, alpha, betta, move, counter);
     }
-
-    //if ( alpha == saveAlpha && eg.realMovesCount() > 0 )
-    //{
-    //  ScoreType alpha1 = alpha;
-    //  EscapeGenerator eg2(hcap, board_);
-    //  Move found(0);
-    //  for ( ; !stop_ && alpha1 < betta ; )
-    //  {
-    //    const Move & move = eg2.escape();
-    //    if ( !move )
-    //      break;
-
-    //    checkForStop();
-
-    //    if ( stop_ )
-    //      break;
-
-    //    THROW_IF( !board_.possibleMove(move), "move validation failed" );
-
-    //    capture(depth, ply, alpha1, betta, move, counter);
-    //    if ( alpha1 >= betta && !found )
-    //    {
-    //      found = move;
-    //    }
-    //    if ( alpha1 > alpha )
-    //    {
-    //      char fen[256];
-    //      board_.toFEN(fen);
-    //      bool ok = true;
-    //    }
-    //  }
-    //  if ( alpha1 >= betta )
-    //  {
-    //    char fen[256];
-    //    board_.toFEN(fen);
-    //    bool ok = true;
-    //  }
-    //}
-
-    //if ( stop_ )
-    //  return alpha;
-
-    //if ( !counter && eg.realMovesCount() )
-    //{
-    //  EscapeGeneratorLimited eg1(hcap, board_, minimalType, depth >= 0);
-    //  for ( ;; )
-    //  {
-    //    Move & move = eg1.next();
-    //    if ( !move )
-    //      break;
-    //  }
-    //}
-
-    THROW_IF( !counter && eg.realMovesCount() > 0, "no moves done while escape" );
 
     if ( counter == 0 )
     {
@@ -1345,10 +1255,6 @@ void Player::capture(int depth, int ply, ScoreType & alpha, ScoreType betta, con
 
       assemblePV(cap, haveCheck, ply);
 
-#ifdef USE_KILLER_CAPS
-      contexts_[ply].killer_ = cap;
-#endif
-
 #ifdef USE_HASH_TABLE_CAPTURE
       updateCaptureHash(depth, ply, cap, s, betta, hcode, color);
 #endif
@@ -1483,16 +1389,6 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
   }
 #endif
 
-#ifdef USE_KILLER_ADV
-  // at the last push killer (only if it is capture)
-  Move killer = contexts_[ply].killer_;
-  if ( killer && killer.rindex_ >= 0 && !find_move(moves, num, killer) && board_.validMove(killer) )
-  {
-    killer.fkiller_ = 1;
-    moves[num++] = killer;
-  }
-#endif
-
   moves[num].clear();
 
   return num;
@@ -1536,16 +1432,6 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
 
   if ( hmove )
     caps[num++] = hmove;
-
-#ifdef USE_KILLER_CAPS
-  Move killer = contexts_[ply].killer_;
-  if ( killer && killer != hmove && killer.rindex_ >= 0 && board_.validMove(killer) &&
-       board_.getFigure(Figure::otherColor(board_.getColor()), killer.rindex_).getType() >= minimalType)
-  {
-    killer.checkVerified_ = 0;
-    caps[num++] = killer;
-  }
-#endif
 
   caps[num].clear();
 
