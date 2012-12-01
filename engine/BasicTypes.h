@@ -36,6 +36,8 @@ typedef unsigned __int64 uint64;
 typedef int16 ScoreType;
 typedef uint64 BitMask;
 
+const ScoreType ScoreMax = std::numeric_limits<ScoreType>::max();
+
 namespace nst
 {
   enum dirs

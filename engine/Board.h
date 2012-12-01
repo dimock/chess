@@ -96,7 +96,11 @@ public:
     killer = ki;
     killer.clearFlags();
 
-    return possibleMove(killer);
+    bool ok = possibleMove(killer);
+    if ( !ok )
+      killer.clear();
+
+    return ok;
   }
 
   /// unpack from hash, move have to be physically possible

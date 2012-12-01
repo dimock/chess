@@ -123,6 +123,11 @@ struct Move
     return *reinterpret_cast<const uint16*>(this) != *reinterpret_cast<const uint16*>(&other) ||
       this->new_type_ != other.new_type_;
   }
+
+  inline bool operator < (const Move & other) const
+  {
+    return vsort_ > other.vsort_;
+  }
 };
 
 /// complete move structure with all information, required for undo

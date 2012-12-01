@@ -101,6 +101,7 @@ struct PlyContext
   PlyContext() : threat_(0), null_move_threat_(0) {}
 
   Move killer_;
+  ScoreType killerScore_;
   Move pv_[MaxPly+1];
   uint16 threat_ : 1,
          null_move_threat_ : 1;
@@ -117,6 +118,21 @@ struct PlyContext
     threat_ = 0;
     null_move_threat_ = 0;
     ext_data_.clear();
+  }
+
+  void setKiller(const Move & killer, ScoreType score)
+  {
+    if ( !killer.capture_ && !killer.new_type_ )
+    {
+      killer_ = killer;
+      killerScore_ = score;
+    }
+  }
+
+  void clearKiller()
+  {
+    killerScore_ = -ScoreMax;
+    killer_.clear();
   }
 
   ExtData ext_data_;
@@ -195,7 +211,7 @@ public:
 
 private:
 
-  void checkForStop()
+  bool checkForStop()
   {
     if ( totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
     {
@@ -204,6 +220,12 @@ private:
       else
         testInput();
     }
+    return stop_;
+  }
+
+  void stop()
+  {
+    stop_ = true;
   }
 
   void testInput();
@@ -212,6 +234,27 @@ private:
 
   // start point of search algorithm
   bool search(SearchResult & , std::ostream * out = 0);
+
+
+  // new search routine
+  Move moves0_[Board::MovesMax];
+  static const int depth0_ = 1;
+
+  void inc_nc()
+  {
+    totalNodes_++;
+    nodesCount_++;
+  }
+
+  int nextDepth(int depth)
+  {
+    return depth - 1 + board_.underCheck();
+  }
+
+  ScoreType alphaBetta0(ScoreType alpha, ScoreType betta);
+  ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
+  ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta);
+
 
   // core of search algorithm
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool null_move, int singularCount);

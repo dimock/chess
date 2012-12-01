@@ -153,7 +153,7 @@ Move & QuiesGenerator::next()
 
   if ( order_ == oGenCaps )
   {
-    cg_.generate(hmove_, minimalType_);
+    cg_.generate(hmove_, Figure::TypePawn);
     order_ = oCaps;
   }
 
@@ -168,7 +168,7 @@ Move & QuiesGenerator::next()
 
   if ( order_ == oGenChecks )
   {
-    chg_.generate(hmove_, minimalType_);
+    chg_.generate(hmove_, Figure::TypePawn);
     order_ = oChecks;
   }
 

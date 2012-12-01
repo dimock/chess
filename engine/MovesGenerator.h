@@ -45,6 +45,12 @@ struct History
     return bad_count_;
   }
 
+  void inc_gb(bool g)
+  {
+    good_count_ +=  g;
+    bad_count_  += !g;
+  }
+
   void inc_good()
   {
     good_count_++;

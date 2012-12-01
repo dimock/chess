@@ -307,7 +307,9 @@ bool Player::search(SearchResult & sres, std::ostream * out)
   MovesGenerator::clear_history();
 
   before_.clear();
-  contexts_[0].killer_.clear();
+
+  for (int i = 0; i < MaxPly; ++i)
+    contexts_[i].clearKiller();
 
   contexts_[0].clearPV(depthMax_);
 
@@ -322,12 +324,13 @@ bool Player::search(SearchResult & sres, std::ostream * out)
       if ( !move )
         break;
       if ( board_.validateMove(move) )
-        numOfMoves_++;
+        moves0_[numOfMoves_++] = move;
     }
+    moves0_[numOfMoves_].clear();
   }
 
 
-  for (depth_ = 1; !stop_ && depth_ <= depthMax_; ++depth_)
+  for (depth_ = depth0_; !stop_ && depth_ <= depthMax_; ++depth_)
   {
     pv_board_ = board_;
     pv_board_.set_moves(pv_moves_);
@@ -341,7 +344,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, 0);
+    ScoreType score = alphaBetta0(alpha, betta);
 
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
@@ -371,11 +374,6 @@ bool Player::search(SearchResult & sres, std::ostream * out)
       sres.totalNodes_ = totalNodes_;
 	    sres.plyMax_ = plyMax_;
       sres.dt_ = dt;
-
-      if ( before_ != best_ && before_ && !before_.capture_ && !before_.new_type_ )
-        contexts_[0].killer_ = before_;
-      else
-        contexts_[0].killer_.clear();
 
       for (int i = 0; i < depth_; ++i)
       {
@@ -1166,9 +1164,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       if ( !cap )
         break;
 
-      checkForStop();
-
-      if ( stop_ )
+      if ( checkForStop() )
         break;
 
       THROW_IF( !board_.possibleMove(cap), "move validation failed" );
