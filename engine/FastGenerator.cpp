@@ -119,3 +119,63 @@ Move & FastGenerator::move()
 
   return fake_;
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+QuiesGenerator::QuiesGenerator(const Move & hmove, Board & board, Figure::Type minimalType, int depth) :
+  eg_(board), cg_(board), chg_(board), minimalType_(minimalType), hmove_(hmove), board_(board), order_(oHash), depth_(depth), fake_(0)
+{
+  if ( board_.underCheck() )
+  {
+    eg_.generate(hmove);
+    order_ = oEscape;
+  }
+}
+
+bool QuiesGenerator::singleReply() const
+{
+  return eg_.count() == 1;
+}
+
+Move & QuiesGenerator::next()
+{
+  if ( order_ == oHash )
+  {
+    order_ = oGenCaps;
+    if ( hmove_ )
+      return hmove_;
+  }
+
+  if ( order_ == oEscape )
+  {
+    return eg_.escape();
+  }
+
+  if ( order_ == oGenCaps )
+  {
+    cg_.generate(hmove_, minimalType_);
+    order_ = oCaps;
+  }
+
+  if ( order_ == oCaps )
+  {
+    Move & cap = cg_.capture();
+    if ( cap || depth_ < 0 )
+      return cap;
+
+    order_ = oGenChecks;
+  }
+
+  if ( order_ == oGenChecks )
+  {
+    chg_.generate(hmove_, minimalType_);
+    order_ = oChecks;
+  }
+
+  if ( order_ == oChecks )
+  {
+    return chg_.check();
+  }
+
+  return fake_;
+}

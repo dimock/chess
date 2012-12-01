@@ -462,6 +462,10 @@ private:
   void verifyFastGenerator(const Move & hmove, const Move & killer);
 #endif
 
+#ifdef VERIFY_QUIES_GENERATOR
+  void verifyQuiesGenerator(const Move & hmove);
+#endif
+
 #ifdef RECAPTURE_EXTENSION
   bool recapture(int ply, int depth, int initial_balance);
 #endif //RECAPTURE_EXTENSION

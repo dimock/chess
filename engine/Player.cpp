@@ -1098,6 +1098,10 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
 #endif
 
+#ifdef VERIFY_QUIES_GENERATOR
+  verifyQuiesGenerator(hcap);
+#endif
+
   if ( board_.underCheck() )
   {
     EscapeGenerator eg(hcap, board_);

@@ -57,6 +57,8 @@ struct History
 
   void inc_score(int ds)
   {
+    if ( ds < 1 )
+      ds = 1;
     score_ += ds;
     //if ( score_ > history_max_ )
     //  history_max_ = score_;
@@ -493,40 +495,6 @@ public:
 
 protected:
 
-  inline void sortValue(Move & move)
-  {
-    const Field & fto = board_.getField(move.to_);
-    const Field & ffrom = board_.getField(move.from_);
-
-    Figure::Type vtype = fto.type();
-    Figure::Type atype = ffrom.type();
-
-    THROW_IF(vtype != Figure::TypeNone && fto.color() != Figure::otherColor(board_.color_), "invalid color of captured figure");
-
-    // en-passant case
-    if ( vtype == Figure::TypeNone && move.to_ == board_.en_passant_ && ffrom.type() == Figure::TypePawn )
-    {
-      THROW_IF( board_.getField(board_.enpassantPos()).type() != Figure::TypePawn ||
-        board_.getField(board_.enpassantPos()).color() == board_.color_, "no en-passant pawn" );
-
-      vtype = Figure::TypePawn;
-    }
-
-    // capture
-    if ( vtype != Figure::TypeNone )
-    {
-      move.vsort_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + 1000;
-    }
-
-    // pawn promotion
-    if ( move.new_type_ > Figure::TypeNone && move.new_type_ < Figure::TypeKing )
-      move.vsort_ += Figure::figureWeight_[move.new_type_];
-
-    // at first we try to eat checking figure by weaker one
-    if ( board_.checking_[0] == move.to_ || (board_.checkingNum_ > 1 && board_.checking_[1] == move.to_) )
-      move.vsort_ += 1000 - Figure::figureWeight_[atype];
-  }
-
   /// returns number of moves found
   int generate();
   int generateUsual();
@@ -568,82 +536,6 @@ protected:
   Move fake_;
 };
 
-
-//////////////////////////////////////////////////////////////////////////
-/// After horizon only
-class EscapeGeneratorLimited : public EscapeGenerator
-{
-public:
-
-  EscapeGeneratorLimited(const Move & hmove, Board & , Figure::Type minimalType, bool with_checks);
-
-  inline Move & next()
-  {
-    for ( ;; )
-    {
-      Move & move = escape();
-      if ( !move )
-        break;
-
-      if ( !first_ )
-        first_ = move;
-
-      if ( filter(move) )
-      {
-        movesDone_++;
-        return move;
-      }
-    }
-
-    if ( !movesDone_ )
-    {
-      movesDone_++;
-      return first_;
-    }
-
-    return fake_;
-  }
-
-  inline int realMovesCount() const
-  {
-    return generatedMovesCount_;
-  }
-
-  inline bool singleReply() const
-  {
-    return singleReply_;
-  }
-
-protected:
-
-  inline bool filter(const Move & move) const
-  {
-    //const Field & ffield = board_.getField(move.from_);
-    //const Field & tfield = board_.getField(move.to_);
-    //bool strong_cap = move.capture_ &&
-    //  ( (tfield && tfield.type() >= minimalType_) ||
-    //    (ffield.type() == Figure::TypePawn && Figure::TypePawn >= minimalType_ && board_.en_passant_ == move.to_) );
-
-    if ( !move.capture_ && (!withChecks_ || !detectCheck(move)) )
-      return false;
-
-    return board_.see(move) >= 0;
-  }
-
-  bool detectCheck(const Move & move) const;
-
-  bool withChecks_;
-  Figure::Type minimalType_;
-  bool singleReply_;
-  int  generatedMovesCount_;
-  int  movesDone_;
-  Move first_, fake_;
-
-  // for checks detector
-  BitMask mask_all_, mask_brq_;
-  int oking_pos_;
-};
-
 /// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves
 /// generates all valid moves if under check
 class FastGenerator
@@ -683,6 +575,7 @@ class ChecksGenerator : public MovesGeneratorBase
 public:
 
   ChecksGenerator(const Move & hmove, Board & board, Figure::Type minimalType);
+  ChecksGenerator(Board & board);
 
   Move & check()
   {
@@ -708,6 +601,8 @@ public:
       return *move;
     }
   }
+
+  int generate(const Move & hmove, Figure::Type minimalType);
 
 private:
 
@@ -777,4 +672,33 @@ private:
 
   Figure::Type minimalType_;
   Move hmove_;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+/// Generate all moves after horizon
+class QuiesGenerator
+{
+public:
+
+  QuiesGenerator(const Move & hmove, Board & board, Figure::Type minimalType, int depth);
+
+  Move & next();
+
+  // valid only under check
+  bool singleReply() const;
+
+private:
+
+  CapsGenerator cg_;
+  EscapeGenerator eg_;
+  ChecksGenerator chg_;
+
+  enum Order { oNone, oHash, oEscape, oGenCaps, oCaps, oGenChecks, oChecks };
+
+  Board & board_;
+  Figure::Type minimalType_;
+  Move hmove_, fake_;
+  Order order_;
+  int depth_;
 };

@@ -13,6 +13,22 @@ ChecksGenerator::ChecksGenerator(const Move & hmove, Board & board, Figure::Type
   moves_[numOfMoves_].clear();
 }
 
+ChecksGenerator::ChecksGenerator(Board & board) :
+  MovesGeneratorBase(board), minimalType_(Figure::TypeNone), hmove_(0)
+{
+  moves_[0].clear();
+}
+
+int ChecksGenerator::generate(const Move & hmove, Figure::Type minimalType)
+{
+  hmove_ = hmove;
+  minimalType_ = minimalType;
+
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
+  return numOfMoves_;
+}
+
 int ChecksGenerator::generate()
 {
   int m = 0;
