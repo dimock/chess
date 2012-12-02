@@ -238,8 +238,7 @@ private:
 
   void calculateSortValue(Move & move)
   {
-    const Field & ffield = board_.getField(move.from_);
-    THROW_IF( !ffield, "no figure on field we move from" );
+    THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
 
     if ( move.capture_ || move.new_type_ )
     {
