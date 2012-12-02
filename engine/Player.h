@@ -509,12 +509,8 @@ private:
   void verifyEscapeGen(const Move & hmove);
 #endif
 
-#ifdef VERIFY_ESCAPE_GENERATOR_LIMITED
-  void verifyEscapeGenLimited(const Move & hmove, Figure::Type minimalType);
-#endif
-
 #ifdef VERIFY_CHECKS_GENERATOR
-  void verifyChecksGenerator(Figure::Type minimalType);
+  void verifyChecksGenerator();
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR

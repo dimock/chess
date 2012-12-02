@@ -216,9 +216,9 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   }
 
   Move hmove(0);
-  Figure::Type minimalType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
+  Figure::Type thresholdType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
-  QuiesGenerator qg(hmove, board_, minimalType, depth);
+  QuiesGenerator qg(hmove, board_, thresholdType, depth);
 
   if ( qg.singleReply() )
     depth++;

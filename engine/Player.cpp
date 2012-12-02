@@ -325,6 +325,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
     ScoreType score = alphaBetta0(alpha, betta);
+    //ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, SingularExtension_Limit);
 
     if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
     {
@@ -574,7 +575,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef VERIFY_CHECKS_GENERATOR
   if ( !board_.underCheck() )
-    verifyChecksGenerator(Figure::TypeKing);
+    verifyChecksGenerator();
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR
@@ -1037,7 +1038,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 #ifdef VERIFY_CHECKS_GENERATOR
   if ( !board_.underCheck() )
   {
-    verifyChecksGenerator(delta2type(delta));
+    verifyChecksGenerator();
   }
 #endif
 
@@ -1066,13 +1067,6 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   if ( board_.underCheck() )
   {
     verifyEscapeGen(hcap);
-  }
-#endif
-
-#ifdef VERIFY_ESCAPE_GENERATOR_LIMITED
-  if ( board_.underCheck() )
-  {
-    verifyEscapeGenLimited(hcap, minimalType);
   }
 #endif
 
@@ -1137,7 +1131,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
       return alpha;
 
     // generate only suitable captures
-    CapsGenerator cg(hcap, board_, minimalType);
+    CapsGenerator cg(hcap, board_);
     for ( ; !stop_ && alpha < betta; )
     {
       const Move & cap = cg.capture();
@@ -1156,7 +1150,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     // generate check only on 1st iteration under horizon
     if ( depth >= 0 && !stop_ && alpha < betta )
     {
-      ChecksGenerator ckg(hcap, board_, minimalType);
+      ChecksGenerator ckg(hcap, board_);
 
       for ( ; !stop_ && alpha < betta ; )
       {

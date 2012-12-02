@@ -323,9 +323,9 @@ class CapsGenerator : public MovesGeneratorBase
 public:
 
   CapsGenerator(Board & );
-  CapsGenerator(const Move & hcap, Board & , Figure::Type minimalType);
+  CapsGenerator(const Move & hcap, Board & );
 
-  int generate(const Move & hcap, Figure::Type minimalType);
+  int generate(const Move & hcap, Figure::Type thresholdType);
 
   inline Move & capture()
   {
@@ -400,7 +400,7 @@ private:
 
   bool detectCheck(const Move & move, bool & discovered) const;
 
-  Figure::Type minimalType_, thresholdType_;
+  Figure::Type thresholdType_;
   Move hcap_;
 
   // for checks detector
@@ -575,12 +575,12 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////
-// generate all captures with type gt/eq to minimalType
+// generate checks without captures
 class ChecksGenerator : public MovesGeneratorBase
 {
 public:
 
-  ChecksGenerator(const Move & hmove, Board & board, Figure::Type minimalType);
+  ChecksGenerator(const Move & hmove, Board & board);
   ChecksGenerator(Board & board);
 
   Move & check()
@@ -608,16 +608,16 @@ public:
     }
   }
 
-  int generate(const Move & hmove, Figure::Type minimalType);
+  int generate(const Move & hmove);
 
 private:
 
   int generate();
 
-  inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool discovered, bool capture)
+  inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool discovered)
   {
     Move & move = moves_[m];
-    move.set(from, to, new_type, capture);
+    move.set(from, to, new_type, false);
     if ( move == hmove_ )
       return;
 
@@ -637,46 +637,6 @@ private:
     m++;
   }
 
-  // add non-processed moves of pawn if it discovers check in caps-loop
-  inline void add_other_pawn_moves(int & m, int from, int to, int oki_pos)
-  {
-    const BitMask & from_oki_mask = board_.g_betweenMasks->from(oki_pos, from);
-
-    // not processed captures
-    const int8 * table = board_.g_movesTable->pawn(board_.color_, from);
-    for (int i = 0; i < 2 && *table >= 0; ++table, ++i)
-    {
-      if ( *table == to )
-        continue;
-
-      const Field & pfield = board_.getField(*table);
-      if ( !pfield || pfield.color() == board_.color_ || pfield.type() >= minimalType_ )
-        continue;
-
-      // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      if ( (from_oki_mask & set_mask_bit(*table)) )
-        continue;
-
-      // don't add checking pawn's capture, because we add it another way
-      int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, *table, oki_pos);
-      if ( dir == 0 || dir == 1 )
-        continue;
-
-      add(m, from, *table, Figure::TypeNone, true /* discovered */, true /*cap*/);
-    }
-
-    // usual moves
-    for ( ; *table >= 0 && !board_.getField(*table); ++table)
-    {
-      // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      if ( from_oki_mask & set_mask_bit(*table) )
-        break;
-
-      add(m, from, *table, Figure::TypeNone, true /* discovered */, false/*no cap*/);
-    }
-  }
-
-  Figure::Type minimalType_;
   Move hmove_;
 };
 
@@ -687,7 +647,7 @@ class QuiesGenerator
 {
 public:
 
-  QuiesGenerator(const Move & hmove, Board & board, Figure::Type minimalType, int depth);
+  QuiesGenerator(const Move & hmove, Board & board, Figure::Type thresholdType, int depth);
 
   Move & next();
 
@@ -703,7 +663,7 @@ private:
   enum Order { oNone, oHash, oEscape, oGenCaps, oCaps, oGenChecks, oChecks };
 
   Board & board_;
-  Figure::Type minimalType_;
+  Figure::Type thresholdType_;
   Move hmove_, fake_;
   Order order_;
   int depth_;
