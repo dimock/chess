@@ -134,7 +134,7 @@ QuiesGenerator::QuiesGenerator(const Move & hmove, Board & board, Figure::Type m
 
 bool QuiesGenerator::singleReply() const
 {
-  return eg_.count() == 1;
+  return board_.underCheck() && eg_.count() == 1;
 }
 
 Move & QuiesGenerator::next()
@@ -153,7 +153,7 @@ Move & QuiesGenerator::next()
 
   if ( order_ == oGenCaps )
   {
-    cg_.generate(hmove_, Figure::TypePawn);
+    cg_.generate(hmove_, minimalType_);
     order_ = oCaps;
   }
 

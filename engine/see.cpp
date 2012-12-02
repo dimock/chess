@@ -27,7 +27,7 @@ inline uint8 see_unpack_p(uint16 v)
 // have to be called before doing move
 int Board::see(const Move & move) const
 {
- // if ( state_ == Invalid )
+  if ( state_ == Invalid )
     return 0;
 
   const Field & ffield = getField(move.from_);

@@ -7,26 +7,6 @@
 #include "MovesGenerator.h"
 
 //////////////////////////////////////////////////////////////////////////
-inline Figure::Type delta2type(int delta)
-{
-  Figure::Type minimalType = Figure::TypePawn;
-
-#ifdef USE_DELTA_PRUNING_
-  if ( delta > Figure::figureWeight_[Figure::TypeQueen] )
-    minimalType = Figure::TypeKing;
-  else if ( delta > Figure::figureWeight_[Figure::TypeRook] )
-    minimalType = Figure::TypeQueen;
-  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
-    minimalType = Figure::TypeRook;
-  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
-    minimalType = Figure::TypeBishop;
-  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
-    minimalType = Figure::TypeKnight;
-#endif
-
-  return minimalType;
-}
-
 inline int nullMove_depth(int depth)
 {
   if ( depth < 6 )
@@ -324,9 +304,9 @@ bool Player::search(SearchResult & sres, std::ostream * out)
       if ( !move )
         break;
       if ( board_.validateMove(move) )
-        moves0_[numOfMoves_++] = move;
+        moves_[numOfMoves_++] = move;
     }
-    moves0_[numOfMoves_].clear();
+    moves_[numOfMoves_].clear();
   }
 
 

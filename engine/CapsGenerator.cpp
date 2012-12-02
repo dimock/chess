@@ -7,7 +7,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type minimalType) :
-  MovesGeneratorBase(board), hcap_(hcap), minimalType_(minimalType)
+  MovesGeneratorBase(board), hcap_(hcap), minimalType_(minimalType), thresholdType_(minimalType_)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
@@ -20,7 +20,7 @@ CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type mini
 }
 
 CapsGenerator::CapsGenerator(Board & board) :
-  MovesGeneratorBase(board), minimalType_(Figure::TypeNone)
+  MovesGeneratorBase(board), minimalType_(Figure::TypeNone), thresholdType_(Figure::TypeNone)
 {
   hcap_.clear();
 
@@ -34,7 +34,8 @@ CapsGenerator::CapsGenerator(Board & board) :
 int CapsGenerator::generate(const Move & hcap, Figure::Type minimalType)
 {
   hcap_ = hcap;
-  minimalType_ = minimalType;
+  minimalType_ = Figure::TypePawn;
+  thresholdType_ = minimalType;
 
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();

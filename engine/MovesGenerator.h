@@ -391,7 +391,7 @@ private:
     else if ( board_.en_passant_ == move.to_ && board_.getField(move.from_).type() == Figure::TypePawn ) // en-passant capture
       type = Figure::TypePawn;
 
-    if ( !check && type < minimalType_ )
+    if ( !check && type < thresholdType_ )
       return false;
 
     int s = board_.see(move);
@@ -400,7 +400,7 @@ private:
 
   bool detectCheck(const Move & move, bool & discovered) const;
 
-  Figure::Type minimalType_;
+  Figure::Type minimalType_, thresholdType_;
   Move hcap_;
 
   // for checks detector

@@ -138,6 +138,26 @@ struct PlyContext
   ExtData ext_data_;
 };
 
+inline Figure::Type delta2type(int delta)
+{
+  Figure::Type minimalType = Figure::TypePawn;
+
+#ifdef USE_DELTA_PRUNING_
+  if ( delta > Figure::figureWeight_[Figure::TypeQueen] )
+    minimalType = Figure::TypeKing;
+  else if ( delta > Figure::figureWeight_[Figure::TypeRook] )
+    minimalType = Figure::TypeQueen;
+  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
+    minimalType = Figure::TypeRook;
+  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
+    minimalType = Figure::TypeBishop;
+  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
+    minimalType = Figure::TypeKnight;
+#endif
+
+  return minimalType;
+}
+
 
 class Player
 {
@@ -237,7 +257,7 @@ private:
 
 
   // new search routine
-  Move moves0_[Board::MovesMax];
+  Move moves_[Board::MovesMax];
   static const int depth0_ = 1;
 
   void inc_nc()
@@ -246,14 +266,14 @@ private:
     nodesCount_++;
   }
 
-  int nextDepth(int depth)
+  int nextDepth(int depth, const Move & move) const
   {
     return depth - 1 + board_.underCheck();
   }
 
   ScoreType alphaBetta0(ScoreType alpha, ScoreType betta);
   ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
-  ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta);
+  ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta, ScoreType score0 = -ScoreMax);
 
 
   // core of search algorithm

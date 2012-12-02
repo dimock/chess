@@ -23,20 +23,20 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
 
   ScoreType scoreBest = -ScoreMax;
 
-  for (int i = 0; i < numOfMoves_; ++i)
+  for (int count = 0; count < numOfMoves_; ++count)
   {
     if ( checkForStop() )
       break;
 
-    Move & move = moves0_[i];
+    Move & move = moves_[count];
     ScoreType score = -ScoreMax;
     
     board_.makeMove(move);
     inc_nc();
 
-    int depth1 = nextDepth(depth_);
+    int depth1 = nextDepth(depth_, move);
 
-    if ( depth_ == depth0_ || !i ) // 1st iteration
+    if ( depth_ == depth0_ || !count ) // 1st iteration
       score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
     else
     {
@@ -47,31 +47,42 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
 
     board_.unmakeMove();
 
+    move.vsort_ = score + ScoreMax;
+
     if ( score > scoreBest )
     {
       scoreBest = score;
+
       if ( score > alpha )
       {
         best_ = move;
         if ( best_ == before_ )
           beforeFound_ = true;
+
         alpha = score;
         assemblePV(move, board_.underCheck(), 0);
+
+        // bring best move to front, shift other moves 1 position right
+        Move mv = moves_[count];
+        for (int j = count; j > 0; --j)
+          moves_[j] = moves_[j-1];
+        moves_[0] = mv;
       }
     }
 
-    move.vsort_ = score + ScoreMax;
-
-    counter_ = i;
+    counter_ = count;
   }
 
+  // don't need to continue
   if ( counter_ == 1 && !analyze_mode_ )
   {
     beforeFound_ = true;
     pleaseStop();
   }
 
-  std::sort(moves0_, moves0_ + numOfMoves_);
+  // sort only on 1st iteration
+  if ( depth_ == depth0_ )
+    std::sort(moves_, moves_ + numOfMoves_);
 
   return scoreBest;
 }
@@ -92,6 +103,19 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
   if ( ply < MaxPly-1 )
     contexts_[ply].clear(ply);
+
+#ifdef USE_FUTILITY_PRUNING
+  if ( !board_.underCheck() && !board_.isWinnerLoser() &&
+        alpha > -Figure::WeightMat+MaxPly &&
+        alpha < Figure::WeightMat-MaxPly &&
+        depth == 1 && ply > 1 )
+  {
+    ScoreType score0 = board_.evaluate();
+    int delta = (int)alpha - (int)score0 - (int)Figure::positionGain_;
+    if ( delta > 0 )
+      return captures2(depth, ply, alpha, betta, score0);
+  }
+#endif
 
   int counter = 0;
   ScoreType scoreBest = -ScoreMax;
@@ -114,7 +138,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     board_.makeMove(move);
     inc_nc();
 
-    int depth1 = nextDepth(depth);
+    int depth1 = nextDepth(depth, move);
 
     if ( !counter || !pv )
       score = -alphaBetta2(depth1, ply+1, -betta, -alpha, pv);
@@ -160,7 +184,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   return scoreBest;
 }
 
-ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta)
+ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta, ScoreType score0)
 {
   if ( alpha >= Figure::WeightMat-ply )
     return alpha;
@@ -168,7 +192,9 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   if ( board_.drawState() )
     return Figure::WeightDraw;
 
-  ScoreType score0 = board_.evaluate();
+  // not initialized yet
+  if ( score0 == -ScoreMax )
+    score0 = board_.evaluate();
 
   if ( stop_ || ply >= MaxPly )
     return score0;
@@ -178,16 +204,19 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
 
   int counter = 0;
   ScoreType scoreBest = -ScoreMax;
+  int delta = 0;
 
   if ( !board_.underCheck() )
   {
+    delta = (int)alpha - (int)score0 - (int)Figure::positionGain_;
     if ( score0 > alpha )
       alpha = score0;
+
     scoreBest = score0;
   }
 
   Move hmove(0);
-  Figure::Type minimalType = Figure::TypePawn;
+  Figure::Type minimalType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
   QuiesGenerator qg(hmove, board_, minimalType, depth);
 
@@ -208,7 +237,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
     board_.makeMove(move);
     inc_nc();
 
-    int depth1 = nextDepth(depth);
+    int depth1 = nextDepth(depth, move);
 
     score = -captures2(depth1, ply+1, -betta, -alpha);
 
