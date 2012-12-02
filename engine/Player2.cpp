@@ -206,6 +206,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
     ScoreType score = -ScoreMax;
     
     board_.makeMove(move);
+    inc_nc();
 
     int depth1 = nextDepth(depth);
 
