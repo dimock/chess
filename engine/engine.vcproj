@@ -667,6 +667,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HashTable2.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Helpers.h"
 				>
 			</File>
