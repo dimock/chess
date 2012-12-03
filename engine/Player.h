@@ -244,9 +244,9 @@ private:
     return stop_;
   }
 
-  void stop()
+  bool stopped() const
   {
-    stop_ = true;
+    return stop_;
   }
 
   void testInput();
@@ -274,7 +274,7 @@ private:
 
   ScoreType alphaBetta0(ScoreType alpha, ScoreType betta);
   ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
-  ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta, ScoreType score0 = -ScoreMax);
+  ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
 
 
   // core of search algorithm
@@ -572,11 +572,13 @@ private:
 
     hscore = hitem->score_;
     if ( hscore >= Figure::WeightMat-MaxPly )
-      hscore = +Figure::WeightMat-ply;
+      hscore = hscore - ply;
     else if ( hscore <= MaxPly-Figure::WeightMat )
-      hscore = -Figure::WeightMat+ply;
+      hscore = hscore + ply;
 
     THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
+
+    board_.unpack(hitem->move_, hmove);
 
     if ( (int)hitem->depth_ >= depth && ply > 0 )
     {
@@ -587,39 +589,32 @@ private:
       }
 
       if ( (GHashTable::Betta == hitem->flag_ || GHashTable::AlphaBetta == hitem->flag_) &&
-            hscore >= betta && hitem->move_ )
+            hscore >= betta && hmove )
       {
-        if ( board_.unpack(hitem->move_, hmove) )
+        bool retBetta = hmove.capture_ || hmove.new_type_;
+        bool checking = false;
+
+        if ( !retBetta )
         {
-          bool retBetta = hmove.capture_ || hmove.new_type_;
-          bool checking = false;
-
-          if ( !retBetta )
+          int reps = board_.repsCount();
+          for (int i = 1; reps < 2 && i < board_.halfmovesCount()-1; i += 2)
           {
-            int reps = board_.repsCount();
-            for (int i = 1; reps < 2 && i < board_.halfmovesCount()-1; i += 2)
-            {
-              const MoveCmd & mv = board_.getMoveRev(-i);
-              if ( mv.irreversible_ )
-                break;
+            const MoveCmd & mv = board_.getMoveRev(-i);
+            if ( mv.irreversible_ )
+              break;
 
-              if ( mv.from_ == hmove.to_ && mv.to_ == hmove.from_ )
-                reps++;
-            }
-            retBetta = reps < 2;
+            if ( mv.from_ == hmove.to_ && mv.to_ == hmove.from_ )
+              reps++;
           }
+          retBetta = reps < 2;
+        }
 
-          if ( retBetta )
-          {
-            assemblePV(hmove, checking, ply);
-            return GHashTable::Betta;
-          }
+        if ( retBetta )
+        {
+          assemblePV(hmove, checking, ply);
+          return GHashTable::Betta;
         }
       }
-    }
-    else
-    {
-      board_.unpack(hitem->move_, hmove);
     }
 
     return GHashTable::AlphaBetta;
@@ -627,16 +622,18 @@ private:
 
   void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
   {
-    if ( board_.repsCount() < 2 )
     {
       PackedMove pm = board_.pack(move);
       GHashTable::Flag flag = GHashTable::None;
-      if ( score <= alpha || !move )
-        flag = GHashTable::Alpha;
-      else if ( score >= betta )
-        flag = GHashTable::Betta;
-      else
-        flag = GHashTable::AlphaBetta;
+      if ( board_.repsCount() < 2 )
+      {
+        if ( score <= alpha || !move )
+          flag = GHashTable::Alpha;
+        else if ( score >= betta )
+          flag = GHashTable::Betta;
+        else
+          flag = GHashTable::AlphaBetta;
+      }
       if ( score >= +Figure::WeightMat-MaxPly )
         score += ply;
       else if ( score <= -Figure::WeightMat+MaxPly )

@@ -550,9 +550,9 @@ public:
 
   Move & move();
 
-  int count() const
+  bool singleReply() const
   {
-    return eg_.count();
+    return board_.underCheck() && eg_.count() == 1;
   }
 
 private:

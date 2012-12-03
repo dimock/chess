@@ -127,6 +127,9 @@ public:
   PackedMove pack(const Move & move) const
   {
     PackedMove pm;
+    if ( !move )
+      return pm;
+
     pm.from_ = move.from_;
     pm.to_ = move.to_;
     pm.new_type_ = move.new_type_;

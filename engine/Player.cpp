@@ -228,7 +228,7 @@ bool Player::toFEN(char * fen) const
 
 void Player::printPV(Board & pv_board, SearchResult & sres)
 {
-  if ( !out_ )
+  if ( !out_ || !sres.best_ )
     return;
 
   *out_ << sres.depth_ << " " << sres.score_ << " " << (int)sres.dt_ << " " << sres.totalNodes_;
@@ -241,7 +241,7 @@ void Player::printPV(Board & pv_board, SearchResult & sres)
     pv.clearFlags();
     pv.capture_ = captured;
 
-    if (!pv_board.possibleMove(pv) )
+    if ( !pv_board.possibleMove(pv) )
       break;
 
     char str[64];
@@ -308,8 +308,6 @@ bool Player::search(SearchResult & sres, std::ostream * out)
   for (int i = 0; i < MaxPly; ++i)
     contexts_[i].clearKiller();
 
-  contexts_[0].clearPV(depthMax_);
-
   {
     ScoreType alpha = -std::numeric_limits<ScoreType>::max();
     ScoreType betta = +std::numeric_limits<ScoreType>::max();
@@ -331,7 +329,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
   {
     pv_board_ = board_;
     pv_board_.set_moves(pv_moves_);
-
+    contexts_[0].clearPV(depthMax_);
     best_.clear();
     beforeFound_ = false;
     nodesCount_ = 0;
@@ -344,7 +342,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
     ScoreType score = alphaBetta0(alpha, betta);
     //ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, SingularExtension_Limit);
 
-    if ( best_ && (!stop_ || (stop_ && beforeFound_) || (2 == depth_)) )
+    if ( (best_) && (!stop_ || beforeFound_) )
     {
       if ( stop_ && depth_ > 2 &&
         (abs(score-sres.score_) >= Figure::figureWeight_[Figure::TypePawn]/2 || best_ != sres.best_ && abs(score-sres.score_) >= 5)&&

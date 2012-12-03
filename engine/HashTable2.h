@@ -205,7 +205,7 @@ public:
 
     THROW_IF(score > 32760, "wrong value to hash");
 
-    if ( hitem->hcode_ != hcode )
+    if ( hitem->hcode_ && hitem->hcode_ != hcode )
       hitem->clear();
 
     hitem->hcode_ = hcode;
@@ -214,7 +214,7 @@ public:
     hitem->flag_  = flag;
     hitem->movesCount_ = movesCount_;
 
-    if ( flag == AlphaBetta || flag == Betta )
+    if ( move )
       hitem->move_ = move;
   }
 

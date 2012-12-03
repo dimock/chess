@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
 {
-  if ( stop_ )
+  if ( stopped() )
     return board_.evaluate();
 
   if ( numOfMoves_ == 0 )
@@ -34,22 +34,24 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
     board_.makeMove(move);
     inc_nc();
 
-    int depth1 = nextDepth(depth_, move);
-
-    if ( depth_ == depth0_ || !count ) // 1st iteration
-      score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
-    else
     {
-      score = -alphaBetta2(depth1, 1, -alpha-1, -alpha, false);
-      if ( score > alpha )
+      int depth1 = nextDepth(depth_, move);
+
+      if ( depth_ == depth0_ || !count ) // 1st iteration
         score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
+      else
+      {
+        score = -alphaBetta2(depth1, 1, -alpha-1, -alpha, false);
+        if ( score > alpha )
+          score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
+      }
     }
 
     board_.unmakeMove();
 
     move.vsort_ = score + ScoreMax;
 
-    if ( score > scoreBest )
+    if ( !stopped() && score > scoreBest )
     {
       scoreBest = score;
 
@@ -63,10 +65,13 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
         assemblePV(move, board_.underCheck(), 0);
 
         // bring best move to front, shift other moves 1 position right
-        Move mv = moves_[count];
-        for (int j = count; j > 0; --j)
-          moves_[j] = moves_[j-1];
-        moves_[0] = mv;
+        if ( depth_ > depth0_ )
+        {
+          Move mv = moves_[count];
+          for (int j = count; j > 0; --j)
+            moves_[j] = moves_[j-1];
+          moves_[0] = mv;
+        }
       }
     }
 
@@ -95,7 +100,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   if ( board_.drawState() )
     return Figure::WeightDraw;
 
-  if ( stop_ || ply >= MaxPly )
+  if ( stopped() || ply >= MaxPly )
     return board_.evaluate();
 
   ScoreType alpha0 = alpha;
@@ -110,7 +115,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 #endif
 
   if ( depth <= 0 )
-    return captures2(depth, ply, alpha, betta);
+    return captures2(depth, ply, alpha, betta, pv);
 
   if ( ply < MaxPly-1 )
     contexts_[ply].clear(ply);
@@ -124,7 +129,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     ScoreType score0 = board_.evaluate();
     int delta = (int)alpha - (int)score0 - (int)Figure::positionGain_;
     if ( delta > 0 )
-      return captures2(depth, ply, alpha, betta, score0);
+      return captures2(depth, ply, alpha, betta, pv, score0);
   }
 #endif
 
@@ -136,6 +141,10 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   board_.extractKiller(contexts_[ply].killer_, hmove, killer);
 
   FastGenerator fg(board_, hmove, killer);
+
+  if ( pv && fg.singleReply() )
+    depth++;
+
   for ( ; alpha < betta && !checkForStop(); )
   {
     Move & move = fg.move();
@@ -149,23 +158,25 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     board_.makeMove(move);
     inc_nc();
-
-    int depth1 = nextDepth(depth, move);
-
-    if ( !counter || !pv )
-      score = -alphaBetta2(depth1, ply+1, -betta, -alpha, pv);
-    else if ( pv )
+    
     {
-      score = -alphaBetta2(depth1, ply+1, -alpha-1, -alpha, false);
-      if ( score > alpha && score < betta )
-        score = -alphaBetta2(depth1, ply+1, -betta, -alpha, true);
+      int depth1 = nextDepth(depth, move);
+
+      if ( !counter || !pv )
+        score = -alphaBetta2(depth1, ply+1, -betta, -alpha, pv);
+      else if ( pv )
+      {
+        score = -alphaBetta2(depth1, ply+1, -alpha-1, -alpha, false);
+        if ( score > alpha && score < betta )
+          score = -alphaBetta2(depth1, ply+1, -betta, -alpha, true);
+      }
     }
 
     board_.unmakeMove();
 
     contexts_[ply].setKiller(move, score);
 
-    if ( score > scoreBest )
+    if ( !stopped() && score > scoreBest )
     {
       best = move;
       scoreBest = score;
@@ -178,6 +189,9 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     counter++;
   }
+
+  if ( stopped() )
+    return scoreBest;
 
   if ( !counter )
   {
@@ -203,7 +217,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   return scoreBest;
 }
 
-ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta, ScoreType score0)
+ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0)
 {
   if ( alpha >= Figure::WeightMat-ply )
     return alpha;
@@ -215,7 +229,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   if ( score0 == -ScoreMax )
     score0 = board_.evaluate();
 
-  if ( stop_ || ply >= MaxPly )
+  if ( stopped() || ply >= MaxPly )
     return score0;
 
   if ( !board_.underCheck() && score0 >= betta )
@@ -256,13 +270,14 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
     board_.makeMove(move);
     inc_nc();
 
-    int depth1 = nextDepth(depth, move);
-
-    score = -captures2(depth1, ply+1, -betta, -alpha);
+    {
+      int depth1 = nextDepth(depth, move);
+      score = -captures2(depth1, ply+1, -betta, -alpha, pv);
+    }
 
     board_.unmakeMove();
 
-    if ( score > scoreBest )
+    if ( !stopped() && score > scoreBest )
     {
       scoreBest = score;
       if ( score > alpha )
@@ -271,6 +286,9 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
 
     counter++;
   }
+
+  if ( stopped() )
+    return scoreBest;
 
   if ( !counter )
   {
