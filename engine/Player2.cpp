@@ -98,6 +98,17 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   if ( stop_ || ply >= MaxPly )
     return board_.evaluate();
 
+  ScoreType alpha0 = alpha;
+
+  Move hmove(0);
+
+#ifdef USE_HASH
+  ScoreType hscore = -ScoreMax;
+  GHashTable::Flag flag = getHash(depth, ply, alpha, betta, hmove, hscore);
+  if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
+    return hscore;
+#endif
+
   if ( depth <= 0 )
     return captures2(depth, ply, alpha, betta);
 
@@ -119,8 +130,9 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
   int counter = 0;
   ScoreType scoreBest = -ScoreMax;
+  Move best(0);
 
-  Move killer(0), hmove(0);
+  Move killer(0);
   board_.extractKiller(contexts_[ply].killer_, hmove, killer);
 
   FastGenerator fg(board_, hmove, killer);
@@ -151,19 +163,16 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     board_.unmakeMove();
 
-    History & hist = MovesGenerator::history(move.from_, move.to_);
-    hist.inc_gb(score > alpha);
-
     contexts_[ply].setKiller(move, score);
 
     if ( score > scoreBest )
     {
+      best = move;
       scoreBest = score;
       if ( score > alpha )
       {
         alpha = score;
         assemblePV(move, board_.underCheck(), ply);
-        hist.inc_score(depth);
       }
     }
 
@@ -173,11 +182,21 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   if ( !counter )
   {
     board_.setNoMoves();
-    ScoreType score = board_.evaluate();
+    scoreBest = board_.evaluate();
     if ( board_.matState() )
-      score += ply;
-    return score;
+      scoreBest += ply;
   }
+
+
+  if ( best )
+  {
+    History & hist = MovesGenerator::history(best.from_, best.to_);
+    hist.inc_score(depth);
+  }
+
+#ifdef USE_HASH
+  putHash(best, alpha0, betta, scoreBest, depth, ply);
+#endif
 
   THROW_IF( scoreBest < -Figure::WeightMat || scoreBest > +Figure::WeightMat, "invalid score" );
 

@@ -63,6 +63,8 @@ namespace nst
 
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING_
+#define USE_HASH
+
 #undef USE_HASH_TABLE_GENERAL
 #undef USE_HASH_TABLE_ADV
 #undef USE_HASH_TABLE_CAPTURE

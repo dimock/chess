@@ -12,16 +12,28 @@
 __declspec (align(1))
 struct PackedMove
 {
-  PackedMove() : from_(0), to_(0), new_type_(0)
+  PackedMove() : mask_(0)
   {}
 
+  union
+  {
+  struct
+  {
   uint16 from_ : 6,
          to_ : 6,
          new_type_ : 4;
+  };
+  uint16 mask_;
+  };
 
   operator bool () const
   {
     return from_ || to_;
+  }
+
+  void clear()
+  {
+    mask_ = 0;
   }
 
   bool operator == (const PackedMove & other) const

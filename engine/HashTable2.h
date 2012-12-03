@@ -13,14 +13,25 @@ __declspec (align(16)) struct HItem
 
   operator bool () const { return hcode_ != 0; }
 
+  void clear()
+  {
+    move_.clear();
+    mask_ = 0;
+    score_ = 0;
+  }
+
   uint64     hcode_;
   ScoreType  score_;
 
   union {
-  uint16     color_  : 1,
-             depth_  : 6,
+
+  struct
+  {
+  uint16     depth_  : 6,
              flag_   : 2,
-             threat_ : 1;
+             threat_ : 1,
+             mode_   : 2;
+  };
 
   uint16     mask_;
   };
@@ -31,43 +42,44 @@ __declspec (align(16)) struct HItem
 };
 
 __declspec (align(16)) 
-template <int BucketSize = 4>
 struct HBucket
 {
-  HItem * find(const uint64 & hcode)
+  static const int BucketSize = 4;
+
+  const HItem * find(const uint64 & hcode) const
   {
     for (int i = 0; i < BucketSize; ++i)
     {
-      if ( items_[i].hcode_ = hcode )
+      if ( items_[i].hcode_ == hcode )
         return items_ + i;
     }
     return 0;
   }
 
-  HItem * get(const uint64 & hcode, int depth)
+  HItem * get(const uint64 & hcode)
   {
     uint8 movesCount = +std::numeric_limits<uint8>::max();
     HItem * hfar = 0;
-    HItem * hemp = 0;
+    HItem * hempty = 0;
     for (int i = 0; i < BucketSize; ++i)
     {
-      if ( items_[i].hcode_ == hcode && items_[i].depth_ < depth )
+      if ( items_[i].hcode_ == hcode )
         return items_ + i;
 
-      if ( !items_[i].hcode_ && !hemp )
-        hemp = items_ + i;
+      if ( !items_[i].hcode_ && !hempty )
+        hempty = items_ + i;
       
       if ( !hfar || (int)items_[i].movesCount_ < movesCount )
       {
         movesCount = items_[i].movesCount_;
         hfar = items_ + i;
       }
-
-      if ( hemp )
-        return hemp;
-
-      return hfar;
     }
+
+    if ( hempty )
+      return hempty;
+
+    return hfar;
   }
 
   HItem items_[BucketSize];
@@ -79,7 +91,7 @@ class HashTable2
 
 public:
 
-  enum Flag { None, AlphaBetta, Alpha, Betta };
+  enum Flag { None, Alpha, AlphaBetta, Betta };
 
   HashTable2(int size) : buffer_(0)
   {
@@ -114,11 +126,6 @@ public:
   int size() const
   {
     return (((size_t)1) << size_) - 1;
-  }
-
-  ITEM & operator [] (const uint64 & code)
-  {
-    return buffer_[code & szMask_];
   }
 
   void inc()
@@ -157,7 +164,17 @@ public:
     return n == size();
   }
 
-private:
+protected:
+
+  ITEM & operator [] (const uint64 & code)
+  {
+    return buffer_[code & szMask_];
+  }
+
+  const ITEM & operator [] (const uint64 & code) const
+  {
+    return buffer_[code & szMask_];
+  }
 
   ITEM * buffer_;
   int size_;
@@ -172,66 +189,39 @@ public:
   GHashTable(int size) : HashTable2<HBucket>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, int depth, Figure::Color color, Flag flag, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType score, int depth, Flag flag, const PackedMove & move)
   {
     HBucket & hb = (*this)[hcode];
-    HItem * hitem = hb.get(hcode, depth);
+    HItem * hitem = hb.get(hcode);
     if( !hitem )
       return;
 
-    if ( (hitem->hcode_ == hcode) && (hitem->depth_ > depth || (Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta))) )
+    if ( (hitem->hcode_ == hcode) &&
+         ((hitem->depth_ > depth) || 
+          (depth == hitem->depth_) && (Alpha == flag && (hitem->flag_ == AlphaBetta || hitem->flag_ == Betta))) )
+    {
       return;
-
-    //if ( (hitem->hcode_ == hcode) && 
-    //     ((depth < (int)hitem->depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
-    //      (depth == (int)hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta))) )
-    //{
-    //  //if ( s < hitem.score_ && hitem.hcode_ == hcode )
-    //  //  hitem.score_ = s;
-
-    //  return;
-    //}
-
-    THROW_IF(s > 32760, "wrong value to hash");
-
-    if ( hitem.hcode_ && hitem.hcode_ != hcode )
-    {
-      hitem.threat_ = 0;
-      hitem.move_ = PackedMove();
-
-#ifdef USE_THREAT_MOVE
-      hitem.tmove_ = PackedMove();
-#endif
-
-#ifdef USE_HASH_MOVE_EX
-      hitem.move_ex_[0] = PackedMove();
-      hitem.move_ex_[1] = PackedMove();
-#endif
     }
 
-    hitem.hcode_ = hcode;
-    hitem.score_ = s;
-    hitem.depth_ = depth;
-    hitem.color_ = color;
-    hitem.flag_  = flag;
-    hitem.ply_   = ply;
-    hitem.halfmovesCount_ = halfmovesCount;
+    THROW_IF(score > 32760, "wrong value to hash");
 
-    if ( flag != Alpha && move && move != hitem.move_ )
-    {
-#ifdef USE_HASH_MOVE_EX
-      // save previously found movies
-      if ( hitem.move_ex_[0] == move )
-        hitem.move_ex_[0] = hitem.move_;
-      else
-      {
-        hitem.move_ex_[1] = hitem.move_ex_[0];
-        hitem.move_ex_[0] = hitem.move_;
-      }
-#endif
-      hitem.move_ = move;
-    }
-    //else
-    //  hitem.threat_ = 0;
+    if ( hitem->hcode_ != hcode )
+      hitem->clear();
+
+    hitem->hcode_ = hcode;
+    hitem->score_ = score;
+    hitem->depth_ = depth;
+    hitem->flag_  = flag;
+    hitem->movesCount_ = movesCount_;
+
+    if ( flag == AlphaBetta || flag == Betta )
+      hitem->move_ = move;
+  }
+
+  const HItem * find(const uint64 & hcode) const
+  {
+    const HBucket & hb = this->operator [] (hcode);
+    const HItem * hitem = hb.find(hcode);
+    return hitem;
   }
 };

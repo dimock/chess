@@ -8,6 +8,7 @@
 
 #include "Board.h"
 #include "HashTable.h"
+#include "HashTable2.h"
 #include <time.h>
 
 class SearchResult
@@ -322,6 +323,10 @@ private:
   CapturesHashTable chash_;
 #endif
 
+#ifdef USE_HASH
+  GHashTable hash_;
+#endif
+
   //////////////////////////////////////////////////////////////////////////
   // return true if we have to return betta-1 to recalculate with full depth
   bool movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Move & move, int & counter, bool null_move, int singularCount);
@@ -550,4 +555,95 @@ private:
 
   // do we need additional check extension
   int extend_check(int depth, int ply, EscapeGenerator & eg, ScoreType alpha, ScoreType betta);
+
+
+#ifdef USE_HASH
+  // we should return alpha if flag is Alpha, or Betta if flag is Betta
+  inline GHashTable::Flag getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore)
+  {
+    if ( betta > alpha+1 )
+      return GHashTable::AlphaBetta;
+
+    const HItem * hitem = hash_.find(board_.hashCode());
+    if ( !hitem )
+      return GHashTable::None;
+
+    THROW_IF( hitem->hcode_ != board_.hashCode(), "invalid hash item found" );
+
+    hscore = hitem->score_;
+    if ( hscore >= Figure::WeightMat-MaxPly )
+      hscore = +Figure::WeightMat-ply;
+    else if ( hscore <= MaxPly-Figure::WeightMat )
+      hscore = -Figure::WeightMat+ply;
+
+    THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
+
+    if ( (int)hitem->depth_ >= depth && ply > 0 )
+    {
+      if ( GHashTable::Alpha == hitem->flag_ && hscore <= alpha )
+      {
+        THROW_IF( !stop_ && alpha < -32760, "invalid hscore" );
+        return GHashTable::Alpha;
+      }
+
+      if ( (GHashTable::Betta == hitem->flag_ || GHashTable::AlphaBetta == hitem->flag_) &&
+            hscore >= betta && hitem->move_ )
+      {
+        if ( board_.unpack(hitem->move_, hmove) )
+        {
+          bool retBetta = hmove.capture_ || hmove.new_type_;
+          bool checking = false;
+
+          if ( !retBetta )
+          {
+            int reps = board_.repsCount();
+            for (int i = 1; reps < 2 && i < board_.halfmovesCount()-1; i += 2)
+            {
+              const MoveCmd & mv = board_.getMoveRev(-i);
+              if ( mv.irreversible_ )
+                break;
+
+              if ( mv.from_ == hmove.to_ && mv.to_ == hmove.from_ )
+                reps++;
+            }
+            retBetta = reps < 2;
+          }
+
+          if ( retBetta )
+          {
+            assemblePV(hmove, checking, ply);
+            return GHashTable::Betta;
+          }
+        }
+      }
+    }
+    else
+    {
+      board_.unpack(hitem->move_, hmove);
+    }
+
+    return GHashTable::AlphaBetta;
+  }
+
+  void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
+  {
+    if ( board_.repsCount() < 2 )
+    {
+      PackedMove pm = board_.pack(move);
+      GHashTable::Flag flag = GHashTable::None;
+      if ( score <= alpha || !move )
+        flag = GHashTable::Alpha;
+      else if ( score >= betta )
+        flag = GHashTable::Betta;
+      else
+        flag = GHashTable::AlphaBetta;
+      if ( score >= +Figure::WeightMat-MaxPly )
+        score += ply;
+      else if ( score <= -Figure::WeightMat+MaxPly )
+        score -= ply;
+      hash_.push(board_.hashCode(), score, depth, flag, pm);
+    }
+  }
+#endif // USE_HASH
+
 };

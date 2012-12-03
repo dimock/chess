@@ -77,6 +77,9 @@ Player::Player() :
 #ifdef USE_HASH_TABLE_GENERAL
   ,ghash_(20)
 #endif
+#ifdef USE_HASH
+  ,hash_(20)
+#endif
 {
   posted_fen_[0] = 0;
 
@@ -164,13 +167,16 @@ void Player::setMemory(int mb)
   if ( mb < 1 )
     return;
 
+  int bytesN = mb*1024*1024;
+
+#if ((defined USE_HASH_TABLE_GENERAL) || (defined USE_HASH_TABLE_CAPTURE))
   int ghitemSize = sizeof(GeneralHItem);
   int chitemSize = sizeof(CaptureHItem);
-  int bytesN = mb*1024*1024;
 
   int hsize = log2(bytesN/ghitemSize) - 1;
   if ( hsize < 10 )
     return;
+#endif
 
 #ifdef USE_HASH_TABLE_GENERAL
   ghash_.resize(hsize-1);
@@ -178,6 +184,13 @@ void Player::setMemory(int mb)
 
 #ifdef USE_HASH_TABLE_CAPTURE
   chash_.resize(hsize+1);
+#endif
+
+#ifdef USE_HASH
+  int hitemSize = sizeof(HItem);
+  int hsize2 = log2(bytesN/hitemSize) - 2;
+  if ( hsize2 >= 10 )
+    hash_.resize(hsize2);
 #endif
 
 }
@@ -274,6 +287,10 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 bool Player::search(SearchResult & sres, std::ostream * out)
 {
   sres = SearchResult();
+
+#ifdef USE_HASH
+  hash_.inc();
+#endif
 
   stop_ = false;
   totalNodes_ = 0;
