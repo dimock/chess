@@ -192,13 +192,14 @@ end:
   return m;
 }
 
-// multiplies v*n and divides by d v*n/d
+// multiplies v*n and divides by d v*n/(d+n)
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
   unsigned int r = 0;
   __asm
   {
     mov eax, dword ptr [d]
+    add eax, dword ptr [n]
     bsr ecx, eax
     jnz md_begin
     xor ecx, ecx
@@ -265,17 +266,17 @@ inline int find_msb(const BitMask & mask)
   return n;
 }
 
-inline int log2(int n)
+inline int log2(const uint64 & n)
 {
 	unsigned long m;
-	if ( !_BitScanReverse(&m, (unsigned long)n) )
+	if ( !_BitScanReverse64(&m, n) )
 		return 0;
 	return m;
 }
 
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
-  unsigned long long r = (unsigned long long)v * n;
+  uint64 r = (uint64)v * n;
   r >>= log2(d+n);
   unsigned x = *((unsigned*)&r);
   return x;
