@@ -603,7 +603,7 @@ private:
     return GHashTable::AlphaBetta;
   }
 
-  void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
+  inline void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
   {
     if ( board_.repsCount() < 3 )
     {
