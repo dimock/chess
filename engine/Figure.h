@@ -315,12 +315,27 @@ public:
   inline const BitMask & mask(Figure::Color color) const { return mask_[color]; }
   inline const BitMask & type_mask(const Figure::Type type, const Figure::Color color) const { return fcounter_[color].type_mask(type); }
 
-private:
-
   inline const BitMask & code(const Figure::Color c, const Figure::Type t, int p) const
   {
     return s_zobristCodes_[(p<<4) | (c<<3) | t];
   }
+
+  inline const BitMask & enpassantCode(uint8 pos, uint8 color) const
+  {
+    return s_zobristCodes_[ (pos<<4) | (color<<3) ];
+  }
+
+  inline const BitMask & castleCode(uint8 color, uint8 index) const
+  {
+    s_zobristCastle_[color][index];
+  }
+
+  inline const BitMask & colorCode() const
+  {
+    return s_zobristColor_;
+  }
+
+private:
 
   /// all figures mask
   BitMask mask_[2];

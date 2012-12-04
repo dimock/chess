@@ -559,7 +559,7 @@ private:
 
 #ifdef USE_HASH
   // we should return alpha if flag is Alpha, or Betta if flag is Betta
-  inline GHashTable::Flag getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore)
+  inline GHashTable::Flag getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)
   {
     if ( betta > alpha+1 )
       return GHashTable::AlphaBetta;
@@ -591,27 +591,10 @@ private:
       if ( (GHashTable::Betta == hitem->flag_ || GHashTable::AlphaBetta == hitem->flag_) &&
             hscore >= betta && hmove )
       {
-        bool retBetta = hmove.capture_ || hmove.new_type_;
-        bool checking = false;
-
-        if ( !retBetta )
+        if ( board_.calculateReps(hmove) < 2 )
         {
-          int reps = board_.repsCount();
-          for (int i = 1; reps < 2 && i < board_.halfmovesCount()-1; i += 2)
-          {
-            const MoveCmd & mv = board_.getMoveRev(-i);
-            if ( mv.irreversible_ )
-              break;
-
-            if ( mv.from_ == hmove.to_ && mv.to_ == hmove.from_ )
-              reps++;
-          }
-          retBetta = reps < 2;
-        }
-
-        if ( retBetta )
-        {
-          assemblePV(hmove, checking, ply);
+          if ( pv )
+            assemblePV(hmove, false, ply);
           return GHashTable::Betta;
         }
       }
@@ -622,6 +605,7 @@ private:
 
   void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
   {
+    if ( board_.repsCount() < 3 )
     {
       PackedMove pm = board_.pack(move);
       GHashTable::Flag flag = GHashTable::None;

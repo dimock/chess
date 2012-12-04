@@ -23,12 +23,12 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
 
   ScoreType scoreBest = -ScoreMax;
 
-  for (int count = 0; count < numOfMoves_; ++count)
+  for (counter_ = 0; counter_ < numOfMoves_; ++counter_)
   {
     if ( checkForStop() )
       break;
 
-    Move & move = moves_[count];
+    Move & move = moves_[counter_];
     ScoreType score = -ScoreMax;
     
     board_.makeMove(move);
@@ -37,7 +37,7 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
     {
       int depth1 = nextDepth(depth_, move);
 
-      if ( depth_ == depth0_ || !count ) // 1st iteration
+      if ( depth_ == depth0_ || !counter_ ) // 1st iteration
         score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
       else
       {
@@ -67,19 +67,17 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
         // bring best move to front, shift other moves 1 position right
         if ( depth_ > depth0_ )
         {
-          Move mv = moves_[count];
-          for (int j = count; j > 0; --j)
+          Move mv = moves_[counter_];
+          for (int j = counter_; j > 0; --j)
             moves_[j] = moves_[j-1];
           moves_[0] = mv;
         }
       }
     }
-
-    counter_ = count;
   }
 
   // don't need to continue
-  if ( counter_ == 1 && !analyze_mode_ )
+  if ( !stopped() && counter_ == 1 && !analyze_mode_ )
   {
     beforeFound_ = true;
     pleaseStop();
@@ -109,7 +107,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
 #ifdef USE_HASH
   ScoreType hscore = -ScoreMax;
-  GHashTable::Flag flag = getHash(depth, ply, alpha, betta, hmove, hscore);
+  GHashTable::Flag flag = getHash(depth, ply, alpha, betta, hmove, hscore, pv);
   if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
     return hscore;
 #endif
@@ -183,7 +181,8 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
       if ( score > alpha )
       {
         alpha = score;
-        assemblePV(move, board_.underCheck(), ply);
+        if ( pv )
+          assemblePV(move, board_.underCheck(), ply);
       }
     }
 

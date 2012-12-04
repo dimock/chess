@@ -263,6 +263,9 @@ public:
     return can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
   }
 
+  /// used for hashed moves
+  int  calculateReps(const Move & move) const;
+
   /// is move physically possible
   bool possibleMove(const Move & mv) const;
 
@@ -508,6 +511,12 @@ private:
 
   /// return short/long castle possibility
   bool castling() const { return castling_ != 0; }
+
+  bool castling(Figure::Color c) const
+  {
+    int offset = c<<1;
+    return ((castling_ >> offset) & 3) != 0;
+  }
 
   bool castling(Figure::Color c, int t /* 0 - short (K), 1 - long (Q) */) const
   {

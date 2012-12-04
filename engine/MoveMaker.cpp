@@ -932,3 +932,65 @@ bool Board::validateValidator(const Move & mv)
 }
 
 #endif
+
+int Board::calculateReps(const Move & move) const
+{
+  const Field & ffrom = getField(move.from_);
+  const Field & fto   = getField(move.to_);
+
+  // capture or pawn movement
+  if ( move.capture_ || ffrom.type() == Figure::TypePawn )
+    return 0;
+
+  // castle
+  if ( ffrom.type() == Figure::TypeKing && castling(color_) )
+      return 0;
+
+  // 1st rook movement
+  if ( ffrom.type() == Figure::TypeRook )
+  {
+      if ( ( color_ && (castling_K() && move.from_ ==  0 || castling_Q() && move.from_ ==  7)) ||
+           (!color_ && (castling_k() && move.from_ == 56 || castling_q() && move.from_ == 63)) )
+      {
+        return 0;
+      }
+  }
+
+  // calculate new hash value
+  BitMask zcode = hashCode();
+  Figure::Color ocolor = Figure::otherColor(color_);
+
+  if ( en_passant_ > 0 )
+  {
+    const BitMask & enpassantCode = fmgr().enpassantCode(en_passant_, ocolor);
+    zcode ^= enpassantCode;
+  }
+
+  // movement
+  {
+    const BitMask & uc0 = fmgr().code(color_, ffrom.type(), move.from_);
+    const BitMask & uc1 = fmgr().code(color_, ffrom.type(), move.to_);
+    zcode ^= uc0;
+    zcode ^= uc1;
+  }
+
+  // color
+  zcode ^= fmgr().colorCode();
+
+  int reps = 1;
+  int i = halfmovesCounter_-2;
+  for (; reps < 2 && i >= 0; i -= 2)
+  {
+    if ( getMove(i).zcode_ == zcode )
+      reps++;
+
+    if ( getMove(i).irreversible_ )
+      break;
+  }
+
+  // may be we forget to test initial position?
+  if ( reps < 2 && i == -1 && zcode == getMove(0).zcode_old_ )
+    reps++;
+
+  return reps;
+}
