@@ -267,9 +267,31 @@ private:
     nodesCount_++;
   }
 
-  int nextDepth(int depth, const Move & move) const
+  int nextDepth(int depth, const Move & move, bool pv) const
   {
-    return depth - 1 + board_.underCheck();
+    depth--;
+    depth += board_.underCheck();
+
+    if ( !move.see_good_ || !pv )
+      return depth;
+
+    if ( move.new_type_ == Figure::TypeQueen )
+      return depth+1;
+
+    // this is not a recapture but capture of strong figure by weaker one.
+    // it usually means that previous move was stupid )
+    if ( board_.halfmovesCount() > 1 )
+    {
+      const Field & ffrom = board_.getField(move.from_);
+      const Field & fto = board_.getField(move.to_);
+      const MoveCmd & prev = board_.getMoveRev(-1);
+      const MoveCmd & curr = board_.getMoveRev(0);
+
+      if ( prev.capture_ && (move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_) )//(typeLEQ(fto.type(), (Figure::Type)curr.eaten_type_) || curr.en_passant_ == curr.to_) )
+        return depth+1;
+    }
+
+    return depth;
   }
 
   ScoreType alphaBetta0(ScoreType alpha, ScoreType betta);

@@ -1517,7 +1517,7 @@ int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, b
     initial_balance = -initial_balance;
 
 #ifdef EXTEND_PROMOTION
-  if ( move.new_type_ == Figure::TypeQueen && move.recapture_ )
+  if ( move.new_type_ == Figure::TypeQueen && move.see_good_ )
   {
     return 1;
   }

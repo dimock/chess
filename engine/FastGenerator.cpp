@@ -66,7 +66,7 @@ Move & FastGenerator::move()
       }
 
       move->alreadyDone_ = 1;
-      move->recapture_ = 1;
+      move->see_good_ = 1;
       return *move;
     }
 

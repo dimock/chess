@@ -35,7 +35,7 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
     inc_nc();
 
     {
-      int depth1 = nextDepth(depth_, move);
+      int depth1 = nextDepth(depth_, move, false);
 
       if ( depth_ == depth0_ || !counter_ ) // 1st iteration
         score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
@@ -140,7 +140,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
   FastGenerator fg(board_, hmove, killer);
 
-  if ( pv && fg.singleReply() )
+  if ( /*pv && */fg.singleReply() )
     depth++;
 
   for ( ; alpha < betta && !checkForStop(); )
@@ -158,13 +158,14 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     inc_nc();
     
     {
-      int depth1 = nextDepth(depth, move);
+      int depth1 = nextDepth(depth, move, pv);
 
       if ( !counter || !pv )
         score = -alphaBetta2(depth1, ply+1, -betta, -alpha, pv);
       else if ( pv )
       {
-        score = -alphaBetta2(depth1, ply+1, -alpha-1, -alpha, false);
+        int depth2 = nextDepth(depth, move, false);
+        score = -alphaBetta2(depth2, ply+1, -alpha-1, -alpha, false);
         if ( score > alpha && score < betta )
           score = -alphaBetta2(depth1, ply+1, -betta, -alpha, true);
       }
@@ -252,7 +253,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
 
   QuiesGenerator qg(hmove, board_, thresholdType, depth);
 
-  if ( qg.singleReply() )
+  if ( /*pv && */qg.singleReply() )
     depth++;
 
   for ( ; alpha < betta && !checkForStop(); )
@@ -270,7 +271,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
     inc_nc();
 
     {
-      int depth1 = nextDepth(depth, move);
+      int depth1 = nextDepth(depth, move, false);
       score = -captures2(depth1, ply+1, -betta, -alpha, pv);
     }
 

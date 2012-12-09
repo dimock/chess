@@ -65,10 +65,7 @@ inline bool typeLEQ(Figure::Type type1, Figure::Type type2)
     return true;
   }
 
-  if ( type1 < type2 )
-    return true;
-
-  return false;
+  return type1 < type2;
 }
 
 

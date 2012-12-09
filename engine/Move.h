@@ -81,7 +81,7 @@ struct Move
 		       capture_ : 1,
            checkFlag_ : 1,
            threat_ : 1,
-           recapture_ : 1,
+           see_good_ : 1,
            discoveredCheck_ : 1,
            seen_ : 1;
     };

@@ -214,8 +214,8 @@ public:
           continue;
         }
 
-        if ( see_gain >= 0 )
-          move->recapture_ = 1;
+        //if ( see_gain >= 0 )
+        //  move->recapture_ = 1;
       }
 
       move->alreadyDone_ = 1;
@@ -370,15 +370,14 @@ private:
     m++;
   }
 
-  inline bool filter(const Move & move) const
+  inline bool filter(Move & move) const
   {
     if ( move.capture_ && move.new_type_ )
       return true;
 
-    bool discovered;
-    bool check = detectCheck(move, discovered);
+    bool check = detectCheck(move);
 
-    if ( discovered )
+    if ( move.discoveredCheck_ )
       return true; // always ok
 
     Figure::Type type = Figure::TypeNone;
@@ -397,7 +396,7 @@ private:
     return s >= 0;
   }
 
-  bool detectCheck(const Move & move, bool & discovered) const;
+  bool detectCheck(Move & move) const;
 
   Figure::Type thresholdType_;
   Move hcap_;

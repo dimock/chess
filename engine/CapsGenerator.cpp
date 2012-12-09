@@ -217,10 +217,8 @@ int CapsGenerator::generate()
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool CapsGenerator::detectCheck(const Move & move, bool & discovered) const
+bool CapsGenerator::detectCheck(Move & move) const
 {
-  discovered = false;
-
   const Field & ffield = board_.getField(move.from_);
   const Field & tfield = board_.getField(move.to_);
 
@@ -230,7 +228,7 @@ bool CapsGenerator::detectCheck(const Move & move, bool & discovered) const
   const BitMask mask_all = mask_all_ | set_mask_bit(move.to_);
   if ( board_.discoveredCheck(move.from_, color, mask_all, mask_brq_, oking_pos_) )
   {
-    discovered = true;
+    move.discoveredCheck_ = 1;
     return true;
   }
 
@@ -255,7 +253,7 @@ bool CapsGenerator::detectCheck(const Move & move, bool & discovered) const
 
       if ( board_.discoveredCheck(ep_pos, color, mask_all ^ set_mask_bit(ep_pos), mask_brq_, oking_pos_) )
       {
-        discovered = true;
+        move.discoveredCheck_ = 1;
         return true;
       }
     }
