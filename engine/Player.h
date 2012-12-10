@@ -159,6 +159,22 @@ inline Figure::Type delta2type(int delta)
   return minimalType;
 }
 
+inline int nullMove_depth(int depth)
+{
+  if ( depth < 6 )
+    depth -= 2;
+  else if ( depth < 8 )
+    depth -= 3;
+  else if ( depth < 12 )
+    depth -= 4;
+  else
+    depth -= 6;
+
+  if ( depth < NullMove_DepthMin )
+    depth = NullMove_DepthMin;
+
+  return depth;
+}
 
 class Player
 {

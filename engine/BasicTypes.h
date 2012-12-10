@@ -64,6 +64,7 @@ namespace nst
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING_
 #define USE_HASH
+#define USE_NULL_MOVE
 
 #undef USE_HASH_TABLE_GENERAL
 #undef USE_HASH_TABLE_ADV
@@ -71,7 +72,6 @@ namespace nst
 #undef RETURN_IF_ALPHA_BETTA_CAPTURES
 #undef USE_GENERAL_HASH_IN_CAPS
 #undef RETURN_IF_BETTA
-#undef USE_NULL_MOVE
 #undef USE_LMR
 #undef USE_IID
 
@@ -82,7 +82,7 @@ namespace nst
 
 #undef EXTENDED_THREAT_DETECTION
 #undef MARKOFF_BOTVINNIK_EXTENSION
-#define MAT_THREAT_EXTENSION
+#undef MAT_THREAT_EXTENSION
 
 #undef ONLY_LEQ_THREAT
 

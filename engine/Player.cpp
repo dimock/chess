@@ -7,27 +7,6 @@
 #include "MovesGenerator.h"
 
 //////////////////////////////////////////////////////////////////////////
-inline int nullMove_depth(int depth)
-{
-  if ( depth < 6 )
-    depth -= 2;
-  else if ( depth < 8 )
-    depth -= 3;
-  else if ( depth < 12 )
-    depth -= 4;
-  else
-    depth -= 6;
-  //int depth1 = depth - NullMove_PlyReduce;
-  //depth >>= 1;
-  //if ( depth > depth1 )
-  //  depth = depth1;
-
-  if ( depth < NullMove_DepthMin )
-    depth = NullMove_DepthMin;
-
-  return depth;
-}
-
 inline bool find_move(const Move * moves, int n, const Move & m)
 {
   for (int i = 0; i < n; ++i)
@@ -488,19 +467,15 @@ void Player::processPosted(int t)
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 {
-  if (   board_.underCheck() ||
-        !board_.allowNullMove() ||
-        (ply < 1) ||
-        (ply >= MaxPly-1) ||
-        (depth < NullMove_DepthMin+1) ||
-        (depth_ < NullMove_DepthStart) ||
+  if (  board_.underCheck() ||
+       !board_.allowNullMove() ||
+       (depth < NullMove_DepthMin+1) ||
+       (depth_ < NullMove_DepthStart) ||
         betta >= Figure::WeightMat+MaxPly ||
         alpha <= -Figure::WeightMat-MaxPly  )
+  {
     return alpha;
-
-#ifndef NDEBUG
-  Board board0(board_);
-#endif
+  }
 
   MoveCmd move;
   board_.makeNullMove(move);
@@ -510,8 +485,6 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
   ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */, 0);
 
   board_.unmakeNullMove(move);
-
-  THROW_IF( board0 != board_, "nullMove wasn't correctly unmake" );
 
   // set threat flag in current context if null-move failed
   // we need to verify this position more carefully to prevent reduction of dangerous movement on ply-1
@@ -524,15 +497,6 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
 #ifdef MAT_THREAT_EXTENSION
   if ( nullScore <= -Figure::WeightMat+MaxPly && nullScore > -std::numeric_limits<ScoreType>::max() )
     contexts_[ply].ext_data_.mat_threats_found_++;
-#endif
-
-#ifdef MARKOFF_BOTVINNIK_EXTENSION
-  // Markoff-Botvinnik extension ??? don't completely understand the reason to do it. just an experiment
-  if ( ply > 2 && contexts_[ply].ext_data_.mbe_move_ &&
-       contexts_[ply-2].ext_data_.mbe_move_ == contexts_[ply].ext_data_.mbe_move_ )
-  {
-    contexts_[ply].ext_data_.mbe_threat_ = true;
-  }
 #endif
 
   return nullScore;

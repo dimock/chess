@@ -118,6 +118,33 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   if ( ply < MaxPly-1 )
     contexts_[ply].clear(ply);
 
+#ifdef USE_NULL_MOVE
+  if ( !pv && !board_.underCheck() && board_.allowNullMove() && depth > 1 &&
+        betta < Figure::WeightMat-MaxPly &&
+        alpha > -Figure::WeightMat+MaxPly)
+  {
+    MoveCmd move;
+    board_.makeNullMove(move);
+
+    int null_depth = depth-4;
+    if ( null_depth < 1 )
+      null_depth = 1;
+
+    ScoreType nullScore = -alphaBetta2(null_depth, ply+1, -betta, -(betta-1), false);
+
+    board_.unmakeNullMove(move);
+
+    // verify null-move
+    if ( nullScore >= betta )
+    {
+      depth -= 5;
+      if ( depth < 1 )
+        depth = 1;
+    }
+  }
+#endif
+
+
 #ifdef USE_FUTILITY_PRUNING
   if ( !board_.underCheck() && !board_.isWinnerLoser() &&
         alpha > -Figure::WeightMat+MaxPly &&
