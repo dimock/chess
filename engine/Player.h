@@ -581,14 +581,16 @@ private:
   // we should return alpha if flag is Alpha, or Betta if flag is Betta
   inline GHashTable::Flag getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)
   {
-    if ( betta > alpha+1 )
-      return GHashTable::AlphaBetta;
-
     const HItem * hitem = hash_.find(board_.hashCode());
     if ( !hitem )
-      return GHashTable::None;
+      return GHashTable::NoFlag;
 
     THROW_IF( hitem->hcode_ != board_.hashCode(), "invalid hash item found" );
+
+    board_.unpack(hitem->move_, hmove);
+
+    if ( betta > alpha+1 )
+      return GHashTable::AlphaBetta;
 
     hscore = hitem->score_;
     if ( hscore >= Figure::WeightMat-MaxPly )
@@ -597,8 +599,6 @@ private:
       hscore = hscore + ply;
 
     THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
-
-    board_.unpack(hitem->move_, hmove);
 
     if ( (int)hitem->depth_ >= depth && ply > 0 )
     {
@@ -628,7 +628,7 @@ private:
     if ( board_.repsCount() < 3 )
     {
       PackedMove pm = board_.pack(move);
-      GHashTable::Flag flag = GHashTable::None;
+      GHashTable::Flag flag = GHashTable::NoFlag;
       if ( board_.repsCount() < 2 )
       {
         if ( score <= alpha || !move )
