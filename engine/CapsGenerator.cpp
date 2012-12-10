@@ -217,7 +217,7 @@ int CapsGenerator::generate()
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool CapsGenerator::detectCheck(Move & move) const
+bool CapsGenerator::expressCheck(Move & move) const
 {
   const Field & ffield = board_.getField(move.from_);
   const Field & tfield = board_.getField(move.to_);

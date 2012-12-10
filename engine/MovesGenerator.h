@@ -375,7 +375,7 @@ private:
     if ( move.capture_ && move.new_type_ )
       return true;
 
-    bool check = detectCheck(move);
+    bool check = expressCheck(move);
 
     if ( move.discoveredCheck_ )
       return true; // always ok
@@ -396,7 +396,7 @@ private:
     return s >= 0;
   }
 
-  bool detectCheck(Move & move) const;
+  bool expressCheck(Move & move) const;
 
   Figure::Type thresholdType_;
   Move hcap_;

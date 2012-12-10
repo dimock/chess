@@ -282,8 +282,6 @@ private:
     // it usually means that previous move was stupid )
     if ( board_.halfmovesCount() > 1 )
     {
-      const Field & ffrom = board_.getField(move.from_);
-      const Field & fto = board_.getField(move.to_);
       const MoveCmd & prev = board_.getMoveRev(-1);
       const MoveCmd & curr = board_.getMoveRev(0);
 
