@@ -248,7 +248,16 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
     scoreBest = score0;
   }
 
-  Move hmove(0);
+  //ScoreType alpha0 = alpha;
+  Move /*best(0), */hmove(0);
+
+//#ifdef USE_HASH
+//  ScoreType hscore = -ScoreMax;
+//  GHashTable::Flag flag = getCap(depth, ply, alpha, betta, hmove, hscore, pv);
+//  if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
+//    return hscore;
+//#endif
+
   Figure::Type thresholdType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
   QuiesGenerator qg(hmove, board_, thresholdType, depth);
@@ -279,6 +288,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
 
     if ( !stopped() && score > scoreBest )
     {
+      //best = move;
       scoreBest = score;
       if ( score > alpha )
         alpha = score;
@@ -293,12 +303,16 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   if ( !counter )
   {
     if ( board_.underCheck() )
-      return -Figure::WeightMat+ply;
+      scoreBest = -Figure::WeightMat+ply;
     else
-      return score0;
+      scoreBest = score0;
   }
 
   THROW_IF( scoreBest < -Figure::WeightMat || scoreBest > +Figure::WeightMat, "invalid score" );
+
+//#ifdef USE_HASH
+//  putCap(best, alpha0, betta, scoreBest, ply);
+//#endif
 
   return scoreBest;
 }

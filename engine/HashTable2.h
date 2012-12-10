@@ -197,9 +197,10 @@ public:
     if( !hitem )
       return;
 
-    if ( (hitem->hcode_ == hcode) &&
-         ((hitem->depth_ > depth) || 
-          (depth == hitem->depth_) && (Alpha == flag && (hitem->flag_ == AlphaBetta || hitem->flag_ == Betta))) )
+    if ( (hitem->mode_ == General) &&
+         (hitem->hcode_ == hcode) &&
+          ( (hitem->depth_ > depth) || 
+            (depth == hitem->depth_ && Alpha == flag && hitem->flag_ > Alpha) ) )
     {
       return;
     }
@@ -228,9 +229,11 @@ public:
       return;
 
     if ( hitem->hcode_ == hcode &&
-        ( hitem->mode_ == General || hitem->mode_ == Eval ||
-          (Alpha == flag && (hitem->flag_ == AlphaBetta || hitem->flag_ == Betta)) ) )
+         ( hitem->mode_ == General || hitem->mode_ == Eval ||
+           Alpha == flag && hitem->flag_ > Alpha ) )
+    {
       return;
+    }
 
     if ( hitem->hcode_ && hitem->hcode_ != hcode )
       hitem->clear();

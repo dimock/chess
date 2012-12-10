@@ -589,7 +589,7 @@ private:
 
     board_.unpack(hitem->move_, hmove);
 
-    if ( betta > alpha+1 )
+    if ( pv || hitem->mode_ != GHashTable::General )
       return GHashTable::AlphaBetta;
 
     hscore = hitem->score_;
@@ -608,8 +608,7 @@ private:
         return GHashTable::Alpha;
       }
 
-      if ( (GHashTable::Betta == hitem->flag_ || GHashTable::AlphaBetta == hitem->flag_) &&
-            hscore >= betta && hmove )
+      if ( hitem->flag_ > GHashTable::Alpha && hscore >= betta && hmove )
       {
         if ( board_.calculateReps(hmove) < 2 )
         {
@@ -625,25 +624,92 @@ private:
 
   inline void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
   {
-    if ( board_.repsCount() < 3 )
+    if ( board_.repsCount() >= 3 )
+      return;
+
+    PackedMove pm = board_.pack(move);
+    GHashTable::Flag flag = GHashTable::NoFlag;
+    if ( board_.repsCount() < 2 )
     {
-      PackedMove pm = board_.pack(move);
-      GHashTable::Flag flag = GHashTable::NoFlag;
-      if ( board_.repsCount() < 2 )
-      {
-        if ( score <= alpha || !move )
-          flag = GHashTable::Alpha;
-        else if ( score >= betta )
-          flag = GHashTable::Betta;
-        else
-          flag = GHashTable::AlphaBetta;
-      }
-      if ( score >= +Figure::WeightMat-MaxPly )
-        score += ply;
-      else if ( score <= -Figure::WeightMat+MaxPly )
-        score -= ply;
-      hash_.push(board_.hashCode(), score, depth, flag, pm);
+      if ( score <= alpha || !move )
+        flag = GHashTable::Alpha;
+      else if ( score >= betta )
+        flag = GHashTable::Betta;
+      else
+        flag = GHashTable::AlphaBetta;
     }
+    if ( score >= +Figure::WeightMat-MaxPly )
+      score += ply;
+    else if ( score <= -Figure::WeightMat+MaxPly )
+      score -= ply;
+    hash_.push(board_.hashCode(), score, depth, flag, pm);
+  }
+
+  inline GHashTable::Flag getCap(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)
+  {
+    const HItem * hitem = hash_.find(board_.hashCode());
+    if ( !hitem || (hitem->mode_ != GHashTable::General && hitem->mode_ != GHashTable::Capture) )
+      return GHashTable::NoFlag;
+
+    THROW_IF( hitem->hcode_ != board_.hashCode(), "invalid hash item found" );
+
+    board_.unpack(hitem->move_, hmove);
+
+    // only capture is valid if item is General
+    if ( hitem->mode_ == GHashTable::General && (!hmove || !hmove.capture_) )
+      return GHashTable::NoFlag;
+
+    // don't use flags if there is usual move in hash
+    if ( pv || hitem->mode_ == GHashTable::General )
+      return GHashTable::AlphaBetta;
+
+    hscore = hitem->score_;
+    if ( hscore >= Figure::WeightMat-MaxPly )
+      hscore = hscore - ply;
+    else if ( hscore <= MaxPly-Figure::WeightMat )
+      hscore = hscore + ply;
+
+    THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
+
+    if ( depth < 0 && ply > 0 )
+    {
+      if ( GHashTable::Alpha == hitem->flag_ && hscore <= alpha )
+      {
+        THROW_IF( !stop_ && alpha < -32760, "invalid hscore" );
+        return GHashTable::Alpha;
+      }
+
+      if ( hitem->flag_ > GHashTable::Alpha && hscore >= betta && hmove )
+      {
+        if ( board_.calculateReps(hmove) < 2 )
+          return GHashTable::Betta;
+      }
+    }
+
+    return GHashTable::AlphaBetta;
+  }
+
+  inline void putCap(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int ply)
+  {
+    if ( board_.repsCount() >= 3 )
+      return;
+
+    PackedMove pm = board_.pack(move);
+    GHashTable::Flag flag = GHashTable::NoFlag;
+    if ( board_.repsCount() < 2 )
+    {
+      if ( score <= alpha || !move )
+        flag = GHashTable::Alpha;
+      else if ( score >= betta )
+        flag = GHashTable::Betta;
+      else
+        flag = GHashTable::AlphaBetta;
+    }
+    if ( score >= +Figure::WeightMat-MaxPly )
+      score += ply;
+    else if ( score <= -Figure::WeightMat+MaxPly )
+      score -= ply;
+    hash_.pushCap(board_.hashCode(), score, flag, pm);
   }
 #endif // USE_HASH
 
