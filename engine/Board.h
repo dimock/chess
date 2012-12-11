@@ -231,16 +231,8 @@ public:
 
   inline bool allowNullMove() const
   {
-    return fmgr_.weight(color_) > 0;
-    //if ( (fmgr_.knights(color_)+fmgr_.bishops(color_)+fmgr_.rooks(color_)+fmgr_.queens(color_) == 0) ||
-    //      !can_win_[0] ||
-    //      !can_win_[1] ||
-    //     (fmgr_.weight(color_) < Figure::figureWeight_[Figure::TypeRook]) )
-    //{
-    //  return false;
-    //}
-
-    //return true;
+    return can_win_[color_] &&
+        (fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 0);
   }
 
   inline bool shortNullMoveReduction() const

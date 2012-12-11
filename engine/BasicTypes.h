@@ -111,7 +111,7 @@ namespace nst
 
 
 static const int HalfnodesCountToOverwrite = 16;
-static const int MaxPly = 50;
+static const int MaxPly = 64;
 static const int LMR_PlyReduce = 2;
 static const int LMR_DepthLimit = 3;
 static const int LMR_MinDepthLimit = 5;
