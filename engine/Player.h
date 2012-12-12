@@ -309,7 +309,7 @@ private:
   }
 
   ScoreType alphaBetta0(ScoreType alpha, ScoreType betta);
-  ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
+  ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, bool null_move);
   ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
 
 
@@ -630,6 +630,13 @@ private:
         {
           if ( pv )
             assemblePV(hmove, false, ply);
+
+          if ( hitem->threat_ && board_.getMoveRev(0).reduced_ )
+          {
+            hscore = betta-1;
+            return GHashTable::Alpha;
+          }
+
           return GHashTable::Betta;
         }
       }
@@ -638,7 +645,7 @@ private:
     return GHashTable::AlphaBetta;
   }
 
-  inline void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
+  inline void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat)
   {
     if ( board_.repsCount() >= 3 )
       return;
@@ -658,7 +665,7 @@ private:
       score += ply;
     else if ( score <= -Figure::WeightMat+MaxPly )
       score -= ply;
-    hash_.push(board_.hashCode(), score, depth, flag, pm);
+    hash_.push(board_.hashCode(), score, depth, flag, pm, threat);
   }
 
   inline GHashTable::Flag getCap(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)

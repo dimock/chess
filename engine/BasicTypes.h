@@ -64,7 +64,9 @@ namespace nst
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING_
 #define USE_HASH
+#undef  USE_HASH_CAPS
 #define USE_NULL_MOVE
+#define USE_LMR
 
 #undef USE_HASH_TABLE_GENERAL
 #undef USE_HASH_TABLE_ADV
@@ -72,7 +74,6 @@ namespace nst
 #undef RETURN_IF_ALPHA_BETTA_CAPTURES
 #undef USE_GENERAL_HASH_IN_CAPS
 #undef RETURN_IF_BETTA
-#undef USE_LMR
 #undef USE_IID
 
 #define EXTEND_PROMOTION
@@ -95,12 +96,6 @@ namespace nst
 #undef VALIDATE_VALIDATOR
 
 #define USE_FAST_GENERATOR
-
-#ifndef NDEBUG
-  #define DEBUG_NULLMOVE
-#else
-  #undef DEBUG_NULLMOVE
-#endif
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF

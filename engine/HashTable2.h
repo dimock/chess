@@ -190,7 +190,7 @@ public:
   GHashTable(int size) : HashTable2<HBucket>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType score, int depth, Flag flag, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
   {
     HBucket & hb = (*this)[hcode];
     HItem * hitem = hb.get(hcode);
@@ -215,6 +215,7 @@ public:
     hitem->depth_ = depth;
     hitem->flag_  = flag;
     hitem->mode_  = General;
+    hitem->threat_ = threat;
     hitem->movesCount_ = movesCount_;
 
     if ( move )

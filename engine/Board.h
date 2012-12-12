@@ -137,17 +137,10 @@ public:
   }
 
   /// used in LMR
-  bool canBeReduced(const Move & move) const
-  {
-    // don't reduce captures
-    if ( (move.capture_ || move.new_type_ > 0) )
-      return false;
+  bool canBeReduced() const;
 
-    // don't allow reduction of pawn's movement to pre-last line or pawn's attack
-    return !isDangerPawn(move);
-  }
-
-  /// used to detect reduction/extension necessity
+  /// used to detect reduction/extension possibility
+  /// don't allow reduction of pawn's movement to pre-last line or pawn's attack
   bool isDangerPawn(const Move & move) const
   {
     const Field & fto = getField(move.to_);
@@ -274,8 +267,8 @@ public:
   void unmakeMove();
 
   /// null-move
-  void makeNullMove(MoveCmd & move);
-  void unmakeNullMove(MoveCmd & move);
+  void makeNullMove();
+  void unmakeNullMove();
 
   /// verify if there is draw or mat
   void verifyState();

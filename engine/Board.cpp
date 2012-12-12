@@ -55,6 +55,19 @@ bool Board::initEmpty(Figure::Color color)
   return true;
 }
 
+bool Board::canBeReduced() const
+{
+  const MoveCmd & move = getMoveRev(0);
+  const MoveCmd & prev = getMoveRev(-1);
+
+  History & hist = MovesGenerator::history(move.from_, move.to_);
+
+  return  ((hist.good()<<4) <= hist.bad()) &&
+    !(move.capture_ || move.new_type_ > 0 || move.threat_ || move.castle_ || underCheck() || prev.checkingNum_ > 0) &&
+    !isDangerPawn(move);
+}
+
+
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
 bool Board::fromFEN(const char * fen)
 {

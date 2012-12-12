@@ -630,9 +630,7 @@ bool Board::verifyChessDraw()
 
 //////////////////////////////////////////////////////////////////////////
 // NULL MOVE
-#ifdef DEBUG_NULLMOVE
-
-void Board::makeNullMove(MoveCmd & )
+void Board::makeNullMove()
 {
   THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
@@ -659,7 +657,7 @@ void Board::makeNullMove(MoveCmd & )
   move.zcode_ = hashCode();
 }
 
-void Board::unmakeNullMove(MoveCmd & )
+void Board::unmakeNullMove()
 {
   THROW_IF(halfmovesCounter_ <= 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
@@ -671,36 +669,6 @@ void Board::unmakeNullMove(MoveCmd & )
   fmgr_.restoreHash(move.zcode_old_);
   state_ = (State)move.state_;
 }
-
-#else
-
-void Board::makeNullMove(MoveCmd & move)
-{
-  move.zcode_old_ = hashCode();
-  move.state_ = state_;
-
-  if ( en_passant_ >= 0 )
-  {
-    fmgr_.hashEnPassant(en_passant_, color_);
-    move.en_passant_ = en_passant_;
-    en_passant_ = -1;
-  }
-  else
-    move.en_passant_ = -1;
-
-  color_ = Figure::otherColor(color_);
-  fmgr_.hashColor();
-}
-
-void Board::unmakeNullMove(MoveCmd & move)
-{
-  color_ = Figure::otherColor(color_);
-  en_passant_ = move.en_passant_;
-  fmgr_.restoreHash(move.zcode_old_);
-  state_ = (State)move.state_;
-}
-
-#endif
 
 
 #ifdef VALIDATE_VALIDATOR

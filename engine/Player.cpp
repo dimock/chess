@@ -477,14 +477,13 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
     return alpha;
   }
 
-  MoveCmd move;
-  board_.makeNullMove(move);
+  board_.makeNullMove();
 
   depth = nullMove_depth(depth);
 
   ScoreType nullScore = -alphaBetta(depth, ply+1, -betta, -(betta-1), true /* null-move */, 0);
 
-  board_.unmakeNullMove(move);
+  board_.unmakeNullMove();
 
   // set threat flag in current context if null-move failed
   // we need to verify this position more carefully to prevent reduction of dangerous movement on ply-1
@@ -874,37 +873,37 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
       {
         int R = 1;
 
-#ifdef USE_LMR
-        if (  counter > LMR_Counter &&
-              depth_ > LMR_MinDepthLimit &&
-              depth > LMR_DepthLimit &&
-              board_.canBeReduced(move) &&
-              !move.threat_ &&
-              !mv_cmd.castle_ &&
-              !haveCheck &&
-              !check_esc &&
-              !null_move &&
-              !mv_cmd.extended_ &&
-              alpha > -Figure::WeightMat+MaxPly &&
-              ((hist.good()<<4) <= hist.bad()) )
-        {
-          R = LMR_PlyReduce;
-          mv_cmd.reduced_ = true;
-        }
-#endif
+//#ifdef USE_LMR
+//        if (  counter > LMR_Counter &&
+//              depth_ > LMR_MinDepthLimit &&
+//              depth > LMR_DepthLimit &&
+//              board_.canBeReduced(move) &&
+//              !move.threat_ &&
+//              !mv_cmd.castle_ &&
+//              !haveCheck &&
+//              !check_esc &&
+//              !null_move &&
+//              !mv_cmd.extended_ &&
+//              alpha > -Figure::WeightMat+MaxPly &&
+//              ((hist.good()<<4) <= hist.bad()) )
+//        {
+//          R = LMR_PlyReduce;
+//          mv_cmd.reduced_ = true;
+//        }
+//#endif
 
         score = -alphaBetta(depth-R, ply+1, -(alpha+1), -alpha, null_move, singularCount);
 
         THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
         mv_cmd.reduced_ = false;
 
-#ifdef USE_LMR
-
-        if ( !stop_ && score > alpha && R > 1 ) // was LMR
-          score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, singularCount);
-
-        THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
-#endif
+//#ifdef USE_LMR
+//
+//        if ( !stop_ && score > alpha && R > 1 ) // was LMR
+//          score = -alphaBetta(depth-1, ply+1, -(alpha+1), -alpha, null_move, singularCount);
+//
+//        THROW_IF( !stop_ && (score < -32760 || score > 32760), "invalid score" );
+//#endif
       }
 
       if ( !stop_ && counter < 2  || (score > alpha && score < betta) )
@@ -1391,75 +1390,6 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
   return num;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// is given movement caused by previous? this mean that if we don't do this move we loose
-// we actually check if moved figure was/willbe attacked by previously moved one or from direction it was moved from
-//////////////////////////////////////////////////////////////////////////
-bool Player::isRealThreat(const Move & move)
-{
-  // don't need to forbid if our answer is capture or check ???
-  if ( move.capture_ || move.checkFlag_ )
-    return false;
-
-  const MoveCmd & prev = board_.getMoveRev(0);
-  Figure::Color ocolor = Figure::otherColor(board_.getColor());
-
-  const Field & pfield = board_.getField(prev.to_);
-  THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
-
-  // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) /*|| pawnBeforePromotion(prev)*/)
-  {
-    return false;
-  }
-
-  /// we have to move king even if there a lot of figures
-  if ( board_.getField(move.from_).type() == Figure::TypeKing && board_.fmgr().weight(board_.getColor()) > Figure::figureWeight_[Figure::TypeQueen]+Figure::figureWeight_[Figure::TypeRook] )
-    return true;
-
-  const Field & cfield = board_.getField(move.from_);
-  THROW_IF( !cfield || cfield.color() != board_.getColor(), "no figure of required color in while detecting threat" );
-
-  // we have to put figure under attack
-  if ( board_.ptAttackedBy(move.to_, prev.to_) 
-#ifdef ONLY_LEQ_THREAT
-    && typeLEQ(pfig.getType(), cfig.getType())
-#endif
-    )
-    return true;
-
-  // put our figure under attack
-  int tindex = board_.getAttackedFrom(ocolor, move.to_, prev.from_);
-  if ( tindex >= 0 )
-  {
-#ifdef ONLY_LEQ_THREAT
-    const Figure & afig = board_.getFigure(ocolor, tindex);
-    if ( typeLEQ(afig.getType(), cfig.getType()))
-#endif
-      return true;
-  }
-
-  // prev move was attack, and we should escape from it
-  if ( board_.ptAttackedBy(move.from_, prev.to_) 
-#ifdef ONLY_LEQ_THREAT
-    && typeLEQ(cfig.getType(), pfig.getType())
-#endif
-    )
-    return true;
-
-  // our figure was attacked from direction, opened by prev movement
-  int findex = board_.getAttackedFrom(ocolor, move.from_, prev.from_);
-  if ( findex >= 0 )
-  {
-#ifdef ONLY_LEQ_THREAT
-    const Figure & afig = board_.getFigure(ocolor, findex);
-    if ( typeLEQ(cfig.getType(), afig.getType()))
-#endif
-      return true;
-  }
-
-  return false;
-}
 //////////////////////////////////////////////////////////////////////////
 int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser, int initial_balance)
 {
