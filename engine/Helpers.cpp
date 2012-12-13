@@ -292,13 +292,11 @@ bool parseSAN(Board & board, const char * str, Move & move)
   if ( !str )
     return false;
 
-#ifdef DEBUG_NULLMOVE
   if ( strcmp(str, "null") == 0 ) // null-move
   {
     move.clear();
     return true;
   }
-#endif
 
   Figure::Type type = Figure::TypePawn;
   Figure::Type new_type = Figure::TypeNone;
@@ -420,13 +418,11 @@ bool printSAN(Board & board, const Move & move, char * str)
   if ( !str )
     return false;
 
-#ifdef DEBUG_NULLMOVE
   if ( !move ) // null-move passed
   {
     strcpy(str, "null");
     return true;
   }
-#endif
 
   Field field = board.getField(move.from_);
 

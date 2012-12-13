@@ -315,10 +315,10 @@ bool Player::search(SearchResult & sres, std::ostream * out)
 	  plyMax_ = 0;
     counter_ = 0;
 
-    ScoreType alpha = -std::numeric_limits<ScoreType>::max();
-    ScoreType betta = +std::numeric_limits<ScoreType>::max();
 
-    ScoreType score = alphaBetta0(alpha, betta);
+    ScoreType score = alphaBetta0();
+    //ScoreType alpha = -std::numeric_limits<ScoreType>::max();
+    //ScoreType betta = +std::numeric_limits<ScoreType>::max();
     //ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, SingularExtension_Limit);
 
     if ( (best_) && (!stop_ || beforeFound_) )
@@ -366,7 +366,7 @@ bool Player::search(SearchResult & sres, std::ostream * out)
 
     firstIter_ = false;
 
-    if ( !best_ || (score >= Figure::WeightMat-MaxPly || score <= MaxPly-Figure::WeightMat) && !analyze_mode_ )
+    if ( !best_ || (score >= Figure::MatScore-MaxPly || score <= MaxPly-Figure::MatScore) && !analyze_mode_ )
       break;
   }
 
@@ -471,8 +471,8 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
        !board_.allowNullMove() ||
        (depth < NullMove_DepthMin+1) ||
        (depth_ < NullMove_DepthStart) ||
-        betta >= Figure::WeightMat+MaxPly ||
-        alpha <= -Figure::WeightMat-MaxPly  )
+        betta >= Figure::MatScore+MaxPly ||
+        alpha <= -Figure::MatScore-MaxPly  )
   {
     return alpha;
   }
@@ -494,7 +494,7 @@ ScoreType Player::nullMove(int depth, int ply, ScoreType alpha, ScoreType betta)
   }
 
 #ifdef MAT_THREAT_EXTENSION
-  if ( nullScore <= -Figure::WeightMat+MaxPly && nullScore > -std::numeric_limits<ScoreType>::max() )
+  if ( nullScore <= -Figure::MatScore+MaxPly && nullScore > -std::numeric_limits<ScoreType>::max() )
     contexts_[ply].ext_data_.mat_threats_found_++;
 #endif
 
@@ -507,7 +507,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 	if ( ply > plyMax_ )
 		plyMax_ = ply;
 
-  if ( stop_ || ply >= MaxPly || alpha >= Figure::WeightMat-ply )
+  if ( stop_ || ply >= MaxPly || alpha >= Figure::MatScore-ply )
   {
     THROW_IF( !stop_ && (alpha < -32760 || alpha > 32760), "invalid score" );
     return alpha;
@@ -615,8 +615,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef USE_FUTILITY_PRUNING
   if ( !board_.underCheck() &&
-       alpha > -Figure::WeightMat+MaxPly &&
-       alpha < Figure::WeightMat-MaxPly &&
+       alpha > -Figure::MatScore+MaxPly &&
+       alpha < Figure::MatScore-MaxPly &&
        depth == 1 && ply > 1 && !board_.isWinnerLoser() )
   {
     ScoreType score = board_.evaluate();
@@ -884,7 +884,7 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
 //              !check_esc &&
 //              !null_move &&
 //              !mv_cmd.extended_ &&
-//              alpha > -Figure::WeightMat+MaxPly &&
+//              alpha > -Figure::MatScore+MaxPly &&
 //              ((hist.good()<<4) <= hist.bad()) )
 //        {
 //          R = LMR_PlyReduce;
@@ -997,12 +997,12 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   if ( stop_ || ply >= MaxPly )
   {
-    if ( alpha < -Figure::WeightMat-MaxPly )
+    if ( alpha < -Figure::MatScore-MaxPly )
       return board_.evaluate();
     else
       return alpha;
   }
-  else if ( alpha >= Figure::WeightMat-ply )
+  else if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
   if ( ply < MaxPly )
@@ -1274,7 +1274,7 @@ int Player::collectHashMoves(int depth, int ply, bool null_move, ScoreType alpha
 #ifdef USE_IID
   // internal iterative deeping
   // if we don't have move in hashes, let's try to calculate to reduced depth to find some appropriate move
-  if ( ply > 0 && depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha && alpha > -Figure::WeightMat+MaxPly )
+  if ( ply > 0 && depth > 1 && !null_move && !pv && ghash_[board_.hashCode()].flag_ != GeneralHashTable::Alpha && alpha > -Figure::MatScore+MaxPly )
   {
     depth -= 3;
     if ( depth < 1 )
@@ -1393,7 +1393,7 @@ int Player::collectHashCaps(int ply, Figure::Type minimalType, Move (&caps)[Hash
 //////////////////////////////////////////////////////////////////////////
 int Player::do_extension(int depth, int ply, ScoreType alpha, ScoreType betta, bool was_winnerloser, int initial_balance)
 {
-  if ( depth <= 0 || alpha >= Figure::WeightMat-MaxPly || board_.halfmovesCount() < 1 )
+  if ( depth <= 0 || alpha >= Figure::MatScore-MaxPly || board_.halfmovesCount() < 1 )
     return 0;
 
   const MoveCmd & move = board_.getMoveRev(0);

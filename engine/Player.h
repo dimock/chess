@@ -308,8 +308,8 @@ private:
     return depth;
   }
 
-  ScoreType alphaBetta0(ScoreType alpha, ScoreType betta);
-  ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, bool null_move);
+  ScoreType alphaBetta0();
+  ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
   ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
 
 
@@ -410,12 +410,12 @@ private:
       return GeneralHashTable::None;
 
     ScoreType hscore = hitem.score_;
-    if ( hscore >= Figure::WeightMat-MaxPly )
+    if ( hscore >= Figure::MatScore-MaxPly )
     {
       hscore += hitem.ply_;
       hscore -= ply;
     }
-    else if ( hscore <= MaxPly-Figure::WeightMat )
+    else if ( hscore <= MaxPly-Figure::MatScore )
     {
       hscore -= hitem.ply_;
       hscore += ply;
@@ -488,12 +488,12 @@ private:
       if ( depth < 0 || !(hitem.depth_ & 32) /* HACK */ || board_.underCheck() )
       {
         ScoreType hscore = hitem.score_;
-        if ( hscore >= Figure::WeightMat-MaxPly )
+        if ( hscore >= Figure::MatScore-MaxPly )
         {
           hscore += hitem.ply_;
           hscore -= ply;
         }
-        else if ( hscore <= MaxPly-Figure::WeightMat )
+        else if ( hscore <= MaxPly-Figure::MatScore )
         {
           hscore -= hitem.ply_;
           hscore += ply;
@@ -609,9 +609,9 @@ private:
       return GHashTable::AlphaBetta;
 
     hscore = hitem->score_;
-    if ( hscore >= Figure::WeightMat-MaxPly )
+    if ( hscore >= Figure::MatScore-MaxPly )
       hscore = hscore - ply;
-    else if ( hscore <= MaxPly-Figure::WeightMat )
+    else if ( hscore <= MaxPly-Figure::MatScore )
       hscore = hscore + ply;
 
     THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
@@ -661,9 +661,9 @@ private:
       else
         flag = GHashTable::AlphaBetta;
     }
-    if ( score >= +Figure::WeightMat-MaxPly )
+    if ( score >= +Figure::MatScore-MaxPly )
       score += ply;
-    else if ( score <= -Figure::WeightMat+MaxPly )
+    else if ( score <= -Figure::MatScore+MaxPly )
       score -= ply;
     hash_.push(board_.hashCode(), score, depth, flag, pm, threat);
   }
@@ -687,9 +687,9 @@ private:
       return GHashTable::AlphaBetta;
 
     hscore = hitem->score_;
-    if ( hscore >= Figure::WeightMat-MaxPly )
+    if ( hscore >= Figure::MatScore-MaxPly )
       hscore = hscore - ply;
-    else if ( hscore <= MaxPly-Figure::WeightMat )
+    else if ( hscore <= MaxPly-Figure::MatScore )
       hscore = hscore + ply;
 
     THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
@@ -728,9 +728,9 @@ private:
       else
         flag = GHashTable::AlphaBetta;
     }
-    if ( score >= +Figure::WeightMat-MaxPly )
+    if ( score >= +Figure::MatScore-MaxPly )
       score += ply;
-    else if ( score <= -Figure::WeightMat+MaxPly )
+    else if ( score <= -Figure::MatScore+MaxPly )
       score -= ply;
     hash_.pushCap(board_.hashCode(), score, flag, pm);
   }

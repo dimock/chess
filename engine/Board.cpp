@@ -58,12 +58,11 @@ bool Board::initEmpty(Figure::Color color)
 bool Board::canBeReduced() const
 {
   const MoveCmd & move = getMoveRev(0);
-  const MoveCmd & prev = getMoveRev(-1);
 
   History & hist = MovesGenerator::history(move.from_, move.to_);
 
   return  ((hist.good()<<4) <= hist.bad()) &&
-    !(move.capture_ || move.new_type_ > 0 || move.threat_ || move.castle_ || underCheck() || prev.checkingNum_ > 0) &&
+    !(move.capture_ || move.new_type_ > 0 || move.threat_ || move.castle_ || underCheck()) &&
     !isDangerPawn(move);
 }
 
@@ -541,11 +540,7 @@ bool Board::load(Board & board, std::istream & is)
   const int N = 1024;
   char str[N];
   const char * sepr  = " \t\n\r";
-#ifdef DEBUG_NULLMOVE
   const char * strmv = "123456789abcdefgh+-OxPNBRQKnul=#";
-#else
-  const char * strmv = "123456789abcdefgh+-OxPNBRQK=#";
-#endif
   bool fen_expected = false, fen_init = false;
 
   const int ML = 16;

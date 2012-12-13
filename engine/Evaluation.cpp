@@ -266,9 +266,9 @@ extern const ScoreType Figure::pawnGuarded_[2][8] = {
 ScoreType Board::evaluate() const
 {
   if ( matState() )
-    return -Figure::WeightMat;
+    return -Figure::MatScore;
   else if ( drawState() )
-    return Figure::WeightDraw;
+    return Figure::DrawScore;
   
   ScoreType score = -std::numeric_limits<ScoreType>::max();
   if ( can_win_[0] != can_win_[1] )

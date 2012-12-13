@@ -192,7 +192,7 @@ int Board::see(const Move & move) const
           }
           // illegal move
           else if ( col == color && 0 == i )
-            return -Figure::WeightMat;
+            return -Figure::MatScore;
         }
         break;
 
@@ -215,7 +215,7 @@ int Board::see(const Move & move) const
           }
           // illegal move
           else if ( col == color && 0 == i )
-            return -Figure::WeightMat;
+            return -Figure::MatScore;
         }
         break;
 

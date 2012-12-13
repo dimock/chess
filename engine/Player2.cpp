@@ -9,7 +9,7 @@
 
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
+ScoreType Player::alphaBetta0()
 {
   if ( stopped() )
     return board_.evaluate();
@@ -21,7 +21,12 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
     return score;
   }
 
+  ScoreType alpha = -std::numeric_limits<ScoreType>::max();
+  ScoreType betta = +std::numeric_limits<ScoreType>::max();
+
   ScoreType scoreBest = -ScoreMax;
+  
+  bool under_check = board_.underCheck();
 
   for (counter_ = 0; counter_ < numOfMoves_; ++counter_)
   {
@@ -38,12 +43,28 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
       int depth1 = nextDepth(depth_, move, false);
 
       if ( depth_ == depth0_ || !counter_ ) // 1st iteration
-        score = -alphaBetta2(depth1, 1, -betta, -alpha, true, false);
+        score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
       else
       {
-        score = -alphaBetta2(depth1, 1, -alpha-1, -alpha, false, false);
-        if ( score > alpha )
-          score = -alphaBetta2(depth1, 1, -betta, -alpha, true, false);
+        int R = 0;
+
+#ifdef USE_LMR
+        if ( !under_check &&
+             depth_ > LMR_MinDepthLimit &&
+             alpha > -Figure::MatScore-MaxPly && 
+             board_.canBeReduced() )
+        {
+          R = 1;
+        }
+#endif
+
+        score = -alphaBetta2(depth1-R, 1, -alpha-1, -alpha, false);
+
+        if ( !stopped() && score > alpha && R > 0 )
+          score = -alphaBetta2(depth1, 1, -alpha-1, -alpha, false);
+
+        if ( !stopped() && score > alpha )
+          score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
       }
     }
 
@@ -90,13 +111,13 @@ ScoreType Player::alphaBetta0(ScoreType alpha, ScoreType betta)
   return scoreBest;
 }
 
-ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, bool null_move)
+ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
 {
-  if ( alpha >= Figure::WeightMat-ply )
+  if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
   if ( board_.drawState() )
-    return Figure::WeightDraw;
+    return Figure::DrawScore;
 
   if ( stopped() || ply >= MaxPly )
     return board_.evaluate();
@@ -121,24 +142,23 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   bool nm_threat = false, real_threat = false;
 
 #ifdef USE_NULL_MOVE
-  if ( !pv && !board_.underCheck() && board_.allowNullMove() && depth >= 2 &&
-        betta < Figure::WeightMat-MaxPly &&
-        betta > -Figure::WeightMat+MaxPly)
+  if ( !pv && !board_.underCheck() && board_.allowNullMove() && depth >= NullMove_DepthMin+1 &&
+        betta < Figure::MatScore+MaxPly &&
+        betta > -Figure::MatScore-MaxPly )
   {
     board_.makeNullMove();
 
-    int null_depth = depth-4;
+    int null_depth = depth - NullMove_PlyReduce;
 
-    ScoreType nullScore = -alphaBetta2(null_depth, ply+1, -betta, -(betta-1), false, true);
+    ScoreType nullScore = -alphaBetta2(null_depth, ply+1, -betta, -(betta-1), false);
 
     board_.unmakeNullMove();
 
     // verify null-move
     if ( nullScore >= betta )
     {
-      null_move = true;
-      depth -= 5;
-      if ( depth < 1 )
+      depth -= NullMove_PlyReduce;
+      if ( depth <= 0 )
         return captures2(depth, ply, alpha, betta, pv);
     }
     else // may be we are in danger? verify it later
@@ -148,9 +168,9 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( !board_.underCheck() && !board_.isWinnerLoser() &&
-        alpha > -Figure::WeightMat+MaxPly &&
-        alpha < Figure::WeightMat-MaxPly &&
+  if ( !pv && !board_.underCheck() && !board_.isWinnerLoser() &&
+        alpha > -Figure::MatScore+MaxPly &&
+        alpha < Figure::MatScore-MaxPly &&
         depth == 1 && ply > 1 )
   {
     ScoreType score0 = board_.evaluate();
@@ -173,6 +193,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     depth++;
 
   MoveCmd & prev = board_.getMoveRev(0);
+  bool under_check = board_.underCheck();
 
   for ( ; alpha < betta && !checkForStop(); )
   {
@@ -193,36 +214,33 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     {
       int depth1 = nextDepth(depth, move, pv);
 
-      if ( !counter || !pv )
-        score = -alphaBetta2(depth1, ply+1, -betta, -alpha, pv, null_move);
-      else if ( pv )
+      if ( !counter )
+        score = -alphaBetta2(depth1, ply+1, -betta, -alpha, pv);
+      else
       {
-        int R = 1 - board_.underCheck();
+        int depth2 = nextDepth(depth, move, false);
+        int R = 0;
 
 #ifdef USE_LMR
-        if ( !null_move &&
+        if ( !under_check &&
              depth_ > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
-             alpha > -Figure::WeightMat+MaxPly &&             
+             alpha > -Figure::MatScore-MaxPly &&             
              board_.canBeReduced() )
         {
-          R = LMR_PlyReduce;
+          R = 1;
           curr.reduced_ = true;
         }
 #endif
 
-        score = -alphaBetta2(depth-R, ply+1, -alpha-1, -alpha, false, null_move);
+        score = -alphaBetta2(depth2-R, ply+1, -alpha-1, -alpha, false);
         curr.reduced_ = false;
 
-#ifdef USE_LMR
-        if ( !stopped() && score > alpha && R > 1 )
-        {
-          score = -alphaBetta2(depth-1, ply+1, -alpha-1, -alpha, false, null_move);
-        }
-#endif
+        if ( !stopped() && score > alpha && R > 0 )
+          score = -alphaBetta2(depth2, ply+1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha && score < betta )
-          score = -alphaBetta2(depth1, ply+1, -betta, -alpha, true, null_move);
+          score = -alphaBetta2(depth1, ply+1, -betta, -alpha, true);
       }
     }
 
@@ -276,18 +294,18 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   putHash(best, alpha0, betta, scoreBest, depth, ply, real_threat);
 #endif
 
-  THROW_IF( scoreBest < -Figure::WeightMat || scoreBest > +Figure::WeightMat, "invalid score" );
+  THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );
 
   return scoreBest;
 }
 
 ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0)
 {
-  if ( alpha >= Figure::WeightMat-ply )
+  if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
   if ( board_.drawState() )
-    return Figure::WeightDraw;
+    return Figure::DrawScore;
 
   // not initialized yet
   if ( score0 == -ScoreMax )
@@ -367,12 +385,12 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   if ( !counter )
   {
     if ( board_.underCheck() )
-      scoreBest = -Figure::WeightMat+ply;
+      scoreBest = -Figure::MatScore+ply;
     else
       scoreBest = score0;
   }
 
-  THROW_IF( scoreBest < -Figure::WeightMat || scoreBest > +Figure::WeightMat, "invalid score" );
+  THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );
 
 #ifdef USE_HASH_CAPS
   putCap(best, alpha0, betta, scoreBest, ply);

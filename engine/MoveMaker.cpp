@@ -100,10 +100,8 @@ bool Board::validateMove(const Move & move) const
   if ( drawState() || matState() )
     return false;
 
-#ifdef DEBUG_NULLMOVE
   if ( !move ) // null-move
     return true;
-#endif
 
   const Field & ffrom = getField(move.from_);
   const Field & fto   = getField(move.to_);
@@ -266,14 +264,11 @@ bool Board::validateMove(const Move & move) const
 
 void Board::makeMove(const Move & mv)
 {
-#ifdef DEBUG_NULLMOVE
   if ( !mv )
   {
-    MoveCmd x;
-    makeNullMove(x);
+    makeNullMove();
     return;
   }
-#endif
 
   THROW_IF(halfmovesCounter_ < 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
@@ -487,14 +482,11 @@ void Board::unmakeMove()
 
   MoveCmd & move = lastMove();
 
-#ifdef DEBUG_NULLMOVE
   if ( !move )
   {
-    MoveCmd x;
-    unmakeNullMove(x);
+    unmakeNullMove();
     return;
   }
-#endif
 
   halfmovesCounter_--;
 
