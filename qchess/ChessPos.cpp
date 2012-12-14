@@ -455,7 +455,7 @@ const Board & ChessPosition::getBoard() const
   return vboard_;
 }
 
-bool ChessPosition::findMove(SearchResult & sres)
+bool ChessPosition::findMove(SearchResult * sres)
 {
   if ( working_ )
     return false;
@@ -464,7 +464,7 @@ bool ChessPosition::findMove(SearchResult & sres)
 
   bool b = player_.findMove(sres);
   if ( b )
-    b = applyMove(sres.best_);
+    b = applyMove(sres->best_);
 
   working_ = false;
 

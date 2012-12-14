@@ -37,7 +37,7 @@ public:
   int  getBoardWidth() const { return boardSize_.width(); }
 
   // making move
-  bool findMove(SearchResult & sres);
+  bool findMove(SearchResult * sres);
   bool applyMove(const Move &);
 
   const Board & getBoard() const;

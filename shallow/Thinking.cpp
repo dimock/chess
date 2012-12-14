@@ -184,9 +184,12 @@ void Thinking::analyze()
   player_.setMaxDepth(32);
 
   SearchResult sres;
+  if ( post_ )
+    sres.out_ = &cout;
+
   player_.setAnalyzeMode(true);
   player_.setGiveTimeCbk(0);
-  player_.findMove(sres, post_ ? &cout : 0);
+  player_.findMove(&sres);
   player_.setAnalyzeMode(false);
 
   player_.setTimeLimit(timePerMoveMS_);
@@ -214,12 +217,14 @@ bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
     return true;
 
 	SearchResult sres;
+  if ( post_ )
+    sres.out_ = &cout;
 
   player_.setAnalyzeMode(false);
   player_.setGiveTimeCbk(give_more_time);
   thinking_ = true;
   givetimeCounter_ = 0;
-  if ( player_.findMove(sres, post_ ? &cout : 0) )
+  if ( player_.findMove(&sres) )
   {
     if ( board.validateMove(sres.best_) )
     {

@@ -26,13 +26,15 @@ public:
   int plyMax_;
   clock_t dt_;
 
+  // write result here
+  std::ostream * out_;
+
   /// result
   Move best_;
   Move pv_[MaxPly+1];
   int  depth_;
 
   ScoreType score_;
-//  bool wminus_;
 };
 
 class CapsGenerator;
@@ -41,8 +43,8 @@ class EscapeGenerator;
 class ChecksGenerator;
 
 // implementation isn't perfect )) have to rewrite
-typedef void (* PLAYER_CALLBACK)();
-typedef int (*GIVE_MORE_TIME)();
+typedef void (*PLAYER_CALLBACK)();
+typedef int  (*GIVE_MORE_TIME)();
 
 struct PlyContext
 {
@@ -190,7 +192,6 @@ class Player
   char posted_fen_[256];
   PLAYER_CALLBACK callback_;
   GIVE_MORE_TIME givetime_;
-  std::ostream * out_;
   int counter_, numOfMoves_;
   Board pv_board_;
   bool analyze_mode_;
@@ -218,7 +219,7 @@ public:
   void saveHash(const char * fname) const;
   void loadHash(const char * fname);
 
-  bool findMove(SearchResult & , std::ostream * out = 0);
+  bool findMove(SearchResult * );
   
   Board & getBoard()
   {
@@ -260,6 +261,8 @@ private:
     return stop_;
   }
 
+  void reset();
+
   bool stopped() const
   {
     return stop_;
@@ -267,10 +270,10 @@ private:
 
   void testInput();
   void processPosted(int t);
-  void printPV(Board & pv_board, SearchResult & sres);
+  void printPV();
 
   // start point of search algorithm
-  bool search(SearchResult & , std::ostream * out = 0);
+  bool search();
 
 
   // new search routine
@@ -285,8 +288,10 @@ private:
 
   int nextDepth(int depth, const Move & move, bool pv) const
   {
+    if ( board_.underCheck() )
+      return depth;
+
     depth--;
-    depth += board_.underCheck();
 
     if ( !move.see_good_ || !pv )
       return depth;
@@ -294,14 +299,12 @@ private:
     if ( move.new_type_ == Figure::TypeQueen )
       return depth+1;
 
-    // this is not a recapture but capture of strong figure by weaker one.
-    // it usually means that previous move was stupid )
     if ( board_.halfmovesCount() > 1 )
     {
       const MoveCmd & prev = board_.getMoveRev(-1);
       const MoveCmd & curr = board_.getMoveRev(0);
 
-      if ( prev.capture_ && (move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_) )//(typeLEQ(fto.type(), (Figure::Type)curr.eaten_type_) || curr.en_passant_ == curr.to_) )
+      if ( /*prev.capture_ && */(move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_) )
         return depth+1;
     }
 
@@ -309,6 +312,7 @@ private:
   }
 
   ScoreType alphaBetta0();
+  ScoreType alphaBetta1(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
   ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
   ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
 
@@ -331,10 +335,11 @@ private:
   int depthMax_;
   int depth_;
   int nodesCount_, totalNodes_, plyMax_;
-  bool firstIter_;
+  //bool firstIter_;
   clock_t tstart_, tprev_;
-  Move before_, best_;
-  bool beforeFound_;
+  Move /*before_, */best_;
+  //bool beforeFound_;
+  SearchResult * sres_;
 
   // mat-balance at the root node (before starting calculation)
   int initial_material_balance_;

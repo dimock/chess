@@ -436,7 +436,10 @@ public:
       takeHash_ = 0;
 
       if ( hmove_ )
+      {
+        hmove_.see_good_ = (board_.see(hmove_) >= 0);
         return hmove_;
+      }
     }
 
     for ( ; !do_weak_; )
@@ -454,13 +457,13 @@ public:
       {
         do_weak_ = true;
         break;
-        //return *move;
       }
 
       if ( move->capture_ && !move->seen_ && numOfMoves_ > 1 )
       {
         move->seen_ = 1;
-        if ( board_.see(*move) < 0 )
+        move->see_good_ = board_.see(*move) >= 0;
+        if ( !move->see_good_ )
         {
           weak_[weakN_++] = *move;
           move->alreadyDone_ = 1;
@@ -545,6 +548,8 @@ protected:
 class FastGenerator
 {
 public:
+
+  FastGenerator(Board & board);
   FastGenerator(Board & board, const Move & hmove, const Move & killer);
 
   Move & move();

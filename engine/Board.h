@@ -225,7 +225,7 @@ public:
   inline bool allowNullMove() const
   {
     return can_win_[color_] &&
-        (fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 0);
+        (fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1);
   }
 
   inline bool shortNullMoveReduction() const

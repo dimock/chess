@@ -6,6 +6,19 @@ FastGenerator.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
 #include "MovesTable.h"
 
 //////////////////////////////////////////////////////////////////////////
+FastGenerator::FastGenerator(Board & board) :
+  cg_(board), ug_(board), eg_(board), hmove_(0), killer_(0), order_(oHash),
+  board_(board), weakN_(0)
+{
+  fake_.clear();
+  weak_[0].clear();
+
+  if ( board_.underCheck() )
+  {
+    order_ = oEscapes;
+    eg_.generate(hmove_);
+  }
+}
 
 FastGenerator::FastGenerator(Board & board, const Move & hmove, const Move & killer) :
   cg_(board), ug_(board), eg_(board), hmove_(hmove), killer_(killer), order_(oHash),
@@ -27,7 +40,10 @@ Move & FastGenerator::move()
   {
     order_ = oGenCaps;
     if ( hmove_ )
+    {
+      hmove_.see_good_ = (board_.see(hmove_) >= 0);
       return hmove_;
+    }
   }
 
   if ( order_ == oEscapes )

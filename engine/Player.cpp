@@ -26,7 +26,8 @@ SearchResult::SearchResult() :
   nullMovesCount_(0),
   depth_(0),
   score_(0),
-  dt_(0)
+  dt_(0),
+  out_(0)
 {
   best_.clear();
   for (int i = 0; i < MaxPly; ++i)
@@ -37,7 +38,7 @@ Player::Player() :
   analyze_mode_(false),
   counter_(0),
   numOfMoves_(0),
-  out_(0),
+  sres_(0),
   callback_(0),
   givetime_(0),
   posted_command_(Posted_NONE),
@@ -205,44 +206,47 @@ bool Player::toFEN(char * fen) const
   return board_.toFEN(fen);
 }
 
-void Player::printPV(Board & pv_board, SearchResult & sres)
+void Player::printPV()
 {
-  if ( !out_ || !sres.best_ )
+  if ( !sres_ || !sres_->out_ || !sres_->best_ )
     return;
 
-  *out_ << sres.depth_ << " " << sres.score_ << " " << (int)sres.dt_ << " " << sres.totalNodes_;
-  for (int i = 0; i < sres.depth_ && sres.pv_[i]; ++i)
+  *sres_->out_ << sres_->depth_ << " " << sres_->score_ << " " << (int)sres_->dt_ << " " << sres_->totalNodes_;
+  for (int i = 0; i < sres_->depth_ && sres_->pv_[i]; ++i)
   {
-    *out_ << " ";
+    *sres_->out_ << " ";
 
-    Move pv = sres.pv_[i];
+    Move pv = sres_->pv_[i];
     uint8 captured = pv.capture_;
     pv.clearFlags();
     pv.capture_ = captured;
 
-    if ( !pv_board.possibleMove(pv) )
+    if ( !pv_board_.possibleMove(pv) )
       break;
 
     char str[64];
-    if ( !printSAN(pv_board, pv, str) )
+    if ( !printSAN(pv_board_, pv, str) )
       break;
 
-    THROW_IF( !pv_board.validateMove(pv), "move is invalid but it is not detected by printSAN()");
+    THROW_IF( !pv_board_.validateMove(pv), "move is invalid but it is not detected by printSAN()");
 
-    pv_board.makeMove(pv);
+    pv_board_.makeMove(pv);
 
-    *out_ << str;
+    *sres_->out_ << str;
   }
-  *out_ << std::endl;
+  *sres_->out_ << std::endl;
 }
 
-bool Player::findMove(SearchResult & sres, std::ostream * out)
+bool Player::findMove(SearchResult * sres)
 {
-  out_ = out;
+  if ( !sres )
+    return false;
+
+  sres_ = sres;
   bool ok = false;
   for ( ;; )
   {
-    ok = search(sres, out);
+    ok = search();
 
     if ( !posted_command_ )
       break;
@@ -259,39 +263,38 @@ bool Player::findMove(SearchResult & sres, std::ostream * out)
 
     posted_command_ = Posted_NONE;
   }
-  out_ = 0;
+  sres_ = 0;
   return ok;
 }
 
-bool Player::search(SearchResult & sres, std::ostream * out)
+void Player::reset()
 {
-  sres = SearchResult();
-
-#ifdef USE_HASH
-  hash_.inc();
-#endif
-
   stop_ = false;
   totalNodes_ = 0;
-  firstIter_ = true;
   tprev_ = tstart_ = clock();
   numOfMoves_ = 0;
-  
+
   // for recapture extension
   initial_material_balance_ = board_.fmgr().weight();
 
   MovesGenerator::clear_history();
 
-  before_.clear();
-
   for (int i = 0; i < MaxPly; ++i)
     contexts_[i].clearKiller();
+}
 
+
+bool Player::search()
+{
+#ifdef USE_HASH
+  hash_.inc();
+#endif
+
+  reset();
+  
   {
-    ScoreType alpha = -std::numeric_limits<ScoreType>::max();
-    ScoreType betta = +std::numeric_limits<ScoreType>::max();
-    int counter = 0;
-    MovesGenerator mg(board_);
+    //MovesGenerator mg(board_);
+    FastGenerator mg(board_);
     for ( ;; )
     {
       const Move & move = mg.move();
@@ -304,28 +307,30 @@ bool Player::search(SearchResult & sres, std::ostream * out)
   }
 
 
-  for (depth_ = depth0_; !stop_ && depth_ <= depthMax_; ++depth_)
+  const ScoreType alpha = -ScoreMax;
+  const ScoreType betta = +ScoreMax;
+
+  for (depth_ = depth0_; !stopped() && depth_ <= depthMax_; ++depth_)
   {
     pv_board_ = board_;
     pv_board_.set_moves(pv_moves_);
     contexts_[0].clearPV(depthMax_);
     best_.clear();
-    beforeFound_ = false;
     nodesCount_ = 0;
 	  plyMax_ = 0;
     counter_ = 0;
 
-
     ScoreType score = alphaBetta0();
-    //ScoreType alpha = -std::numeric_limits<ScoreType>::max();
-    //ScoreType betta = +std::numeric_limits<ScoreType>::max();
+    //ScoreType score = alphaBetta1(depth_, 0, alpha, betta, true);
+
     //ScoreType score = alphaBetta(depth_, 0, alpha, betta, false, SingularExtension_Limit);
 
-    if ( (best_) && (!stop_ || beforeFound_) )
+    if ( best_ )
     {
-      if ( stop_ && depth_ > 2 &&
-        (abs(score-sres.score_) >= Figure::figureWeight_[Figure::TypePawn]/2 || best_ != sres.best_ && abs(score-sres.score_) >= 5)&&
-        givetime_ )
+      if (  stop_ && depth_ > 2 &&
+           (abs(score-sres_->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 ||
+            best_ != sres_->best_ && abs(score-sres_->score_) >= 5) &&
+            givetime_ )
       {
         int t_add = (givetime_)();
         if ( t_add > 0 )
@@ -342,37 +347,33 @@ bool Player::search(SearchResult & sres, std::ostream * out)
       clock_t dt = (t - tstart_) / 10;
       tprev_ = t;
 
-      sres.score_ = score;
-      sres.best_  = best_;
-      sres.depth_ = depth_;
-      sres.nodesCount_ = nodesCount_;
-      sres.totalNodes_ = totalNodes_;
-	    sres.plyMax_ = plyMax_;
-      sres.dt_ = dt;
+      sres_->score_ = score;
+      sres_->best_  = best_;
+      sres_->depth_ = depth_;
+      sres_->nodesCount_ = nodesCount_;
+      sres_->totalNodes_ = totalNodes_;
+	    sres_->plyMax_ = plyMax_;
+      sres_->dt_ = dt;
 
       for (int i = 0; i < depth_; ++i)
       {
-        sres.pv_[i] = contexts_[0].pv_[i];
-        if ( !sres.pv_[i] )
+        sres_->pv_[i] = contexts_[0].pv_[i];
+        if ( !sres_->pv_[i] )
           break;
       }
 
-      THROW_IF( sres.pv_[0] != best_, "invalid PV found" );
+      THROW_IF( sres_->pv_[0] != best_, "invalid PV found" );
 
-      before_ = best_;
-
-      printPV(pv_board_, sres);
+      printPV();
     }
-
-    firstIter_ = false;
 
     if ( !best_ || (score >= Figure::MatScore-MaxPly || score <= MaxPly-Figure::MatScore) && !analyze_mode_ )
       break;
   }
 
-  sres.totalNodes_ = totalNodes_;
+  sres_->totalNodes_ = totalNodes_;
 
-  return sres.best_;
+  return sres_->best_;
 }
 
 void Player::setCallback(PLAYER_CALLBACK cbk)
@@ -393,7 +394,8 @@ void Player::setAnalyzeMode(bool analyze)
 void Player::testTimer()
 {
   int t = clock();
-  stop_ = stop_ || ( (t - tstart_) > timeLimitMS_);
+  if ( (t - tstart_) > timeLimitMS_ )
+    pleaseStop();
 
   if ( callback_ )
     (callback_)();
@@ -403,7 +405,7 @@ void Player::testTimer()
 
   if ( posted_command_ == Posted_NEW || posted_command_ == Posted_UNDO || posted_command_ == Posted_FEN )
   {
-    stop_ = true;
+    pleaseStop();
     return;
   }
 
@@ -434,7 +436,7 @@ void Player::processPosted(int t)
 
   if ( posted_command_ == Posted_UPDATE )
   {
-    if ( out_ && depth_ > 0 )
+    if ( sres_ && sres_->out_ && depth_ > 0 )
     {
       posted_command_ = Posted_NONE;
 
@@ -443,7 +445,7 @@ void Player::processPosted(int t)
 
       Move mv = best_;
       if ( !mv )
-        mv = before_;
+        mv = sres_->best_;
       uint8 captured = mv.capture_;
       mv.clearFlags();
       mv.capture_ = captured;
@@ -455,7 +457,7 @@ void Player::processPosted(int t)
         strcat(outstr, str);
       }
 
-      *out_ << outstr << std::endl;
+      *sres_->out_ << outstr << std::endl;
     }
   }
   else if ( posted_command_ == Posted_HINT )
@@ -796,7 +798,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   if ( 0 == ply && counter == 1 && !analyze_mode_ && !stop_ )
   {
-    beforeFound_ = true;
+    //beforeFound_ = true;
     stop_ = true;
   }
 
@@ -931,8 +933,6 @@ bool Player::movement(int depth, int ply, ScoreType & alpha, ScoreType betta, Mo
         if ( 0 == ply )
         {
           best_ = move;
-          if ( before_ == best_ )
-            beforeFound_ = true;
         }
 
         if ( !move.capture_ && !move.new_type_ )

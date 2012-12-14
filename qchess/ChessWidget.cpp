@@ -477,7 +477,8 @@ void ChessWidget::findMove()
 
   Board pv_board = cpos_.getBoard();
 
-  depth_ = cpos_.findMove(sres_);
+  sres_ = SearchResult();
+  depth_ = cpos_.findMove(&sres_);
   if ( 0 == depth_ || !sres_.best_ )
     return;
 
