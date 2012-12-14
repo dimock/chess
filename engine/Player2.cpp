@@ -342,13 +342,13 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   if ( !pv &&
        !board_.underCheck() &&
         board_.allowNullMove() &&
-        depth >= NullMove_DepthMin+1 &&
+        depth >= board_.nullMoveDepthMin() &&
         betta < Figure::MatScore+MaxPly &&
         betta > -Figure::MatScore-MaxPly )
   {
     board_.makeNullMove();
 
-    int null_depth = depth - NullMove_PlyReduce;
+    int null_depth = depth - board_.nullMoveReduce();
 
     ScoreType nullScore = -alphaBetta2(null_depth, ply+1, -betta, -(betta-1), false);
 
@@ -357,7 +357,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     // verify null-move
     if ( nullScore >= betta )
     {
-      depth -= NullMove_PlyReduce;
+      depth -= board_.nullMoveReduce();
       if ( depth <= 0 )
         return captures2(depth, ply, alpha, betta, pv);
     }
@@ -462,6 +462,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     counter++;
 
+#ifdef USE_LMR
     // have to recalculate with full depth
     if ( !stopped() && alpha >= betta && nm_threat && isRealThreat(move) )
     {
@@ -470,6 +471,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
       else
         real_threat = true;
     }
+#endif
   }
 
   if ( stopped() )

@@ -100,6 +100,8 @@ public:
     if ( !ok )
       killer.clear();
 
+    //killer.threat_ = 1; // to prevent LMR
+
     return ok;
   }
 
@@ -225,7 +227,23 @@ public:
   inline bool allowNullMove() const
   {
     return can_win_[color_] &&
-        (fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1);
+        (fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 0);
+  }
+
+  inline int nullMoveDepthMin() const
+  {
+    if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
+      return NullMove_DepthMin+1;
+    else
+      return NullMove_DepthMin+3;
+  }
+
+  inline int nullMoveReduce() const
+  {
+    if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
+      return NullMove_PlyReduce;
+    else
+      return NullMove_PlyReduce-1;
   }
 
   inline bool shortNullMoveReduction() const
