@@ -1,0 +1,72 @@
+[Event "Computer chess game"]
+[Site "DIMOCK"]
+[Date "2012.12.15"]
+[Round "?"]
+[White "Shallow.Win32"]
+[Black "Shallow.Win32"]
+[Result "*"]
+[BlackElo "2200"]
+[Time "05:54:43"]
+[WhiteElo "2200"]
+[TimeControl "40/240:40/240:40/240"]
+[Termination "unterminated"]
+[PlyCount "76"]
+[WhiteType "human"]
+[BlackType "program"]
+
+1. e4 e6 2. Nf3 Nc6 3. d4 d5 4. e5 Bd7 5. Be2 Nge7 6. O-O a5 7. Bg5 h6 8.
+Be3 Nf5 9. c4 {(c2c4 f8e7 b1c3 d5c4 e2c4 e8g8 e3f4 e8e7 d4f5 e6f5) +0.72/8
+6} f6 {(f6 cxd5 Nxe3 fxe3 exd5 Nc3 Be6 e4 dxe4 Nxe4) -0.45/10 6} 10. Nc3
+{(b1c3 f6e5 c4d5 e6d5 f3e5 c6e5 f2e3 e8e7 e3d4) +1.07/7 6} fxe5 {(fxe5 cxd5
+exd5 Nxe5 Nxe5 dxe5 Bc6 Bh5+) -0.50/8 6} 11. cxd5 {(c4d5 e6d5 f3e5 c6e5
+d4e5 e8f8 e5g6 g7f6 e3d4) +1.23/7 6} exd5 {(exd5 Nxe5 Nxe5 dxe5 Nxe3 Bh5+
+Ke7 fxe3 Be6) -0.75/9 6} 12. Nxe5 {(f3e5 c6e5 d4e5 f5e3 e2h5 g7g6 h5g6 e8e7
+c3d5) +1.24/7 7} Nxe5 {(Nxe5 dxe5 Nxe3 Bh5+ Ke7 fxe3 Be6 Bg4 Bxg4 Qxg4)
+-0.75/10 6} 13. dxe5 {(d4e5 f5e3 e2h5 e8e7 f2e3 e8e7 e3c5 f5d6 g6f7)
++1.28/7 6} Nxe3 {(Nxe3 Bh5+ Ke7 fxe3 Be6 Bg4 Bxg4 Qxg4 c6 Qf5 Qe8) -0.85/11
+6} 14. fxe3 {(f2e3 d7e6 e2h5 e8e7 a1c1 g7g6 h5g6 e8e7 f1f7) +1.26/7 6} Be6
+{(Be6 Bh5+ Ke7 Bg4 Bxg4 Qxg4 c6 e4 Qb6+) -0.75/9 6} 15. Bh5+ {(e2h5 e8e7
+d1d4 c7c6 g1h1 d5d4 g1h1 d5e4 c3d5) +1.43/6 6} Ke7 {(Ke7 Qb3 a4 Nxa4 b6
+Qb4+ Kd7 Qb5+ Ke7) -1.40/9 6} 16. Qb3 {(d1b3 b7b6 e3e4 c7c6 a1d1 e7e6 f7d7
+d8d7 b7a8) +1.46/7 6} Rb8 {(Rb8 e4 c6 exd5 cxd5 Rfd1 Kd7 Qb5+) -1.50/8 6}
+17. e4 {(e3e4 c7c6 a1d1 e7d7 e4d5 c6d5 c3d5 c6d5) +2.04/6 6} c6 {(c6 exd5
+cxd5 Bf3 b5 Nxd5+ Bxd5 Bxd5 Qb6+) -1.95/9 6} 18. exd5 {(e4d5 c6d5 a1d1 e7d7
+h5g4 e7d7 h5d1 b8f8 h3f5) +2.27/6 6} Kd7 {(Kd7 dxe6+ Kc8 Rf7 Bc5+ Kh1 Qh4
+Bf3) -5.30/8 6} 19. dxe6+ {(d5e6 d7c8 g1h1 d8d4 f2g1 h4d8 g1h1 d7e7 h5g4)
++5.58/6 6} Kc8 {(Kc8 Rf7 Bc5+ Kh1 Qh4 Bf3 Qg5 Qd1 Rd8) -5.20/9 6} 20. Qc4
+{(b3c4 f8e7 c3e4 d8b6 f1f2 c6b5 a1c1 h8f8 b3b6 h4h5) +5.96/7 6} Be7 {(Be7
+Ne4 Qc7 Rf7 Qb6+ Rf2 Qc7 Qd3 a4) -5.20/9 6} 21. Ne4 {(c3e4 d8b6 f1f2 h8d8
+f1f7 d8d5 f7e7 c8c7 e7e8 a5a4) +5.90/7 6} Qb6+ {(Qb6+ Rf2 Rd8 Nd6+ Kc7 Qg4
+g5 Nc4 Qc5 Re1) -5.35/10 6} 22. Rf2 {(f1f2 h8f8 a1f1 d8d5 c4c3 e7b4 c3h3
+d5e5 e7e8q c7c8 f8f2) +6.07/8 6} Ra8 {(Ra8 Rd1 Rf8 Bf3 Kb8 Qc3 c5 Qc4 a4
+Rd7) -5.30/10 6} 23. Nd6+ {(e4d6 c8b8 h5g6 e7g5 d6f5 h8f8 a1f1 b6b4 g1h1
+g7g6) +6.37/7 6} Kb8 {(Kb8 Qc3 c5 Bf3 Ra7 Rd1 Rd8 Rfd2 c4+ Qd4 Qxd4+)
+-5.15/11 6} 24. Bg6 {(h5g6 h8f8 a1f1 b8c7 d6e4 c7c8 b2b3 c7b8 f7b7) +6.15/7
+6} a4 {(a4 Be4 Rf8 Bf3 Bg5 Kf1 a3 bxa3 Rxa3 Ne4 Be3) -5.05/11 6} 25. Qc3
+{(c4c3 e7h4 g2g3 h4g5 d6c4 e7h4 g1h1 c7b8 c3g7) +6.01/7 6} Rf8 {(Rf8 Rf1
+Rxf2 Rxf2 c5 Rd2 Bg5 Rd5 Ra5 Kh1 Be7 Nf5) -5.00/12 6} 26. Rf1 {(a1f1 e7h4
+g2g3 h4g5 d6c4 e7d8 c3b4 a8a7 f8f7) +6.07/7 6} Rxf2 {(Rxf2 Rxf2 c5 Rd2 Ra7
+Be4 Bg5 Rd5 c4+ Rd4 Be7) -5.15/11 6} 27. Rxf2 {(f1f2 e7h4 d6f5 a4a3 c3b4
+b7b5 b2a3 b7b5 g1h1 e7g5 f8g7) +6.06/8 6} c5 {(c5 Rd2 Ra7 Be4 h5 Bf3 h4 Qc4
+Bg5 Re2 Be7) -5.20/11 6} 28. Rd2 {(f2d2 e7g5 d2d5 c5c4 d5d4 a8a6 e1f2 b6d6
+d6c8) +6.38/7 6} Ra7 {(Ra7 Be4 g5 Qh3 c4+ Kh1 Qc5 Qxh6 Qxe5 Nxc4 Qf6)
+-5.90/11 8} 29. Be4 {(g6e4 e7g5 d2f2 g5e7 g1h1 a4a3 g1f1 c5e5 d6f5 a5e5)
++6.64/7 6} g5 {(g5 Qh3 c4+ Kf1 Qd8 Nxc4 Qf8+ Qf3 Qc8 Bd5) -6.10/10 6} 30.
+Qc4 {(c3c4 h6h5 d6f5 b6a5 c4c3 a7b7 f3f2 b6f2 d6b7) +6.95/7 6} Qa5 {(Qa5
+Qd5 Qd8 Qxc5 Ra5 Qd4 a3 bxa3 Bxd6) -6.35/9 8} 31. Qd5 {(c4d5 a4a3 d6c4 a5b4
+d2f2 a5c7 c4f1 e7d6 d6b7 c1b1) +7.28/7 6} Qd8 {(Qd8 Qxc5 Ra5 Qd4 h5 Rc2
+Rxe5 Qxe5 Bxd6 Qb5 Qe7) -6.55/11 6} 32. Qxc5 {(d5c5 a7a6 c5c4 e7d6 c5d6
+b8a8 c2c7 g8b8 e4b7 e7b4 c2c5) +8.07/8 6} Ra5 {(Ra5 Qd4 h5 Bxb7 Qc7 Be4 Qc5
+Nf5 Qxd4+ Nxd4 Bc5) -7.25/11 6} 33. Qd4 {(c5d4 b7b5 d2c2 d8b6 g1h1 b6d8
+b4d4 d8b6 b4b6 c5e5) +7.85/7 6} g4 {(g4 Bxb7 Qc7 Be4 Qc5 Nf5 Bg5 Rd3 g3 h4)
+-7.25/10 6} 34. Bxb7 {(e4b7 d8c7 b7e4 c7c1 d2d1 c5d4 g1h1 b8a7 h8d4 e7d6)
++8.53/7 6} Ra7 {(Ra7 Qb4 Qc7 Bd5+ Rb7 Bxb7 Bd8 Qxa4 Qc1+) -13.25/9 8} 35.
+Rd3 {(d2d3 h6h5 b7e4 a7a6 b2b4 a6b6 g1f1 a5a7 c4b6 a7a8) +8.87/7 6} h5 {(h5
+Qb4 Bxd6 Rxd6 Qxd6 Qxd6+ Kxb7 e7 Ra8) -13.30/9 7} 36. Qb4 {(d4b4 e7d6 d3d6
+d8c7 b7e4 d8b6 g1f1 a7a8 g1f1 a7a8) +11.98/7 6} Bxd6 {(Bxd6 Rxd6 Qxd6 Qxd6+
+Kxb7 e7 Ra8 Qd5+ Ka7 Qxa8+) -14.35/10 6} 37. Rxd6 {(d3d6 d8d6 e5d6 a7b7
+b4f4 b8c7 d8c8 b8c7 c3c5 c8e6 g1f1 c5c1) +14.86/8 6} Qxd6 {(Qxd6 Qxd6+ Kxb7
+e7 Ra8 Qd5+ Ka7 Qxa8+ Kxa8 e8=Q+) -19.20/10 6} 38. exd6 {(e5d6 a7b7 d6d7
+b8a8 d4a4 b7a7 a4c6 a8b8 d6d7 a7d7 e6d7 a8a7 e8a8) +21.27/10 6} Rxb7 {(Rxb7
+Qf4 Ka7 d7 Rb8 Qxa4+ Kb6 e7 Kb7 d8=N+) -M9/10 3} *
+
