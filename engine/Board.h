@@ -266,6 +266,9 @@ public:
     return can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
   }
 
+  /// to detect draw by moves repetitons
+  int countReps() const;
+
   /// used for hashed moves
   int  calculateReps(const Move & move) const;
 
@@ -462,6 +465,26 @@ public:
 
   /// methods
 private:
+
+  int countReps(int from, const BitMask & zcode) const
+  {
+    int reps = 1;
+    int i = halfmovesCounter_ - from;
+    for (; reps < 2 && i >= 0; i -= 2)
+    {
+      if ( getMove(i).zcode_ == zcode )
+        reps++;
+
+      if ( getMove(i).irreversible_ )
+        break;
+    }
+
+    // may be we forget to test initial position?
+    if ( reps < 2 && i == -1 && zcode == getMove(0).zcode_old_ )
+      reps++;
+
+    return reps;
+  }
 
   /// clear board. reset all fields, number of moves etc...
   void clear();

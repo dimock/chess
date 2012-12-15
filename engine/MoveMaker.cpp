@@ -593,20 +593,7 @@ bool Board::verifyChessDraw()
     return true;
   }
 
-  int reps = 1;
-  int i = halfmovesCounter_-3;
-  for (; reps < 3 && i >= 0; i -= 2)
-  {
-    if ( getMove(i).zcode_ == fmgr_.hashCode() )
-      reps++;
-
-    if ( getMove(i).irreversible_ )
-      break;
-  }
-
-  // may be we forget to test initial position?
-  if ( reps < 3 && i == -1 && fmgr_.hashCode() == getMove(0).zcode_old_ )
-    reps++;
+  int reps = countReps();
 
   if ( reps > repsCounter_ )
     repsCounter_ = reps;
@@ -937,20 +924,10 @@ int Board::calculateReps(const Move & move) const
   // color
   zcode ^= fmgr().colorCode();
 
-  int reps = 1;
-  int i = halfmovesCounter_-2;
-  for (; reps < 2 && i >= 0; i -= 2)
-  {
-    if ( getMove(i).zcode_ == zcode )
-      reps++;
+  return countReps(2, zcode);
+}
 
-    if ( getMove(i).irreversible_ )
-      break;
-  }
-
-  // may be we forget to test initial position?
-  if ( reps < 2 && i == -1 && zcode == getMove(0).zcode_old_ )
-    reps++;
-
-  return reps;
+int Board::countReps() const
+{
+  return countReps(3, hashCode());
 }
