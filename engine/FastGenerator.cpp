@@ -148,11 +148,6 @@ QuiesGenerator::QuiesGenerator(const Move & hmove, Board & board, Figure::Type t
   }
 }
 
-bool QuiesGenerator::singleReply() const
-{
-  return board_.underCheck() && eg_.count() == 1;
-}
-
 Move & QuiesGenerator::next()
 {
   if ( order_ == oHash )

@@ -313,7 +313,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
-  if ( board_.drawState() )
+  if ( board_.drawState() || (!board_.underCheck() && board_.repsCount() > 1) )
     return Figure::DrawScore;
 
   if ( stopped() || ply >= MaxPly )
@@ -388,6 +388,9 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   board_.extractKiller(contexts_[ply].killer_, hmove, killer);
 
   FastGenerator fg(board_, hmove, killer);
+
+  if ( !fg.chessMat() && board_.repsCount() > 1 )
+    return Figure::DrawScore;
 
   if ( fg.singleReply() )
     depth++;
@@ -506,7 +509,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
-  if ( board_.drawState() )
+  if ( board_.drawState() || (!board_.underCheck() && board_.repsCount() > 1) )
     return Figure::DrawScore;
 
   // not initialized yet
@@ -545,6 +548,9 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   Figure::Type thresholdType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
   QuiesGenerator qg(hmove, board_, thresholdType, depth);
+
+  if ( !qg.chessMat() && board_.repsCount() > 1 )
+    return Figure::DrawScore;
 
   for ( ; alpha < betta && !checkForStop(); )
   {

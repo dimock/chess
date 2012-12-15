@@ -559,6 +559,11 @@ public:
     return board_.underCheck() && eg_.count() == 1;
   }
 
+  bool chessMat() const
+  {
+    return board_.underCheck() && eg_.count() == 0;
+  }
+
 private:
 
   enum GOrder
@@ -655,7 +660,15 @@ public:
   Move & next();
 
   // valid only under check
-  bool singleReply() const;
+  bool singleReply() const
+  {
+    return board_.underCheck() && eg_.count() == 1;
+  }
+
+  bool chessMat() const
+  {
+    return board_.underCheck() && eg_.count() == 0;
+  }
 
 private:
 
