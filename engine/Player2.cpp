@@ -546,9 +546,6 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
 
   QuiesGenerator qg(hmove, board_, thresholdType, depth);
 
-  if ( qg.singleReply() )
-    depth++;
-
   for ( ; alpha < betta && !checkForStop(); )
   {
     Move & move = qg.next();
