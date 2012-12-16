@@ -236,6 +236,9 @@ ScoreType Player::alphaBetta0()
 
     Move & move = moves_[counter_];
     ScoreType score = -ScoreMax;
+
+    if ( board_.isDangerPawn(move) )
+      move.threat_ = 1;
     
     board_.makeMove(move);
     inc_nc();
@@ -406,6 +409,9 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     ScoreType score = -ScoreMax;
 
+    if ( board_.isDangerPawn(move) )
+      move.threat_ = 1;
+
     board_.makeMove(move);
     inc_nc();
     
@@ -545,8 +551,8 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
   Figure::Type thresholdType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
   QuiesGenerator qg(hmove, board_, thresholdType, depth);
-  //if ( qg.singleReply() && depth >= 0 )
-  //  depth++;
+  if ( qg.singleReply() )
+    depth++;
 
   for ( ; alpha < betta && !checkForStop(); )
   {
@@ -622,7 +628,7 @@ bool Player::isRealThreat(const Move & move)
   THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 || board_.isDangerPawn(prev) )
+  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 || prev.threat_ )
     return false;
 
   /// we have to move king even if there a lot of figures

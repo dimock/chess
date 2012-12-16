@@ -62,10 +62,27 @@ bool Board::canBeReduced() const
   History & hist = MovesGenerator::history(move.from_, move.to_);
 
   return  ((hist.good()<<4) <= hist.bad()) &&
-    !(move.capture_ || move.new_type_ > 0 || move.threat_ || move.castle_ || underCheck()) &&
-    !isDangerPawn(move);
+    !(move.capture_ || move.new_type_ > 0 || move.threat_ || move.castle_ || underCheck());
 }
 
+bool Board::isDangerPawn(const Move & move) const
+{
+  const Field & ffrom = getField(move.from_);
+  //return ffrom.type() == Figure::TypePawn;
+  if ( ffrom.type() != Figure::TypePawn )
+    return false;
+
+  if ( move.capture_ || move.new_type_ > 0 )
+    return true;
+
+  //// pawn is attacking
+  const BitMask & p_cap = g_movesTable->pawnCaps_o(color_, move.from_);
+  const BitMask & o_mask = fmgr().mask( Figure::otherColor(color_) );
+  if ( p_cap & o_mask )
+    return true;
+  
+  return see(move) >= 0;
+}
 
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
 bool Board::fromFEN(const char * fen)

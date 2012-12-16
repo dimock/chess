@@ -143,28 +143,7 @@ public:
 
   /// used to detect reduction/extension possibility
   /// don't allow reduction of pawn's movement to pre-last line or pawn's attack
-  bool isDangerPawn(const Move & move) const
-  {
-    const Field & fto = getField(move.to_);
-    return fto.type() == Figure::TypePawn;
-    //if ( fto.type() != Figure::TypePawn )
-    //  return false;
-
-    //// attacking
-    //const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
-    //const uint64 & o_mask = fmgr_.mask(color_);
-    //if ( p_caps & o_mask )
-    //  return true;
-
-    //// becomes passed
-    //const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
-    //Figure::Color ocolor = Figure::otherColor(color_);
-    //const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
-    //const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
-    //const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
-
-    //return !(opmsk & passmsk) && !(pmsk & blckmsk);
-  }
+  bool isDangerPawn(const Move & move) const;
 
   // becomes passed
   bool pawnPassed(const MoveCmd & move) const
