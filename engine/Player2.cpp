@@ -460,8 +460,6 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     board_.makeMove(move);
     inc_nc();
 
-    findSequence(move, ply, depth, counter, alpha, betta);
-    
     MoveCmd & curr = board_.getMoveRev(0);
 
     {
