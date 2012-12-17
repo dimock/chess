@@ -94,6 +94,8 @@ ScoreType Player::alphaBetta1(int depth, int ply, ScoreType alpha, ScoreType bet
     board_.makeNullMove();
 
     int null_depth = depth - NullMove_PlyReduce;
+    if ( null_depth < 0 )
+      null_depth = 0;
 
     ScoreType nullScore = -alphaBetta1(null_depth, ply+1, -betta, -(betta-1), false);
 
@@ -102,9 +104,13 @@ ScoreType Player::alphaBetta1(int depth, int ply, ScoreType alpha, ScoreType bet
     // verify null-move
     if ( nullScore >= betta )
     {
-      depth -= NullMove_PlyReduce;
-      if ( depth <= 0 )
-        return captures2(depth, ply, alpha, betta, pv);
+      if ( null_depth <= 0 )
+        nullScore = captures2(depth, ply, alpha, betta, pv);
+      else
+        nullScore = alphaBetta1(null_depth, ply, alpha, betta, pv);
+
+      if ( nullScore >= betta )
+        return nullScore;
     }
     else // may be we are in danger? verify it later
       nm_threat = true;
