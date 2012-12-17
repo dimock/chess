@@ -9,256 +9,6 @@
 #include <fstream>
 #include <sstream>
 
-void Player::findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const
-{
-  struct MOVE { int from_, to_; };
-  bool identical = false;
-  static MOVE sequence[] = {
-    {61, 47},
-    {39, 47},
-    {10, 12},
-    {14, 30},
-    {52, 53},
-    {13, 21},
-    {62, 46} };
-
-    if ( ply < sizeof(sequence)/sizeof(MOVE) && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
-    {
-      for (int i = ply; i >= 0; --i)
-      {
-        identical = true;
-        int j = i-ply;
-        if ( j >= board_.halfmovesCount() )
-          break;
-        const MoveCmd & mc = board_.getMoveRev(j);
-        if ( mc.from_ != sequence[i].from_ || mc.to_ != sequence[i].to_ )
-        {
-          identical = false;
-          break;
-        }
-      }
-    }
-
-    if ( identical )
-    {
-      std::stringstream sstm;
-      Board::save(board_, sstm, false);
-      std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
-      ofs << "PLY: " << ply << std::endl;
-      std::string s = sstm.str();
-      ofs << s;
-      ofs << "depth_ = " << depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
-      ofs << "===================================================================" << std::endl << std::endl;
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta1(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
-{
-  if ( alpha >= Figure::MatScore-ply )
-    return alpha;
-
-  if ( board_.drawState() || board_.countReps() > 1 )
-    return Figure::DrawScore;
-
-  if ( stopped() || ply >= MaxPly )
-    return board_.evaluate();
-
-  ScoreType alpha0 = alpha;
-
-  Move hmove(0);
-
-#ifdef USE_HASH
-  ScoreType hscore = -ScoreMax;
-  GHashTable::Flag flag = getHash(depth, ply, alpha, betta, hmove, hscore, pv);
-  if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
-    return hscore;
-#endif
-
-  if ( depth <= 0 )
-    return captures2(depth, ply, alpha, betta, pv);
-
-  if ( ply < MaxPly-1 )
-    contexts_[ply].clear(ply);
-
-  bool nm_threat = false, real_threat = false;
-
-#ifdef USE_NULL_MOVE
-  if ( !pv &&
-       !board_.underCheck() &&
-        ply > 0 && board_.allowNullMove() &&
-        depth >= NullMove_DepthMin+1 &&
-        betta < +Figure::MatScore+MaxPly &&
-        betta > -Figure::MatScore-MaxPly )
-  {
-    board_.makeNullMove();
-
-    int null_depth = depth - NullMove_PlyReduce;
-    if ( null_depth < 0 )
-      null_depth = 0;
-
-    ScoreType nullScore = -alphaBetta1(null_depth, ply+1, -betta, -(betta-1), false);
-
-    board_.unmakeNullMove();
-
-    // verify null-move
-    if ( nullScore >= betta )
-    {
-      if ( null_depth <= 0 )
-        nullScore = captures2(depth, ply, alpha, betta, pv);
-      else
-        nullScore = alphaBetta1(null_depth, ply, alpha, betta, pv);
-
-      if ( nullScore >= betta )
-        return nullScore;
-    }
-    else // may be we are in danger? verify it later
-      nm_threat = true;
-  }
-#endif
-
-
-#ifdef USE_FUTILITY_PRUNING
-  if ( !pv && !board_.underCheck() && !board_.isWinnerLoser() &&
-    alpha > -Figure::MatScore+MaxPly &&
-    alpha < Figure::MatScore-MaxPly &&
-    depth == 1 && ply > 1 )
-  {
-    ScoreType score0 = board_.evaluate();
-    int delta = (int)alpha - (int)score0 - (int)Figure::positionGain_;
-    if ( delta > 0 )
-      return captures2(depth, ply, alpha, betta, pv, score0);
-  }
-#endif
-
-  int counter = 0;
-  ScoreType scoreBest = -ScoreMax;
-  Move best(0);
-
-  Move killer(0);
-  board_.extractKiller(contexts_[ply].killer_, hmove, killer);
-
-  FastGenerator fg(board_, hmove, killer);
-
-  if ( fg.singleReply() )
-    depth++;
-
-  bool under_check = board_.underCheck();
-
-  for ( ; alpha < betta && !checkForStop(); )
-  {
-    Move & move = fg.move();
-    if ( !move )
-      break;
-
-    if ( !board_.validateMove(move) )
-      continue;
-
-    ScoreType score = -ScoreMax;
-
-    board_.makeMove(move);
-    inc_nc();
-
-    MoveCmd & curr = board_.getMoveRev(0);
-
-    {
-      int depth1 = nextDepth(depth, move, pv);
-
-      if ( !counter )
-        score = -alphaBetta1(depth1, ply+1, -betta, -alpha, pv);
-      else
-      {
-        int depth2 = nextDepth(depth, move, false);
-        int R = 0;
-
-#ifdef USE_LMR
-        if ( !under_check &&
-              depth_ > LMR_MinDepthLimit &&
-              depth > LMR_DepthLimit &&
-              alpha > -Figure::MatScore-MaxPly &&             
-              board_.canBeReduced() )
-        {
-          R = 1;
-          curr.reduced_ = true;
-        }
-#endif
-
-        score = -alphaBetta1(depth2-R, ply+1, -alpha-1, -alpha, false);
-        curr.reduced_ = false;
-
-        if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta1(depth2, ply+1, -alpha-1, -alpha, false);
-
-        if ( !stopped() && score > alpha && score < betta )
-          score = -alphaBetta1(depth1, ply+1, -betta, -alpha, true);
-      }
-    }
-
-    board_.unmakeMove();
-
-    if ( !stopped() && score > scoreBest )
-    {
-      best = move;
-      scoreBest = score;
-      if ( score > alpha )
-      {
-        alpha = score;
-        if ( !ply )
-          best_ = move;
-        if ( pv )
-          assemblePV(move, board_.underCheck(), ply);
-      }
-    }
-
-    counter++;
-    if ( !ply )
-      counter_ = counter;
-
-#ifdef USE_LMR
-    // have to recalculate with full depth
-    if ( !stopped() && ply > 0 && alpha >= betta && nm_threat && isRealThreat(move) )
-    {
-      if ( board_.getMoveRev(0).reduced_ )
-        return betta-1;
-      else
-        real_threat = true;
-    }
-#endif
-  }
-
-  if ( stopped() )
-    return scoreBest;
-
-  if ( !counter )
-  {
-    board_.setNoMoves();
-    scoreBest = board_.evaluate();
-    if ( board_.matState() )
-      scoreBest += ply;
-  }
-
-
-  if ( best )
-  {
-    contexts_[ply].setKiller(best, scoreBest);
-    History & hist = MovesGenerator::history(best.from_, best.to_);
-    hist.inc_score(depth);
-  }
-
-#ifdef USE_HASH
-  putHash(best, alpha0, betta, scoreBest, depth, ply, real_threat);
-#endif
-
-  THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );
-
-  // don't need to continue
-  if ( !stopped() && !ply && counter_ == 1 && !analyze_mode_ )
-    pleaseStop();
-
-  return scoreBest;
-}
-
-
 
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta0()
@@ -711,4 +461,48 @@ bool Player::isRealThreat(const Move & move)
     return true;
 
   return false;
+}
+
+//////////////////////////////////////////////////////////////////////////
+void Player::findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const
+{
+  struct MOVE { int from_, to_; };
+  bool identical = false;
+  static MOVE sequence[] = {
+    {61, 47},
+    {39, 47},
+    {10, 12},
+    {14, 30},
+    {52, 53},
+    {13, 21},
+    {62, 46} };
+
+    if ( ply < sizeof(sequence)/sizeof(MOVE) && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
+    {
+      for (int i = ply; i >= 0; --i)
+      {
+        identical = true;
+        int j = i-ply;
+        if ( j >= board_.halfmovesCount() )
+          break;
+        const MoveCmd & mc = board_.getMoveRev(j);
+        if ( mc.from_ != sequence[i].from_ || mc.to_ != sequence[i].to_ )
+        {
+          identical = false;
+          break;
+        }
+      }
+    }
+
+    if ( identical )
+    {
+      std::stringstream sstm;
+      Board::save(board_, sstm, false);
+      std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
+      ofs << "PLY: " << ply << std::endl;
+      std::string s = sstm.str();
+      ofs << s;
+      ofs << "depth_ = " << depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
+      ofs << "===================================================================" << std::endl << std::endl;
+    }
 }

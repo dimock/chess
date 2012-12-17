@@ -315,7 +315,6 @@ private:
   void findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const;
 
   ScoreType alphaBetta0();
-  ScoreType alphaBetta1(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
   ScoreType alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
   ScoreType captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
 
