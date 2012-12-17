@@ -68,20 +68,34 @@ bool Board::canBeReduced() const
 bool Board::isDangerPawn(const Move & move) const
 {
   const Field & ffrom = getField(move.from_);
-  //return ffrom.type() == Figure::TypePawn;
   if ( ffrom.type() != Figure::TypePawn )
     return false;
 
   if ( move.capture_ || move.new_type_ > 0 )
     return true;
 
-  //// pawn is attacking
-  const BitMask & p_cap = g_movesTable->pawnCaps_o(color_, move.from_);
-  const BitMask & o_mask = fmgr().mask( Figure::otherColor(color_) );
-  if ( p_cap & o_mask )
+  Figure::Color  color = color_;
+  Figure::Color ocolor = Figure::otherColor(color);
+
+  // attacking
+  const uint64 & p_caps = g_movesTable->pawnCaps_o(ffrom.color(), move.to_);
+  const uint64 & o_mask = fmgr_.mask(ocolor);
+  if ( p_caps & o_mask )
     return true;
-  
-  return see(move) >= 0;
+
+  //// becomes passed
+  const uint64 & pmsk = fmgr_.pawn_mask_t(color);
+  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
+  const uint64 & passmsk = g_pawnMasks->mask_passed(color, move.to_);
+  const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, move.to_);
+
+  if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
+    return true;
+
+  if ( see(move) >= 0 )
+    return true;
+
+  return false;
 }
 
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */

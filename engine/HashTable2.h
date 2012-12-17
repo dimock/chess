@@ -200,7 +200,8 @@ public:
     if ( (hitem->mode_ == General) &&
          (hitem->hcode_ == hcode) &&
           ( (hitem->depth_ > depth) || 
-            (depth == hitem->depth_ && Alpha == flag && hitem->flag_ > Alpha) ) )
+            (depth == hitem->depth_ && Alpha == flag && hitem->flag_ > Alpha) ||
+            (depth == hitem->depth_ && Alpha == flag && hitem->flag_ == Alpha && score >= hitem->score_) ) )
     {
       return;
     }
