@@ -6,6 +6,51 @@
 #include "Player.h"
 #include "MovesGenerator.h"
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+
+void Player::findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const
+{
+  struct MOVE { int from_, to_; };
+  bool identical = false;
+  static MOVE sequence[] = {
+    {61, 47},
+    {39, 47},
+    {10, 12},
+    {14, 30},
+    {52, 53},
+    {13, 21},
+    {62, 46} };
+
+    if ( ply < sizeof(sequence)/sizeof(MOVE) && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
+    {
+      for (int i = ply; i >= 0; --i)
+      {
+        identical = true;
+        int j = i-ply;
+        if ( j >= board_.halfmovesCount() )
+          break;
+        const MoveCmd & mc = board_.getMoveRev(j);
+        if ( mc.from_ != sequence[i].from_ || mc.to_ != sequence[i].to_ )
+        {
+          identical = false;
+          break;
+        }
+      }
+    }
+
+    if ( identical )
+    {
+      std::stringstream sstm;
+      Board::save(board_, sstm, false);
+      std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
+      ofs << "PLY: " << ply << std::endl;
+      std::string s = sstm.str();
+      ofs << s;
+      ofs << "depth_ = " << depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
+      ofs << "===================================================================" << std::endl << std::endl;
+    }
+}
 
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta1(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
@@ -414,6 +459,8 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     board_.makeMove(move);
     inc_nc();
+
+    findSequence(move, ply, depth, counter, alpha, betta);
     
     MoveCmd & curr = board_.getMoveRev(0);
 
