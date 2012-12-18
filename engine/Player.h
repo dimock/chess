@@ -307,9 +307,11 @@ private:
   void verifyFastGenerator(const Move & hmove, const Move & killer);
 #endif
 
-#ifdef VERIFY_QUIES_GENERATOR
-  void verifyQuiesGenerator(const Move & hmove);
+#ifdef VERIFY_TACTICAL_GENERATOR
+  void verifyTacticalGenerator();
 #endif
+
+  void verifyGenerators(const Move & hmove);
 
   // for DEBUG
   void findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const;

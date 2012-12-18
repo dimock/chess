@@ -720,7 +720,7 @@ bool Board::validateValidator(const Move & mv)
       THROW_IF( !(rook_from & 3) && getField(rook_from+1), "long castle is impossible" );
 
       rf_field.clear();
-      fmgr_.undo(color_, Figure::TypeRook, rook_from, rook_to);
+      fmgr_.move(color_, Figure::TypeRook, rook_from, rook_to);
       Field & field_rook_to  = getField(rook_to);
       THROW_IF( field_rook_to, "field that rook is going to undo to while castling is occupied" );
       field_rook_to.set(color_, Figure::TypeRook);
@@ -828,7 +828,7 @@ bool Board::validateValidator(const Move & mv)
   else
   {
     // usual movement
-    fmgr_.undo(ffrom.color(), ffrom.type(), undo.from_, undo.to_);
+    fmgr_.move(ffrom.color(), ffrom.type(), undo.from_, undo.to_);
     fto.set(color_, ffrom.type());
   }
 

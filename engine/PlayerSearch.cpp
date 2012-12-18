@@ -250,6 +250,8 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return hscore;
 #endif
 
+  verifyGenerators(hmove);
+
   if ( depth <= 0 )
     return captures(depth, ply, alpha, betta, pv);
 

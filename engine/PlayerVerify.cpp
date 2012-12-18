@@ -20,12 +20,8 @@ void Player::saveHash(const char * fname) const
   sprintf(bfname, "%s_b.hash", fname);
   sprintf(hfname, "%s_h.hash", fname);
 
-#ifdef USE_HASH_TABLE_GENERAL
-  ghash_.save(gfname);
-#endif
-
-#ifdef USE_HASH_TABLE_CAPTURE
-  chash_.save(cfname);
+#ifdef USE_HASH
+  hash_.save(gfname);
 #endif
 
   board_.save(bfname);
@@ -40,12 +36,8 @@ void Player::loadHash(const char * fname)
   sprintf(bfname, "%s_b.hash", fname);
   sprintf(hfname, "%s_h.hash", fname);
 
-#ifdef USE_HASH_TABLE_GENERAL
-  ghash_.load(gfname);
-#endif
-
-#ifdef USE_HASH_TABLE_CAPTURE
-  chash_.load(cfname);
+#ifdef USE_HASH
+  hash_.load(gfname);
 #endif
 
   board_.load(bfname);
@@ -461,9 +453,6 @@ void Player::verifyFastGenerator(const Move & hmove, const Move & killer)
       int dir = board_.g_figureDir->dir(Figure::TypeKnight, board_.color_, move.to_, ki_pos);
       if ( dir < 0 )
         continue;
-
-      if ( board_.see(move) < 0 )
-        continue;
     }
 
     legal[n++] = move;
@@ -542,8 +531,8 @@ void Player::verifyFastGenerator(const Move & hmove, const Move & killer)
 #endif
 
 
-#ifdef VERIFY_QUIES_GENERATOR
-void Player::verifyQuiesGenerator(const Move & hmove)
+#ifdef VERIFY_TACTICAL_GENERATOR
+void Player::verifyTacticalGenerator()
 {
   Figure::Type minimalType = Figure::TypePawn;
   MovesGenerator mg(board_);
@@ -655,6 +644,32 @@ void Player::verifyQuiesGenerator(const Move & hmove)
   }
 }
 #endif
+
+void Player::verifyGenerators(const Move & hmove)
+{
+
+#ifdef VERIFY_ESCAPE_GENERATOR
+  verifyEscapeGen(hmove);
+#endif
+
+#ifdef VERIFY_CHECKS_GENERATOR
+  verifyChecksGenerator();
+#endif
+
+#ifdef VERIFY_CAPS_GENERATOR
+  verifyCapsGenerator();
+#endif
+
+#ifdef VERIFY_FAST_GENERATOR
+  Move killer(0);
+  verifyFastGenerator(hmove, killer);
+#endif
+
+#ifdef VERIFY_TACTICAL_GENERATOR
+  verifyTacticalGenerator();
+#endif
+
+}
 
 //////////////////////////////////////////////////////////////////////////
 /// for DEBUG
