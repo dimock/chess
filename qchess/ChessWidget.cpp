@@ -500,7 +500,7 @@ void ChessWidget::findMove()
 
   ticksAll_ = qpt.ticks();
   
-  pv_board.set_moves(pv_moves_);
+  pv_board.set_undoStack(pvundoStack_);
 
   for (int i = 0; i < sres_.depth_ && sres_.pv_[i]; ++i)
   {
@@ -578,7 +578,7 @@ bool OpenBook::load(const char * fname, const Board & i_board)
   if ( sbook.status() != QTextStream::Ok )
     return false;
 
-  MoveCmd tmoves[Board::GameLength];
+  UndoInfo tundo[Board::GameLength];
 
   for ( ; !sbook.atEnd(); )
   {
@@ -587,7 +587,7 @@ bool OpenBook::load(const char * fname, const Board & i_board)
       break;
 
     Board board = i_board;
-    board.set_moves(tmoves);
+    board.set_undoStack(tundo);
     board.fromFEN(0);
 
     MovesLine moves;
@@ -635,7 +635,7 @@ Move OpenBook::nextMove(const Board & board)
     size_t j = 0;
     for ( ; j < board.halfmovesCount() && j < mline.size(); ++j)
     {
-      Move mv = board.getMove((int)j);
+      Move mv = board.undoInfo((int)j);
       if ( mv != mline[j] )
         j = mline.size();
     }

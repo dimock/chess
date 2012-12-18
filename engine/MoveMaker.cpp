@@ -274,19 +274,19 @@ void Board::makeMove(const Move & mv)
 
   halfmovesCounter_++;
 
-  MoveCmd & move = lastMove();
-  move.clearUndo();
-  move = mv;
+  UndoInfo & undo = lastUndo();
+  undo.clearUndo();
+  undo = mv;
 
   // store Zobrist key and state
-  move.old_state_ = state_;
-  move.zcode_old_ = fmgr_.hashCode();
+  undo.old_state_ = state_;
+  undo.zcode_old_ = fmgr_.hashCode();
 
   // store checking info
-  move.checking_figs_ = checking_figs_;
-  move.checkingNum_ = checkingNum_;
+  undo.checking_figs_ = checking_figs_;
+  undo.checkingNum_ = checkingNum_;
 
-  move.castling_ = castling_;
+  undo.castling_ = castling_;
 
   state_ = Ok;
 
@@ -294,11 +294,11 @@ void Board::makeMove(const Move & mv)
   Figure::Color ocolor = Figure::otherColor(color);
 
   // store masks - don't undo it to save time
-  move.mask_[0] = fmgr_.mask(Figure::ColorBlack);
-  move.mask_[1] = fmgr_.mask(Figure::ColorWhite);
+  undo.mask_[0] = fmgr_.mask(Figure::ColorBlack);
+  undo.mask_[1] = fmgr_.mask(Figure::ColorWhite);
 
-  Field & ffrom = getField(move.from_);
-  Field & fto   = getField(move.to_);
+  Field & ffrom = getField(undo.from_);
+  Field & fto   = getField(undo.to_);
 
   // castle
   bool castle_k = castling(color, 0);
@@ -308,17 +308,17 @@ void Board::makeMove(const Move & mv)
 
   if ( ffrom.type() == Figure::TypeKing )
   {
-    int d = move.to_ - move.from_;
+    int d = undo.to_ - undo.from_;
     if ( (2 == d || -2 == d) )
     {
-      move.castle_ = true;
+      undo.castle_ = true;
 
       // don't do castling under check
       THROW_IF( checkingNum_ > 0, "can not castle under check" );
 
       d >>= 1;
-      int rook_to = move.from_ + d;
-      int rook_from = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
+      int rook_to = undo.from_ + d;
+      int rook_from = undo.from_ + ((d>>1) ^ 3);//d < 0 ? undo.from_ - 4 : undo.from_ + 3
 
       Field & rf_field = getField(rook_from);
       THROW_IF( rf_field.type() != Figure::TypeRook || rf_field.color() != color_, "no rook for castle" );
@@ -327,7 +327,7 @@ void Board::makeMove(const Move & mv)
       rf_field.clear();
       fmgr_.move(color_, Figure::TypeRook, rook_from, rook_to);
       Field & field_rook_to  = getField(rook_to);
-      THROW_IF( field_rook_to, "field that rook is going to move to while castling is occupied" );
+      THROW_IF( field_rook_to, "field that rook is going to undo to while castling is occupied" );
       field_rook_to.set(color_, Figure::TypeRook);
     }
 
@@ -338,10 +338,10 @@ void Board::makeMove(const Move & mv)
   else if ( (castle_k || castle_q) && (ffrom.type() == Figure::TypeRook) )
   {
     // short castle
-    castle_kk = move.from_ != castle_rook_pos[0][color];
+    castle_kk = undo.from_ != castle_rook_pos[0][color];
 
     // long castle
-    castle_qq = move.from_ != castle_rook_pos[1][color];
+    castle_qq = undo.from_ != castle_rook_pos[1][color];
   }
   
   // eat rook of another side
@@ -350,12 +350,12 @@ void Board::makeMove(const Move & mv)
     bool ocastle_k = castling(ocolor, 0);
     bool ocastle_q = castling(ocolor, 1);
 
-    if ( ocastle_k && move.to_ == castle_rook_pos[0][ocolor] )
+    if ( ocastle_k && undo.to_ == castle_rook_pos[0][ocolor] )
     {
       clear_castling(ocolor, 0);
       fmgr_.hashCastling(ocolor, 0);
     }
-    else if ( ocastle_q && move.to_ == castle_rook_pos[1][ocolor] )
+    else if ( ocastle_q && undo.to_ == castle_rook_pos[1][ocolor] )
     {
       clear_castling(ocolor, 1);
       fmgr_.hashCastling(ocolor, 1);
@@ -380,23 +380,23 @@ void Board::makeMove(const Move & mv)
   {
     THROW_IF(fto.color() == color_, "invalid color of captured figure" );
 
-    move.eaten_type_ = fto.type();
-    fmgr_.decr(fto.color(), fto.type(), move.to_);
+    undo.eaten_type_ = fto.type();
+    fmgr_.decr(fto.color(), fto.type(), undo.to_);
     fto.clear();
-    THROW_IF( !move.capture_, "capture flag isn't set" );
+    THROW_IF( !undo.capture_, "capture flag isn't set" );
   }
-  else if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
+  else if ( undo.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
   {
     int ep_pos = enpassantPos();
     Field & epfield = getField(ep_pos);
     THROW_IF( epfield.color() != ocolor || epfield.type() != Figure::TypePawn, "en-passant pawn is invalid" );
     fmgr_.decr(epfield.color(), epfield.type(), ep_pos);
     epfield.clear();
-    THROW_IF( !move.capture_, "en-passant isn't detected as capture" );
+    THROW_IF( !undo.capture_, "en-passant isn't detected as capture" );
   }
   else
   {
-    THROW_IF(move.capture_, "capture flag set but no figure to eat");
+    THROW_IF(undo.capture_, "capture flag set but no figure to eat");
   }
 
   // clear en-passant hash code
@@ -404,33 +404,33 @@ void Board::makeMove(const Move & mv)
     fmgr_.hashEnPassant(en_passant_, ocolor);
 
   // save en-passant field
-  move.en_passant_ = en_passant_;
+  undo.en_passant_ = en_passant_;
   en_passant_ = -1;
 
 
   // en-passant
   if ( Figure::TypePawn == ffrom.type() )
   {
-    int dir = g_figureDir->dir(ffrom.type(), ffrom.color(), move.from_, move.to_);
+    int dir = g_figureDir->dir(ffrom.type(), ffrom.color(), undo.from_, undo.to_);
     if ( 3 == dir )
     {
-      en_passant_ = (move.to_ + move.from_) >> 1;
+      en_passant_ = (undo.to_ + undo.from_) >> 1;
       fmgr_.hashEnPassant(en_passant_, color_);
     }
   }
 
-  // move figure 'from' -> 'to'
-  if ( move.new_type_ > 0 )
+  // undo figure 'from' -> 'to'
+  if ( undo.new_type_ > 0 )
   {
     // pawn promotion
-    fmgr_.decr(ffrom.color(), ffrom.type(), move.from_);
-    fto.set(color_, (Figure::Type)move.new_type_);
-    fmgr_.incr(fto.color(), fto.type(), move.to_);
+    fmgr_.decr(ffrom.color(), ffrom.type(), undo.from_);
+    fto.set(color_, (Figure::Type)undo.new_type_);
+    fmgr_.incr(fto.color(), fto.type(), undo.to_);
   }
   else
   {
     // usual movement
-    fmgr_.move(ffrom.color(), ffrom.type(), move.from_, move.to_);
+    fmgr_.move(ffrom.color(), ffrom.type(), undo.from_, undo.to_);
     fto.set(color_, ffrom.type());
   }
 
@@ -438,18 +438,18 @@ void Board::makeMove(const Move & mv)
   ffrom.clear();
 
   // update counters
-  move.fifty_moves_  = fiftyMovesCount_;
-  move.reps_counter_ = repsCounter_;
+  undo.fifty_moves_  = fiftyMovesCount_;
+  undo.reps_counter_ = repsCounter_;
 
-  if ( Figure::TypePawn == fto.type() || move.capture_ || move.new_type_ > 0 )
+  if ( Figure::TypePawn == fto.type() || undo.capture_ || undo.new_type_ > 0 )
   {
-    move.irreversible_ = true;
+    undo.irreversible_ = true;
     fiftyMovesCount_ = 0;
     repsCounter_ = 0;
   }
   else
   {
-    move.irreversible_ = false;
+    undo.irreversible_ = false;
     fiftyMovesCount_++;
   }
 
@@ -460,29 +460,29 @@ void Board::makeMove(const Move & mv)
   color_ = ocolor;
 
   // put new hash code to detect threefold repetition
-  move.zcode_ = fmgr_.hashCode();
+  undo.zcode_ = fmgr_.hashCode();
 
-  move.can_win_[0] = can_win_[0];
-  move.can_win_[1] = can_win_[1];
+  undo.can_win_[0] = can_win_[0];
+  undo.can_win_[1] = can_win_[1];
 
   verifyChessDraw();
 
-  detectCheck(move);
+  detectCheck(undo);
 
-  move.state_ = state_;
+  undo.state_ = state_;
 
   THROW_IF( isAttacked(Figure::otherColor(color_), kingPos(color_)) && !underCheck(), "check isn't detected" );
   THROW_IF( !isAttacked(Figure::otherColor(color_), kingPos(color_)) && underCheck(), "detected check, that doesn't exist" );
-  THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))), "our king is under check after move" );
+  THROW_IF( isAttacked(color_, kingPos(Figure::otherColor(color_))), "our king is under check after undo" );
 }
 
 void Board::unmakeMove()
 {
   THROW_IF(halfmovesCounter_ <= 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
-  MoveCmd & move = lastMove();
+  UndoInfo & undo = lastUndo();
 
-  if ( !move )
+  if ( !undo )
   {
     unmakeNullMove();
     return;
@@ -493,40 +493,40 @@ void Board::unmakeMove()
   color_ = Figure::otherColor(color_);
 
   // store checking info
-  checking_figs_ = move.checking_figs_;
-  checkingNum_ = move.checkingNum_;
+  checking_figs_ = undo.checking_figs_;
+  checkingNum_ = undo.checkingNum_;
 
   // restore castling flags
-  castling_ = move.castling_;
+  castling_ = undo.castling_;
 
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color_);
 
-  can_win_[0] = move.can_win_[0];
-  can_win_[1] = move.can_win_[1];
+  can_win_[0] = undo.can_win_[0];
+  can_win_[1] = undo.can_win_[1];
 
   movesCounter_ -= ~color_ & 1;
 
-  Field & ffrom = getField(move.from_);
-  Field & fto = getField(move.to_);
+  Field & ffrom = getField(undo.from_);
+  Field & fto = getField(undo.to_);
 
   // restore figure
-  if ( move.new_type_ > 0 )
+  if ( undo.new_type_ > 0 )
   {
     // restore old type
-    fmgr_.u_decr(fto.color(), fto.type(), move.to_);
-    fmgr_.u_incr(fto.color(), Figure::TypePawn, move.from_);
+    fmgr_.u_decr(fto.color(), fto.type(), undo.to_);
+    fmgr_.u_incr(fto.color(), Figure::TypePawn, undo.from_);
     ffrom.set(color_, Figure::TypePawn);
   }
   else
   {
-    fmgr_.u_move(fto.color(), fto.type(), move.to_, move.from_);
+    fmgr_.u_move(fto.color(), fto.type(), undo.to_, undo.from_);
     ffrom.set(fto.color(), fto.type());
   }
   fto.clear();
 
   // restore en-passant
-  en_passant_ = move.en_passant_;
-  if ( en_passant_ == move.to_ && Figure::TypePawn == ffrom.type() )
+  en_passant_ = undo.en_passant_;
+  if ( en_passant_ == undo.to_ && Figure::TypePawn == ffrom.type() )
   {
     int ep_pos = enpassantPos();
     Field & epfield = getField(ep_pos);
@@ -535,21 +535,21 @@ void Board::unmakeMove()
   }
 
   // restore eaten figure
-  if ( move.eaten_type_ > 0 )
+  if ( undo.eaten_type_ > 0 )
   {
-    fto.set(ocolor, (Figure::Type)move.eaten_type_);
-    fmgr_.u_incr(fto.color(), fto.type(), move.to_);
+    fto.set(ocolor, (Figure::Type)undo.eaten_type_);
+    fmgr_.u_incr(fto.color(), fto.type(), undo.to_);
   }
 
   // restore rook after castling
   if ( ffrom.type() == Figure::TypeKing )
   {
-    int d = move.to_ - move.from_;
+    int d = undo.to_ - undo.from_;
     if ( (2 == d || -2 == d) )
     {
       d >>= 1;
-      int rook_to = move.from_ + d;
-      int rook_from = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
+      int rook_to = undo.from_ + d;
+      int rook_from = undo.from_ + ((d>>1) ^ 3);//d < 0 ? undo.from_ - 4 : undo.from_ + 3
 
       Field & rfrom = getField(rook_from);
       Field & rto = getField(rook_to);
@@ -561,14 +561,14 @@ void Board::unmakeMove()
   }
 
   // restore figures masks
-  fmgr_.restoreMasks(move.mask_);
+  fmgr_.restoreMasks(undo.mask_);
 
-  fiftyMovesCount_ = move.fifty_moves_;
-  repsCounter_ = move.reps_counter_;
+  fiftyMovesCount_ = undo.fifty_moves_;
+  repsCounter_ = undo.reps_counter_;
 
   // restore hash code and state
-  state_ = (State)move.old_state_;
-  fmgr_.restoreHash(move.zcode_old_);
+  state_ = (State)undo.old_state_;
+  fmgr_.restoreHash(undo.zcode_old_);
 }
 
 bool Board::verifyChessDraw()
@@ -615,43 +615,42 @@ void Board::makeNullMove()
 
   halfmovesCounter_++;
 
-  MoveCmd & move = lastMove();
-  move.clear();
-  move.clearUndo();
+  UndoInfo & undo = lastUndo();
+  undo.clear();
+  undo.clearUndo();
 
-  move.zcode_old_ = hashCode();
-  move.state_ = state_;
+  undo.zcode_old_ = hashCode();
+  undo.state_ = state_;
 
   if ( en_passant_ >= 0 )
   {
     fmgr_.hashEnPassant(en_passant_, color_);
-    move.en_passant_ = en_passant_;
+    undo.en_passant_ = en_passant_;
     en_passant_ = -1;
   }
   else
-    move.en_passant_ = -1;
+    undo.en_passant_ = -1;
 
   color_ = Figure::otherColor(color_);
   fmgr_.hashColor();
-  move.zcode_ = hashCode();
+  undo.zcode_ = hashCode();
 }
 
 void Board::unmakeNullMove()
 {
   THROW_IF(halfmovesCounter_ <= 0 || halfmovesCounter_ >= GameLength, "number of halfmoves is invalid");
 
-  MoveCmd & move = lastMove();
+  UndoInfo & undo = lastUndo();
   halfmovesCounter_--;
 
   color_ = Figure::otherColor(color_);
-  en_passant_ = move.en_passant_;
-  fmgr_.restoreHash(move.zcode_old_);
-  state_ = (State)move.state_;
+  en_passant_ = undo.en_passant_;
+  fmgr_.restoreHash(undo.zcode_old_);
+  state_ = (State)undo.state_;
 }
 
 
 #ifdef VALIDATE_VALIDATOR
-
 bool Board::validateMove(const Move & mv) const
 {
   bool ok = validateMove2(mv);
@@ -669,19 +668,19 @@ bool Board::validateValidator(const Move & mv)
 {
   halfmovesCounter_++;
 
-  MoveCmd & move = lastMove();
-  move.clearUndo();
-  move = mv;
+  UndoInfo & undo = lastUndo();
+  undo.clearUndo();
+  undo = mv;
 
   // store Zobrist key and state
-  move.old_state_ = state_;
-  move.zcode_old_ = fmgr_.hashCode();
+  undo.old_state_ = state_;
+  undo.zcode_old_ = fmgr_.hashCode();
 
   // store checking info
-  move.checking_figs_ = checking_figs_;
-  move.checkingNum_ = checkingNum_;
+  undo.checking_figs_ = checking_figs_;
+  undo.checkingNum_ = checkingNum_;
 
-  move.castling_ = castling_;
+  undo.castling_ = castling_;
 
   state_ = Ok;
 
@@ -689,11 +688,11 @@ bool Board::validateValidator(const Move & mv)
   Figure::Color ocolor = Figure::otherColor(color);
 
   // store masks - don't undo it to save time
-  move.mask_[0] = fmgr_.mask(Figure::ColorBlack);
-  move.mask_[1] = fmgr_.mask(Figure::ColorWhite);
+  undo.mask_[0] = fmgr_.mask(Figure::ColorBlack);
+  undo.mask_[1] = fmgr_.mask(Figure::ColorWhite);
 
-  Field & ffrom = getField(move.from_);
-  Field & fto   = getField(move.to_);
+  Field & ffrom = getField(undo.from_);
+  Field & fto   = getField(undo.to_);
 
   // castle
   bool castle_k = castling(color, 0);
@@ -703,30 +702,30 @@ bool Board::validateValidator(const Move & mv)
 
   if ( ffrom.type() == Figure::TypeKing )
   {
-    int d = move.to_ - move.from_;
+    int d = undo.to_ - undo.from_;
     if ( (2 == d || -2 == d) )
     {
-      move.castle_ = true;
+      undo.castle_ = true;
 
       // don't do castling under check
       if ( checkingNum_ > 0 )
         return false;
 
       d >>= 1;
-      int rook_to = move.from_ + d;
-      int rook_from = move.from_ + ((d>>1) ^ 3);//d < 0 ? move.from_ - 4 : move.from_ + 3
+      int rook_to = undo.from_ + d;
+      int rook_from = undo.from_ + ((d>>1) ^ 3);//d < 0 ? undo.from_ - 4 : undo.from_ + 3
 
       Field & rf_field = getField(rook_from);
       THROW_IF( rf_field.type() != Figure::TypeRook || rf_field.color() != color_, "no rook for castle" );
       THROW_IF( !(rook_from & 3) && getField(rook_from+1), "long castle is impossible" );
 
       rf_field.clear();
-      fmgr_.move(color_, Figure::TypeRook, rook_from, rook_to);
+      fmgr_.undo(color_, Figure::TypeRook, rook_from, rook_to);
       Field & field_rook_to  = getField(rook_to);
-      THROW_IF( field_rook_to, "field that rook is going to move to while castling is occupied" );
+      THROW_IF( field_rook_to, "field that rook is going to undo to while castling is occupied" );
       field_rook_to.set(color_, Figure::TypeRook);
 
-      if ( isAttacked(ocolor, rook_to) || isAttacked(ocolor, move.to_) )
+      if ( isAttacked(ocolor, rook_to) || isAttacked(ocolor, undo.to_) )
         return false;
     }
 
@@ -737,10 +736,10 @@ bool Board::validateValidator(const Move & mv)
   else if ( (castle_k || castle_q) && (ffrom.type() == Figure::TypeRook) )
   {
     // short castle
-    castle_kk = move.from_ != castle_rook_pos[0][color];
+    castle_kk = undo.from_ != castle_rook_pos[0][color];
 
     // long castle
-    castle_qq = move.from_ != castle_rook_pos[1][color];
+    castle_qq = undo.from_ != castle_rook_pos[1][color];
   }
 
   // eat rook of another side
@@ -749,12 +748,12 @@ bool Board::validateValidator(const Move & mv)
     bool ocastle_k = castling(ocolor, 0);
     bool ocastle_q = castling(ocolor, 1);
 
-    if ( ocastle_k && move.to_ == castle_rook_pos[0][ocolor] )
+    if ( ocastle_k && undo.to_ == castle_rook_pos[0][ocolor] )
     {
       clear_castling(ocolor, 0);
       fmgr_.hashCastling(ocolor, 0);
     }
-    else if ( ocastle_q && move.to_ == castle_rook_pos[1][ocolor] )
+    else if ( ocastle_q && undo.to_ == castle_rook_pos[1][ocolor] )
     {
       clear_castling(ocolor, 1);
       fmgr_.hashCastling(ocolor, 1);
@@ -779,23 +778,23 @@ bool Board::validateValidator(const Move & mv)
   {
     THROW_IF(fto.color() == color_, "invalid color of captured figure" );
 
-    move.eaten_type_ = fto.type();
-    fmgr_.decr(fto.color(), fto.type(), move.to_);
+    undo.eaten_type_ = fto.type();
+    fmgr_.decr(fto.color(), fto.type(), undo.to_);
     fto.clear();
-    THROW_IF( !move.capture_, "capture flag isn't set" );
+    THROW_IF( !undo.capture_, "capture flag isn't set" );
   }
-  else if ( move.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
+  else if ( undo.to_ == en_passant_ && Figure::TypePawn == ffrom.type() )
   {
     int ep_pos = enpassantPos();
     Field & epfield = getField(ep_pos);
     THROW_IF( epfield.color() != ocolor || epfield.type() != Figure::TypePawn, "en-passant pawn is invalid" );
     fmgr_.decr(epfield.color(), epfield.type(), ep_pos);
     epfield.clear();
-    THROW_IF( !move.capture_, "en-passant isn't detected as capture" );
+    THROW_IF( !undo.capture_, "en-passant isn't detected as capture" );
   }
   else
   {
-    THROW_IF(move.capture_, "capture flag set but no figure to eat");
+    THROW_IF(undo.capture_, "capture flag set but no figure to eat");
   }
 
   // clear en-passant hash code
@@ -803,33 +802,33 @@ bool Board::validateValidator(const Move & mv)
     fmgr_.hashEnPassant(en_passant_, ocolor);
 
   // save en-passant field
-  move.en_passant_ = en_passant_;
+  undo.en_passant_ = en_passant_;
   en_passant_ = -1;
 
 
   // en-passant
   if ( Figure::TypePawn == ffrom.type() )
   {
-    int dir = g_figureDir->dir(ffrom.type(), ffrom.color(), move.from_, move.to_);
+    int dir = g_figureDir->dir(ffrom.type(), ffrom.color(), undo.from_, undo.to_);
     if ( 3 == dir )
     {
-      en_passant_ = (move.to_ + move.from_) >> 1;
+      en_passant_ = (undo.to_ + undo.from_) >> 1;
       fmgr_.hashEnPassant(en_passant_, color_);
     }
   }
 
-  // move figure 'from' -> 'to'
-  if ( move.new_type_ > 0 )
+  // undo figure 'from' -> 'to'
+  if ( undo.new_type_ > 0 )
   {
     // pawn promotion
-    fmgr_.decr(ffrom.color(), ffrom.type(), move.from_);
-    fto.set(color_, (Figure::Type)move.new_type_);
-    fmgr_.incr(fto.color(), fto.type(), move.to_);
+    fmgr_.decr(ffrom.color(), ffrom.type(), undo.from_);
+    fto.set(color_, (Figure::Type)undo.new_type_);
+    fmgr_.incr(fto.color(), fto.type(), undo.to_);
   }
   else
   {
     // usual movement
-    fmgr_.move(ffrom.color(), ffrom.type(), move.from_, move.to_);
+    fmgr_.undo(ffrom.color(), ffrom.type(), undo.from_, undo.to_);
     fto.set(color_, ffrom.type());
   }
 
@@ -837,18 +836,18 @@ bool Board::validateValidator(const Move & mv)
   ffrom.clear();
 
   // update counters
-  move.fifty_moves_  = fiftyMovesCount_;
-  move.reps_counter_ = repsCounter_;
+  undo.fifty_moves_  = fiftyMovesCount_;
+  undo.reps_counter_ = repsCounter_;
 
-  if ( Figure::TypePawn == fto.type() || move.capture_ || move.new_type_ > 0 )
+  if ( Figure::TypePawn == fto.type() || undo.capture_ || undo.new_type_ > 0 )
   {
-    move.irreversible_ = true;
+    undo.irreversible_ = true;
     fiftyMovesCount_ = 0;
     repsCounter_ = 0;
   }
   else
   {
-    move.irreversible_ = false;
+    undo.irreversible_ = false;
     fiftyMovesCount_++;
   }
 
@@ -859,16 +858,16 @@ bool Board::validateValidator(const Move & mv)
   color_ = ocolor;
 
   // put new hash code to detect threefold repetition
-  move.zcode_ = fmgr_.hashCode();
+  undo.zcode_ = fmgr_.hashCode();
 
-  move.can_win_[0] = can_win_[0];
-  move.can_win_[1] = can_win_[1];
+  undo.can_win_[0] = can_win_[0];
+  undo.can_win_[1] = can_win_[1];
 
   verifyChessDraw();
 
-  detectCheck(move);
+  detectCheck(undo);
 
-  move.state_ = state_;
+  undo.state_ = state_;
 
   THROW_IF( isAttacked(Figure::otherColor(color_), kingPos(color_)) && !underCheck(), "check isn't detected" );
   THROW_IF( !isAttacked(Figure::otherColor(color_), kingPos(color_)) && underCheck(), "detected check, that doesn't exist" );
@@ -877,7 +876,6 @@ bool Board::validateValidator(const Move & mv)
 
   return true;
 }
-
 #endif
 
 int Board::calculateReps(const Move & move) const

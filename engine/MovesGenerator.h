@@ -164,7 +164,7 @@ protected:
     // at first we try to eat recently moved opponent's figure
     if ( move.capture_ && board_.halfmovesCount() > 1 )
     {
-      MoveCmd & prev = board_.getMoveRev(-1);
+      UndoInfo & prev = board_.undoInfoRev(-1);
       if ( prev.to_ == move.to_ )
         move.vsort_ += Figure::figureWeight_[vtype] >> 1;
     }
@@ -559,11 +559,6 @@ public:
     return board_.underCheck() && eg_.count() == 1;
   }
 
-  bool chessMat() const
-  {
-    return board_.underCheck() && eg_.count() == 0;
-  }
-
 private:
 
   enum GOrder
@@ -588,7 +583,6 @@ class ChecksGenerator : public MovesGeneratorBase
 {
 public:
 
-  ChecksGenerator(const Move & hmove, Board & board);
   ChecksGenerator(Board & board);
 
   Move & check()
@@ -616,18 +610,16 @@ public:
     }
   }
 
-  int generate(const Move & hmove);
+  int generate();
 
 private:
 
-  int generate();
+  int genChecks();
 
   inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool discovered)
   {
     Move & move = moves_[m];
     move.set(from, to, new_type, false);
-    if ( move == hmove_ )
-      return;
 
     move.discoveredCheck_ = discovered;
 
@@ -644,18 +636,16 @@ private:
 
     m++;
   }
-
-  Move hmove_;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// Generate all moves after horizon
-class QuiesGenerator
+/// Generate tactical moves after horizon
+class TacticalGenerator
 {
 public:
 
-  QuiesGenerator(const Move & hmove, Board & board, Figure::Type thresholdType, int depth);
+  TacticalGenerator(Board & board, Figure::Type thresholdType, int depth);
 
   Move & next();
 
@@ -665,22 +655,17 @@ public:
     return board_.underCheck() && eg_.count() == 1;
   }
 
-  bool chessMat() const
-  {
-    return board_.underCheck() && eg_.count() == 0;
-  }
-
 private:
 
   CapsGenerator cg_;
   EscapeGenerator eg_;
   ChecksGenerator chg_;
 
-  enum Order { oNone, oHash, oEscape, oGenCaps, oCaps, oGenChecks, oChecks };
+  enum Order { oNone, oEscape, oGenCaps, oCaps, oGenChecks, oChecks };
 
   Board & board_;
   Figure::Type thresholdType_;
-  Move hmove_, fake_;
+  Move fake_;
   Order order_;
   int depth_;
 };

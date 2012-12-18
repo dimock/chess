@@ -490,7 +490,7 @@ bool ChessPosition::applyMove(const Move & move)
 void ChessPosition::setLastMove(const Board & board)
 {
   if ( board.halfmovesCount() > 0 )
-    vmove_  = board.getMove(board.halfmovesCount()-1);
+    vmove_  = board.undoInfo(board.halfmovesCount()-1);
   else
     vmove_.clear();
 }
@@ -540,7 +540,7 @@ void ChessPosition::redo()
     return;
 
   vmove_.clear();
-  const MoveCmd & move = ((const Board &)board).getMove(i);
+  Move move = board.undoInfo(i);
   if ( !board.validateMove(move) )
     return;
 

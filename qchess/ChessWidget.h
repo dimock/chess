@@ -101,7 +101,7 @@ private:
   int bs_count_;
   int depth_;
   char pv_str_[256];
-  MoveCmd pv_moves_[Board::GameLength];
+  UndoInfo pvundoStack_[Board::GameLength];
   double moves_avg_base_, depth_avg_, moves_base_;
   ScoreType score_;
   bool goingToClose_;

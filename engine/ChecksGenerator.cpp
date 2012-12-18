@@ -6,28 +6,20 @@
 #include "MovesTable.h"
 
 //////////////////////////////////////////////////////////////////////////
-ChecksGenerator::ChecksGenerator(const Move & hmove, Board & board) :
-  MovesGeneratorBase(board), hmove_(hmove)
-{
-  numOfMoves_ = generate();
-  moves_[numOfMoves_].clear();
-}
-
 ChecksGenerator::ChecksGenerator(Board & board) :
-  MovesGeneratorBase(board), hmove_(0)
+  MovesGeneratorBase(board)
 {
   moves_[0].clear();
 }
 
-int ChecksGenerator::generate(const Move & hmove)
+int ChecksGenerator::generate()
 {
-  hmove_ = hmove;
-  numOfMoves_ = generate();
+  numOfMoves_ = genChecks();
   moves_[numOfMoves_].clear();
   return numOfMoves_;
 }
 
-int ChecksGenerator::generate()
+int ChecksGenerator::genChecks()
 {
   int m = 0;
 

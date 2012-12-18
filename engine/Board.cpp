@@ -15,7 +15,7 @@ int64 Board::ticks_;
 int   Board::tcounter_;
 
 Board::Board() :
-  g_moves(0),
+  g_undoStack(0),
   g_movesTable(0),
   g_figureDir(0),
   g_pawnMasks(0),
@@ -57,12 +57,12 @@ bool Board::initEmpty(Figure::Color color)
 
 bool Board::canBeReduced() const
 {
-  const MoveCmd & move = getMoveRev(0);
+  const UndoInfo & undo = undoInfoRev(0);
 
-  History & hist = MovesGenerator::history(move.from_, move.to_);
+  History & hist = MovesGenerator::history(undo.from_, undo.to_);
 
   return  ((hist.good()<<4) <= hist.bad()) &&
-    !(move.capture_ || move.new_type_ > 0 || move.threat_ || move.castle_ || underCheck());
+    !(undo.capture_ || undo.new_type_ > 0 || undo.threat_ || undo.castle_ || underCheck());
 }
 
 bool Board::isDangerPawn(const Move & move) const
@@ -543,8 +543,8 @@ void Board::verifyState()
     // update move's state because it is last one
     if ( halfmovesCounter_ > 0 )
     {
-      MoveCmd & move = getMove(halfmovesCounter_-1);
-      move.state_ = state_;
+      UndoInfo & undo = undoInfo(halfmovesCounter_-1);
+      undo.state_ = state_;
     }
   }
 }
@@ -712,12 +712,12 @@ bool Board::save(const Board & board, std::ostream & os, bool write_prefix)
     sres = "1/2-1/2";
 
   Board sboard = board;
-  MoveCmd tempMoves[Board::GameLength];
+  UndoInfo tempUndo[Board::GameLength];
 
   int num = sboard.halfmovesCount();
   for (int i = 0; i < num; ++i)
-    tempMoves[i] = board.getMove(i);
-  sboard.set_moves(tempMoves);
+    tempUndo[i] = board.undoInfo(i);
+  sboard.set_undoStack(tempUndo);
 
   while ( sboard.halfmovesCount() > 0 )
     sboard.unmakeMove();
@@ -742,7 +742,7 @@ bool Board::save(const Board & board, std::ostream & os, bool write_prefix)
     int moveNum = sboard.movesCount();
 
     // stash move
-    Move move = board.getMove(i);
+    Move move = board.undoInfo(i);
 
     char str[16];
     if ( !printSAN(sboard, move, str) )
@@ -847,7 +847,7 @@ void Board::save(const char * fname) const
   if ( !f )
     return;
   fwrite((char*)this, sizeof(*this), 1, f);
-  fwrite((char*)g_moves, sizeof(MoveCmd), GameLength, f);
+  fwrite((char*)g_undoStack, sizeof(UndoInfo), GameLength, f);
   fclose(f);
 }
 
@@ -856,7 +856,7 @@ void Board::load(const char * fname)
   FILE * f = fopen(fname, "rb");
   if ( !f )
     return;
-  MoveCmd * moves = g_moves;
+  UndoInfo * undoStack = g_undoStack;
   const MovesTable * movesTable = g_movesTable;
   const FigureDir * figuresDir = g_figureDir;
   const PawnMasks * pawnMask = g_pawnMasks;
@@ -865,8 +865,8 @@ void Board::load(const char * fname)
   const DistanceCounter * distCounter = g_distanceCounter;
 
   fread((char*)this, sizeof(*this), 1, f);
-  g_moves = moves;
-  fread((char*)g_moves, sizeof(MoveCmd), GameLength, f);
+  g_undoStack = undoStack;
+  fread((char*)g_undoStack, sizeof(UndoInfo), GameLength, f);
   fclose(f);
 
   g_movesTable = movesTable;

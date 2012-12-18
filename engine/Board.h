@@ -62,7 +62,7 @@ public:
   void load(const char * fname);
 
   /// init global data
-  void set_moves(MoveCmd * moves) { g_moves = moves; }
+  void set_undoStack(UndoInfo * undoStack) { g_undoStack = undoStack; }
   void set_MovesTable(const MovesTable * movesTable) { g_movesTable = movesTable; }
   void set_FigureDir(const FigureDir * figureDir) { g_figureDir = figureDir; }
   void set_PawnMasks(const PawnMasks * pawnMasks) { g_pawnMasks = pawnMasks; }
@@ -77,7 +77,7 @@ public:
   bool toFEN(char * fen) const;
 
   /// initialize empty board with given color to move
-  bool initEmpty(Figure::Color );
+  bool initEmpty(Figure::Color);
 
   /*! movements
    */
@@ -85,10 +85,10 @@ public:
   bool extractKiller(const Move & ki, const Move & hmove, Move & killer) const
   {
     if ( !ki || 
-        (getField(ki.to_) ||
-        (en_passant_ == ki.to_ && getField(ki.from_).type() == Figure::TypePawn) ||
-        ki.new_type_) ||
-        (hmove == ki) )
+        ( hmove == ki ) ||
+        (  getField(ki.to_) ||
+          (en_passant_ == ki.to_ && getField(ki.from_).type() == Figure::TypePawn) ||
+           ki.new_type_ ) )
     {
       return false;
     }
@@ -141,12 +141,17 @@ public:
   /// used in LMR
   bool canBeReduced() const;
 
-  /// used to detect reduction/extension possibility
-  /// don't allow reduction of pawn's movement to pre-last line or pawn's attack
+  /// don't allow LMR of strong pawn's moves
   bool isDangerPawn(const Move & move) const;
 
+  /// don't allow LMR of strong moves
+  bool isMoveThreat(const Move & move) const
+  {
+    return isDangerPawn(move);
+  }
+
   // becomes passed
-  bool pawnPassed(const MoveCmd & move) const
+  bool pawnPassed(const UndoInfo & move) const
   {
     const Field & fto = getField(move.to_);
     if ( fto.type() != Figure::TypePawn )
@@ -213,9 +218,9 @@ public:
   inline int nullMoveDepthMin() const
   {
     if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
-      return NullMove_DepthMin+1;
+      return NullMove_DepthMin;
     else
-      return NullMove_DepthMin+3;
+      return NullMove_DepthMin+2;
   }
 
   inline int nullMoveReduce() const
@@ -249,6 +254,28 @@ public:
   /// to detect draw by moves repetitons
   int countReps() const;
 
+  /// with given zcode
+  int countReps(int from, const BitMask & zcode) const
+  {
+    int reps = 1;
+    int i = halfmovesCounter_ - from;
+    for (; reps < 2 && i >= 0; i -= 2)
+    {
+      if ( undoInfo(i).zcode_ == zcode )
+        reps++;
+
+      if ( undoInfo(i).irreversible_ )
+        break;
+    }
+
+    // may be we forget to test initial position?
+    if ( reps < 2 && i == -1 && zcode == undoInfo(0).zcode_old_ )
+      reps++;
+
+    return reps;
+  }
+
+
   /// used for hashed moves
   int  calculateReps(const Move & move) const;
 
@@ -273,9 +300,6 @@ public:
 
   /// verify if there is draw or mat
   void verifyState();
-
-  /// 2 means that only king's movements are valid
-  int doubleCheck() const { return lastMove().checkingNum_ > 1; }
 
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
@@ -328,41 +352,48 @@ public:
   uint8 repsCount() const { return repsCounter_; }
 
   /// get i-th move from begin
-  const MoveCmd & getMove(int i) const
+  const UndoInfo & undoInfo(int i) const
   {
-    THROW_IF( !g_moves, "board isn't initialized" );
+    THROW_IF( !g_undoStack, "board isn't initialized" );
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
-    return g_moves[i];
+    return g_undoStack[i];
+  }
+
+  UndoInfo & undoInfo(int i)
+  {
+    THROW_IF( !g_undoStack, "board isn't initialized" );
+    THROW_IF( i < 0 || i >= GameLength, "there was no move" );
+    return g_undoStack[i];
   }
 
   /// get i-th move from end
   /// '0' means the last one, '-1' means 1 before last
-  MoveCmd & getMoveRev(int i)
+  UndoInfo & undoInfoRev(int i)
   {
-    THROW_IF( !g_moves, "board isn't initialized" );
+    THROW_IF( !g_undoStack, "board isn't initialized" );
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i-1];
+    return g_undoStack[halfmovesCounter_+i-1];
   }
 
-  const MoveCmd & getMoveRev(int i) const
+  const UndoInfo & undoInfoRev(int i) const
   {
-    THROW_IF( !g_moves, "board isn't initialized" );
+    THROW_IF( !g_undoStack, "board isn't initialized" );
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i-1];
+    return g_undoStack[halfmovesCounter_+i-1];
   }
 
-  const MoveCmd & lastMove() const
+  const UndoInfo & lastUndo() const
   {
-    THROW_IF( !g_moves, "board isn't initialized" );
+    THROW_IF( !g_undoStack, "board isn't initialized" );
     THROW_IF( halfmovesCounter_ <= 0, "invalid halfmovesCounter");
-    return g_moves[halfmovesCounter_-1];
+    return g_undoStack[halfmovesCounter_-1];
   }
 
-  MoveCmd & lastMove()
+  UndoInfo & lastUndo()
   {
-      THROW_IF( !g_moves, "board isn't initialized" );
+      THROW_IF( !g_undoStack, "board isn't initialized" );
       THROW_IF( halfmovesCounter_ <= 0, "invalid halfmovesCounter");
-      return g_moves[halfmovesCounter_-1];
+      return g_undoStack[halfmovesCounter_-1];
   }
 
   /// returns current move color
@@ -446,26 +477,6 @@ public:
   /// methods
 private:
 
-  int countReps(int from, const BitMask & zcode) const
-  {
-    int reps = 1;
-    int i = halfmovesCounter_ - from;
-    for (; reps < 2 && i >= 0; i -= 2)
-    {
-      if ( getMove(i).zcode_ == zcode )
-        reps++;
-
-      if ( getMove(i).irreversible_ )
-        break;
-    }
-
-    // may be we forget to test initial position?
-    if ( reps < 2 && i == -1 && zcode == getMove(0).zcode_old_ )
-      reps++;
-
-    return reps;
-  }
-
   /// clear board. reset all fields, number of moves etc...
   void clear();
 
@@ -506,13 +517,6 @@ private:
       return true;
 
     return false;
-  }
-
-  MoveCmd & getMove(int i)
-  {
-    THROW_IF( !g_moves, "board isn't initialized" );
-    THROW_IF( i < 0 || i >= GameLength, "there was no move" );
-    return g_moves[i];
   }
 
   /// return short/long castle possibility
@@ -565,7 +569,7 @@ private:
   bool verifyChessDraw();
 
   /// find all checking figures, save them into board
-  void detectCheck(const MoveCmd & move);
+  void detectCheck(const UndoInfo & move);
 
   /// is king of given color attacked by given figure
   inline bool isAttackedBy(Figure::Color color, const Figure::Color acolor, const Figure::Type type, int from) const
@@ -703,7 +707,7 @@ private:
   uint16 checking_figs_;
   };
 
-  MoveCmd * g_moves;
+  UndoInfo * g_undoStack;
   const MovesTable * g_movesTable;
   const FigureDir * g_figureDir;
   const PawnMasks * g_pawnMasks;

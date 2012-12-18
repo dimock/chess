@@ -185,7 +185,7 @@ class GHashTable : public HashTable2<HBucket>
 public:
 
   enum Flag { NoFlag, Alpha, AlphaBetta, Betta };
-  enum Mode { NoMode, General, Capture, Eval };
+  enum Mode { NoMode, General, Eval };
 
   GHashTable(int size) : HashTable2<HBucket>(size)
   {}
@@ -217,33 +217,6 @@ public:
     hitem->flag_  = flag;
     hitem->mode_  = General;
     hitem->threat_ = threat;
-    hitem->movesCount_ = movesCount_;
-
-    if ( move )
-      hitem->move_ = move;
-  }
-
-  void pushCap(const uint64 & hcode, ScoreType score, Flag flag, const PackedMove & move)
-  {
-    HBucket & hb = (*this)[hcode];
-    HItem * hitem = hb.get(hcode);
-    if( !hitem )
-      return;
-
-    if ( hitem->hcode_ == hcode &&
-         ( hitem->mode_ == General || hitem->mode_ == Eval ||
-           Alpha == flag && hitem->flag_ > Alpha ) )
-    {
-      return;
-    }
-
-    if ( hitem->hcode_ && hitem->hcode_ != hcode )
-      hitem->clear();
-
-    hitem->hcode_ = hcode;
-    hitem->score_ = score;
-    hitem->flag_  = flag;
-    hitem->mode_  = Capture;
     hitem->movesCount_ = movesCount_;
 
     if ( move )

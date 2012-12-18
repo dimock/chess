@@ -7,21 +7,21 @@
 #include "FigureDirs.h"
 
 //////////////////////////////////////////////////////////////////////////
-void Board::detectCheck(const MoveCmd & move)
+void Board::detectCheck(const UndoInfo & undo)
 {
   checkingNum_ = 0;
   const Figure::Color color = color_;
   Figure::Color ocolor = Figure::otherColor(color_);
-  const Field & ffrom = getField(move.from_);
-  const Field & fto = getField(move.to_);
+  const Field & ffrom = getField(undo.from_);
+  const Field & fto = getField(undo.to_);
 
-  int d = move.to_ - move.from_;
+  int d = undo.to_ - undo.from_;
   if ( fto.type() == Figure::TypeKing && ((2 == d || -2 == d)) ) // castle with check
   {
-    THROW_IF( !move.castle_, "castle flag wasn't set" );
+    THROW_IF( !undo.castle_, "castle flag wasn't set" );
 
     d >>= 1;
-    int rook_to = move.from_ + d;
+    int rook_to = undo.from_ + d;
     if ( isAttackedBy(color, ocolor, Figure::TypeRook, rook_to) )
     {
       checking_[checkingNum_++] = rook_to;
@@ -36,18 +36,18 @@ void Board::detectCheck(const MoveCmd & move)
     const BitMask & king_mask = fmgr_.king_mask(color);
     if ( fto.type() == Figure::TypePawn )
     {
-      const BitMask & pw_mask = g_movesTable->pawnCaps_o(ocolor, move.to_);
+      const BitMask & pw_mask = g_movesTable->pawnCaps_o(ocolor, undo.to_);
       if ( pw_mask & king_mask )
-        checking_[checkingNum_++] = move.to_;
+        checking_[checkingNum_++] = undo.to_;
     }
     else if ( fto.type() == Figure::TypeKnight )
     {
-      const BitMask & kn_mask = g_movesTable->caps(Figure::TypeKnight, move.to_);
+      const BitMask & kn_mask = g_movesTable->caps(Figure::TypeKnight, undo.to_);
       if ( kn_mask & king_mask )
-        checking_[checkingNum_++] = move.to_;
+        checking_[checkingNum_++] = undo.to_;
     }
-    else if ( isAttackedBy(color, ocolor, fto.type(), move.to_) )
-      checking_[checkingNum_++] = move.to_;
+    else if ( isAttackedBy(color, ocolor, fto.type(), undo.to_) )
+      checking_[checkingNum_++] = undo.to_;
   }
 
   int king_pos = kingPos(color);
@@ -55,10 +55,10 @@ void Board::detectCheck(const MoveCmd & move)
   BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
 
   // check through en-passant field
-  if ( move.en_passant_ == move.to_ && fto.type() == Figure::TypePawn )
+  if ( undo.en_passant_ == undo.to_ && fto.type() == Figure::TypePawn )
   {
     static int pw_delta[2] = { -8, 8 };
-    int ep_pos = move.en_passant_ + pw_delta[color]; // color == color of captured pawn
+    int ep_pos = undo.en_passant_ + pw_delta[color]; // color == color of captured pawn
 
     // 1. through en-passant pawn field
     int apos = findDiscovered(ep_pos, ocolor, mask_all, brq_mask, king_pos);
@@ -66,9 +66,9 @@ void Board::detectCheck(const MoveCmd & move)
       checking_[checkingNum_++] = apos;
   }
 
-  // 2. through move.from_ field
-  int apos = findDiscovered(move.from_, ocolor, mask_all, brq_mask, king_pos);
-  if ( apos >= 0 && apos != move.to_ ) // exclude figure, that's made current move
+  // 2. through undo.from_ field
+  int apos = findDiscovered(undo.from_, ocolor, mask_all, brq_mask, king_pos);
+  if ( apos >= 0 && apos != undo.to_ ) // exclude figure, that's made current undo
     checking_[checkingNum_++] = apos;
 
   THROW_IF( checkingNum_ > 2, "more than 2 figures give check" );

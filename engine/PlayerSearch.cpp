@@ -6,10 +6,125 @@
 #include "Player.h"
 #include "MovesGenerator.h"
 #include <algorithm>
-#include <fstream>
-#include <sstream>
+
+//////////////////////////////////////////////////////////////////////////
+bool Player::findMove(SearchResult * sres)
+{
+  if ( !sres )
+    return false;
+
+  sres_ = sres;
+  bool ok = false;
+  for ( ;; )
+  {
+    ok = search();
+
+    if ( !posted_command_ )
+      break;
+
+    if ( posted_command_ == Posted_NEW )
+      fromFEN(0);
+    else if ( posted_command_ == Posted_FEN && posted_fen_[0] )
+    {
+      fromFEN(posted_fen_);
+      posted_fen_[0] = 0;
+    }
+    else if ( posted_command_ == Posted_UNDO && board_.halfmovesCount() > 0 )
+      board_.unmakeMove();
+
+    posted_command_ = Posted_NONE;
+  }
+  sres_ = 0;
+  return ok;
+}
+
+bool Player::search()
+{
+#ifdef USE_HASH
+  hash_.inc();
+#endif
+
+  reset();
+
+  {
+    MovesGenerator mg(board_);
+    for ( ;; )
+    {
+      const Move & move = mg.move();
+      if ( !move )
+        break;
+      if ( board_.validateMove(move) )
+        moves_[numOfMoves_++] = move;
+    }
+    moves_[numOfMoves_].clear();
+  }
 
 
+  const ScoreType alpha = -ScoreMax;
+  const ScoreType betta = +ScoreMax;
+
+  for (depth_ = depth0_; !stopped() && depth_ <= depthMax_; ++depth_)
+  {
+    pv_board_ = board_;
+    pv_board_.set_undoStack(pvundoStack_);
+    contexts_[0].clearPV(depthMax_);
+    best_.clear();
+    nodesCount_ = 0;
+    plyMax_ = 0;
+    counter_ = 0;
+
+    ScoreType score = alphaBetta0();
+
+    if ( best_ )
+    {
+      if (  stop_ && depth_ > 2 &&
+        (abs(score-sres_->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 ||
+        best_ != sres_->best_ && abs(score-sres_->score_) >= 5) &&
+        givetime_ )
+      {
+        int t_add = (givetime_)();
+        if ( t_add > 0 )
+        {
+          stop_ = false;
+          timeLimitMS_ += t_add;
+          if ( counter_ < numOfMoves_ )
+            depth_--;
+          continue;
+        }
+      }
+
+      clock_t t  = clock();
+      clock_t dt = (t - tstart_) / 10;
+      tprev_ = t;
+
+      sres_->score_ = score;
+      sres_->best_  = best_;
+      sres_->depth_ = depth_;
+      sres_->nodesCount_ = nodesCount_;
+      sres_->totalNodes_ = totalNodes_;
+      sres_->plyMax_ = plyMax_;
+      sres_->dt_ = dt;
+
+      for (int i = 0; i < depth_; ++i)
+      {
+        sres_->pv_[i] = contexts_[0].pv_[i];
+        if ( !sres_->pv_[i] )
+          break;
+      }
+
+      THROW_IF( sres_->pv_[0] != best_, "invalid PV found" );
+
+      printPV();
+    }
+
+    if ( !best_ || (score >= Figure::MatScore-MaxPly || score <= MaxPly-Figure::MatScore) && !analyze_mode_ )
+      break;
+  }
+
+  sres_->totalNodes_ = totalNodes_;
+
+  return sres_->best_;
+}
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta0()
 {
@@ -28,7 +143,7 @@ ScoreType Player::alphaBetta0()
 
   ScoreType scoreBest = -ScoreMax;
   
-  bool under_check = board_.underCheck();
+  bool check_escape = board_.underCheck();
 
   for (counter_ = 0; counter_ < numOfMoves_; ++counter_)
   {
@@ -38,7 +153,7 @@ ScoreType Player::alphaBetta0()
     Move & move = moves_[counter_];
     ScoreType score = -ScoreMax;
 
-    if ( board_.isDangerPawn(move) )
+    if ( board_.isMoveThreat(move) )
       move.threat_ = 1;
     
     board_.makeMove(move);
@@ -48,7 +163,7 @@ ScoreType Player::alphaBetta0()
       int depth1 = nextDepth(depth_, move, true);
 
       if ( depth_ == depth0_ || !counter_ ) // 1st iteration
-        score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
+        score = -alphaBetta(depth1, 1, -betta, -alpha, true);
       else
       {
         int depth2 = nextDepth(depth_, move, false);
@@ -56,7 +171,7 @@ ScoreType Player::alphaBetta0()
         int R = 0;
 
 #ifdef USE_LMR
-        if ( !under_check &&
+        if ( !check_escape &&
              depth_ > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
              board_.canBeReduced() )
@@ -65,13 +180,13 @@ ScoreType Player::alphaBetta0()
         }
 #endif
 
-        score = -alphaBetta2(depth2-R, 1, -alpha-1, -alpha, false);
+        score = -alphaBetta(depth2-R, 1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta2(depth2, 1, -alpha-1, -alpha, false);
+          score = -alphaBetta(depth2, 1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha )
-          score = -alphaBetta2(depth1, 1, -betta, -alpha, true);
+          score = -alphaBetta(depth1, 1, -betta, -alpha, true);
       }
     }
 
@@ -112,7 +227,8 @@ ScoreType Player::alphaBetta0()
   return scoreBest;
 }
 
-ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
+//////////////////////////////////////////////////////////////////////////
+ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
 {
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
@@ -135,7 +251,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 #endif
 
   if ( depth <= 0 )
-    return captures2(depth, ply, alpha, betta, pv);
+    return captures(depth, ply, alpha, betta, pv);
 
   if ( ply < MaxPly-1 )
     contexts_[ply].clear(ply);
@@ -154,7 +270,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     int null_depth = depth - board_.nullMoveReduce();
 
-    ScoreType nullScore = -alphaBetta2(null_depth, ply+1, -betta, -(betta-1), false);
+    ScoreType nullScore = -alphaBetta(null_depth, ply+1, -betta, -(betta-1), false);
 
     board_.unmakeNullMove();
 
@@ -163,7 +279,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     {
       depth -= board_.nullMoveReduce();
       if ( depth <= 0 )
-        return captures2(depth, ply, alpha, betta, pv);
+        return captures(depth, ply, alpha, betta, pv);
     }
     else // may be we are in danger? verify it later
       nm_threat = true;
@@ -180,7 +296,7 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
     ScoreType score0 = board_.evaluate();
     int delta = (int)alpha - (int)score0 - (int)Figure::positionGain_;
     if ( delta > 0 )
-      return captures2(depth, ply, alpha, betta, pv, score0);
+      return captures(depth, ply, alpha, betta, pv, score0);
   }
 #endif
 
@@ -196,8 +312,8 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   if ( fg.singleReply() )
     depth++;
 
-  MoveCmd & prev = board_.getMoveRev(0);
-  bool under_check = board_.underCheck();
+  UndoInfo & prev = board_.undoInfoRev(0);
+  bool check_escape = board_.underCheck();
 
   for ( ; alpha < betta && !checkForStop(); )
   {
@@ -210,26 +326,26 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
 
     ScoreType score = -ScoreMax;
 
-    if ( board_.isDangerPawn(move) )
+    if ( board_.isMoveThreat(move) )
       move.threat_ = 1;
 
     board_.makeMove(move);
     inc_nc();
 
-    MoveCmd & curr = board_.getMoveRev(0);
+    UndoInfo & curr = board_.undoInfoRev(0);
 
     {
       int depth1 = nextDepth(depth, move, pv);
 
       if ( !counter )
-        score = -alphaBetta2(depth1, ply+1, -betta, -alpha, pv);
+        score = -alphaBetta(depth1, ply+1, -betta, -alpha, pv);
       else
       {
         int depth2 = nextDepth(depth, move, false);
         int R = 0;
 
 #ifdef USE_LMR
-        if ( !under_check &&
+        if ( !check_escape &&
              depth_ > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
              alpha > -Figure::MatScore-MaxPly &&             
@@ -240,20 +356,20 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
         }
 #endif
 
-        score = -alphaBetta2(depth2-R, ply+1, -alpha-1, -alpha, false);
+        score = -alphaBetta(depth2-R, ply+1, -alpha-1, -alpha, false);
         curr.reduced_ = false;
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta2(depth2, ply+1, -alpha-1, -alpha, false);
+          score = -alphaBetta(depth2, ply+1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha && score < betta )
-          score = -alphaBetta2(depth1, ply+1, -betta, -alpha, true);
+          score = -alphaBetta(depth1, ply+1, -betta, -alpha, true);
       }
     }
 
     board_.unmakeMove();
 
-    contexts_[ply].setKiller(move, score);
+    contexts_[ply].setKiller(move);
 
     if ( !stopped() && score > scoreBest )
     {
@@ -308,7 +424,8 @@ ScoreType Player::alphaBetta2(int depth, int ply, ScoreType alpha, ScoreType bet
   return scoreBest;
 }
 
-ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0)
+//////////////////////////////////////////////////////////////////////////
+ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0)
 {
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
@@ -339,25 +456,16 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
     scoreBest = score0;
   }
 
-  ScoreType alpha0 = alpha;
-  Move best(0), hmove(0);
-
-#ifdef USE_HASH_CAPS
-  ScoreType hscore = -ScoreMax;
-  GHashTable::Flag flag = getCap(depth, ply, alpha, betta, hmove, hscore, pv);
-  if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
-    return hscore;
-#endif
-
+  Move best(0);
   Figure::Type thresholdType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
-  QuiesGenerator qg(hmove, board_, thresholdType, depth);
-  if ( qg.singleReply() )
+  TacticalGenerator tg(board_, thresholdType, depth);
+  if ( tg.singleReply() )
     depth++;
 
   for ( ; alpha < betta && !checkForStop(); )
   {
-    Move & move = qg.next();
+    Move & move = tg.next();
     if ( !move )
       break;
 
@@ -371,7 +479,7 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
 
     {
       int depth1 = nextDepth(depth, move, false);
-      score = -captures2(depth1, ply+1, -betta, -alpha, pv, -ScoreMax);
+      score = -captures(depth1, ply+1, -betta, -alpha, pv, -ScoreMax);
     }
 
     board_.unmakeMove();
@@ -400,12 +508,88 @@ ScoreType Player::captures2(int depth, int ply, ScoreType alpha, ScoreType betta
 
   THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );
 
-#ifdef USE_HASH_CAPS
-  putCap(best, alpha0, betta, scoreBest, ply);
-#endif
-
   return scoreBest;
 }
+
+
+/// extract data from hash table
+#ifdef USE_HASH
+GHashTable::Flag Player::getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)
+{
+  const HItem * hitem = hash_.find(board_.hashCode());
+  if ( !hitem )
+    return GHashTable::NoFlag;
+
+  THROW_IF( hitem->hcode_ != board_.hashCode(), "invalid hash item found" );
+
+  board_.unpack(hitem->move_, hmove);
+
+  if ( pv || hitem->mode_ != GHashTable::General )
+    return GHashTable::AlphaBetta;
+
+  hscore = hitem->score_;
+  if ( hscore >= Figure::MatScore-MaxPly )
+    hscore = hscore - ply;
+  else if ( hscore <= MaxPly-Figure::MatScore )
+    hscore = hscore + ply;
+
+  THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
+
+  if ( (int)hitem->depth_ >= depth && ply > 0 )
+  {
+    if ( GHashTable::Alpha == hitem->flag_ && hscore <= alpha )
+    {
+      THROW_IF( !stop_ && alpha < -32760, "invalid hscore" );
+      return GHashTable::Alpha;
+    }
+
+    if ( hitem->flag_ > GHashTable::Alpha && hscore >= betta && hmove )
+    {
+      if ( board_.calculateReps(hmove) < 2 )
+      {
+        if ( pv )
+          assemblePV(hmove, false, ply);
+
+        /// danger move was reduced - recalculate it with full depth
+        if ( hitem->threat_ && board_.undoInfoRev(0).reduced_ )
+        {
+          hscore = betta-1;
+          return GHashTable::Alpha;
+        }
+
+        return GHashTable::Betta;
+      }
+    }
+  }
+
+  return GHashTable::AlphaBetta;
+}
+
+/// insert data to hash table
+void Player::putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat)
+{
+  if ( board_.repsCount() >= 3 )
+    return;
+
+  PackedMove pm = board_.pack(move);
+  GHashTable::Flag flag = GHashTable::NoFlag;
+  if ( board_.repsCount() < 2 )
+  {
+    if ( score <= alpha || !move )
+      flag = GHashTable::Alpha;
+    else if ( score >= betta )
+      flag = GHashTable::Betta;
+    else
+      flag = GHashTable::AlphaBetta;
+  }
+  if ( score >= +Figure::MatScore-MaxPly )
+    score += ply;
+  else if ( score <= -Figure::MatScore+MaxPly )
+    score -= ply;
+  hash_.push(board_.hashCode(), score, depth, flag, pm, threat);
+}
+#endif
+
 
 //////////////////////////////////////////////////////////////////////////
 // is given movement caused by previous? this mean that if we don't do this move we loose
@@ -418,7 +602,7 @@ bool Player::isRealThreat(const Move & move)
   if ( move.capture_ || move.checkFlag_ )
     return false;
 
-  const MoveCmd & prev = board_.getMoveRev(0);
+  const UndoInfo & prev = board_.undoInfoRev(0);
   if ( !prev ) // null-move
     return false;
 
@@ -461,48 +645,4 @@ bool Player::isRealThreat(const Move & move)
     return true;
 
   return false;
-}
-
-//////////////////////////////////////////////////////////////////////////
-void Player::findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const
-{
-  struct MOVE { int from_, to_; };
-  bool identical = false;
-  static MOVE sequence[] = {
-    {61, 47},
-    {39, 47},
-    {10, 12},
-    {14, 30},
-    {52, 53},
-    {13, 21},
-    {62, 46} };
-
-    if ( ply < sizeof(sequence)/sizeof(MOVE) && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
-    {
-      for (int i = ply; i >= 0; --i)
-      {
-        identical = true;
-        int j = i-ply;
-        if ( j >= board_.halfmovesCount() )
-          break;
-        const MoveCmd & mc = board_.getMoveRev(j);
-        if ( mc.from_ != sequence[i].from_ || mc.to_ != sequence[i].to_ )
-        {
-          identical = false;
-          break;
-        }
-      }
-    }
-
-    if ( identical )
-    {
-      std::stringstream sstm;
-      Board::save(board_, sstm, false);
-      std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
-      ofs << "PLY: " << ply << std::endl;
-      std::string s = sstm.str();
-      ofs << s;
-      ofs << "depth_ = " << depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
-      ofs << "===================================================================" << std::endl << std::endl;
-    }
 }

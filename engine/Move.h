@@ -60,6 +60,7 @@ struct Move
 #else
   Move() {}
 #endif
+
   Move(int) { clear(); }
 
   /// index of field go from
@@ -144,14 +145,14 @@ struct Move
 
 /// complete move structure with all information, required for undo
 __declspec (align(1))
-struct MoveCmd : public Move
+struct UndoInfo : public Move
 {
-  MoveCmd() {}
+  UndoInfo() {}
 
-  MoveCmd(const Move & move) : Move(move)
+  UndoInfo(const Move & move) : Move(move)
   {}
 
-  MoveCmd & operator = (const Move & move)
+  UndoInfo & operator = (const Move & move)
   {
     *((Move*)this) = move;
     return *this;
@@ -163,7 +164,7 @@ struct MoveCmd : public Move
   uint64 zcode_old_;
 
   /// figures masks
-  uint64 mask_[2];
+  BitMask mask_[2];
 
   /// if this move is irreversible, we don't need to enumerate any move in fifty-move-rule detector
   bool  irreversible_;

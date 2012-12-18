@@ -54,48 +54,18 @@ namespace nst
   };
 };
 
-
-#undef USE_HASH_MOVE_EX
-#undef USE_THREAT_MOVE
-
-#define PERFORM_CHECKS_IN_CAPTURES
-#define USE_ZERO_WINDOW
-
 #define USE_FUTILITY_PRUNING
-#define USE_DELTA_PRUNING_
+#define USE_DELTA_PRUNING
 #define USE_HASH
-#undef  USE_HASH_CAPS
 #define USE_NULL_MOVE
 #define USE_LMR
-
-#undef USE_HASH_TABLE_GENERAL
-#undef USE_HASH_TABLE_ADV
-#undef USE_HASH_TABLE_CAPTURE
-#undef RETURN_IF_ALPHA_BETTA_CAPTURES
-#undef USE_GENERAL_HASH_IN_CAPS
-#undef RETURN_IF_BETTA
-#undef USE_IID
-
-#define EXTEND_PROMOTION
-#undef RECAPTURE_EXTENSION
-#undef EXTEND_PASSED_PAWN
-#undef EXTEND_WINNER_LOSER
-
-#undef EXTENDED_THREAT_DETECTION
-#undef MARKOFF_BOTVINNIK_EXTENSION
-#undef MAT_THREAT_EXTENSION
-
-#undef ONLY_LEQ_THREAT
 
 #undef VERIFY_ESCAPE_GENERATOR
 #undef VERIFY_CHECKS_GENERATOR
 #undef VERIFY_CAPS_GENERATOR
 #undef VERIFY_FAST_GENERATOR
 #undef VERIFY_QUIES_GENERATOR
-
 #undef VALIDATE_VALIDATOR
-
-#define USE_FAST_GENERATOR
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF
@@ -103,24 +73,13 @@ namespace nst
   #define TIMING_FLAG 0x1FFF
 #endif
 
-
-
-static const int HalfnodesCountToOverwrite = 16;
 static const int MaxPly = 64;
-static const int LMR_PlyReduce = 2;
 static const int LMR_DepthLimit = 3;
 static const int LMR_MinDepthLimit = 5;
-static const int LMR_Counter = 1;
+static const int NullMove_DepthMin = 2;
 static const int NullMove_PlyReduce = 4;
 static const int NullMove_DepthStart = 4;
-static const int NullMove_DepthMin = 1;
-static const int HashedMoves_Size = 8;
-static const int MatThreatExtension_Limit = 1;
-static const int MbeExtension_Limit = 1;
-static const int SingularExtension_Limit = 0;
-static const int RecaptureExtension_Limit = 1;
-static const int ChecksExtension_Limit = 16;
-static const int DoubleChecksExtension_Limit = 8;
+
 
 #ifndef _M_X64
 class QpfTimer

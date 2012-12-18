@@ -138,25 +138,20 @@ Move & FastGenerator::move()
 
 
 //////////////////////////////////////////////////////////////////////////
-QuiesGenerator::QuiesGenerator(const Move & hmove, Board & board, Figure::Type thresholdType, int depth) :
-  eg_(board), cg_(board), chg_(board), thresholdType_(thresholdType), hmove_(hmove), board_(board), order_(oHash), depth_(depth), fake_(0)
+TacticalGenerator::TacticalGenerator(Board & board, Figure::Type thresholdType, int depth) :
+  eg_(board), cg_(board), chg_(board), thresholdType_(thresholdType), board_(board),
+  order_(oGenCaps), depth_(depth), fake_(0)
 {
   if ( board_.underCheck() )
   {
+    Move hmove(0);
     eg_.generate(hmove);
     order_ = oEscape;
   }
 }
 
-Move & QuiesGenerator::next()
+Move & TacticalGenerator::next()
 {
-  if ( order_ == oHash )
-  {
-    order_ = oGenCaps;
-    if ( hmove_ )
-      return hmove_;
-  }
-
   if ( order_ == oEscape )
   {
     return eg_.escape();
@@ -164,7 +159,8 @@ Move & QuiesGenerator::next()
 
   if ( order_ == oGenCaps )
   {
-    cg_.generate(hmove_, thresholdType_);
+    Move hmove(0);
+    cg_.generate(hmove, thresholdType_);
     order_ = oCaps;
   }
 
@@ -179,7 +175,7 @@ Move & QuiesGenerator::next()
 
   if ( order_ == oGenChecks )
   {
-    chg_.generate(hmove_);
+    chg_.generate();
     order_ = oChecks;
   }
 
