@@ -47,7 +47,7 @@ bool Player::search()
   reset();
 
   {
-    MovesGenerator mg(board_);
+    FastGenerator mg(board_);
     for ( ;; )
     {
       const Move & move = mg.move();
