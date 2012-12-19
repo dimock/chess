@@ -89,7 +89,7 @@ public:
 
 private:
 
-  void formatPV(SearchResult * sres);
+  void formatPV();
   void enableActions(bool on);
   void drawState();
   void drawInfo();
@@ -104,7 +104,7 @@ private:
   QPoint upleft_;
   int infoHeight_;
   ChessPosition cpos_;
-  SearchResult sres_, sresUpdate_;
+  SearchResult sres_;
   int movesCount_;
   int full_t_, dt_;
   int bs_count_;

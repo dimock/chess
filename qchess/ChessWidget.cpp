@@ -324,7 +324,7 @@ void ChessWidget::onUseOpenBook(bool o)
 
 void ChessWidget::onPvUpdated()
 {
-  formatPV(&sresUpdate_);
+  formatPV();
   update();
 }
 
@@ -497,9 +497,9 @@ void ChessWidget::findMove()
 
   Board pv_board = cpos_.getBoard();
 
-  sres_ = SearchResult();
-  depth_ = cpos_.findMove(&sres_);
-  if ( 0 == depth_ || !sres_.best_ )
+  SearchResult sres;
+  depth_ = cpos_.findMove(&sres);
+  if ( 0 == depth_ || !sres.best_ )
     return;
 
   dt_ = tm.elapsed();
@@ -508,28 +508,29 @@ void ChessWidget::findMove()
 
   if ( depth_ > 0 )
   {
-    moves_base_ = exp(log((double)sres_.nodesCount_)/depth_);
+    moves_base_ = exp(log((double)sres.nodesCount_)/depth_);
     moves_avg_base_ += moves_base_;
   }
   depth_avg_ += depth_;
   movesCount_ = cpos_.movesCount();
   if ( Board::ticks_ )
     Board::tcounter_ /= Board::ticks_;
-
   ticksAll_ = qpt.ticks();
-  formatPV(&sres_);
+
+  sres_ = sres;
+  updatePV(&sres);
 }
 
 void ChessWidget::updatePV(SearchResult * sres)
 {
-  sresUpdate_ = *sres;
+  sres_ = *sres;
   emit pvUpdated();
 }
 
-void ChessWidget::formatPV(SearchResult * sres)
+void ChessWidget::formatPV()
 {
   pv_str_[0] = 0;  
-  Board board = sres->board_;
+  Board board = sres_.board_;
   board.set_undoStack(pvundoStack_);
   for (int i = 0; i < sres_.depth_ && sres_.pv_[i]; ++i)
   {
