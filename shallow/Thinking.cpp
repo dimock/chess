@@ -10,7 +10,7 @@
 static Thinking * g_thinking_ = 0;
 
 // returns time in ms
-int give_more_time()
+int giveTimeCallback()
 {
   if ( !g_thinking_ )
     return 0;
@@ -20,7 +20,7 @@ int give_more_time()
 
 using namespace std;
 
-#define DEPTH_MAXIMUM 32
+static const int DepthMaximum = 32;
 
 Thinking::Thinking() :
 	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
@@ -39,9 +39,15 @@ Thinking::~Thinking()
   g_thinking_ = 0;
 }
 
-void Thinking::setPlayerCallback(PLAYER_CALLBACK cbk)
+void Thinking::setPlayerCallbacks(CallbackStruct cs)
 {
-  player_.setCallback(cbk);
+  cs.giveTime_ = &giveTimeCallback;
+  player_.setCallbacks(cs);
+}
+
+void Thinking::clearPlayerCallbacks()
+{
+  player_.setCallbacks(CallbackStruct());
 }
 
 void Thinking::setPost(bool p)
@@ -79,7 +85,7 @@ void Thinking::setTimePerMove(int ms)
   if ( timePerMoveMS_ < 100 )
     timePerMoveMS_ = 100;
   player_.setTimeLimit(timePerMoveMS_);
-  player_.setMaxDepth(DEPTH_MAXIMUM);
+  player_.setMaxDepth(DepthMaximum);
 }
 
 void Thinking::setXtime(int ms)
@@ -92,7 +98,7 @@ void Thinking::setXtime(int ms)
   if ( xtimeMS_ < 100 )
     xtimeMS_ = 100;
   timePerMoveMS_ = -1;
-  player_.setMaxDepth(DEPTH_MAXIMUM);
+  player_.setMaxDepth(DepthMaximum);
 }
 
 void Thinking::setMovesLeft(int mleft)
@@ -103,7 +109,7 @@ void Thinking::setMovesLeft(int mleft)
   maxDepth_ = -1;
   movesLeft_ = mleft;
   timePerMoveMS_ = -1;
-  player_.setMaxDepth(DEPTH_MAXIMUM);
+  player_.setMaxDepth(DepthMaximum);
 }
 
 
@@ -132,7 +138,6 @@ int Thinking::giveMoreTime()
   return 0;
 }
 
-
 void Thinking::enableBook(int v)
 {
 }
@@ -141,7 +146,8 @@ bool Thinking::undo()
 {
   if ( is_thinking() )
   {
-    player_.postUndo();
+    PostedCommand cmd(PostedCommand::ctUNDO);
+    player_.postCommand(cmd);
     return false;
   }
 
@@ -167,7 +173,8 @@ bool Thinking::init()
 {
   if ( is_thinking() )
   {
-    player_.postNew();
+    PostedCommand cmd(PostedCommand::ctNEW);
+    player_.postCommand(cmd);
     return true;
   }
 
@@ -181,19 +188,16 @@ void Thinking::analyze()
 
   thinking_ = true;
   player_.setTimeLimit(0);
-  player_.setMaxDepth(32);
+  player_.setMaxDepth(DepthMaximum);
 
   SearchResult sres;
-  if ( post_ )
-    sres.out_ = &cout;
 
   player_.setAnalyzeMode(true);
-  player_.setGiveTimeCbk(0);
   player_.findMove(&sres);
   player_.setAnalyzeMode(false);
 
   player_.setTimeLimit(timePerMoveMS_);
-  player_.setMaxDepth(maxDepth_ < 0 ? DEPTH_MAXIMUM : maxDepth_);
+  player_.setMaxDepth(maxDepth_ < 0 ? DepthMaximum : maxDepth_);
   thinking_ = false;
 }
 
@@ -217,11 +221,8 @@ bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
     return true;
 
 	SearchResult sres;
-  if ( post_ )
-    sres.out_ = &cout;
 
   player_.setAnalyzeMode(false);
-  player_.setGiveTimeCbk(give_more_time);
   thinking_ = true;
   givetimeCounter_ = 0;
   if ( player_.findMove(&sres) )
@@ -235,7 +236,6 @@ bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
       sres.best_.clear();
   }
   thinking_ = false;
-  player_.setGiveTimeCbk(0);
 
   state = board.getState();
 
@@ -344,7 +344,9 @@ bool Thinking::fromFEN(xCmd & cmd)
 
   if ( is_thinking() )
   {
-    player_.postFEN(fen);
+    PostedCommand pcmd(PostedCommand::ctFEN);
+    pcmd.fen_ = fen;
+    player_.postCommand(pcmd);
     return true;
   }
 
@@ -367,7 +369,10 @@ void Thinking::editCmd(xCmd & cmd)
   if ( is_thinking() )
   {
     if ( cmd.type() == xCmd::xLeaveEdit ) // command '.'
-      player_.postStatus();
+    {
+      PostedCommand pcmd(PostedCommand::ctUPDATE);
+      player_.postCommand(pcmd);
+    }
 
     return;
   }

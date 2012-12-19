@@ -21,6 +21,7 @@ class ChessPosition
 public:
 
 	ChessPosition();
+  ~ChessPosition();
 
   void pleaseStop();
   void setMaxDepth(int d);
@@ -52,6 +53,7 @@ public:
   bool save() const;
   bool load();
 
+  void setUpdateCallback(SendOutput callback);
 
 private:
 

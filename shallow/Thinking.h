@@ -42,7 +42,8 @@ public:
   void analyze();
   void stop();
 
-  void setPlayerCallback(PLAYER_CALLBACK );
+  void setPlayerCallbacks(CallbackStruct cs);
+  void clearPlayerCallbacks();
   
   int giveMoreTime();
 
@@ -59,6 +60,7 @@ private:
 	void setFigure(xCmd & cmd);
 
 	Figure::Color boardColor_, figureColor_;
+  Board board_;
 	Player player_;
   int movesLeft_;
   int xtimeMS_;

@@ -8,43 +8,100 @@
 #include <algorithm>
 
 //////////////////////////////////////////////////////////////////////////
+inline Figure::Type delta2type(int delta)
+{
+  Figure::Type minimalType = Figure::TypePawn;
+
+#ifdef USE_DELTA_PRUNING
+  if ( delta > Figure::figureWeight_[Figure::TypeQueen] )
+    minimalType = Figure::TypeKing;
+  else if ( delta > Figure::figureWeight_[Figure::TypeRook] )
+    minimalType = Figure::TypeQueen;
+  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
+    minimalType = Figure::TypeRook;
+  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
+    minimalType = Figure::TypeBishop;
+  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
+    minimalType = Figure::TypeKnight;
+#endif
+
+  return minimalType;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 bool Player::findMove(SearchResult * sres)
 {
   if ( !sres )
     return false;
 
-  sres_ = sres;
   bool ok = false;
-  for ( ;; )
+  bool leave = false;
+  for ( ; !leave; )
   {
-    ok = search();
+    ok = search(sres);
+    leave = true;
 
-    if ( !posted_command_ )
-      break;
-
-    if ( posted_command_ == Posted_NEW )
-      fromFEN(0);
-    else if ( posted_command_ == Posted_FEN && posted_fen_[0] )
+    while ( !posted_.empty() )
     {
-      fromFEN(posted_fen_);
-      posted_fen_[0] = 0;
-    }
-    else if ( posted_command_ == Posted_UNDO && board_.halfmovesCount() > 0 )
-      board_.unmakeMove();
+      PostedCommand & cmd = posted_.front();
 
-    posted_command_ = Posted_NONE;
+      switch ( cmd.type_ )
+      {
+      case PostedCommand::ctUPDATE:
+        {
+          if ( callbacks_.sendStatus_ )
+            (callbacks_.sendStatus_)(&sdata_);
+          break;
+        }
+
+      case PostedCommand::ctHINT:
+      case PostedCommand::ctNONE:
+          break;
+
+      case PostedCommand::ctNEW:
+        {
+          fromFEN(0);
+          leave = !sparams_.analyze_mode_;
+          break;
+        }
+
+      case PostedCommand::ctUNDO:
+        {
+          board_.unmakeMove();
+          leave = !sparams_.analyze_mode_;
+          break;
+        }
+
+      case PostedCommand::ctFEN:
+        {
+          fromFEN(cmd.fen_.c_str());
+          leave = !sparams_.analyze_mode_;
+          break;
+        }
+      }
+
+      posted_.pop();
+    }
   }
-  sres_ = 0;
+
   return ok;
 }
 
-bool Player::search()
+bool Player::search(SearchResult * sres)
 {
+  if ( !sres )
+    return false;
+
 #ifdef USE_HASH
   hash_.inc();
 #endif
 
   reset();
+
+  // stash board to correctly print status later
+  sres->board_   = board_;
+  sdata_.board_ = board_;
 
   {
     FastGenerator mg(board_);
@@ -54,84 +111,112 @@ bool Player::search()
       if ( !move )
         break;
       if ( board_.validateMove(move) )
-        moves_[numOfMoves_++] = move;
+        moves_[sdata_.numOfMoves_++] = move;
     }
-    moves_[numOfMoves_].clear();
+    moves_[sdata_.numOfMoves_].clear();
   }
 
 
   const ScoreType alpha = -ScoreMax;
   const ScoreType betta = +ScoreMax;
 
-  for (depth_ = depth0_; !stopped() && depth_ <= depthMax_; ++depth_)
+  for (sdata_.depth_ = depth0_; !stopped() && sdata_.depth_ <= sparams_.depthMax_; ++sdata_.depth_)
   {
-    pv_board_ = board_;
-    pv_board_.set_undoStack(pvundoStack_);
-    contexts_[0].clearPV(depthMax_);
-    best_.clear();
-    nodesCount_ = 0;
-    plyMax_ = 0;
-    counter_ = 0;
+    plystack_[0].clearPV(sparams_.depthMax_);
+
+    sdata_.restart();
 
     ScoreType score = alphaBetta0();
 
-    if ( best_ )
+    if ( sdata_.best_ )
     {
-      if (  stop_ && depth_ > 2 &&
-        (abs(score-sres_->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 ||
-        best_ != sres_->best_ && abs(score-sres_->score_) >= 5) &&
-        givetime_ )
+      if (  stop_ && sdata_.depth_ > 2 &&
+            (abs(score-sres->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 ||
+            sdata_.best_ != sres->best_ && abs(score-sres->score_) >= 5) &&
+            callbacks_.giveTime_ &&
+            !sparams_.analyze_mode_ )
       {
-        int t_add = (givetime_)();
+        int t_add = (callbacks_.giveTime_)();
         if ( t_add > 0 )
         {
           stop_ = false;
-          timeLimitMS_ += t_add;
-          if ( counter_ < numOfMoves_ )
-            depth_--;
+          sparams_.timeLimitMS_ += t_add;
+          if ( sdata_.counter_ < sdata_.numOfMoves_ )
+            sdata_.depth_--;
           continue;
         }
       }
 
       clock_t t  = clock();
-      clock_t dt = (t - tstart_) / 10;
-      tprev_ = t;
+      clock_t dt = (t - sdata_.tstart_) / 10;
+      sdata_.tprev_ = t;
 
-      sres_->score_ = score;
-      sres_->best_  = best_;
-      sres_->depth_ = depth_;
-      sres_->nodesCount_ = nodesCount_;
-      sres_->totalNodes_ = totalNodes_;
-      sres_->plyMax_ = plyMax_;
-      sres_->dt_ = dt;
+      sres->score_ = score;
+      sres->best_  = sdata_.best_;
+      sres->depth_ = sdata_.depth_;
+      sres->nodesCount_ = sdata_.nodesCount_;
+      sres->totalNodes_ = sdata_.totalNodes_;
+      sres->plyMax_ = sdata_.plyMax_;
+      sres->dt_ = dt;
 
-      for (int i = 0; i < depth_; ++i)
+      for (int i = 0; i < sdata_.depth_; ++i)
       {
-        sres_->pv_[i] = contexts_[0].pv_[i];
-        if ( !sres_->pv_[i] )
+        sres->pv_[i] = plystack_[0].pv_[i];
+        if ( !sres->pv_[i] )
           break;
       }
 
-      THROW_IF( sres_->pv_[0] != best_, "invalid PV found" );
+      THROW_IF( sres->pv_[0] != sdata_.best_, "invalid PV found" );
 
-      printPV();
+      if ( callbacks_.sendOutput_ )
+        (callbacks_.sendOutput_ )(sres);
     }
 
-    if ( !best_ || (score >= Figure::MatScore-MaxPly || score <= MaxPly-Figure::MatScore) && !analyze_mode_ )
+    if ( !sdata_.best_ ||
+         ( (score >= Figure::MatScore-MaxPly || score <= MaxPly-Figure::MatScore) &&
+            !sparams_.analyze_mode_ ) )
+    {
       break;
+    }
   }
 
-  sres_->totalNodes_ = totalNodes_;
-
-  return sres_->best_;
+  sres->totalNodes_ = sdata_.totalNodes_;
+  return sres->best_;
 }
+
+//////////////////////////////////////////////////////////////////////////
+int Player::nextDepth(int depth, const Move & move, bool pv) const
+{
+  if ( board_.underCheck() )
+    return depth;
+
+  depth--;
+
+  if ( !move.see_good_ || !pv )
+    return depth;
+
+  if ( move.new_type_ == Figure::TypeQueen )
+    return depth+1;
+
+  if ( board_.halfmovesCount() > 1 )
+  {
+    const UndoInfo & prev = board_.undoInfoRev(-1);
+    const UndoInfo & curr = board_.undoInfoRev(0);
+
+    if ( move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
+      return depth+1;
+  }
+
+  return depth;
+}
+
 //////////////////////////////////////////////////////////////////////////
 ScoreType Player::alphaBetta0()
 {
   if ( stopped() )
     return board_.evaluate();
 
-  if ( numOfMoves_ == 0 )
+  if ( sdata_.numOfMoves_ == 0 )
   {
     board_.setNoMoves();
     ScoreType score = board_.evaluate();
@@ -145,34 +230,34 @@ ScoreType Player::alphaBetta0()
   
   bool check_escape = board_.underCheck();
 
-  for (counter_ = 0; counter_ < numOfMoves_; ++counter_)
+  for (sdata_.counter_ = 0; sdata_.counter_ < sdata_.numOfMoves_; ++sdata_.counter_)
   {
     if ( checkForStop() )
       break;
 
-    Move & move = moves_[counter_];
+    Move & move = moves_[sdata_.counter_];
     ScoreType score = -ScoreMax;
 
     if ( board_.isMoveThreat(move) )
       move.threat_ = 1;
     
     board_.makeMove(move);
-    inc_nc();
+    sdata_.inc_nc();
 
     {
-      int depth1 = nextDepth(depth_, move, true);
+      int depth1 = nextDepth(sdata_.depth_, move, true);
 
-      if ( depth_ == depth0_ || !counter_ ) // 1st iteration
+      if ( sdata_.depth_ == depth0_ || !sdata_.counter_ ) // 1st iteration
         score = -alphaBetta(depth1, 1, -betta, -alpha, true);
       else
       {
-        int depth2 = nextDepth(depth_, move, false);
+        int depth2 = nextDepth(sdata_.depth_, move, false);
 
         int R = 0;
 
 #ifdef USE_LMR
         if ( !check_escape &&
-             depth_ > LMR_MinDepthLimit &&
+             sdata_.depth_ > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
              board_.canBeReduced() )
         {
@@ -200,15 +285,15 @@ ScoreType Player::alphaBetta0()
 
       if ( score > alpha )
       {
-        best_ = move;
+        sdata_.best_ = move;
         alpha = score;
         assemblePV(move, board_.underCheck(), 0);
 
         // bring best move to front, shift other moves 1 position right
-        if ( depth_ > depth0_ )
+        if ( sdata_.depth_ > depth0_ )
         {
-          Move mv = moves_[counter_];
-          for (int j = counter_; j > 0; --j)
+          Move mv = moves_[sdata_.counter_];
+          for (int j = sdata_.counter_; j > 0; --j)
             moves_[j] = moves_[j-1];
           moves_[0] = mv;
         }
@@ -217,12 +302,12 @@ ScoreType Player::alphaBetta0()
   }
 
   // don't need to continue
-  if ( !stopped() && counter_ == 1 && !analyze_mode_ )
+  if ( !stopped() && sdata_.counter_ == 1 && !sparams_.analyze_mode_ )
     pleaseStop();
 
   // sort only on 1st iteration
-  if ( depth_ == depth0_ )
-    std::sort(moves_, moves_ + numOfMoves_);
+  if ( sdata_.depth_ == depth0_ )
+    std::sort(moves_, moves_ + sdata_.numOfMoves_);
 
   return scoreBest;
 }
@@ -254,7 +339,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return captures(depth, ply, alpha, betta, pv);
 
   if ( ply < MaxPly-1 )
-    contexts_[ply].clear(ply);
+    plystack_[ply].clear(ply);
 
   bool nm_threat = false, real_threat = false;
 
@@ -305,7 +390,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   Move best(0);
 
   Move killer(0);
-  board_.extractKiller(contexts_[ply].killer_, hmove, killer);
+  board_.extractKiller(plystack_[ply].killer_, hmove, killer);
 
   FastGenerator fg(board_, hmove, killer);
 
@@ -330,7 +415,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       move.threat_ = 1;
 
     board_.makeMove(move);
-    inc_nc();
+    sdata_.inc_nc();
 
     UndoInfo & curr = board_.undoInfoRev(0);
 
@@ -346,7 +431,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef USE_LMR
         if ( !check_escape &&
-             depth_ > LMR_MinDepthLimit &&
+             sdata_.depth_ > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
              alpha > -Figure::MatScore-MaxPly &&             
              board_.canBeReduced() )
@@ -369,7 +454,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     board_.unmakeMove();
 
-    contexts_[ply].setKiller(move);
+    plystack_[ply].setKiller(move);
 
     if ( !stopped() && score > scoreBest )
     {
@@ -475,7 +560,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     ScoreType score = -ScoreMax;
     
     board_.makeMove(move);
-    inc_nc();
+    sdata_.inc_nc();
 
     {
       int depth1 = nextDepth(depth, move, false);

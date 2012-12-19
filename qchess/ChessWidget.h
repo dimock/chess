@@ -58,6 +58,10 @@ public:
   void mouseMoveEvent(QMouseEvent * e);
   void keyReleaseEvent(QKeyEvent * e);
 
+signals:
+
+  void pvUpdated();
+
 private:
 
   void createMenu();
@@ -77,9 +81,15 @@ private slots:
   void onHumanWithHumanMode(bool);
   void onUseOpenBook(bool);
   void onSettings();
+  void onPvUpdated();
+
+public:
+
+  void updatePV(SearchResult * );
 
 private:
 
+  void formatPV(SearchResult * sres);
   void enableActions(bool on);
   void drawState();
   void drawInfo();
@@ -88,14 +98,13 @@ private:
   bool useOpenBook() const;
   bool okToReset();
   bool findInBook();
-
   bool readOpenBook();
 
   QPoint curPt_;
   QPoint upleft_;
   int infoHeight_;
   ChessPosition cpos_;
-  SearchResult sres_;
+  SearchResult sres_, sresUpdate_;
   int movesCount_;
   int full_t_, dt_;
   int bs_count_;

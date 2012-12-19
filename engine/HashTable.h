@@ -1,67 +1,88 @@
 #pragma once
 
 /*************************************************************
-  HashTable.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
+  HashTable2.h - Copyright (C) 2011 - 2012 by Dmitry Sultanov
  *************************************************************/
 
 #include "BasicTypes.h"
 
-__declspec (align(16)) struct GeneralHItem
+__declspec (align(16)) struct HItem
 {
-  GeneralHItem() : hcode_(0), score_(0), depth_(0), color_(0), flag_(0), ply_(0), threat_(0), halfmovesCount_(0)
+  HItem() : hcode_(0), score_(0), mask_(0), movesCount_(0)
   {}
 
   operator bool () const { return hcode_ != 0; }
+
+  void clear()
+  {
+    move_.clear();
+    mask_ = 0;
+    score_ = 0;
+  }
 
   uint64     hcode_;
   ScoreType  score_;
-  uint32     color_ : 1,
-             depth_ : 6,
-             ply_ : 7,
-             flag_ : 2,
-             threat_ : 1;
 
-  uint8      halfmovesCount_;
+  union {
 
-  PackedMove move_;
+  struct
+  {
+  uint16     depth_  : 6,
+             flag_   : 2,
+             threat_ : 1,
+             mode_   : 2;
+  };
 
-#ifdef USE_THREAT_MOVE
-  PackedMove tmove_;
-#endif
+  uint16     mask_;
+  };
 
-#ifdef USE_HASH_MOVE_EX
-  PackedMove move_ex_[2];
-#endif
-};
+  uint8      movesCount_;
 
-
-__declspec (align(16)) struct CaptureHItem
-{
-  CaptureHItem() : hcode_(0), score_(0), color_(0), flag_(0), depth_(0), ply_(0), eval_(-std::numeric_limits<ScoreType>::max())
-  {}
-
-  operator bool () const { return hcode_ != 0; }
-
-  uint64     hcode_;
-  ScoreType  score_;
-  uint16     color_ : 1,
-             flag_ : 2,
-             ply_ : 7,
-             depth_ : 6;
-
-  ScoreType  eval_;
   PackedMove move_;
 };
 
-__declspec (align(16)) struct EvalHItem
+__declspec (align(16)) 
+struct HBucket
 {
-  EvalHItem() : eval_(-std::numeric_limits<ScoreType>::max()), hcode_(0)
-  {}
+  static const int BucketSize = 4;
 
-  operator bool () const { return hcode_ != 0; }
+  const HItem * find(const uint64 & hcode) const
+  {
+    for (int i = 0; i < BucketSize; ++i)
+    {
+      if ( items_[i].hcode_ == hcode )
+        return items_ + i;
+    }
+    return 0;
+  }
 
-  uint64    hcode_;
-  ScoreType eval_;
+  HItem * get(const uint64 & hcode)
+  {
+    uint8 movesCount = +std::numeric_limits<uint8>::max();
+    HItem * hfar = 0;
+    HItem * hempty = 0;
+    for (int i = 0; i < BucketSize; ++i)
+    {
+      if ( items_[i].hcode_ == hcode )
+        return items_ + i;
+
+      if ( !items_[i].hcode_ && !hempty )
+        hempty = items_ + i;
+      
+      if ( !hfar || (int)items_[i].movesCount_ < movesCount )
+      {
+        movesCount = items_[i].movesCount_;
+        hfar = items_ + i;
+      }
+    }
+
+    if ( hempty )
+      return hempty;
+
+    return hfar;
+  }
+
+  HItem items_[BucketSize];
 };
 
 template <class ITEM>
@@ -69,8 +90,6 @@ class HashTable
 {
 
 public:
-
-  enum Flag { None, AlphaBetta, Alpha, Betta };
 
   HashTable(int size) : buffer_(0)
   {
@@ -94,6 +113,7 @@ public:
     buffer_ = 0;
     szMask_ = 0;
     size_ = size;
+    movesCount_ = 0;
 
     THROW_IF((unsigned)size > 24, "hash table size if too large");
 
@@ -106,9 +126,9 @@ public:
     return (((size_t)1) << size_) - 1;
   }
 
-  ITEM & operator [] (const uint64 & code)
+  void inc()
   {
-    return buffer_[code & szMask_];
+    movesCount_++;
   }
 
   bool load(const char * fname)
@@ -142,110 +162,71 @@ public:
     return n == size();
   }
 
-private:
+protected:
+
+  ITEM & operator [] (const uint64 & code)
+  {
+    return buffer_[code & szMask_];
+  }
+
+  const ITEM & operator [] (const uint64 & code) const
+  {
+    return buffer_[code & szMask_];
+  }
 
   ITEM * buffer_;
   int size_;
   uint32 szMask_;
+  uint8 movesCount_;
 };
 
-class GeneralHashTable : public HashTable<GeneralHItem>
+class GHashTable : public HashTable<HBucket>
 {
 public:
 
-  GeneralHashTable(int size) : HashTable<GeneralHItem>(size)
+  enum Flag { NoFlag, Alpha, AlphaBetta, Betta };
+  enum Mode { NoMode, General, Eval };
+
+  GHashTable(int size) : HashTable<HBucket>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType s, int depth, int ply, int halfmovesCount,
-    Figure::Color color, Flag flag, const PackedMove & move)
+  void push(const uint64 & hcode, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
   {
-    GeneralHItem & hitem = (*this)[hcode];
+    HBucket & hb = (*this)[hcode];
+    HItem * hitem = hb.get(hcode);
+    if( !hitem )
+      return;
 
-	  if ( (depth < (int)hitem.depth_) || (Alpha == flag && hitem.flag_ != None && s >= hitem.score_) ||
-		     (depth == (int)hitem.depth_ && Alpha == flag && (hitem.flag_ == AlphaBetta || hitem.flag_ == Betta)) )
+    if ( (hitem->mode_ == General) &&
+         (hitem->hcode_ == hcode) &&
+          ( (hitem->depth_ > depth) || 
+            (depth == hitem->depth_ && Alpha == flag && hitem->flag_ > Alpha) ||
+            (depth == hitem->depth_ && Alpha == flag && hitem->flag_ == Alpha && score >= hitem->score_) ) )
     {
-      //if ( s < hitem.score_ && hitem.hcode_ == hcode )
-      //  hitem.score_ = s;
-
       return;
     }
 
-    THROW_IF(s > 32760, "wrong value to hash");
+    THROW_IF(score > 32760, "wrong value to hash");
 
-    if ( hitem.hcode_ && hitem.hcode_ != hcode )
-    {
-      hitem.threat_ = 0;
-      hitem.move_ = PackedMove();
+    if ( hitem->hcode_ && hitem->hcode_ != hcode )
+      hitem->clear();
 
-#ifdef USE_THREAT_MOVE
-      hitem.tmove_ = PackedMove();
-#endif
+    hitem->hcode_ = hcode;
+    hitem->score_ = score;
+    hitem->depth_ = depth;
+    hitem->flag_  = flag;
+    hitem->mode_  = General;
+    hitem->threat_ = threat;
+    hitem->movesCount_ = movesCount_;
 
-#ifdef USE_HASH_MOVE_EX
-      hitem.move_ex_[0] = PackedMove();
-      hitem.move_ex_[1] = PackedMove();
-#endif
-    }
-
-    hitem.hcode_ = hcode;
-    hitem.score_ = s;
-    hitem.depth_ = depth;
-    hitem.color_ = color;
-    hitem.flag_  = flag;
-    hitem.ply_   = ply;
-    hitem.halfmovesCount_ = halfmovesCount;
-
-    if ( flag != Alpha && move && move != hitem.move_ )
-    {
-#ifdef USE_HASH_MOVE_EX
-      // save previously found movies
-      if ( hitem.move_ex_[0] == move )
-        hitem.move_ex_[0] = hitem.move_;
-      else
-      {
-        hitem.move_ex_[1] = hitem.move_ex_[0];
-        hitem.move_ex_[0] = hitem.move_;
-      }
-#endif
-      hitem.move_ = move;
-    }
-    //else
-    //  hitem.threat_ = 0;
+    if ( move )
+      hitem->move_ = move;
   }
-};
 
-class CapturesHashTable : public HashTable<CaptureHItem>
-{
-public:
-
-  CapturesHashTable(int size) : HashTable<CaptureHItem>(size)
-  {}
-
-  void push(const uint64 & hcode, ScoreType s, Figure::Color color, Flag flag, int depth, int ply, const PackedMove & move)
+  const HItem * find(const uint64 & hcode) const
   {
-    CaptureHItem & hitem = operator [] (hcode);
-
-    if ( Alpha == flag && (AlphaBetta == hitem.flag_ || Betta == hitem.flag_) )
-    {
-      if ( s < hitem.score_ && hitem.hcode_ == hcode )
-        hitem.score_ = s;
-
-      return;
-    }
-
-    if ( hitem.hcode_ != hcode )
-      hitem.eval_ = -std::numeric_limits<ScoreType>::max();
-
-    hitem.hcode_ = hcode;
-    hitem.score_ = s;
-    hitem.color_ = color;
-    hitem.flag_  = flag;
-    hitem.depth_ = depth;
-    hitem.ply_   = ply;
-
-    if ( Alpha != flag )
-    {
-      hitem.move_ = move;
-    }
+    const HBucket & hb = this->operator [] (hcode);
+    const HItem * hitem = hb.find(hcode);
+    return hitem;
   }
 };

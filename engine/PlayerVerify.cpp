@@ -671,6 +671,15 @@ void Player::verifyGenerators(const Move & hmove)
 
 }
 
+void Player::enumerate()
+{
+  enumerate(sdata_.depth_);
+}
+
+void Player::enumerate(int depth)
+{
+}
+
 //////////////////////////////////////////////////////////////////////////
 /// for DEBUG
 void Player::findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const
@@ -711,7 +720,7 @@ void Player::findSequence(const Move & move, int ply, int depth, int counter, Sc
       ofs << "PLY: " << ply << std::endl;
       std::string s = sstm.str();
       ofs << s;
-      ofs << "depth_ = " << depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
+      ofs << "depth_ = " << sdata_.depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
       ofs << "===================================================================" << std::endl << std::endl;
     }
 }

@@ -19,7 +19,15 @@
 #include <QFile>
 #include "setparamsdlg.h"
 
+static ChessWidget * g_chesswidget;
 
+void updateCallback(SearchResult * sres)
+{
+  if ( g_chesswidget )
+    g_chesswidget->updatePV(sres);
+}
+
+//////////////////////////////////////////////////////////////////////////
 ChessAlgThread::ChessAlgThread(ChessWidget * widget) :
   widget_(widget)
 {
@@ -50,6 +58,8 @@ ChessWidget::ChessWidget(QWidget * parent) :
   onOpenBookAction_(0),
   onSettingsAction_(0)
 {
+  g_chesswidget = this;
+
   QSettings settings(tr("Dimock"), tr("qchess"));
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
   depthMax_ = settings.value(tr("max_depth"), 16).toInt();
@@ -71,11 +81,15 @@ ChessWidget::ChessWidget(QWidget * parent) :
 
   obook_.load( "debut.tbl", cpos_.getBoard() );
 
+  cpos_.setUpdateCallback(&updateCallback);
+
   connect(&thread_, SIGNAL(finished()), this, SLOT(onMoveFound()));
+  connect(this, SIGNAL(pvUpdated()), this, SLOT(onPvUpdated()));
 }
 
 ChessWidget::~ChessWidget()
 {
+  g_chesswidget = 0;
 }
 
 void ChessWidget::createMenu()
@@ -308,6 +322,12 @@ void ChessWidget::onUseOpenBook(bool o)
   settings.setValue(tr("open_book"), o);
 }
 
+void ChessWidget::onPvUpdated()
+{
+  formatPV(&sresUpdate_);
+  update();
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 bool ChessWidget::computerAnswers() const
@@ -496,22 +516,31 @@ void ChessWidget::findMove()
   if ( Board::ticks_ )
     Board::tcounter_ /= Board::ticks_;
 
-  pv_str_[0] = 0;
-
   ticksAll_ = qpt.ticks();
-  
-  pv_board.set_undoStack(pvundoStack_);
+  formatPV(&sres_);
+}
 
+void ChessWidget::updatePV(SearchResult * sres)
+{
+  sresUpdate_ = *sres;
+  emit pvUpdated();
+}
+
+void ChessWidget::formatPV(SearchResult * sres)
+{
+  pv_str_[0] = 0;  
+  Board board = sres->board_;
+  board.set_undoStack(pvundoStack_);
   for (int i = 0; i < sres_.depth_ && sres_.pv_[i]; ++i)
   {
-    if ( !pv_board.possibleMove(sres_.pv_[i]) || !pv_board.validateMove(sres_.pv_[i]) )
+    if ( !board.possibleMove(sres_.pv_[i]) || !board.validateMove(sres_.pv_[i]) )
       break;
 
     char str[32];
-    if ( !printSAN(pv_board, sres_.pv_[i], str) )
+    if ( !printSAN(board, sres_.pv_[i], str) )
       break;
 
-    pv_board.makeMove(sres_.pv_[i]);
+    board.makeMove(sres_.pv_[i]);
 
     strcat_s(pv_str_, str);
     strcat_s(pv_str_, " ");

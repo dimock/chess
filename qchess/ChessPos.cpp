@@ -36,6 +36,17 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
   player_.setMemory(256);
 }
 
+ChessPosition::~ChessPosition()
+{
+}
+
+void ChessPosition::setUpdateCallback(SendOutput callback)
+{
+  CallbackStruct cs;
+  cs.sendOutput_ = callback;
+  player_.setCallbacks(cs);
+}
+
 void ChessPosition::setMaxDepth(int d)
 {
   player_.setMaxDepth(d);

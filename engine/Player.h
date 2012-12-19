@@ -8,8 +8,8 @@
 
 #include "Board.h"
 #include "HashTable.h"
-#include "HashTable2.h"
 #include <time.h>
+#include <queue>
 
 class SearchResult
 {
@@ -18,16 +18,13 @@ public:
   SearchResult();
 
   /// statistic
+  clock_t dt_;
   int nodesCount_;
   int totalNodes_;
-  int forcedNodes_;
-  int additionalNodes_;
-  int nullMovesCount_;
   int plyMax_;
-  clock_t dt_;
-
-  // write result here
-  std::ostream * out_;
+  int numOfMoves_;
+  int counter_;
+  Board board_;
 
   /// result
   Move best_;
@@ -37,18 +34,74 @@ public:
   ScoreType score_;
 };
 
+struct SearchData
+{
+  SearchData();
+
+  void reset();
+  void restart();
+
+  void inc_nc()
+  {
+    totalNodes_++;
+    nodesCount_++;
+  }
+
+  Board board_;
+  int counter_;
+  int numOfMoves_;
+  int depth_;
+  int nodesCount_;
+  int totalNodes_;
+  int plyMax_;
+  clock_t tstart_;
+  clock_t tprev_;
+  Move best_;
+};
+
+
+typedef void (*QueryInputCommand)();
+typedef int  (*GiveMoreTime)();
+typedef void (*SendOutput)(SearchResult *);
+typedef void (*SendStatus)(SearchData *);
+
+struct CallbackStruct
+{
+  CallbackStruct() :
+    queryInput_(0), giveTime_(0), sendOutput_(0), sendStatus_(0)
+  {
+  }
+
+  QueryInputCommand queryInput_;
+  GiveMoreTime      giveTime_;
+  SendOutput        sendOutput_;
+  SendStatus        sendStatus_;
+};
+
+
+struct PostedCommand
+{
+  enum CommandType
+  { ctNONE, ctUNDO, ctUPDATE, ctHINT, ctNEW, ctFEN };
+
+  PostedCommand(CommandType t = ctNONE) : type_(t)
+  {
+  }
+
+  std::string fen_;
+  CommandType type_;
+};
+
+
+
 class CapsGenerator;
 class MovesGenerator;
 class EscapeGenerator;
 class ChecksGenerator;
 
-// implementation isn't perfect )) have to rewrite
-typedef void (*PLAYER_CALLBACK)();
-typedef int  (*GIVE_MORE_TIME)();
-
-struct PlyContext
+struct PlyStack
 {
-  PlyContext() {}
+  PlyStack() {}
 
   Move killer_;
   Move pv_[MaxPly+1];
@@ -76,25 +129,16 @@ struct PlyContext
   }
 };
 
-inline Figure::Type delta2type(int delta)
+struct SearchParams
 {
-  Figure::Type minimalType = Figure::TypePawn;
+  SearchParams();
 
-#ifdef USE_DELTA_PRUNING
-  if ( delta > Figure::figureWeight_[Figure::TypeQueen] )
-    minimalType = Figure::TypeKing;
-  else if ( delta > Figure::figureWeight_[Figure::TypeRook] )
-    minimalType = Figure::TypeQueen;
-  else if ( delta > Figure::figureWeight_[Figure::TypeBishop] )
-    minimalType = Figure::TypeRook;
-  else if ( delta > Figure::figureWeight_[Figure::TypeKnight] )
-    minimalType = Figure::TypeBishop;
-  else if ( delta > Figure::figureWeight_[Figure::TypePawn] )
-    minimalType = Figure::TypeKnight;
-#endif
+  void reset();
 
-  return minimalType;
-}
+  int timeLimitMS_;
+  int depthMax_;
+  bool analyze_mode_;
+};
 
 class Player
 {
@@ -104,16 +148,6 @@ class Player
   friend class ChecksGenerator;
 
 
-  // analyze move support
-  enum PostedCommand { Posted_NONE, Posted_UNDO, Posted_UPDATE, Posted_HINT, Posted_NEW, Posted_FEN };
-  PostedCommand posted_command_;
-  char posted_fen_[256];
-  PLAYER_CALLBACK callback_;
-  GIVE_MORE_TIME givetime_;
-  int counter_, numOfMoves_;
-  Board pv_board_;
-  bool analyze_mode_;
-
 public:
 
   // initialize global arrays, tables, masks, etc. write them to it's board_
@@ -121,22 +155,14 @@ public:
   ~Player();
 
   void setMemory(int mb);
-  void setCallback(PLAYER_CALLBACK);
-  void setGiveTimeCbk(GIVE_MORE_TIME);
-  void setAnalyzeMode(bool);
+  void setCallbacks(CallbackStruct cs);
 
-  void postUndo();
-  void postNew();
-  void postFEN(const char *);
-  void postStatus();
-  void postHint();
+  void postCommand(const PostedCommand & cmd);
 
   bool fromFEN(const char * fen);
   bool toFEN(char * fen) const;
 
-  void saveHash(const char * fname) const;
-  void loadHash(const char * fname);
-
+  // call it to start search
   bool findMove(SearchResult * );
   
   Board & getBoard()
@@ -149,105 +175,60 @@ public:
     return board_;
   }
 
-  void pleaseStop()
-  {
-    stop_ = true;
-  }
+  void pleaseStop();
   
-  void setTimeLimit(int ms)
-  {
-    timeLimitMS_ = ms;
-  }
-
-  void setMaxDepth(int d)
-  {
-    if ( d >= 1 && d <= 32 )
-      depthMax_ = d;
-  }
+  void setAnalyzeMode(bool);
+  void setTimeLimit(int ms);
+  void setMaxDepth(int d);
 
 private:
 
-  bool checkForStop()
-  {
-    if ( totalNodes_ && !(totalNodes_ & TIMING_FLAG) )
-    {
-      if ( timeLimitMS_ > 0 )
-        testTimer();
-      else
-        testInput();
-    }
-    return stop_;
-  }
-
+  bool checkForStop();
   void reset();
 
-  bool stopped() const
-  {
-    return stop_;
-  }
 
+  // time control
+  void testTimer();
+  bool stopped() const { return stop_; }
   void testInput();
-  void processPosted(int t);
-  void printPV();
 
   // start point of search algorithm
-  bool search();
+  bool search(SearchResult * sres);
 
-  // new search routine
-  Move moves_[Board::MovesMax];
-  static const int depth0_ = 1;
-
-  void inc_nc()
-  {
-    totalNodes_++;
-    nodesCount_++;
-  }
-
-  int nextDepth(int depth, const Move & move, bool pv) const
-  {
-    if ( board_.underCheck() )
-      return depth;
-
-    depth--;
-
-    if ( !move.see_good_ || !pv )
-      return depth;
-
-    if ( move.new_type_ == Figure::TypeQueen )
-      return depth+1;
-
-    if ( board_.halfmovesCount() > 1 )
-    {
-      const UndoInfo & prev = board_.undoInfoRev(-1);
-      const UndoInfo & curr = board_.undoInfoRev(0);
-
-      if ( move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
-        return depth+1;
-    }
-
-    return depth;
-  }
+  // testing of move generator
+  void enumerate();
+  void enumerate(int depth);
 
   // search routine
   ScoreType alphaBetta0();
   ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
   ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
+  int nextDepth(int depth, const Move & move, bool pv) const;
+  void assemblePV(const Move & move, bool checking, int ply);
 
-  // time control
-  void testTimer();
 
+  // is given movement caused by previous. this mean that if we don't do this move we loose
+  // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
+  bool isRealThreat(const Move & move);
+
+#ifdef USE_HASH
+  // we should return alpha if flag is Alpha, or Betta if flag is Betta
+  GHashTable::Flag getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv);
+  void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat);
+#endif // USE_HASH
+
+  // analyze move support
+  std::queue<PostedCommand> posted_;
+  CallbackStruct callbacks_;
+
+  // search data
   volatile bool stop_;
   Board board_;
-  int timeLimitMS_;
-  int depthMax_;
-  int depth_;
-  int nodesCount_, totalNodes_, plyMax_;
-  clock_t tstart_, tprev_;
-  Move best_;
-  SearchResult * sres_;
-
-  PlyContext contexts_[MaxPly+1];
-  UndoInfo * pvundoStack_;
+  SearchData sdata_;
+  SearchParams sparams_;
+  PlyStack plystack_[MaxPly+1];
+  Move moves_[Board::MovesMax];
+  static const int depth0_ = 1;
 
   // global data
   UndoInfo * g_undoStack;
@@ -262,35 +243,9 @@ private:
   GHashTable hash_;
 #endif
 
-  void assemblePV(const Move & move, bool checking, int ply)
-  {
-    if ( ply > depth_ || ply >= MaxPly )
-      return;
 
-    contexts_[ply].pv_[ply] = move;
-    contexts_[ply].pv_[ply].checkFlag_ = checking;
-    contexts_[ply].pv_[ply+1].clear();
+/// for DEBUG, verification
 
-    for (int i = ply+1; i < depth_; ++i)
-    {
-      contexts_[ply].pv_[i] = contexts_[ply+1].pv_[i];
-      if ( !contexts_[ply].pv_[i] )
-        break;
-    }
-  }
-
-  // is given movement caused by previous. this mean that if we don't do this move we loose
-  // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
-  bool isRealThreat(const Move & move);
-
-#ifdef USE_HASH
-  // we should return alpha if flag is Alpha, or Betta if flag is Betta
-  GHashTable::Flag getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv);
-  void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat);
-#endif // USE_HASH
-
-
-/// verification
 #ifdef VERIFY_ESCAPE_GENERATOR
   void verifyEscapeGen(const Move & hmove);
 #endif
@@ -311,8 +266,10 @@ private:
   void verifyTacticalGenerator();
 #endif
 
+  void findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const;
   void verifyGenerators(const Move & hmove);
 
-  // for DEBUG
-  void findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const;
+public:
+  void saveHash(const char * fname) const;
+  void loadHash(const char * fname);
 };

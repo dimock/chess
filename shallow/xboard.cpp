@@ -13,7 +13,7 @@ using namespace std;
 
 static xBoardMgr * g_xboard_mgr_ = 0;
 
-void player_callback()
+void queryInput()
 {
   if ( !g_xboard_mgr_ )
     return;
@@ -22,6 +22,22 @@ void player_callback()
     return;
 
   g_xboard_mgr_->do_cmd();
+}
+
+void sendOutput(SearchResult * sres)
+{
+  if ( !g_xboard_mgr_ )
+    return;
+
+  g_xboard_mgr_->printPV(sres);
+}
+
+void sendStatus(SearchData * sdata)
+{
+  if ( !g_xboard_mgr_ )
+    return;
+
+  g_xboard_mgr_->printStat(sdata);
 }
 
 xBoardMgr::xBoardMgr() :
@@ -51,12 +67,17 @@ xBoardMgr::xBoardMgr() :
     }
   }
 
-  thk_.setPlayerCallback(player_callback);
+  CallbackStruct cs;
+  cs.sendOutput_ = &sendOutput;
+  cs.sendStatus_ = &sendStatus;
+  cs.queryInput_ = &queryInput;
+  thk_.setPlayerCallbacks(cs);
 }
 
 xBoardMgr::~xBoardMgr()
 {
-  thk_.setPlayerCallback(0);
+  g_xboard_mgr_ = 0;
+  thk_.clearPlayerCallbacks();
 }
   
 bool xBoardMgr::peekInput()
@@ -140,6 +161,70 @@ void xBoardMgr::write_error(const std::exception * e /*= 0*/)
   strftime(pgn_fname, MAX_PATH, "fen_%d-%m-%Y_%H-%M-%S.pgn", t);
   thk_.pgn2file(pgn_fname);
 #endif
+}
+
+void xBoardMgr::printPV(SearchResult * sres)
+{
+  if ( !sres || !sres->best_ )
+    return;
+
+  Board board = sres->board_;
+  UndoInfo undoStack[Board::GameLength];
+  board.set_undoStack(undoStack);
+
+  cout << sres->depth_ << " " << sres->score_ << " " << (int)sres->dt_ << " " << sres->totalNodes_;
+  for (int i = 0; i < sres->depth_ && sres->pv_[i]; ++i)
+  {
+    cout << " ";
+
+    Move pv = sres->pv_[i];
+    uint8 captured = pv.capture_;
+    pv.clearFlags();
+    pv.capture_ = captured;
+
+    if ( !board.possibleMove(pv) )
+      break;
+
+    char str[64];
+    if ( !printSAN(board, pv, str) )
+      break;
+
+    THROW_IF( !board.validateMove(pv), "move is invalid but it is not detected by printSAN()");
+
+    board.makeMove(pv);
+
+    cout << str;
+  }
+  cout << std::endl;
+}
+
+void xBoardMgr::printStat(SearchData * sdata)
+{
+  if ( sdata && sdata->depth_ <= 0 )
+    return;
+
+  Board board = sdata->board_;
+  UndoInfo undoStack[Board::GameLength];
+  board.set_undoStack(undoStack);
+
+  char outstr[1024];
+  clock_t t = clock() - sdata->tstart_;
+  int movesLeft = sdata->numOfMoves_ - sdata->counter_;
+  sprintf(outstr, "stat01: %d %d %d %d %d", t/10, sdata->totalNodes_, sdata->depth_-1, movesLeft, sdata->numOfMoves_);
+
+  Move mv = sdata->best_;
+  uint8 captured = mv.capture_;
+  mv.clearFlags();
+  mv.capture_ = captured;
+
+  char str[64];
+  if ( mv && board.validateMove(mv) && printSAN(board, mv, str) )
+  {
+    strcat(outstr, " ");
+    strcat(outstr, str);
+  }
+
+  cout << outstr << std::endl;
 }
 
 bool xBoardMgr::do_cmd()

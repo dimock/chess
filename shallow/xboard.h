@@ -18,6 +18,8 @@ public:
   void write_error(const std::exception * e = 0);
 
   bool peekInput();
+  void printPV(SearchResult * sres);
+  void printStat(SearchData * sres);
 
 #ifdef WRITE_LOG_FILE_
   std::ostream & get_log()

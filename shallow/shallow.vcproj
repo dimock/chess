@@ -180,7 +180,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="::if exist ..\pyrename.py ..\pyrename.py $(TargetPath)&#x0D;&#x0A;if exist $(ARENA_PATH) xcopy /Y /R $(TargetDir)*.exe $(ARENA_PATH)\Engines\shallow\*&#x0D;&#x0A;"
+				CommandLine="::if exist ..\pyrename.py ..\pyrename.py $(TargetPath)&#x0D;&#x0A;::if exist $(ARENA_PATH) xcopy /Y /R $(TargetDir)*.exe $(ARENA_PATH)\Engines\shallow\*&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
