@@ -106,7 +106,6 @@ private:
   ChessPosition cpos_;
   SearchResult sres_;
   int movesCount_;
-  int full_t_, dt_;
   int bs_count_;
   int depth_;
   char pv_str_[256];
@@ -119,9 +118,7 @@ private:
   bool autoPlay_;
   int  timelimit_;
   bool useTimer_;
-  //bool computerAnswers_;
   int  depthMax_;
-  int64 ticksAll_;
 
   QAction * onNewAction_;
   QAction * onLoadAction_;

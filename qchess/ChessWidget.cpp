@@ -43,10 +43,10 @@ void ChessAlgThread::run()
 
 //////////////////////////////////////////////////////////////////////////
 ChessWidget::ChessWidget(QWidget * parent) :
-  QMainWindow(parent), upleft_(20, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
-  moves_base_(0), dt_(0),
-  thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), /*computerAnswers_(true),*/ timelimit_(1000),
-  depthMax_(2), ticksAll_(0), infoHeight_(60),
+  QMainWindow(parent), upleft_(20, 50), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
+  moves_base_(0),
+  thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), timelimit_(1000),
+  depthMax_(2), infoHeight_(60),
   onNewAction_(0),
   onLoadAction_(0),
   onSaveAction_(0),
@@ -196,8 +196,6 @@ void ChessWidget::onNew()
 
   cpos_.setTimeLimit(timelimit_);
 
-  dt_ = 0;
-  full_t_ = 0;
   depth_ = 0;
   bs_count_ = 0;
   moves_avg_base_ = 0;
@@ -250,8 +248,6 @@ void ChessWidget::onGetFEN()
   QString qfen = QApplication::clipboard()->text();
   if ( cpos_.fromFEN(qfen.toAscii().data()) )
   {
-    dt_ = 0;
-    full_t_ = 0;
     depth_ = 0;
     bs_count_ = 0;
     moves_avg_base_ = 0;
@@ -418,14 +414,14 @@ void ChessWidget::drawInfo()
   QPainter painter(this);
   QString infoText;
 
-  int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
+  int nps = sres_.dt_ > 0 ? sres_.totalNodes_*100.0/sres_.dt_ : 0;
   //int ticksN = Board::ticks_;
   //int hscore = Board::tcounter_;
   //infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, LMR-errors = %d, hist. score(avg) = %d\n{ %s }",
   //  cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
 
   if ( computerAnswers() )
-    infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f, %d nps", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_ / 100.f, nps);
+    infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f, %d nodes, %d nps", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_/100.f, sres_.totalNodes_, nps);
   else
     infoText.sprintf("[%d]", cpos_.movesCount());
 
@@ -487,11 +483,6 @@ void ChessWidget::findMove()
   if ( useOpenBook() && findInBook() )
     return;
 
-  QTime tm;
-  tm.start();
-
-  QpfTimer qpt;
-
   Board::ticks_ = 0;
   Board::tcounter_ = 0;
 
@@ -502,8 +493,6 @@ void ChessWidget::findMove()
   if ( 0 == depth_ || !sres.best_ )
     return;
 
-  dt_ = tm.elapsed();
-  full_t_ += dt_;
   bs_count_++;
 
   if ( depth_ > 0 )
@@ -515,7 +504,6 @@ void ChessWidget::findMove()
   movesCount_ = cpos_.movesCount();
   if ( Board::ticks_ )
     Board::tcounter_ /= Board::ticks_;
-  ticksAll_ = qpt.ticks();
 
   sres_ = sres;
   updatePV(&sres);

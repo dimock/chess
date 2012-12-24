@@ -181,6 +181,10 @@ bool Player::search(SearchResult * sres)
   }
 
   sres->totalNodes_ = sdata_.totalNodes_;
+
+  clock_t t  = clock();
+  sres->dt_ = (t - sdata_.tstart_) / 10;
+
   return sres->best_;
 }
 
