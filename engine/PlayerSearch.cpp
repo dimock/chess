@@ -363,14 +363,14 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     board_.unmakeNullMove();
 
-    // verify null-move
+    // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
       depth -= board_.nullMoveReduce();
       if ( depth <= 0 )
         return captures(depth, ply, alpha, betta, pv);
     }
-    else // may be we are in danger? verify it later
+    else // may be we are in danger?
       nm_threat = true;
   }
 #endif
@@ -415,11 +415,15 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
     ScoreType score = -ScoreMax;
 
+    // detect some threat, like pawn's attack etc...
+    // don't LMR such moves
     if ( board_.isMoveThreat(move) )
       move.threat_ = 1;
 
     board_.makeMove(move);
     sdata_.inc_nc();
+
+    //findSequence(move, ply, depth, counter, alpha, betta);
 
     UndoInfo & curr = board_.undoInfoRev(0);
 
@@ -473,17 +477,6 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     }
 
     counter++;
-
-#ifdef USE_LMR
-    // have to recalculate with full depth
-    if ( !stopped() && alpha >= betta && nm_threat && isRealThreat(move) )
-    {
-      if ( prev.reduced_ )
-        return betta-1;
-      else
-        real_threat = true;
-    }
-#endif
   }
 
   if ( stopped() )
@@ -502,6 +495,17 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   {
     History & hist = MovesGenerator::history(best.from_, best.to_);
     hist.inc_score(depth);
+
+#if ((defined USE_LMR) && (defined VERIFY_LMR))
+    // have to recalculate with full depth, or indicate threat in hash
+    if ( !stopped() && alpha >= betta && nm_threat && isRealThreat(best) )
+    {
+      if ( prev.reduced_ )
+        return betta-1;
+      else
+        real_threat = true;
+    }
+#endif
   }
 
 #ifdef USE_HASH
@@ -640,7 +644,8 @@ GHashTable::Flag Player::getHash(int depth, int ply, ScoreType alpha, ScoreType 
           assemblePV(hmove, false, ply);
 
         /// danger move was reduced - recalculate it with full depth
-        if ( hitem->threat_ && board_.undoInfoRev(0).reduced_ )
+        const UndoInfo & prev = board_.undoInfoRev(0);
+        if ( hitem->threat_ && prev.reduced_ )
         {
           hscore = betta-1;
           return GHashTable::Alpha;

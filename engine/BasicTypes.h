@@ -59,6 +59,7 @@ namespace nst
 #define USE_HASH
 #define USE_NULL_MOVE
 #define USE_LMR
+#define VERIFY_LMR
 
 //#define VERIFY_ESCAPE_GENERATOR
 //#define VERIFY_CHECKS_GENERATOR

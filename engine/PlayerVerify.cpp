@@ -687,13 +687,12 @@ void Player::findSequence(const Move & move, int ply, int depth, int counter, Sc
   struct MOVE { int from_, to_; };
   bool identical = false;
   static MOVE sequence[] = {
-    {61, 47},
-    {39, 47},
-    {10, 12},
-    {14, 30},
-    {52, 53},
-    {13, 21},
-    {62, 46} };
+    //{29, 37},
+    {44, 53},
+    {14, 5},
+    {40, 57},
+    {32, 50},
+    {60, 52} };
 
     if ( ply < sizeof(sequence)/sizeof(MOVE) && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
     {
@@ -714,6 +713,10 @@ void Player::findSequence(const Move & move, int ply, int depth, int counter, Sc
 
     if ( identical )
     {
+      if ( sdata_.depth_ == 6 && ply == 1 )
+      {
+        int ttt = 0;
+      }
       std::stringstream sstm;
       Board::save(board_, sstm, false);
       std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
