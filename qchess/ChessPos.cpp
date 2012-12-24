@@ -31,8 +31,20 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
   diff_hei_ = squareDiffSize_ + diff_margin_*2;
   boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
   halfmovesNumber_ = 0;
+  selectedPos_ = -1;
   vmove_.clear();
   player_.setMemory(256);
+}
+
+ChessPosition::~ChessPosition()
+{
+}
+
+void ChessPosition::setUpdateCallback(SendOutput callback)
+{
+  CallbackStruct cs;
+  cs.sendOutput_ = callback;
+  player_.setCallbacks(cs);
 }
 
 void ChessPosition::setMaxDepth(int d)
@@ -68,23 +80,10 @@ bool ChessPosition::fromFEN(const char * fen)
   vboard_ = player_.getBoard();
 #endif
 
-  int counter = 0;
-  ScoreType a = -10000;
-  Move hmove;
-  hmove.clear();
-  CapsGenerator cg(hmove, vboard_, Figure::TypeKing, 1, player_, a, +10000, counter);
-  ChecksGenerator2 ckg(hmove, vboard_, 1, player_, Figure::TypeKing);
-
-  //int imb = vboard_.fmgr().weight();
-  //if ( !vboard_.getColor() )
-  //  imb = -imb;
-  //Move m;
-  //m.set(19, 36, 3, 0, 0);
-
-  //int score = vboard_.see_before(imb, m);
-  //int score2 = vboard_.see_before2(imb, m);
-
-  //ScoreType s = vboard_.evaluate();
+  //Move hmove;
+  //hmove.clear();
+  //CapsGenerator cg(hmove, vboard_, Figure::TypeKing);
+  //ChecksGenerator ckg(hmove, vboard_, Figure::TypeKing);
 
   return true;
 }
@@ -183,20 +182,15 @@ void ChessPosition::drawBoard(QPainter * painter, QSize & ) const
 
 const QImage * ChessPosition::figImage(Figure::Type t, Figure::Color c) const
 {
-  Figure fig(t, c, 0, 0);
-  return figImage(fig);
-}
-
-const QImage * ChessPosition::figImage(const Figure & fig) const
-{
-  unsigned idx = fig.getColor()*6 + (fig.getType() - 1);
+  unsigned idx = c*6 + (t - 1);
   if ( idx > 11 )
     return 0;
 
   if ( !fimages_[idx].get() )
   {
     QString imgName;
-    imgName.sprintf(":/images/%s_%c.png", fig.name(), fig.getColor() ? 'w' : 'b');
+    static char ccolors[2] = {'b', 'w'};
+    imgName.sprintf(":/images/%s_%c.png", Figure::name(t), ccolors[c]);
     fimages_[idx].reset( new QImage(imgName) );
   }
 
@@ -261,32 +255,30 @@ void ChessPosition::drawFigures(QPainter * painter, QSize & ) const
 {
   QSize boardSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
 
-  for (int color = 0; color < 2; ++color)
+  for (int i = 0; i < Board::NumOfFields; ++i)
   {
-    for (int index = 0; index < Board::NumOfFigures; ++index)
-    {
-      Figure fig = vboard_.getFigure((Figure::Color)color, index);
-      if ( !fig || fig == selectedFigure_ )
-        continue;
+    const Field & field = vboard_.getField(i);
+    if ( !field || i == selectedPos_ )
+      continue;
 
-      const QImage * img = figImage(fig);
-  	  if ( !img )
-  		  continue;
+    const QImage * img = figImage(field.type(), field.color());
+    if ( !img )
+      continue;
 
-      QPoint p = coordByField(fig.where());
-      QRect r(p.x(), p.y(), squareSize_, squareSize_);
+    QPoint p = coordByField(i);
+    QRect r(p.x(), p.y(), squareSize_, squareSize_);
 
-      painter->drawImage(r, *img, img->rect());
-    }
+    painter->drawImage(r, *img, img->rect());
   }
 }
 
 void ChessPosition::drawCurrentMoving(QPainter * painter, QSize & , const QPoint & cursorPt) const
 {
-  if ( selectedFigure_.getType() == Figure::TypeNone )
+  if ( selectedPos_ < 0 )
     return;
 
-  const QImage * img = figImage(selectedFigure_);
+  const Field & field = vboard_.getField(selectedPos_);
+  const QImage * img = figImage(field.type(), field.color());
   if ( !img )
     return;
 
@@ -333,17 +325,16 @@ int ChessPosition::getPositionOnPt(const QPoint & pt) const
   return Index(x, y);
 }
 
-bool ChessPosition::getFigureOnPt(const QPoint & pt, Figure & fig) const
+bool ChessPosition::getFieldByPt(const QPoint & pt, Field & field) const
 {
   int pos = getPositionOnPt(pt);
   if ( pos < 0 )
     return false;
 
-  const Field & field = vboard_.getField(pos);
+  field = vboard_.getField(pos);
   if ( !field )
     return false;
 
-  fig = vboard_.getFigure(field.color(), field.index());
   return true;
 }
 
@@ -356,10 +347,15 @@ bool ChessPosition::selectFigure(const QPoint & pt)
   selectedPositions_.clear();
 
   Board & board = player_.getBoard();
+  selectedPos_ = getPositionOnPt(pt);
+  if ( selectedPos_ < 0 )
+    return false;
 
-  if ( !getFigureOnPt(pt, selectedFigure_) || selectedFigure_.getColor() != board.getColor() )
+  const Field & sfield = board.getField(selectedPos_);
+
+  if ( sfield.color() != board.getColor() )
   {
-    selectedFigure_.clear();
+    selectedPos_ = -1;
     return false;
   }
 
@@ -367,7 +363,7 @@ bool ChessPosition::selectFigure(const QPoint & pt)
 
   if ( !mg )
   {
-    selectedFigure_.setType(Figure::TypeNone);
+    selectedPos_ = -1;
     return false;
   }
 
@@ -377,29 +373,19 @@ bool ChessPosition::selectFigure(const QPoint & pt)
     if ( !move )
       break;
 
-#ifndef NDEBUG
-    Board board0 = board;
-#endif
-
-    int index = board.getField(move.from_).index();
-    if ( board.makeMove(move) )
+    if ( board.validateMove(move) && selectedPos_ == move.from_ )
     {
-      if ( index == selectedFigure_.getIndex() )
-      {
-        selectedPositions_.insert(move.to_);
-        selectedMoves_.push_back(move);
-      }
+      selectedPositions_.insert(move.to_);
+      selectedMoves_.push_back(move);
     }
-    board.unmakeMove();
-
-    THROW_IF(board0 != board, "board is not restored by undo move method");
   }
 
-  if ( selectedPositions_.size() == 0 )
+  if ( selectedPositions_.empty() )
   {
-    selectedFigure_.setType(Figure::TypeNone);
+    selectedPos_ = -1;
     return false;
   }
+
   return true;
 }
 
@@ -469,7 +455,7 @@ bool ChessPosition::makeMovement(const QPoint & pt)
 void ChessPosition::clearSelected()
 {
   selectedMoves_.clear();
-  selectedFigure_.clear();
+  selectedPos_ = -1;
   selectedPositions_.clear();
 }
 
@@ -480,7 +466,7 @@ const Board & ChessPosition::getBoard() const
   return vboard_;
 }
 
-bool ChessPosition::findMove(SearchResult & sres)
+bool ChessPosition::findMove(SearchResult * sres)
 {
   if ( working_ )
     return false;
@@ -489,7 +475,7 @@ bool ChessPosition::findMove(SearchResult & sres)
 
   bool b = player_.findMove(sres);
   if ( b )
-    b = applyMove(sres.best_);
+    b = applyMove(sres->best_);
 
   working_ = false;
 
@@ -499,30 +485,23 @@ bool ChessPosition::findMove(SearchResult & sres)
 bool ChessPosition::applyMove(const Move & move)
 {
   Board & board = player_.getBoard();
+  vmove_.clear();
 
-  if ( !board.validMove(move) )
+  if ( !board.possibleMove(move) || !board.validateMove(move) )
     return false;
 
-  if ( board.makeMove(move) )
-  {
-    halfmovesNumber_ = board.halfmovesCount();
-    board.verifyState();
-    vboard_ = board;
-    vmove_  = move;
-    return true;
-  }
-  else
-  {
-    board.unmakeMove();
-    vmove_.clear();
-    return false;
-  }
+  board.makeMove(move);
+  halfmovesNumber_ = board.halfmovesCount();
+  board.verifyState();
+  vboard_ = board;
+  vmove_  = move;
+  return true;
 }
 
 void ChessPosition::setLastMove(const Board & board)
 {
   if ( board.halfmovesCount() > 0 )
-    vmove_  = board.getMove(board.halfmovesCount()-1);
+    vmove_  = board.undoInfo(board.halfmovesCount()-1);
   else
     vmove_.clear();
 }
@@ -571,14 +550,12 @@ void ChessPosition::redo()
   if ( i >= halfmovesNumber_ )
     return;
 
-  const MoveCmd & move = ((const Board &)board).getMove(i);
-
-  if ( !board.makeMove(move) )
-  {
-    board.unmakeMove();
-    vmove_.clear();
+  vmove_.clear();
+  Move move = board.undoInfo(i);
+  if ( !board.validateMove(move) )
     return;
-  }
+
+  board.makeMove(move);
 
   // it could be draw or mat if there is last move
   if ( halfmovesNumber_ == board.halfmovesCount() )

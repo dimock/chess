@@ -16,9 +16,18 @@
 #include <QSettings>
 #include <QClipboard>
 #include <QTextStream>
+#include <QFile>
 #include "setparamsdlg.h"
 
+static ChessWidget * g_chesswidget;
 
+void updateCallback(SearchResult * sres)
+{
+  if ( g_chesswidget )
+    g_chesswidget->updatePV(sres);
+}
+
+//////////////////////////////////////////////////////////////////////////
 ChessAlgThread::ChessAlgThread(ChessWidget * widget) :
   widget_(widget)
 {
@@ -34,10 +43,10 @@ void ChessAlgThread::run()
 
 //////////////////////////////////////////////////////////////////////////
 ChessWidget::ChessWidget(QWidget * parent) :
-  QMainWindow(parent), upleft_(20, 50), full_t_(0), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
-  moves_base_(0), dt_(0),
-  thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), /*computerAnswers_(true),*/ timelimit_(1000),
-  depthMax_(2), ticksAll_(0), infoHeight_(60),
+  QMainWindow(parent), upleft_(20, 50), depth_(0), bs_count_(0), moves_avg_base_(0), depth_avg_(0), movesCount_(0),
+  moves_base_(0),
+  thread_(this), goingToClose_(false), changed_(false), autoPlay_(false), useTimer_(true), timelimit_(1000),
+  depthMax_(2), infoHeight_(60),
   onNewAction_(0),
   onLoadAction_(0),
   onSaveAction_(0),
@@ -49,6 +58,8 @@ ChessWidget::ChessWidget(QWidget * parent) :
   onOpenBookAction_(0),
   onSettingsAction_(0)
 {
+  g_chesswidget = this;
+
   QSettings settings(tr("Dimock"), tr("qchess"));
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
   depthMax_ = settings.value(tr("max_depth"), 16).toInt();
@@ -56,6 +67,8 @@ ChessWidget::ChessWidget(QWidget * parent) :
   //setFixedSize(450, 600);
   pv_str_[0] = 0;
   setAttribute(Qt::WA_DeleteOnClose);
+
+  setWindowIcon(QIcon(":/images/chess.png"));
 
   upleft_.setY(cpos_.getDiffHeight() + 50);
   cpos_.setUpLeft(upleft_);
@@ -68,11 +81,15 @@ ChessWidget::ChessWidget(QWidget * parent) :
 
   obook_.load( "debut.tbl", cpos_.getBoard() );
 
+  cpos_.setUpdateCallback(&updateCallback);
+
   connect(&thread_, SIGNAL(finished()), this, SLOT(onMoveFound()));
+  connect(this, SIGNAL(pvUpdated()), this, SLOT(onPvUpdated()));
 }
 
 ChessWidget::~ChessWidget()
 {
+  g_chesswidget = 0;
 }
 
 void ChessWidget::createMenu()
@@ -179,8 +196,6 @@ void ChessWidget::onNew()
 
   cpos_.setTimeLimit(timelimit_);
 
-  dt_ = 0;
-  full_t_ = 0;
   depth_ = 0;
   bs_count_ = 0;
   moves_avg_base_ = 0;
@@ -233,8 +248,6 @@ void ChessWidget::onGetFEN()
   QString qfen = QApplication::clipboard()->text();
   if ( cpos_.fromFEN(qfen.toAscii().data()) )
   {
-    dt_ = 0;
-    full_t_ = 0;
     depth_ = 0;
     bs_count_ = 0;
     moves_avg_base_ = 0;
@@ -305,6 +318,12 @@ void ChessWidget::onUseOpenBook(bool o)
   settings.setValue(tr("open_book"), o);
 }
 
+void ChessWidget::onPvUpdated()
+{
+  formatPV();
+  update();
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 bool ChessWidget::computerAnswers() const
@@ -363,16 +382,22 @@ void ChessWidget::drawState()
 {
   const Board & board = cpos_.getBoard();
   Figure::Color color = board.getColor();
-  Board::State state = board.getState();
+  uint8 state = board.getState();
 
   QString stateText = color == Figure::ColorBlack ? tr("Black") : tr("White");
   stateText += tr(" have ");
-  if ( state == Board::UnderCheck )
-    stateText += tr("Check");
-  else if ( state == Board::ChessMat )
+  if ( board.matState() )
     stateText += tr("Mat");
-  else if ( Board::isDraw(state) )
-    stateText = tr("Draw");
+  else if ( board.underCheck() )
+    stateText += tr("Check");
+  else if ( state & Board::DrawInsuf )
+    stateText = tr("Material insufficient");
+  else if ( state & Board::DrawReps )
+    stateText = tr("Threefold repetition");
+  else if ( state & Board::Draw50Moves )
+    stateText = tr("50 moves rule");
+  else if ( state & Board::Stalemat )
+    stateText = tr("Stalemat");
   else
     return;
 
@@ -389,14 +414,14 @@ void ChessWidget::drawInfo()
   QPainter painter(this);
   QString infoText;
 
-  int nps = dt_ > 0 ? sres_.totalNodes_*1000.0/dt_ : 0;
-  int ticksN = Board::ticks_;
-  int hscore = Board::tcounter_;
+  int nps = sres_.dt_ > 0 ? sres_.totalNodes_*100.0/sres_.dt_ : 0;
+  //int ticksN = Board::ticks_;
+  //int hscore = Board::tcounter_;
   //infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, LMR-errors = %d, hist. score(avg) = %d\n{ %s }",
   //  cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
 
   if ( computerAnswers() )
-    infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f, %d nps", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_ / 100.f, nps);
+    infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f, %d nodes, %d nps", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_/100.f, sres_.totalNodes_, nps);
   else
     infoText.sprintf("[%d]", cpos_.movesCount());
 
@@ -458,27 +483,21 @@ void ChessWidget::findMove()
   if ( useOpenBook() && findInBook() )
     return;
 
-  QTime tm;
-  tm.start();
-
-  QpfTimer qpt;
-
   Board::ticks_ = 0;
   Board::tcounter_ = 0;
 
   Board pv_board = cpos_.getBoard();
 
-  depth_ = cpos_.findMove(sres_);
-  if ( 0 == depth_ || !sres_.best_ )
+  SearchResult sres;
+  depth_ = cpos_.findMove(&sres);
+  if ( 0 == depth_ || !sres.best_ )
     return;
 
-  dt_ = tm.elapsed();
-  full_t_ += dt_;
   bs_count_++;
 
   if ( depth_ > 0 )
   {
-    moves_base_ = exp(log((double)sres_.nodesCount_)/depth_);
+    moves_base_ = exp(log((double)sres.nodesCount_)/depth_);
     moves_avg_base_ += moves_base_;
   }
   depth_avg_ += depth_;
@@ -486,24 +505,31 @@ void ChessWidget::findMove()
   if ( Board::ticks_ )
     Board::tcounter_ /= Board::ticks_;
 
-  pv_str_[0] = 0;
+  sres_ = sres;
+  updatePV(&sres);
+}
 
-  ticksAll_ = qpt.ticks();
-  
-  pv_board.set_moves(pv_moves_);
+void ChessWidget::updatePV(SearchResult * sres)
+{
+  sres_ = *sres;
+  emit pvUpdated();
+}
 
+void ChessWidget::formatPV()
+{
+  pv_str_[0] = 0;  
+  Board board = sres_.board_;
+  board.set_undoStack(pvundoStack_);
   for (int i = 0; i < sres_.depth_ && sres_.pv_[i]; ++i)
   {
-    if ( !pv_board.validMove(sres_.pv_[i]) || !pv_board.makeMove(sres_.pv_[i]) )
+    if ( !board.possibleMove(sres_.pv_[i]) || !board.validateMove(sres_.pv_[i]) )
       break;
-
-    pv_board.unmakeMove();
 
     char str[32];
-    if ( !printSAN(pv_board, sres_.pv_[i], str) )
+    if ( !printSAN(board, sres_.pv_[i], str) )
       break;
 
-    pv_board.makeMove(sres_.pv_[i]);
+    board.makeMove(sres_.pv_[i]);
 
     strcat_s(pv_str_, str);
     strcat_s(pv_str_, " ");
@@ -561,16 +587,16 @@ void ChessWidget::keyReleaseEvent(QKeyEvent * e)
 //////////////////////////////////////////////////////////////////////////
 bool OpenBook::load(const char * fname, const Board & i_board)
 {
-  FILE * f = fopen(fname, "rt");
-  if ( !f )
+  QFile qf(fname);
+  if ( !qf.open(QIODevice::ReadOnly) )
     return false;
 
-  QTextStream sbook(f, QIODevice::ReadOnly);
+  QTextStream sbook(&qf);
 
   if ( sbook.status() != QTextStream::Ok )
     return false;
 
-  MoveCmd tmoves[Board::GameLength];
+  UndoInfo tundo[Board::GameLength];
 
   for ( ; !sbook.atEnd(); )
   {
@@ -579,27 +605,23 @@ bool OpenBook::load(const char * fname, const Board & i_board)
       break;
 
     Board board = i_board;
-    board.set_moves(tmoves);
+    board.set_undoStack(tundo);
     board.fromFEN(0);
 
     MovesLine moves;
     QStringList slist = sline.split( QObject::tr(" "), QString::SkipEmptyParts);
     for (QStringList::iterator it = slist.begin(); it != slist.end(); ++it)
     {
-      char str[256];
-      strncpy(str, it->toAscii().data(), sizeof(str));
       Move move;
-      if ( !strToMove(str, board, move) || !board.makeMove(move) )
+      if ( !strToMove(it->toAscii().data(), board, move) || !board.validateMove(move) )
         break;
 
+      board.makeMove(move);
       moves.push_back(move);
     }
 
     mtable_.push_back(moves);
   }
-  fclose(f);
-
-//  qsrand( QTime::currentTime().msec() );
 
   return true;
 }
@@ -628,10 +650,10 @@ Move OpenBook::nextMove(const Board & board)
   for (size_t i = 0; i < mtable_.size(); ++i)
   {
     MovesLine & mline = mtable_[i];
-    int j = 0;
+    size_t j = 0;
     for ( ; j < board.halfmovesCount() && j < mline.size(); ++j)
     {
-      Move mv = board.getMove(j);
+      Move mv = board.undoInfo((int)j);
       if ( mv != mline[j] )
         j = mline.size();
     }
@@ -649,7 +671,7 @@ Move OpenBook::nextMove(const Board & board)
   if ( valid_moves.empty() )
     return mres;
 
-  int n = xorshf96() % valid_moves.size();
+  size_t n = xorshf96() % valid_moves.size();
   mres = valid_moves[n];
 
   return mres;

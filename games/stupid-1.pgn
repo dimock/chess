@@ -1,0 +1,6 @@
+[SetUp "1"] 
+[FEN "k4r2/p1Q2nqp/1p2b3/8/8/8/P4PPP/2R3K1 w - - 0 35"]
+[Result "*"]
+35. Qc6+ Kb8
+36. Qc7+ Ka8
+*

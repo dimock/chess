@@ -16,13 +16,7 @@
 #ifdef _M_X64
   #include <intrin.h>
   #pragma intrinsic(__rdtsc)
-  #define ONE_SIZE_T 1ULL
-#else
-  #define ONE_SIZE_T 1
 #endif
-
-#undef DONT_USE_EXTS_
-#undef USE_EXTRA_QUIS_
 
 #ifndef NDEBUG
   #define THROW_IF(v, msg) if ( v ) throw std::runtime_error(msg); else;
@@ -42,6 +36,8 @@ typedef unsigned __int64 uint64;
 typedef int16 ScoreType;
 typedef uint64 BitMask;
 
+const ScoreType ScoreMax = std::numeric_limits<ScoreType>::max();
+
 namespace nst
 {
   enum dirs
@@ -58,44 +54,19 @@ namespace nst
   };
 };
 
-
-#define PERFORM_CHECKS_IN_CAPTURES
-#define USE_ZERO_WINDOW
-#define USE_KILLER
-#undef USE_KILLER_ADV
-#undef USE_KILLER_CAPS
 #define USE_FUTILITY_PRUNING
-#define USE_SEE_PRUNING
-#undef SORT_ESCAPE_MOVES
-#define USE_DELTA_PRUNING_
-#define USE_HASH_TABLE_GENERAL
-#define USE_HASH_MOVE_EX
-#define USE_THREAT_MOVE
-#define USE_HASH_TABLE_ADV
-#define USE_HASH_TABLE_CAPTURE
-#define RETURN_IF_ALPHA_BETTA_CAPTURES
-#define USE_GENERAL_HASH_IN_CAPS
-#define RETURN_IF_BETTA
+#define USE_DELTA_PRUNING
+#define USE_HASH
 #define USE_NULL_MOVE
 #define USE_LMR
-#define USE_IID
+#define VERIFY_LMR
 
-#define EXTEND_PROMOTION
-#define RECAPTURE_EXTENSION
-#undef EXTEND_PASSED_PAWN
-#undef EXTEND_WINNER_LOSER
-
-#undef EXTENDED_THREAT_DETECTION
-#undef MARKOFF_BOTVINNIK_EXTENSION
-#undef MAT_THREAT_EXTENSION
-
-#undef ONLY_LEQ_THREAT
-
-#undef VERIFY_ESCAPE_GENERATOR
-#undef VERIFY_CHECKS_GENERATOR
-#undef VERIFY_CAPS_GENERATOR
-
-#undef  DO_CHECK_IMMEDIATELY
+//#define VERIFY_ESCAPE_GENERATOR
+//#define VERIFY_CHECKS_GENERATOR
+//#define VERIFY_CAPS_GENERATOR
+//#define VERIFY_FAST_GENERATOR
+//#define VERIFY_TACTICAL_GENERATOR
+//#define VALIDATE_VALIDATOR
 
 #ifndef NDEBUG
   #define TIMING_FLAG 0xFFF
@@ -103,24 +74,13 @@ namespace nst
   #define TIMING_FLAG 0x1FFF
 #endif
 
-
-
-static const int HalfnodesCountToOverwrite = 16;
-static const int MaxPly = 50;
-static const int LMR_PlyReduce = 2;
+static const int MaxPly = 64;
 static const int LMR_DepthLimit = 3;
 static const int LMR_MinDepthLimit = 5;
-static const int LMR_Counter = 3;
+static const int NullMove_DepthMin = 2;
 static const int NullMove_PlyReduce = 4;
 static const int NullMove_DepthStart = 4;
-static const int NullMove_DepthMin = 1;
-static const int HashedMoves_Size = 8;
-static const int MatThreatExtension_Limit = 1;
-static const int MbeExtension_Limit = 1;
-static const int SingularExtension_Limit = 1;
-static const int RecaptureExtension_Limit = 1;
-static const int ChecksExtension_Limit = 16;
-static const int DoubleChecksExtension_Limit = 8;
+
 
 #ifndef _M_X64
 class QpfTimer
@@ -188,42 +148,47 @@ __declspec (align(1)) class Index
 public:
 
   Index() : index_(-1) {}
-  Index(int8 i) : index_(i) {}
+  Index(int i) : index_(i) {}
   Index(int x, int y) { index_ = x | (y<<3); }
   Index(char x, char y) { index_ = (x-'a') | ((y-'1')<<3); }
 
-  operator int8 () const
+  operator int () const
   {
     return index_;
   }
 
-  operator int8 & ()
+  operator int ()
   {
     return index_;
   }
 
-  int8 x() const
+  int x() const
   {
     THROW_IF(index_ < 0, "try to get x of invalid index");
     return index_&7;
   }
 
-  int8 y() const
+  int y() const
   {
     THROW_IF(index_ < 0, "try to get y of invalid index");
     return (index_>>3)&7;
   }
 
-  void set_x(int8 x)
+  void set_x(int x)
   {
     index_ &= ~7;
     index_ |= x & 7;
   }
 
-  void set_y(int8 y)
+  void set_y(int y)
   {
     index_ &= 7;
     index_ |= (y&7)<<3;
+  }
+
+  int transp() const
+  {
+    return (x() << 3) | y();
   }
 
 private:
@@ -232,4 +197,3 @@ private:
 };
 
 #pragma pack (pop)
-

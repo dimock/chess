@@ -20,6 +20,41 @@ inline int pop_count(uint64 n)
   return (int)n;
 }
 
+inline BitMask set_mask_bit(int bit)
+{
+  return 1ULL << bit;
+}
+
+inline int set_bit(int bit)
+{
+  return 1 << bit;
+}
+
+/*
+GCC asm version
+inline int find_lsb(const BitMask & mask)
+{
+  int n;
+  const BitMask * pmask = &mask;
+  asm
+    (
+    "movl %1, %%edi;"
+    "movl (%%edi), %%eax;"
+    "bsf %%eax, %%ecx;"
+    "jnz end;"
+    "movl 4(%%edi), %%eax;"
+    "bsf %%eax, %%ecx;"
+    "add $32, %%ecx;"
+"end:"\
+    "mov %%ecx, %0"
+    :"=r"(n)
+    :"r"(pmask)
+    :"%eax", "%edi", "%ecx"
+    );
+  return n;
+}
+*/
+
 #ifndef _M_X64
 
 // ALL OF THESE FUNCTIONS BELIEVE THAT mask ISN'T ZERO
@@ -157,13 +192,14 @@ end:
   return m;
 }
 
-// multiplies v*n and divides by d v*n/d
+// multiplies v*n and divides by d v*n/(d+n)
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
   unsigned int r = 0;
   __asm
   {
     mov eax, dword ptr [d]
+    add eax, dword ptr [n]
     bsr ecx, eax
     jnz md_begin
     xor ecx, ecx
@@ -204,7 +240,7 @@ inline int clear_msb(uint64 & mask)
 #endif
     _BitScanReverse64(&n, mask);
   THROW_IF( !b, "no bit found in nonzero number" );
-  mask ^= 1ULL << n;
+  mask ^= set_mask_bit(n);
   return n;
 }
 
@@ -230,18 +266,18 @@ inline int find_msb(const BitMask & mask)
   return n;
 }
 
-inline int log2(int n)
+inline int log2(const uint64 & n)
 {
 	unsigned long m;
-	if ( !_BitScanReverse(&m, (unsigned long)n) )
+	if ( !_BitScanReverse64(&m, n) )
 		return 0;
 	return m;
 }
 
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
-  unsigned long long r = (unsigned long long)v * n;
-  r >>= log2(d);
+  uint64 r = (uint64)v * n;
+  r >>= log2(d+n);
   unsigned x = *((unsigned*)&r);
   return x;
 }
@@ -435,7 +471,7 @@ public:
 struct Move;
 
 bool moveToStr(const Move & move, char * str, bool full);
-bool strToMove(char * str, const Board & board, Move & move);
+bool strToMove(const char * i_str, const Board & board, Move & move);
 
 bool parseSAN(Board & board, const char * str, Move & move);
 bool printSAN(Board & board, const Move & move, char * str);

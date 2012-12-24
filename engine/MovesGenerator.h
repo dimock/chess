@@ -24,6 +24,7 @@ struct History
 
   unsigned score() const
   {
+    //return score_;//((unsigned long long)score_ * good_count_) / (bad_count_ + good_count_ + 1);//
     return mul_div(score_, good_count_, bad_count_);
   }
 
@@ -34,34 +35,153 @@ struct History
     bad_count_ >>= n;
   }
 
+  unsigned good() const
+  {
+    return good_count_;
+  }
+
+  unsigned bad() const
+  {
+    return bad_count_;
+  }
+
+  void inc_gb(bool g)
+  {
+    good_count_ +=  g;
+    bad_count_  += !g;
+  }
+
+  void inc_good()
+  {
+    good_count_++;
+  }
+
+  void inc_bad()
+  {
+    bad_count_++;
+  }
+
+  void inc_score(int ds)
+  {
+    if ( ds < 1 )
+      ds = 1;
+    score_ += ds;
+    //if ( score_ > history_max_ )
+    //  history_max_ = score_;
+  }
+
+protected:
+
   unsigned score_;
   unsigned good_count_, bad_count_;
-  static unsigned history_max_;
+  //static unsigned history_max_;
 };
 
-/// generate all movies from this position. don't verify and sort them. only calculate sort weights
-class MovesGenerator
-{
-  friend class ChecksGenerator;
 
-  static History history_[64][64];
+// base class for all moves generators
+class MovesGeneratorBase
+{
+  static History history_[Board::NumOfFields][Board::NumOfFields];
 
 public:
-
-  MovesGenerator(Board & , int depth, int ply, Player * player, ScoreType & alpha, ScoreType betta, int & counter);
-  MovesGenerator(Board & );
-
-  static inline History & history(int8 from, int8 to)
-  {
-    THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid history field index" );
-    return history_[from][to];
-  }
 
   static void clear_history();
   static void normalize_history(int n);
 
   static void save_history(const char * fname);
   static void load_history(const char * fname);
+
+
+  static inline History & history(int from, int to)
+  {
+    THROW_IF( (unsigned)from > 63 || (unsigned)to > 63, "invalid history field index" );
+    return history_[from][to];
+  }
+
+  MovesGeneratorBase(Board & board) : board_(board),
+    numOfMoves_(0)
+  {}
+
+  operator bool () const
+  {
+    return numOfMoves_ > 0;
+  }
+
+  int count() const
+  {
+    return numOfMoves_;
+  }
+
+  Move * moves()
+  {
+    return moves_;
+  }
+
+  const Move & operator [] (int i) const
+  {
+    THROW_IF( (unsigned)i >= (unsigned)numOfMoves_ || numOfMoves_ >= Board::MovesMax, "index of move is out of range" );
+    return moves_[i];
+  }
+
+  bool find(const Move & m) const;
+  bool has_duplicates() const;
+
+protected:
+
+  inline void sortValueOfCap(Move & move)
+  {
+    const Field & fto = board_.getField(move.to_);
+    const Field & ffrom = board_.getField(move.from_);
+
+    Figure::Type vtype = fto.type();
+
+    THROW_IF(vtype != Figure::TypeNone && fto.color() != Figure::otherColor(board_.color_), "invalid color of captured figure");
+
+    // en-passant case
+    if ( vtype == Figure::TypeNone && move.to_ == board_.en_passant_ && ffrom.type() == Figure::TypePawn )
+    {
+      THROW_IF( board_.getField(board_.enpassantPos()).type() != Figure::TypePawn ||
+        board_.getField(board_.enpassantPos()).color() == board_.color_, "no en-passant pawn" );
+
+      vtype = Figure::TypePawn;
+      move.vsort_ = Figure::figureWeight_[vtype];
+      return;
+    }
+
+    // capture, prefer stronger opponent's figure
+    if ( vtype != Figure::TypeNone )
+    {
+      Figure::Type atype = ffrom.type();
+      move.vsort_ = (Figure::figureWeight_[vtype] << 1) - Figure::figureWeight_[atype];
+    }
+
+    // pawn promotion
+    if ( move.new_type_ > Figure::TypeNone && move.new_type_ < Figure::TypeKing )
+    {
+      move.vsort_ += Figure::figureWeight_[move.new_type_];
+    }
+
+    // at first we try to eat recently moved opponent's figure
+    if ( move.capture_ && board_.halfmovesCount() > 1 )
+    {
+      UndoInfo & prev = board_.undoInfoRev(-1);
+      if ( prev.to_ == move.to_ )
+        move.vsort_ += Figure::figureWeight_[vtype] >> 1;
+    }
+  }
+
+  int numOfMoves_;
+  Board & board_;
+  Move moves_[Board::MovesMax];
+};
+
+/// generate all movies from this position. don't verify and sort them. only calculate sort weights
+class MovesGenerator : public MovesGeneratorBase
+{
+public:
+
+  MovesGenerator(Board & board, const Move & killer);
+  MovesGenerator(Board & );
 
   Move & move()
   {
@@ -71,7 +191,7 @@ public:
       Move * mv = moves_;
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+        if ( mv->alreadyDone_ || mv->vsort_ < move->vsort_ )
           continue;
 
         move = mv;
@@ -79,18 +199,274 @@ public:
       if ( !*move )
         return *move;
 
-      int see_gain = 0;
-      if ( (move->rindex_ >= 0 || move->new_type_ > 0) && !move->seen_ )
+      if ( (move->capture_ || move->new_type_ > 0) && !move->seen_ )
       {
         move->seen_ = 1;
 
-        if ( !see(*move, see_gain) )
+        int see_gain = 0;
+        if ( (see_gain = board_.see(*move)) < 0 )
         {
-          if ( move->rindex_ >= 0 )
-            move->srt_score_ = see_gain + 3000;
+          if ( move->capture_ )
+            move->vsort_ = see_gain + 3000;
           else
-            move->srt_score_ = see_gain + 2000;
+            move->vsort_ = see_gain + 2000;
 
+          continue;
+        }
+
+        //if ( see_gain >= 0 )
+        //  move->recapture_ = 1;
+      }
+
+      move->alreadyDone_ = 1;
+      return *move;
+    }
+  }
+
+private:
+
+  /// returns number of moves found
+  int generate();
+
+  inline void add(int & index, int8 from, int8 to, Figure::Type new_type, bool capture)
+  {
+    Move & move = moves_[index++];
+    move.set(from, to, new_type, capture);
+    
+    calculateSortValue(move);
+  }
+
+  void calculateSortValue(Move & move)
+  {
+    THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
+
+    if ( move.capture_ || move.new_type_ )
+    {
+      sortValueOfCap(move);
+      move.vsort_ += 10000000;
+      return;
+    }
+    else if ( move == killer_ )
+    {
+      move.vsort_ = 3000000;
+      return;
+    }
+
+    const History & hist = history(move.from_, move.to_);
+    move.vsort_ = hist.score() + 10000;
+  }
+
+  Move killer_;
+};
+
+/// generate all moves but captures and promotion to queen. could generate only promotion to knight if it checks
+/// couldn't be called under check !!!
+class UsualGenerator : public MovesGeneratorBase
+{
+public:
+
+  UsualGenerator(Board & );
+
+  /// returns number of moves found
+  int generate(const Move & hmove, const Move & killer);
+
+  Move & move()
+  {
+    for ( ;; )
+    {
+      Move * move = moves_ + numOfMoves_;
+      Move * mv = moves_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+        return *move;
+
+      move->alreadyDone_ = 1;
+      return *move;
+    }
+  }
+
+private:
+
+  inline bool add(int & index, int8 from, int8 to, Figure::Type new_type, bool capture)
+  {
+    Move & move = moves_[index];
+    move.set(from, to, new_type, capture);
+
+    if ( move == hmove_ || move == killer_ )
+      return false;
+
+    index++;
+    calculateSortValue(move);
+    return true;
+  }
+
+  inline void calculateSortValue(Move & move)
+  {
+    THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
+    const History & hist = history(move.from_, move.to_);
+    move.vsort_ = hist.score() + 10;
+  }
+
+  Move hmove_, killer_;
+};
+
+/// generate captures and promotions to queen only, don't detect checks
+class CapsGenerator : public MovesGeneratorBase
+{
+public:
+
+  CapsGenerator(Board & );
+  CapsGenerator(const Move & hcap, Board & );
+
+  int generate(const Move & hcap, Figure::Type thresholdType);
+
+  inline Move & capture()
+  {
+    for ( ;; )
+    {
+      Move * move = moves_ + numOfMoves_;
+      Move * mv = moves_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+        return *move;
+
+      move->alreadyDone_ = 1;
+
+      if ( !filter(*move) )
+        continue;
+
+      return *move;
+    }
+  }
+
+private:
+
+  /// returns number of moves found
+  int generate();
+
+  inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
+  {
+    THROW_IF( !board_.getField(from), "no figure on field we move from" );
+    
+    Move & move = moves_[m];    
+    move.set(from, to, new_type, capture);
+    if ( move == hcap_ )
+      return;
+
+    sortValueOfCap(move);
+    move.vsort_ += 10000; // to prevent negative values
+    m++;
+  }
+
+  inline bool filter(Move & move) const
+  {
+    if ( move.capture_ && move.new_type_ )
+      return true;
+
+    bool check = expressCheck(move);
+
+    if ( move.discoveredCheck_ )
+      return true; // always ok
+
+    Figure::Type type = Figure::TypeNone;
+    const Field & tfield = board_.getField(move.to_);
+    if ( tfield )
+      type = tfield.type();
+    else if ( move.new_type_ )
+      type = (Figure::Type)move.new_type_;
+    else if ( board_.en_passant_ == move.to_ && board_.getField(move.from_).type() == Figure::TypePawn ) // en-passant capture
+      type = Figure::TypePawn;
+
+    if ( !check && type < thresholdType_ )
+      return false;
+
+    int s = board_.see(move);
+    return s >= 0;
+  }
+
+  bool expressCheck(Move & move) const;
+
+  Figure::Type thresholdType_;
+  Move hcap_;
+
+  // for checks detector
+  BitMask mask_all_, mask_brq_;
+  int oking_pos_;
+};
+
+/// generate all moves, that escape from check
+class EscapeGenerator : public MovesGeneratorBase
+{
+public:
+
+  EscapeGenerator(Board &);
+  EscapeGenerator(const Move & hmove, Board & );
+
+  void generate(const Move & hmove);
+
+  int count() const
+  {
+    return movesCount_;
+  }
+
+  bool find(const Move & m) const
+  {
+    if ( m && m == hmove_ )
+      return true;
+
+    return MovesGeneratorBase::find(m); 
+  }
+
+  inline Move & escape()
+  {
+    if ( takeHash_ )
+    {
+      takeHash_ = 0;
+
+      if ( hmove_ )
+      {
+        hmove_.see_good_ = (board_.see(hmove_) >= 0);
+        return hmove_;
+      }
+    }
+
+    for ( ; !do_weak_; )
+    {
+      Move * move = moves_ + numOfMoves_;
+      Move * mv = moves_;
+      for ( ; *mv; ++mv)
+      {
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
+          continue;
+
+        move = mv;
+      }
+      if ( !*move )
+      {
+        do_weak_ = true;
+        break;
+      }
+
+      if ( move->capture_ && !move->seen_ && numOfMoves_ > 1 )
+      {
+        move->seen_ = 1;
+        move->see_good_ = board_.see(*move) >= 0;
+        if ( !move->see_good_ )
+        {
+          weak_[weakN_++] = *move;
+          move->alreadyDone_ = 1;
           continue;
         }
       }
@@ -98,440 +474,126 @@ public:
       move->alreadyDone_ = 1;
       return *move;
     }
-  }
 
-
-  int hist_max() const
-  {
-	  return history_max_;
-  }
-
-  operator bool () const
-  {
-    return numOfMoves_ > 0;
-  }
-
-  int count() const
-  {
-    return numOfMoves_;
-  }
-
-  bool find(const Move & m) const;
-
-private:
-
-  /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
-
-  inline void add_move(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
-  {
-    Move & move = moves_[m++];
-    move.set(from, to, rindex, new_type, 0);
-    calculateWeight(move);
-  }
-
-  void calculateWeight(Move & move)
-  {
-    const Field & ffield = board_.getField(move.from_);
-    THROW_IF( !ffield, "no figure on field we move from" );
-
-    const History & hist = history_[move.from_][move.to_];
-    move.srt_score_ = hist.score_ + 10000;
-
-    if ( move.srt_score_ > history_max_ )
-      history_max_ = move.srt_score_;
-
-    if ( move.rindex_ >= 0 )
+    if ( do_weak_ && weakN_ > 0 )
     {
-      Figure::Type atype = board_.getField(move.from_).type();
-      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-      move.srt_score_ = Figure::figureWeight_[vtype] - Figure::figureWeight_[atype] + 10000000;
-      if ( board_.halfmovesCount() > 1 )
+      weak_[weakN_].clear();
+      for ( ;; )
       {
-        MoveCmd & prev = board_.getMoveRev(-1);
-        if ( prev.to_ == move.to_ )
-          move.srt_score_ += Figure::figureWeight_[vtype] >> 1;
-      }
-    }
-    else if ( move.new_type_ > 0 )
-    {
-      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
-    }
-#ifdef USE_KILLER
-    else if ( move == killer_ )
-    {
-      move.srt_score_ = 3000000;
-      move.fkiller_ = 1;
-    }
-#endif
-  }
-  
-  bool see(Move & move, int & see_gain)
-  {
-    THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
+        Move * move = weak_ + weakN_;
+        Move * mv = weak_;
+        for ( ; *mv; ++mv)
+        {
+          if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
+            continue;
 
-    if ( move.rindex_ >= 0 )
-    {
-      // victim >= attacker
-      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-      Figure::Type atype = board_.getField(move.from_).type();
-      see_gain = Figure::figureWeightSEE_[vtype] - Figure::figureWeightSEE_[atype];
-      if ( see_gain >= 0 )
-        return true;
-    }
+          move = mv;
+        }
+        if ( !*move )
+          return *move;
 
-    // we look from side, that goes to move. we should adjust sing of initial mat-balance
-    int initial_balance = board_.fmgr().weight();
-    if ( !board_.getColor() )
-      initial_balance = -initial_balance;
-
-    see_gain = board_.see_before(initial_balance, move);
-
-    //#ifndef NDEBUG
-    //  int see_gain1 = board_.see_before2(initial_balance, move);
-    //  THROW_IF(see_gain != see_gain1, "see_before2() failed" );
-    //#endif
-
-    return see_gain >= 0;
-  }
-
-  int current_;
-  int numOfMoves_;
-  Player * player_;
-  Board & board_;
-  Move killer_;
-  int depth_;
-  int ply_;
-  Move moves_[Board::MovesMax];
-  unsigned history_max_;
-};
-
-/// generate captures and promotions to queen only, don't detect checks
-class CapsGenerator
-{
-public:
-
-  CapsGenerator(const Move & hcap, Board & , Figure::Type minimalType, int ply, Player &, ScoreType & alpha, ScoreType betta, int & counter);
-
-  inline Move & capture()
-  {
-    for ( ;; )
-    {
-      Move * move = captures_ + numOfMoves_;
-      Move * mv = captures_;
-      for ( ; *mv; ++mv)
-      {
-        if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
-          continue;
-
-        move = mv;
-      }
-      if ( !*move )
-        return *move;
-
-      int see_gain = 0;
-      if ( !move->seen_ && !see(*move, see_gain) )
-      {
-        move->seen_ = 1;
         move->alreadyDone_ = 1;
-        continue;
-      }
-
-      move->alreadyDone_ = 1;
-      return *move;
-    }
-  }
-
-  operator bool () const
-  {
-    return numOfMoves_ > 0;
-  }
-
-  bool find(const Move & move) const
-  {
-    for (int i = 0; i < numOfMoves_; ++i)
-    {
-      if ( move == captures_[i] )
-        return true;
-    }
-    return false;
-  }
-
-  int count() const
-  {
-    return numOfMoves_;
-  }
-
-  const Move (&caps() const)[Board::MovesMax]
-  {
-    return captures_;
-  }
-
-private:
-
-  inline bool see(Move & move, int & see_gain)
-  {
-    THROW_IF(move.rindex_ < 0 && move.new_type_ == 0, "try to see() move that isn't capture or promotion");
-
-    if ( move.rindex_ >= 0 )
-    {
-      // victim >= attacker
-      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-      Figure::Type atype = board_.getField(move.from_).type();
-      see_gain = Figure::figureWeightSEE_[vtype] - Figure::figureWeightSEE_[atype];
-      if ( see_gain >= 0 )
-        return true;
-    }
-
-    // we look from side, that goes to move. we should adjust sing of initial mat-balance
-    int initial_balance = board_.fmgr().weight();
-    if ( !board_.getColor() )
-      initial_balance = -initial_balance;
-
-    see_gain = board_.see_before(initial_balance, move);
-
-    //#ifndef NDEBUG
-    //  int see_gain1 = board_.see_before2(initial_balance, move);
-    //  //if ( see_gain != see_gain1 )
-    //  //{
-    //  //  char fen[256];
-    //  //  board_.toFEN(fen);
-    //  //  std::ofstream of("see.bug.fen");
-    //  //  of << std::string(fen) << std::endl;
-    //  //}
-    //  THROW_IF(see_gain != see_gain1, "see_before2() failed" );
-    //#endif
-
-    return see_gain >= 0;
-  }
-
-  /// returns number of moves found
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
-  bool capture(ScoreType & alpha, ScoreType betta, const Move & move, int & counter);
-
-  inline void add_capture(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
-  {
-    Move & move = captures_[m];
-    
-    move.set(from, to, rindex, new_type, 0);
-    if ( move == hcap_ )
-      return;
-
-    THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
-    move.srt_score_ = 0;
-
-    if ( move.rindex_ >= 0 )
-    {
-      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      Figure::Type atype = board_.getField(move.from_).type();
-      move.srt_score_ = Figure::figureWeight_[rfig.getType()] - Figure::figureWeight_[atype] + 1000000;
-      if ( board_.halfmovesCount() > 1 )
-      {
-        MoveCmd & prev = board_.getMoveRev(-1);
-        if ( prev.to_ == move.to_ )
-          move.srt_score_ += Figure::figureWeight_[rfig.getType()] >> 1;
+        return *move;
       }
     }
-    else if ( move.new_type_ > 0 )
-    {
-      move.srt_score_ = 500000;
-    }
-    m++;
+
+    return fake_;
   }
 
-
-  int current_;
-  int numOfMoves_;
-  Figure::Type minimalType_;
-  Player & player_;
-  Board & board_;
-  int ply_;
-  Move hcap_;
-  Move captures_[Board::MovesMax];
-};
-
-
-/// generate all moves, that escape from check
-class EscapeGenerator
-{
-public:
-
-  EscapeGenerator(const Move & pv, Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
-  EscapeGenerator(Board &, int depth, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter);
-
-  Move & escape()
-  {
-    return escapes_[current_++];
-  }
-
-  operator bool () const
-  {
-    return numOfMoves_ > 0;
-  }
-
-  const Move & operator [] (int i) const
-  {
-    THROW_IF( i >= count(), "move index gt. than number of moves" );
-    return escapes_[i];
-  }
-
-  int count() const
-  {
-    return numOfMoves_;
-  }
-
-  bool find(const Move & m) const;
-
-private:
+protected:
 
   /// returns number of moves found
-  int push_pv();
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
-  int generateUsual(ScoreType & alpha, ScoreType betta, int & counter);
-  int generateKingonly(int m, ScoreType & alpha, ScoreType betta, int & counter);
+  int generate();
+  int generateUsual();
+  int generateKingonly(int m);
 
-  bool add_escape(int & m, int8 from, int8 to, int8 rindex, int8 new_type)
+  inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool capture)
   {
-    Move & move = escapes_[m];
-    move.set(from, to, rindex, new_type, 0);
-
-    if ( move == pv_ )
-      return true;
-
-    if ( !board_.isMoveValidUnderCheck(move) )
-      return false;
-
+    Move & move = moves_[m];
+    move.set(from, to, new_type, capture);
     move.checkVerified_ = 1;
-    ++m;
 
-    return true;
+    if ( move == hmove_ )
+    {
+      takeHash_ = 1;
+      return;
+    }
+
+    if ( capture || move.new_type_ )
+    {
+      sortValueOfCap(move);
+      move.vsort_ += 10000000;
+    }
+    else
+    {
+      const History & hist = history(move.from_, move.to_);
+      move.vsort_ = hist.score()+10;
+    }
+
+    ++m;
   }
 
-  void sort();
+  Move hmove_;
+  int takeHash_;
+  int movesCount_;
 
-
-  int current_;
-  int numOfMoves_;
-
-  Player & player_;
-  int ply_;
-  int depth_;
-
-  Move pv_;
-
-  Board & board_;
-  Move escapes_[Board::MovesMax];
+  Move weak_[Board::MovesMax];
+  int weakN_;
+  bool do_weak_;
+  Move fake_;
 };
 
-// generate all captures with type gt/eq to minimalType
-class ChecksGenerator
+/// first use move from hash, then generate all captures and promotions to queen, at the last generate other moves
+/// generates all valid moves if under check
+class FastGenerator
 {
 public:
 
-  ChecksGenerator(CapsGenerator * cg, Board &, int ply, Player & player, ScoreType & alpha, ScoreType betta, Figure::Type minimalType, int & counter);
+  FastGenerator(Board & board);
+  FastGenerator(Board & board, const Move & hmove, const Move & killer);
 
-  Move & check()
+  Move & move();
+
+  bool singleReply() const
   {
-	  Move * move = checks_ + numOfMoves_;
-	  Move * mv = checks_;
-	  for ( ; *mv; ++mv)
-	  {
-		  if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
-			  continue;
-
-		  move = mv;
-	  }
-	  move->alreadyDone_ = 1;
-	  return *move;
+    return board_.underCheck() && eg_.count() == 1;
   }
 
 private:
 
-  inline bool discoveredCheck(int8 pt, const uint64 & mask_all, const uint64 & brq_mask, int oki_pos)
+  enum GOrder
   {
-    bool checking = false;
-    uint64 from_msk_inv = ~(1ULL << pt);
-    uint64 chk_msk = board_.g_betweenMasks->from(oki_pos, pt) & (brq_mask & from_msk_inv);
-    uint64 mask_all_inv_ex = ~(mask_all & from_msk_inv);
-    for ( ; !checking && chk_msk; )
-    {
-      int n = clear_lsb(chk_msk);
+    oHash, oEscapes, oGenCaps, oCaps, oKiller, oGenUsual, oUsual, oWeak
+  } order_;
 
-      const Field & field = board_.getField(n);
-      THROW_IF( !field || field.color() != board_.color_, "invalid checking figure found" );
+  CapsGenerator cg_;
+  UsualGenerator ug_;
+  EscapeGenerator eg_;
 
-      const Figure & cfig = board_.getFigure(board_.color_, field.index());
-      if ( board_.g_figureDir->dir(cfig.getType(), cfig.getColor(), cfig.where(), oki_pos) < 0 )
-        continue;
+  Move weak_[Board::MovesMax];
+  int  weakN_;
 
-      const uint64 & btw_msk = board_.g_betweenMasks->between(cfig.where(), oki_pos);
-      if ( (btw_msk & mask_all_inv_ex) != btw_msk )
-        continue;
-
-      checking = true;
-    }
-    return checking;
-  }
-
-  int generate(ScoreType & alpha, ScoreType betta, int & counter);
-
-  void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
-  {
-	  Move & move = checks_[m];
-	  move.set(from, to, rindex, new_type, 0);
-    move.discoveredCheck_ = discovered;
-   
-    if ( rindex >= 0 && cg_ && cg_->find(move) )
-      return;
-
-	  const History & hist = MovesGenerator::history(move.from_, move.to_);
-    move.srt_score_ = hist.score_;
-
-    if ( move.rindex_ >= 0 )
-    {
-      const Field & ffield = board_.getField(move.from_);
-      THROW_IF( !ffield, "no figure on field we move from" );
-      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + 10000000;
-    }
-    else if ( move.new_type_ > 0 )
-    {
-      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
-    }
-
-    ++m;
-  }
-
-  Player & player_;
-  int ply_;
-
-  CapsGenerator * cg_;
-  Figure::Type minimalType_;
-
-  Move killer_;
-  int numOfMoves_;
-
+  Move hmove_, killer_, fake_;
   Board & board_;
-  Move checks_[Board::MovesMax];
 };
 
 //////////////////////////////////////////////////////////////////////////
-// generate all captures with type gt/eq to minimalType
-class ChecksGenerator2
+// generate checks without captures
+class ChecksGenerator : public MovesGeneratorBase
 {
 public:
 
-  ChecksGenerator2(const Move & hmove, Board &, int ply, Player & player, Figure::Type minimalType);
+  ChecksGenerator(Board & board);
 
   Move & check()
   {
     for ( ;; )
     {
-      Move * move = checks_ + numOfMoves_;
-      Move * mv = checks_;
+      Move * move = moves_ + numOfMoves_;
+      Move * mv = moves_;
       for ( ; *mv; ++mv)
       {
-        if ( mv->alreadyDone_ || mv->srt_score_ < move->srt_score_ )
+        if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
           continue;
 
         move = mv;
@@ -539,138 +601,71 @@ public:
       if ( !*move )
         return *move;
 
-      int see_gain = 0;
-      if ( !move->seen_ && !see(*move, see_gain) )
-      {
-        move->seen_ = 1;
-        move->alreadyDone_ = 1;
-        continue;
-      }
-
       move->alreadyDone_ = 1;
+
+      if ( !move->discoveredCheck_ && board_.see(*move) < 0 )
+        continue;
+
       return *move;
     }
-  }
-
-  bool has_duplicates() const
-  {
-    for (int i = 0; i < numOfMoves_; ++i)
-    {
-      for (int j = i+1; j < numOfMoves_; ++j)
-      {
-        if ( checks_[i] == checks_[j] )
-          return true;
-      }
-    }
-    return false;
-  }
-
-private:
-
-  bool see(Move & move, int & see_gain)
-  {
-    // discovered check is dangerous. don't skip it anyway
-    if ( move.discoveredCheck_ )
-      return true;
-
-    if ( move.rindex_ >= 0 )
-    {
-      // victim >= attacker
-      Figure::Type vtype = board_.getFigure(Figure::otherColor(board_.getColor()), move.rindex_).getType();
-      Figure::Type atype = board_.getField(move.from_).type();
-      see_gain = Figure::figureWeightSEE_[vtype] - Figure::figureWeightSEE_[atype];
-      if ( see_gain >= 0 )
-        return true;
-    }
-
-    // we look from side, that goes to move. we should adjust sing of initial mat-balance
-    int initial_balance = board_.fmgr().weight();
-    if ( !board_.getColor() )
-      initial_balance = -initial_balance;
-
-    see_gain = board_.see_before(initial_balance, move);
-
-    return see_gain >= 0;
   }
 
   int generate();
 
-  inline void add_check(int & m, int8 from, int8 to, int8 rindex, Figure::Type new_type, bool discovered)
+private:
+
+  int genChecks();
+
+  inline void add(int & m, int8 from, int8 to, Figure::Type new_type, bool discovered)
   {
-    Move & move = checks_[m];
-    move.set(from, to, rindex, new_type, 0);
-    if ( move == hmove_ )
-      return;
+    Move & move = moves_[m];
+    move.set(from, to, new_type, false);
 
     move.discoveredCheck_ = discovered;
 
-    const History & hist = MovesGenerator::history(move.from_, move.to_);
-    move.srt_score_ = hist.score_;
-
-    if ( move.rindex_ >= 0 )
+    if ( move.capture_ || move.new_type_ )
     {
-      const Field & ffield = board_.getField(move.from_);
-      THROW_IF( !ffield, "no figure on field we move from" );
-      const Figure & rfig = board_.getFigure(Figure::otherColor(board_.color_), move.rindex_);
-      move.srt_score_ = (int)Figure::figureWeight_[rfig.getType()] - (int)Figure::figureWeight_[ffield.type()] + 10000000;
+      sortValueOfCap(move);
+      move.vsort_ += 10000000;
     }
-    else if ( move.new_type_ > 0 )
+    else
     {
-      move.srt_score_ = Figure::figureWeight_[move.new_type_] + 5000000;
+      const History & hist = history(move.from_, move.to_);
+      move.vsort_ = hist.score()+10;
     }
 
-    ++m;
+    m++;
   }
+};
 
-  // add non-processed moves of pawn if it discovers check in caps-loop
-  inline void add_other_moves(int & m, int from, int to, int oki_pos)
+
+//////////////////////////////////////////////////////////////////////////
+/// Generate tactical moves after horizon
+class TacticalGenerator
+{
+public:
+
+  TacticalGenerator(Board & board, Figure::Type thresholdType, int depth);
+
+  Move & next();
+
+  // valid only under check
+  bool singleReply() const
   {
-    const BitMask & from_oki_mask = board_.g_betweenMasks->from(oki_pos, from);
-
-    // not procecessed captures
-    const int8 * table = board_.g_movesTable->pawn(board_.color_, from);
-    for (int i = 0; i < 2 && *table >= 0; ++table, ++i)
-    {
-      if ( *table == to )
-        continue;
-
-      const Field & pfield = board_.getField(*table);
-      if ( !pfield || pfield.color() == board_.color_ || pfield.type() >= minimalType_ )
-        continue;
-
-      // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      if ( (from_oki_mask & (1ULL << *table)) )
-        continue;
-
-      // don't add checking pawn's capture, because we add it another way
-      int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, *table, oki_pos);
-      if ( dir == 0 || dir == 1 )
-        continue;
-
-      add_check(m, from, *table, pfield.index(), Figure::TypeNone, true);
-    }
-
-    // usual moves
-    for ( ; *table >= 0 && !board_.getField(*table); ++table)
-    {
-      // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
-      if ( from_oki_mask & (1ULL << *table) )
-        break;
-
-      add_check(m, from, *table, -1, Figure::TypeNone, true);
-    }
+    return board_.underCheck() && eg_.count() == 1;
   }
 
-  Player & player_;
-  int ply_;
+private:
 
-  Figure::Type minimalType_;
+  CapsGenerator cg_;
+  EscapeGenerator eg_;
+  ChecksGenerator chg_;
 
-  Move killer_;
-  int numOfMoves_;
-
-  Move hmove_;
+  enum Order { oNone, oEscape, oGenCaps, oCaps, oGenChecks, oChecks };
 
   Board & board_;
-  Move checks_[Board::MovesMax];
+  Figure::Type thresholdType_;
+  Move fake_;
+  Order order_;
+  int depth_;
 };

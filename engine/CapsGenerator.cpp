@@ -4,82 +4,65 @@
 
 #include "MovesGenerator.h"
 #include "MovesTable.h"
-#include "Player.h"
 
 //////////////////////////////////////////////////////////////////////////
-CapsGenerator::CapsGenerator(const Move & hcap, Board & board, Figure::Type minimalType, int ply, Player & player, ScoreType & alpha, ScoreType betta, int & counter) :
-  board_(board), current_(0), numOfMoves_(0), minimalType_(minimalType), player_(player), ply_(ply), hcap_(hcap)
+CapsGenerator::CapsGenerator(const Move & hcap, Board & board) :
+  MovesGeneratorBase(board), hcap_(hcap), thresholdType_(Figure::TypeNone)
 {
-  numOfMoves_ = generate(alpha, betta, counter);
-  captures_[numOfMoves_].clear();
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
+
+  const Figure::Color & color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
+  mask_all_ = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
+  mask_brq_ = board_.fmgr().bishop_mask(color) | board_.fmgr().rook_mask(color) | board_.fmgr().queen_mask(color);
+  oking_pos_ = board_.kingPos(ocolor);
 }
 
-int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
+CapsGenerator::CapsGenerator(Board & board) :
+  MovesGeneratorBase(board), thresholdType_(Figure::TypeNone)
+{
+  hcap_.clear();
+
+  const Figure::Color & color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
+  mask_all_ = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
+  mask_brq_ = board_.fmgr().bishop_mask(color) | board_.fmgr().rook_mask(color) | board_.fmgr().queen_mask(color);
+  oking_pos_ = board_.kingPos(ocolor);
+}
+
+int CapsGenerator::generate(const Move & hcap, Figure::Type thresholdType)
+{
+  hcap_ = hcap;
+  thresholdType_ = thresholdType;
+
+  numOfMoves_ = generate();
+  moves_[numOfMoves_].clear();
+
+  return numOfMoves_;
+}
+
+int CapsGenerator::generate()
 {
   int m = 0;
 
-  Figure::Color ocolor = Figure::otherColor(board_.color_);
+  Figure::Color& color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
 
-  // generate only promotions to Queen with capture
-  if ( minimalType_ > Figure::TypeQueen )
+  BitMask oppenent_mask = board_.fmgr_.mask(ocolor) ^ board_.fmgr_.king_mask(ocolor);
+  const BitMask & black = board_.fmgr_.mask(Figure::ColorBlack);
+  const BitMask & white = board_.fmgr_.mask(Figure::ColorWhite);
+  BitMask mask_all = white | black;
+  BitMask mask_all_inv = ~mask_all;
+  BitMask brq_mask = board_.fmgr_.bishop_mask(color) | board_.fmgr_.rook_mask(color) | board_.fmgr_.queen_mask(color);
+  int ki_pos = board_.kingPos(color);
+  int oki_pos = board_.kingPos(ocolor);
+
+  // generate pawn promotions
+  const BitMask & pawn_msk = board_.fmgr_.pawn_mask_o(color);
   {
-    BitMask promo_mask = board_.g_movesTable->promote_o(board_.color_) & board_.fmgr().pawn_mask_o(board_.color_);
-    for ( ; promo_mask; )
-    {
-      int from = clear_lsb(promo_mask);
-      BitMask cap_mask = board_.g_movesTable->pawnCaps_o(board_.color_, from) & board_.fmgr().mask(ocolor);
-      for ( ; cap_mask; )
-      {
-        int to = clear_lsb(cap_mask);
-        const Field & field = board_.getField(to);
-        THROW_IF( !field || field.color() != ocolor, "invalid promotion with capture in caps generator" );
-
-        add_capture(m, from, to, field.index(), Figure::TypeQueen);
-      }
-    }
-    return m;
-  }
-
-  const uint64 exclude_mask = 0xffffffffffff00;//72057594037927680;
-  uint64 oppenent_mask = board_.fmgr_.mask(ocolor) ^ board_.fmgr_.king_mask(ocolor);
-  uint64 oppenent_mask_p = oppenent_mask;
-
-  if ( minimalType_ > Figure::TypePawn)
-  {
-    oppenent_mask ^= board_.fmgr_.pawn_mask_o(ocolor);
-    oppenent_mask_p = oppenent_mask;
-  }
-  if ( minimalType_ > Figure::TypeKnight )
-  {
-    oppenent_mask ^= board_.fmgr_.knight_mask(ocolor);
-    oppenent_mask_p ^= board_.fmgr_.knight_mask(ocolor) & exclude_mask;
-  }
-  if ( minimalType_ > Figure::TypeBishop )
-  {
-    oppenent_mask ^= board_.fmgr_.bishop_mask(ocolor);
-    oppenent_mask_p ^= board_.fmgr_.bishop_mask(ocolor) & exclude_mask;
-  }
-  if ( minimalType_ > Figure::TypeRook )
-  {
-    oppenent_mask ^= board_.fmgr_.rook_mask(ocolor);
-    oppenent_mask_p ^= board_.fmgr_.rook_mask(ocolor) & exclude_mask;
-  }
-
-  const uint64 & black = board_.fmgr_.mask(Figure::ColorBlack);
-  const uint64 & white = board_.fmgr_.mask(Figure::ColorWhite);
-  uint64 mask_all = white | black;
-  uint64 mask_all_inv = ~mask_all;
-  uint64 brq_mask = board_.fmgr_.bishop_mask(board_.color_) | board_.fmgr_.rook_mask(board_.color_) | board_.fmgr_.queen_mask(board_.color_);
-
-  // generate pawn promotions (only if < 2 checking figures)
-  const uint64 & pawn_msk = board_.fmgr_.pawn_mask_o(board_.color_);
-  static int pw_delta[] = { -8, 8 };
-
-  const Figure & oking = board_.getFigure(ocolor, Board::KingIndex);
-
-  if ( minimalType_ <= Figure::TypeQueen )
-  {
-    uint64 promo_msk = board_.g_movesTable->promote_o(board_.color_);
+    static int pw_delta[] = { -8, +8 };
+    BitMask promo_msk = board_.g_movesTable->promote_o(color);
     promo_msk &= pawn_msk;
 
     for ( ; promo_msk; )
@@ -90,53 +73,49 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       const Field & field = board_.getField(from);
 
-      THROW_IF( !field || field.color() != board_.color_ || field.type() != Figure::TypePawn, "there is no pawn to promote" );
+      THROW_IF( !field || field.color() != color || field.type() != Figure::TypePawn, "there is no pawn to promote" );
 
-      int to = from + pw_delta[board_.color_];
+      int to = from + pw_delta[color];
 
       THROW_IF( (unsigned)to > 63, "pawn tries to go to invalid field" );
 
       if ( board_.getField(to) )
         continue;
 
-      add_capture(m, from, to, -1, Figure::TypeQueen);
+      add(m, from, to, Figure::TypeQueen, false);
+
+      // add promotion to checking knight
+      if ( board_.g_figureDir->dir(Figure::TypeKnight, color, to, oki_pos) >= 0 )
+        add(m, from, to, Figure::TypeKnight, false);
     }
   }
 
-  // firstly check if have at least 1 attacking pawn
+  // firstly check if we have at least 1 attacking pawn
   bool pawns_eat = false;
 
-  uint64 pawn_eat_msk = 0;
-  if ( board_.color_ )
+  BitMask pawn_eat_msk = 0;
+  if ( color )
     pawn_eat_msk = ((pawn_msk << 9) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk << 7) & Figure::pawnCutoffMasks_[1]);
   else
     pawn_eat_msk = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
 
-  pawns_eat = (pawn_eat_msk & oppenent_mask_p) != 0;
+  pawns_eat = (pawn_eat_msk & oppenent_mask) != 0;
 
-  if ( !pawns_eat && board_.en_passant_ >= 0 && (minimalType_ <= Figure::TypePawn) )
-  {
-    const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
-    THROW_IF( !epawn, "there is no en passant pawn" );
-
-    int to = epawn.where() + pw_delta[board_.color_];
-    THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
-
-    pawns_eat = (pawn_eat_msk & (1ULL << to)) != 0;
-  }
+  if ( !pawns_eat && board_.en_passant_ >= 0 )
+    pawns_eat = (pawn_eat_msk & set_mask_bit(board_.en_passant_)) != 0;
 
   // generate captures
 
   // 1. Pawns
   if ( pawns_eat )
   {
-    BitMask pw_mask = board_.fmgr().pawn_mask_o(board_.color_);
+    BitMask pw_mask = board_.fmgr().pawn_mask_o(color);
 
     for ( ; pw_mask; )
     {
-      int pw_pos = clear_msb(pw_mask);
+      int pw_pos = clear_lsb(pw_mask);
 
-      uint64 p_caps = board_.g_movesTable->pawnCaps_o(board_.color_, pw_pos) & oppenent_mask_p;
+      BitMask p_caps = board_.g_movesTable->pawnCaps_o(color, pw_pos) & oppenent_mask;
 
       for ( ; p_caps; )
       {
@@ -149,39 +128,38 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
         THROW_IF( (unsigned)to > 63, "invalid pawn's capture position" );
 
         const Field & field = board_.getField(to);
-        if ( !field || field.color() != ocolor || (field.type() < minimalType_ && !promotion) )
+        if ( !field || field.color() != ocolor )
           continue;
 
-        add_capture(m, pw_pos, to, field.index(), promotion ? Figure::TypeQueen : Figure::TypeNone);
+        add(m, pw_pos, to, promotion ? Figure::TypeQueen : Figure::TypeNone, true);
+
+        // add promotion to checking knight
+        if ( promotion && board_.g_figureDir->dir(Figure::TypeKnight, color, to, oki_pos) >= 0 )
+          add(m, pw_pos, to, Figure::TypeKnight, true);
       }
+    }
 
-      if ( board_.en_passant_ >= 0 && minimalType_ <= Figure::TypePawn )
+    if ( board_.en_passant_ >= 0 )
+    {
+      THROW_IF( board_.getField(board_.enpassantPos()).type() != Figure::TypePawn || board_.getField(board_.enpassantPos()).color() != ocolor, "there is no en passant pawn" );
+      BitMask ep_mask = board_.g_movesTable->pawnCaps_o(ocolor, board_.en_passant_) & board_.fmgr().pawn_mask_o(color);
+
+      for ( ; ep_mask; )
       {
-        const Figure & epawn = board_.getFigure(ocolor, board_.en_passant_);
-        THROW_IF( !epawn, "there is no en passant pawn" );
-
-        int to = epawn.where() + pw_delta[board_.color_];
-        THROW_IF( (unsigned)to > 63, "invalid en passant field index" );
-
-        int dir = board_.g_figureDir->dir(Figure::TypePawn, board_.color_, pw_pos, to);
-        if ( 0 == dir || 1 == dir )
-        {
-          THROW_IF( !pawns_eat, "have pawns capture, but not detected by mask" );
-
-          add_capture(m, pw_pos, to, board_.en_passant_, 0);
-        }
+        int from = clear_lsb(ep_mask);
+        add(m, from, board_.en_passant_, Figure::TypeNone, true);
       }
     }
   }
 
   // 2. Knights
-  BitMask kn_mask = board_.fmgr().knight_mask(board_.color_);
+  BitMask kn_mask = board_.fmgr().knight_mask(color);
   for ( ; kn_mask; )
   {
-    int kn_pos = clear_msb(kn_mask);
+    int kn_pos = clear_lsb(kn_mask);
 
     // don't need to verify capture possibility by mask
-    uint64 f_caps = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos) & oppenent_mask;
+    BitMask f_caps = board_.g_movesTable->caps(Figure::TypeKnight, kn_pos) & oppenent_mask;
     for ( ; f_caps; )
     {
       int to = clear_lsb(f_caps);
@@ -192,50 +170,35 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
-      THROW_IF( field.type() < minimalType_, "try to capture figure with score lower than required" );
-
-      add_capture(m, kn_pos, to, field.index(), 0);
+      add(m, kn_pos, to, Figure::TypeNone, true);
     }
   }
 
   // 3. Bishops + Rooks + Queens
-  for (int type = Figure::TypeBishop; type < Figure::TypeKing; ++type)
+  for (int type = Figure::TypeBishop; type <= Figure::TypeQueen; ++type)
   {
-    BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, board_.color_);
+    BitMask fg_mask = board_.fmgr().type_mask((Figure::Type)type, color);
     for ( ; fg_mask; )
     {
-      int fg_pos = clear_msb(fg_mask);
+      int from = clear_lsb(fg_mask);
 
-      uint64 f_caps = board_.g_movesTable->caps((Figure::Type)type, fg_pos) & oppenent_mask;
+      BitMask f_caps = board_.g_movesTable->caps((Figure::Type)type, from) & oppenent_mask;
       for ( ; f_caps; )
       {
-        int8 to = clear_lsb(f_caps);
+        int8 to = find_lsb(f_caps);
+        int pos = board_.find_first_index(from, to, mask_all);
+        if ( set_mask_bit(pos) & oppenent_mask )
+          add(m, from, pos, Figure::TypeNone, true);
 
-        const Field & field = board_.getField(to);
-        THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
-
-        THROW_IF( field.type() < minimalType_, "try to capture figure " );
-
-        // can't go here
-        const uint64 & btw_msk = board_.g_betweenMasks->between(fg_pos, to);
-        if ( (btw_msk & mask_all_inv) != btw_msk )
-          continue;
-
-        add_capture(m, fg_pos, to, field.index(), 0);
+        f_caps &= ~board_.g_betweenMasks->from(from, to);
       }
     }
   }
 
   // 4. King
   {
-    BitMask ki_mask = board_.fmgr().king_mask(board_.color_);
-
-    THROW_IF( ki_mask == 0, "invalid position - no king" );
-
-    int ki_pos = clear_lsb(ki_mask);
-
     // don't need to verify capture possibility by mask
-    uint64 f_caps = board_.g_movesTable->caps(Figure::TypeKing, ki_pos) & oppenent_mask;
+    BitMask f_caps = board_.g_movesTable->caps(Figure::TypeKing, ki_pos) & oppenent_mask;
     for ( ; f_caps; )
     {
       int to = clear_lsb(f_caps);
@@ -246,11 +209,81 @@ int CapsGenerator::generate(ScoreType & alpha, ScoreType betta, int & counter)
 
       THROW_IF( !field || field.color() != ocolor, "there is no opponent's figure on capturing field" );
 
-      THROW_IF( field.type() < minimalType_, "try to capture figure with score lower than required" );
-
-      add_capture(m, ki_pos, to, field.index(), 0);
+      add(m, ki_pos, to, Figure::TypeNone, true);
     }
   }
 
   return m;
+}
+
+//////////////////////////////////////////////////////////////////////////
+bool CapsGenerator::expressCheck(Move & move) const
+{
+  const Field & ffield = board_.getField(move.from_);
+  const Field & tfield = board_.getField(move.to_);
+
+  const Figure::Color & color = board_.color_;
+  Figure::Color ocolor = Figure::otherColor(color);
+
+  const BitMask mask_all = mask_all_ | set_mask_bit(move.to_);
+  if ( board_.discoveredCheck(move.from_, color, mask_all, mask_brq_, oking_pos_) )
+  {
+    move.discoveredCheck_ = 1;
+    return true;
+  }
+
+  if ( ffield.type() == Figure::TypeKing )
+    return false;
+
+  const BitMask & oki_mask = board_.fmgr().king_mask(ocolor);
+
+  THROW_IF( !ffield, "no moved figure" );
+
+  if ( ffield.type() == Figure::TypePawn )
+  {
+    const BitMask & pw_caps = board_.g_movesTable->pawnCaps_o(color, move.to_);
+    if ( pw_caps & oki_mask )
+      return true;
+
+    // en-passant discovered check
+    if ( board_.en_passant_ == move.to_ )
+    {
+      int ep_pos = board_.enpassantPos();
+      THROW_IF( board_.getField(ep_pos).type() != Figure::TypePawn || board_.getField(ep_pos).color() != ocolor, "no pawn for en-passant capture" );
+
+      if ( board_.discoveredCheck(ep_pos, color, mask_all ^ set_mask_bit(ep_pos), mask_brq_, oking_pos_) )
+      {
+        move.discoveredCheck_ = 1;
+        return true;
+      }
+    }
+
+    // promotion to knight was generated with check only
+    if ( move.new_type_ == Figure::TypeKnight )
+      return true;
+
+    if ( move.new_type_ == Figure::TypeQueen )
+    {
+      if ( board_.g_figureDir->dir(Figure::TypeQueen, ffield.color(), move.to_, oking_pos_) < 0 )
+        return false;
+
+      return board_.is_nothing_between(move.to_, oking_pos_, ~mask_all_);
+    }
+
+    return false;
+  }
+
+  if ( ffield.type() == Figure::TypeKnight )
+  {
+    const BitMask & kn_caps = board_.g_movesTable->caps(Figure::TypeKnight, move.to_);
+    return (kn_caps & oki_mask) != 0;
+  }
+
+  THROW_IF( ffield.type() < Figure::TypeBishop || ffield.type() > Figure::TypeQueen, "wrong attacking figure type" );
+
+  // at the last bishop + rook + queen
+  if ( board_.g_figureDir->dir(ffield.type(), ffield.color(), move.to_, oking_pos_) < 0 )
+    return false;
+
+  return board_.is_nothing_between(move.to_, oking_pos_, ~mask_all_);
 }

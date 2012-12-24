@@ -10,38 +10,33 @@
 #include "MovesTable.h"
 #include "FigureDirs.h"
 
+class MovesGeneratorBase;
 class MovesGenerator;
 class CapsGenerator;
 class EscapeGenerator;
 class ChecksGenerator;
-class ChecksGenerator2;
+class UsualGenerator;
+class EscapeGeneratorLimited;
+class Player;
 
-#ifdef VERIFY_CHECKS_GENERATOR
+#if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) || (defined VERIFY_FAST_GENERATOR) )
 class Player;
 #endif
-
-struct FiguresMobility
-{
-  FiguresMobility() :
-    knightMob_(0), bishopMob_(0), rookMob_(0), queenMob_(0),
-    knightDist_(0), bishopDist_(0), rookDist_(0), queenDist_(0)
-  {}
-
-  int knightMob_, bishopMob_, rookMob_, queenMob_;
-  int knightDist_, bishopDist_, rookDist_, queenDist_;
-};
 
 /*! board representation
  */
 class Board
 {
+  friend class MovesGeneratorBase;
   friend class MovesGenerator;
   friend class CapsGenerator;
   friend class EscapeGenerator;
   friend class ChecksGenerator;
-  friend class ChecksGenerator2;
+  friend class UsualGenerator;
+  friend class EscapeGeneratorLimited;
+  friend class Player;
 
-#ifdef VERIFY_CHECKS_GENERATOR
+#if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) || (defined VERIFY_FAST_GENERATOR) )
   friend class Player;
 #endif
 
@@ -51,8 +46,8 @@ public:
   static int   tcounter_;
 
   /// constants
-  enum State { Invalid, Ok, Castle, UnderCheck, Stalemat, DrawReps, DrawInsuf, Draw50Moves, ChessMat };
-  enum { PawnIndex, KnightIndex = 8, BishopIndex = 10, RookIndex = 12, QueenIndex = 14, KingIndex = 15, NumOfFigures = 16, NumOfFields = 64, MovesMax = 256, FENsize = 512, GameLength = 4096 };
+  enum State { Invalid, Ok = 1, UnderCheck = 2, Stalemat = 4, DrawReps = 8, DrawInsuf = 16, Draw50Moves = 64, ChessMat = 128 };
+  enum { NumOfFields = 64, MovesMax = 256, FENsize = 512, GameLength = 4096 };
 
   bool operator != (const Board & ) const;
 
@@ -60,14 +55,14 @@ public:
   Board();
 
   static bool load(Board & , std::istream &);
-  static bool save(const Board & , std::ostream &);
+  static bool save(const Board & , std::ostream &, bool = true);
 
   // only for debugging purposes, saves complete board memory dump
   void save(const char * fname) const;
   void load(const char * fname);
 
   /// init global data
-  void set_moves(MoveCmd * moves) { g_moves = moves; }
+  void set_undoStack(UndoInfo * undoStack) { g_undoStack = undoStack; }
   void set_MovesTable(const MovesTable * movesTable) { g_movesTable = movesTable; }
   void set_FigureDir(const FigureDir * figureDir) { g_figureDir = figureDir; }
   void set_PawnMasks(const PawnMasks * pawnMasks) { g_pawnMasks = pawnMasks; }
@@ -82,17 +77,61 @@ public:
   bool toFEN(char * fen) const;
 
   /// initialize empty board with given color to move
-  bool initEmpty(Figure::Color );
+  bool initEmpty(Figure::Color);
 
   /*! movements
    */
 
-  /// unpack from hash
-  Move unpack(const PackedMove & ) const;
+  bool extractKiller(const Move & ki, const Move & hmove, Move & killer) const
+  {
+    if ( !ki || 
+        ( hmove == ki ) ||
+        (  getField(ki.to_) ||
+          (en_passant_ == ki.to_ && getField(ki.from_).type() == Figure::TypePawn) ||
+           ki.new_type_ ) )
+    {
+      return false;
+    }
 
+    killer = ki;
+    killer.clearFlags();
+
+    bool ok = possibleMove(killer);
+    if ( !ok )
+      killer.clear();
+
+    //killer.threat_ = 1; // to prevent LMR
+
+    return ok;
+  }
+
+  /// unpack from hash, move have to be physically possible
+  bool unpack(const PackedMove & pm, Move & move) const
+  {
+    move.clear();
+
+    if ( !pm )
+      return false;
+
+    move.from_ = pm.from_;
+    move.to_ = pm.to_;
+    move.new_type_ = pm.new_type_;
+
+    if ( getField(move.to_) || (en_passant_ == move.to_ && getField(move.from_).type() == Figure::TypePawn) )
+      move.capture_ = true;
+
+    THROW_IF ( !possibleMove(move), "move in hash is impossible" );
+
+    return true;
+  }
+
+  /// put move to hash
   PackedMove pack(const Move & move) const
   {
     PackedMove pm;
+    if ( !move )
+      return pm;
+
     pm.from_ = move.from_;
     pm.to_ = move.to_;
     pm.new_type_ = move.new_type_;
@@ -100,41 +139,19 @@ public:
   }
 
   /// used in LMR
-  bool canBeReduced(const Move & move) const
+  bool canBeReduced() const;
+
+  /// don't allow LMR of strong pawn's moves
+  bool isDangerPawn(const Move & move) const;
+
+  /// don't allow LMR of strong moves
+  bool isMoveThreat(const Move & move) const
   {
-    // don't reduce captures
-    if ( (move.rindex_ >= 0 || move.new_type_ > 0) )
-      return false;
-
-    // don't allow reduction of pawn's movement to pre-last line or pawn's attack
-    return !isDangerPawn(move);
-  }
-
-  /// used to detect reduction/extension necessity
-  bool isDangerPawn(const Move & move) const
-  {
-    const Field & fto = getField(move.to_);
-    if ( fto.type() != Figure::TypePawn )
-      return false;
-
-    // attacking
-    const uint64 & p_caps = g_movesTable->pawnCaps_o(fto.color(), move.to_);
-    const uint64 & o_mask = fmgr_.mask(color_);
-    if ( p_caps & o_mask )
-      return true;
-
-    // becomes passed
-    const uint64 & pmsk = fmgr_.pawn_mask_t(color_);
-    Figure::Color ocolor = Figure::otherColor(color_);
-    const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);
-    const uint64 & passmsk = g_pawnMasks->mask_passed(color_, move.to_);
-    const uint64 & blckmsk = g_pawnMasks->mask_blocked(color_, move.to_);
-
-    return !(opmsk & passmsk) && !(pmsk & blckmsk);
+    return isDangerPawn(move);
   }
 
   // becomes passed
-  bool pawnPassed(const MoveCmd & move) const
+  bool pawnPassed(const UndoInfo & move) const
   {
     const Field & fto = getField(move.to_);
     if ( fto.type() != Figure::TypePawn )
@@ -151,17 +168,18 @@ public:
     return !(opmsk & passmsk) && !(pmsk & blckmsk);
   }
 
-  /// is pt attacked by given figure
-  inline bool ptAttackedBy(int8 pt, const Figure & fig) const
+  /// is pt attacked by figure in position 'p'
+  inline bool ptAttackedBy(int8 pt, int p) const
   {
-    int dir = g_figureDir->dir(fig.getType(), fig.getColor(), fig.where(), pt);
+    const Field & field = getField(p);
+    int dir = g_figureDir->dir(field.type(), field.color(), p, pt);
     if ( dir < 0 )
       return false;
 
-    if ( fig.getType() == Figure::TypeKnight )
+    if ( field.type() == Figure::TypeKnight )
       return true;
 
-    const uint64 & mask = g_betweenMasks->between(fig.where(), pt);
+    const uint64 & mask = g_betweenMasks->between(p, pt);
     const uint64 & black = fmgr_.mask(Figure::ColorBlack);
     if ( (~black & mask) != mask )
       return false;
@@ -173,34 +191,44 @@ public:
     return true;
   }
 
-  /// get index of figure of color 'ocolor', which attacks field 'pt'
-  /// returns -1 if 'pt' was already attacked from this direction (independently of figure)
-  int getAttackedFrom(Figure::Color ocolor, int8 pt, int8 from) const;
+  /// get position of figure of color 'acolor', which attacks field 'pt'
+  /// returns -1 if 'pt' was already attacked from this direction
+  /// even if it is attacked by figure that occupies field 'from'
+  inline int getAttackedFrom(Figure::Color acolor, int8 pt, int8 from) const
+  {
+    BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
+    BitMask brq_mask = fmgr_.bishop_mask(acolor) | fmgr_.rook_mask(acolor) | fmgr_.queen_mask(acolor);
+    const BitMask & btw_mask = g_betweenMasks->between(pt, from);
+    brq_mask &= ~btw_mask; // exclude all figures, that are between 'pt' and 'from'
+
+    return findDiscovered(from, acolor, mask_all, brq_mask, pt);
+  }
 
   const FiguresManager & fmgr() const
   {
     return fmgr_;
   }
 
-  /// verify 
-  bool validMove(const Move &) const;
-
-  /// null-move
-  void makeNullMove(MoveCmd & move);
-  void unmakeNullMove(MoveCmd & move);
-
   inline bool allowNullMove() const
   {
-    if ( (fmgr_.knights(color_)+fmgr_.bishops(color_)+fmgr_.rooks(color_)+fmgr_.queens(color_) == 0) ||
-          !can_win_[0] ||
-          !can_win_[1] ||
-         (fmgr_.weight(color_) < Figure::figureWeight_[Figure::TypeRook]) ||
-         (fmgr_.weight(color_) < Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypeKnight] && !fmgr_.pawns(color_)) )
-    {
-      return false;
-    }
+    return can_win_[color_] &&
+        (fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 0);
+  }
 
-    return true;
+  inline int nullMoveDepthMin() const
+  {
+    if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
+      return NullMove_DepthMin;
+    else
+      return NullMove_DepthMin+2;
+  }
+
+  inline int nullMoveReduce() const
+  {
+    if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
+      return NullMove_PlyReduce;
+    else
+      return NullMove_PlyReduce-1;
   }
 
   inline bool shortNullMoveReduction() const
@@ -223,58 +251,81 @@ public:
     return can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
   }
 
-  /// really make move. perform validation
-  bool makeMove(const Move & );
+  /// to detect draw by moves repetitons
+  int countReps() const;
 
-  /// called after makeMove
+  /// with given zcode
+  int countReps(int from, const BitMask & zcode) const
+  {
+    int reps = 1;
+    int i = halfmovesCounter_ - from;
+    for (; reps < 2 && i >= 0; i -= 2)
+    {
+      if ( undoInfo(i).zcode_ == zcode )
+        reps++;
+
+      if ( undoInfo(i).irreversible_ )
+        break;
+    }
+
+    // may be we forget to test initial position?
+    if ( reps < 2 && i == -1 && zcode == undoInfo(0).zcode_old_ )
+      reps++;
+
+    return reps;
+  }
+
+
+  /// used for hashed moves
+  int  calculateReps(const Move & move) const;
+
+  /// is move physically possible
+  bool possibleMove(const Move & mv) const;
+
+  /// is move meet rules
+  bool validateMove(const Move & mv) const;
+
+#ifdef VALIDATE_VALIDATOR
+  bool validateMove2(const Move & mv) const;
+  bool validateValidator(const Move & mv);
+#endif
+
+  /// make move
+  void makeMove(const Move & );
   void unmakeMove();
-  /*! end of movements */
+
+  /// null-move
+  void makeNullMove();
+  void unmakeNullMove();
 
   /// verify if there is draw or mat
   void verifyState();
 
-  /// 2 means that only king's movements are valid
-  int getNumOfChecking() const { return checkingNum_; }
-
   /// returns position evaluation that depends on color
   ScoreType evaluate() const;
 
-  /// add new figure. firstly find empty slot (index). try to put pawn to slots 0-7, knight to slots 8-9 etc...
-  bool addFigure(const Figure &);
-
-  /// set figure with given index to given position
-  void setFigure(const Figure &);
+  /// add new figure
+  bool addFigure(const Figure::Color color, const Figure::Type type, int pos);
 
   /// verify position and calculate checking figures
   /// very slow. should be used only while initialization
   bool invalidate();
 
-  /// always use this method to get figure
-  inline const Figure & getFigure(Figure::Color color, int index) const
-  {
-    THROW_IF( (size_t)index >= NumOfFigures, "\"Figure & getFigure(Figure::Color, int) const\" - try to get invalid figure");
-    return figures_[color][index];
-  }
-
-  /// always use this method to get figure
-  inline const Figure & getFigure(int8 pos) const
-  {
-    THROW_IF( (uint8)pos > 63, "\"Figure & getFigure(int8) const\" - try to get invalid figure");
-    const Field & field = getField(pos);
-    THROW_IF( !field, "no figure on given field" );
-    return figures_[field.color()][field.index()];
-  }
-
-  /// always use this method to get figure
-  inline Figure & getFigure(Figure::Color color, int index)
-  {
-    THROW_IF( (size_t)index >= NumOfFigures, "\"Figure & getFigure(Figure::Color, int) const\" - try to get invalid figure");
-    return figures_[color][index];
-  }
-
-  inline int8 getEnPassant() const
+  /// position, where capturing pawn goes to
+  inline int enpassant() const
   {
     return en_passant_;
+  }
+
+  /// position of pawn, to be captured by en-passant
+  inline int enpassantPos() const
+  {
+    if ( en_passant_ < 0 )
+      return -1;
+
+    // if current color is black, color of en-passant pawn is white and vise versa
+    static int pw_delta[2] = { 8, -8 };
+    return en_passant_ + pw_delta[color_];
   }
 
   /// always use this method to get field
@@ -301,48 +352,82 @@ public:
   uint8 repsCount() const { return repsCounter_; }
 
   /// get i-th move from begin
-  const MoveCmd & getMove(int i) const
+  const UndoInfo & undoInfo(int i) const
   {
+    THROW_IF( !g_undoStack, "board isn't initialized" );
     THROW_IF( i < 0 || i >= GameLength, "there was no move" );
-    return g_moves[i];
+    return g_undoStack[i];
+  }
+
+  UndoInfo & undoInfo(int i)
+  {
+    THROW_IF( !g_undoStack, "board isn't initialized" );
+    THROW_IF( i < 0 || i >= GameLength, "there was no move" );
+    return g_undoStack[i];
   }
 
   /// get i-th move from end
-  /// 0 means the last one
-  MoveCmd & getMoveRev(int i)
+  /// '0' means the last one, '-1' means 1 before last
+  UndoInfo & undoInfoRev(int i)
   {
+    THROW_IF( !g_undoStack, "board isn't initialized" );
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i-1];
+    return g_undoStack[halfmovesCounter_+i-1];
   }
 
-  const MoveCmd & getMoveRev(int i) const
+  const UndoInfo & undoInfoRev(int i) const
   {
+    THROW_IF( !g_undoStack, "board isn't initialized" );
     THROW_IF( i > 0 || i <= -halfmovesCounter_, "attempt to get move before 1st or after last" );
-    return g_moves[halfmovesCounter_+i-1];
+    return g_undoStack[halfmovesCounter_+i-1];
+  }
+
+  const UndoInfo & lastUndo() const
+  {
+    THROW_IF( !g_undoStack, "board isn't initialized" );
+    THROW_IF( halfmovesCounter_ <= 0, "invalid halfmovesCounter");
+    return g_undoStack[halfmovesCounter_-1];
+  }
+
+  UndoInfo & lastUndo()
+  {
+      THROW_IF( !g_undoStack, "board isn't initialized" );
+      THROW_IF( halfmovesCounter_ <= 0, "invalid halfmovesCounter");
+      return g_undoStack[halfmovesCounter_-1];
   }
 
   /// returns current move color
   Figure::Color getColor() const { return color_; }
 
   /// returns current state, ie check, mat etc
-  State getState() const { return state_; }
+  uint8 getState() const { return state_; }
+
+  /// returns true if we are under check
+  bool underCheck() const { return (state_ & UnderCheck) != 0; }
 
   /// just a useful method to quickly check if there is a draw
-  static bool isDraw(State state)
+  static bool isDraw(uint8 s)
   {
-    return Stalemat == state || DrawReps == state || DrawInsuf == state || Draw50Moves == state;
+    return (s & (Stalemat | DrawReps | DrawInsuf | Draw50Moves)) != 0;
   }
 
+  inline bool matState() const { return (state_ & ChessMat) != 0; }
   inline bool drawState() const { return isDraw(state_); }
+
+  // draw or mat
+  inline bool terminalState() const
+  {
+      return (state_ & (Stalemat | DrawReps | DrawInsuf | Draw50Moves | ChessMat)) != 0;
+  }
 
   inline void setNoMoves()
   {
-    if ( Invalid == state_ || ChessMat == state_ || drawState() )
+    if ( (Invalid == state_) || (ChessMat & state_) || drawState() )
       return;
-    if ( UnderCheck == state_ )
-      state_ = ChessMat;
+    if ( underCheck() )
+      state_ |= ChessMat;
     else
-      state_ = Stalemat;
+      state_ |= Stalemat;
   }
 
   void verifyMasks() const;
@@ -365,49 +450,53 @@ public:
     return score;
   }
 
-
-  /// is field 'pos' attacked by given color? figure isn't moved
-  bool fastAttacked(const Figure::Color c, int8 pos, int8 exclude_pos) const;
+  // will be 'pos' under check after removing figure from 'exclude' position
+  bool isAttacked(const Figure::Color c, int pos, int exclude) const
+  {
+    BitMask mask_all_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
+    mask_all_inv |= set_mask_bit(exclude);
+    return fieldAttacked(c, pos, mask_all_inv);
+  }
 
   /// is field 'pos' attacked by given color?
-  bool isAttacked(const Figure::Color c, int pos) const;
-  bool fastAttacked(const Figure::Color c, int8 pos) const;
+  bool isAttacked(const Figure::Color c, int8 pos) const
+  {
+    BitMask mask_all_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
+    return fieldAttacked(c, pos, mask_all_inv);
+  }
 
+  /// static exchange evaluation, should be called before move
+  int see(const Move & move) const;
 
-  /// static exchange evaluation
-
-  /// should be called directly after move
-  int see(int initial_value, Move & next, int & /*recapture depth*/) const;
-
-  // we try to do 'move'
-  // almost the same as see(), need to be refactored
-  int see_before(int initial_value, const Move & move) const;
-  int see_before2(int initial_value, const Move & move) const;
+  /// find king's position
+  inline int kingPos(Figure::Color c) const
+  {
+    return find_lsb(fmgr_.king_mask(c));
+  }
 
   /// methods
 private:
 
-  // detect discovered check to king of 'kc' color
-  bool see_check(Figure::Color kc, uint8 from, const uint64 & all_mask_inv, const uint64 & a_brq_mask) const;
-  
-  inline bool see_check2(Figure::Color kc, uint8 from, const BitMask & all_mask_inv, const BitMask & a_brq_mask) const
-  {
-    const Figure & king = getFigure((Figure::Color)kc, KingIndex);
+  /// clear board. reset all fields, number of moves etc...
+  void clear();
 
-    // we need to check if there is some attacker on line to king
-    const BitMask & from_msk = g_betweenMasks->from(king.where(), from);
+  // detect discovered check to king of 'kc' color
+  inline bool see_check(Figure::Color kc, uint8 from, uint8 ki_pos, const BitMask & all_mask_inv, const BitMask & a_brq_mask) const
+  {
+    // we need to verify if there is some attacker on line to king
+    const BitMask & from_msk = g_betweenMasks->from(ki_pos, from);
 
     // no attachers at all
     if ( !(a_brq_mask & from_msk) )
       return false;
 
     // is there some figure between king and field that we move from
-    BitMask all_mask_inv2 = (all_mask_inv | (1ULL << from));
+    BitMask all_mask_inv2 = (all_mask_inv | set_mask_bit(from));
 
-    if ( is_something_between(king.where(), from, all_mask_inv2) )
+    if ( is_something_between(ki_pos, from, all_mask_inv2) )
       return false;
 
-    int index = find_first_index(king.where(), from, ~all_mask_inv2);
+    int index = find_first_index(ki_pos, from, ~all_mask_inv2);
     if ( index < 0 )
       return false;
 
@@ -418,121 +507,88 @@ private:
       return false;
 
     // figure have to be in updated BRQ mask
-    if ( !((1ULL<<index) & a_brq_mask) )
+    if ( !(set_mask_bit(index) & a_brq_mask) )
       return false;
 
-    const Figure & fig = getFigure(field.color(), field.index());
-
-    THROW_IF( fig.getType() < Figure::TypeBishop || fig.getType() > Figure::TypeQueen, "see: not appropriate attacker type" );
+    THROW_IF( field.type() < Figure::TypeBishop || field.type() > Figure::TypeQueen, "see: not appropriate attacker type" );
 
     // could figure attack king from it's position
-    if ( g_figureDir->dir(field.type(), field.color(), index, king.where()) >= 0 )
+    if ( g_figureDir->dir(field.type(), field.color(), index, ki_pos) >= 0 )
       return true;
 
     return false;
   }
 
-  /// clear board. remove all figures. reset all fields, number of moves etc...
-  void clear();
+  /// return short/long castle possibility
+  bool castling() const { return castling_ != 0; }
 
-  MoveCmd & getMove(int i)
+  bool castling(Figure::Color c) const
   {
-    THROW_IF( i < 0 || i >= GameLength, "there was no move" );
-    return g_moves[i];
+    int offset = c<<1;
+    return ((castling_ >> offset) & 3) != 0;
   }
 
-  /// return short/long castle possibility
-  bool castling(Figure::Color color, int8 t /* 0 - short (K), 1 - long (Q) */) const
+  bool castling(Figure::Color c, int t /* 0 - short (K), 1 - long (Q) */) const
   {
-	  THROW_IF( (unsigned)color > 1 || (unsigned)t > 1, "invalid color or castle type" );
-    int8 rpos = ((((int8)color-1) >> 7) & 56) | ((t-1) >> 7) & 7;
-    return getFigure(color, KingIndex).isFirstStep() && getField(rpos).type() == Figure::TypeRook && getField(rpos).color() == color && getFigure(color, getField(rpos).index()).isFirstStep();
+    int offset = ((c<<1) | t);
+    return (castling_ >> offset) & 1;
+  }
+
+  // white
+  bool castling_K() const { return (castling_ >> 2) & 1; }
+  bool castling_Q() const { return (castling_ >> 3) & 1; }
+
+  // black
+  bool castling_k() const { return castling_ & 1; }
+  bool castling_q() const { return (castling_ >> 1) & 1; }
+
+  /// set short/long castle
+  void set_castling(Figure::Color c, int t)
+  {
+    int offset = ((c<<1) | t);
+    castling_ |= set_bit(offset);
+  }
+
+  void clear_castling(Figure::Color c, int t)
+  {
+    int offset = ((c<<1) | t);
+    castling_ &= ~set_bit(offset);
   }
 
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
-  inline ScoreType evaluateKing(Figure::Color color, const FiguresMobility & fmob) const;
+  inline ScoreType evaluateKing(Figure::Color color) const;
   inline ScoreType evaluateFianchetto() const;
   ScoreType evaluatePawns(Figure::Color color) const;
   ScoreType evalPawnsEndgame(Figure::Color color) const;
   ScoreType evaluateRooks(Figure::Color color) const;
-  ScoreType evaluateMobility(Figure::Color color, FiguresMobility & fmob) const;
   ScoreType evaluateWinnerLoser() const;
 
-  /// do move. fill undo info, don't validate
-  bool doMove();
-
-  /// undo move. restore old state after doMove
-  void undoMove();
-
-  /// verify position after movement
-  inline bool wasMoveValid(const MoveCmd & move) const
-  {
-    if ( UnderCheck == move.old_state_ )
-    {
-      if ( move.checkVerified_ )
-      {
-        THROW_IF( !wasValidUnderCheck(move), "move was verified as valid, but actualy itsn't" );
-        return true;
-      }
-
-      return wasValidUnderCheck(move);
-    }
-    else
-      return wasValidWithoutCheck(move);
-  }
+  bool verifyCastling(const Figure::Color , int t) const;
 
   bool verifyChessDraw();
 
-  /// return true if current color is checking
-  /// also find all checking figures
-  bool isChecking(MoveCmd &) const;
-
-  /// validate current move. set invalid state_
-  // move is already done
-  bool wasValidUnderCheck(const MoveCmd & ) const;
-
-  // move is already done
-  bool wasValidWithoutCheck(const MoveCmd & ) const;
-
-  // move isn't done yet. we can call it only if 1 attacking figure
-  bool isMoveValidUnderCheck(const Move & move) const;
+  /// find all checking figures, save them into board
+  void detectCheck(const UndoInfo & move);
 
   /// is king of given color attacked by given figure
-  /// returns index of figure if attacked or -1 otherwise
-  inline int isAttackedBy(Figure::Color color, const Figure & fig) const
+  inline bool isAttackedBy(Figure::Color color, const Figure::Color acolor, const Figure::Type type, int from) const
   {
-    const Figure & king = getFigure(color, KingIndex);
-    int dir = g_figureDir->dir(fig.getType(), fig.getColor(), fig.where(), king.where());
-    if ( dir < 0 || Figure::TypeKing == fig.getType() && dir > 7 )
-      return -1;
+    int king_pos = kingPos(color);
+    int dir = g_figureDir->dir(type, acolor, from, king_pos);
+    if ( dir < 0 || Figure::TypeKing == type && dir > 7 )
+      return false;
 
-    const uint64 & mask = g_betweenMasks->between(fig.where(), king.where());
-    const uint64 & black = fmgr_.mask(Figure::ColorBlack);
-    if ( (~black & mask) != mask )
-      return -1;
-
-    const uint64 & white = fmgr_.mask(Figure::ColorWhite);
-    if ( (~white & mask) != mask )
-      return -1;
-
-    return fig.getIndex();
+    BitMask inv_mask_all = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
+    return is_nothing_between(from, king_pos, inv_mask_all);
   }
 
-  /// gets index of figure, attacking from given direction
-  /// check only bishops, rook and queens
-  int getAttackedFrom(Figure::Color color, int apt) const;
-  int fastAttackedFrom(Figure::Color color, int apt) const;
-
-  /// special case - figure isn't moved yet
-  int fastAttackedFrom(Figure::Color color, int apt,
-    const uint64 & clear_msk /* figure goes from */,
-    const uint64 & set_msk /* figure goes to */,
-    const uint64 & exclude_msk /* removed figure - can't attack anymore */) const;
+  // is field 'pos' attacked by color 'c'. mask_all - all figures, mask is inverted
+  bool fieldAttacked(const Figure::Color c, int8 pos, const BitMask & mask_all_inv) const;
 
   // returns number of checking figures.
   // very slow. used only for initial validation
-  int findCheckingFigures(Figure::Color color, int pos);
+  int findCheckingFigures(Figure::Color color, int ki_pos);
 
   // find 1st figure on the whole semi-line given by direction 'from' -> 'to'
   // mask gives all interesting figures
@@ -542,12 +598,7 @@ private:
     if ( !mask_from )
       return -1;
 
-    int index = -1;
-    if ( from < to ) // use LSB
-      index = find_lsb(mask_from);
-    else // MSB
-      index = find_msb(mask_from);
-
+    int index = from < to ?  find_lsb(mask_from) : find_msb(mask_from);
     return index;
   }
 
@@ -559,22 +610,57 @@ private:
     return (btw_msk & inv_mask) != btw_msk;
   }
 
-  inline bool discoveredCheck(int8 pt, Figure::Color color, const uint64 & mask_all, const uint64 & brq_mask, int oki_pos) const
+  // check if there is nothing between 'from' and 'to'
+  // inv_mask - inverted mask of all interesting figures
+  inline bool is_nothing_between(int from, int to, const BitMask & inv_mask) const
   {
-    BitMask from_msk = g_betweenMasks->from(oki_pos, pt);
-    BitMask mask_all_ex = mask_all & ~(1ULL << pt);
+    const BitMask & btw_msk = g_betweenMasks->between(from, to);
+    return (btw_msk & inv_mask) == btw_msk;
+  }
+
+  // acolor - color of attacking side, ki_pos - attacked king pos
+  inline bool discoveredCheck(int pt, Figure::Color acolor, const BitMask & mask_all, const BitMask & brq_mask, int ki_pos) const
+  {
+    const BitMask & from_msk = g_betweenMasks->from(ki_pos, pt);
+    BitMask mask_all_ex = mask_all & ~set_mask_bit(pt);
     mask_all_ex &= from_msk;
     if ( (mask_all_ex & brq_mask) == 0 )
       return false;
 
-    int index = oki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
-    const Field & afield = getField(index);
-    if ( afield.color() != color || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen )
+    int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    if ( (set_mask_bit(apos) & brq_mask) == 0 ) // no BRQ on this field
       return false;
 
-    int dir = g_figureDir->dir(afield.type(), afield.color(), index, oki_pos);
+    const Field & afield = getField(apos);
+    THROW_IF( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen, "discoveredCheck() - attacking figure isn't BRQ" );
+
+    int dir = g_figureDir->dir(afield.type(), afield.color(), apos, ki_pos);
     return dir >= 0;
   }
+
+  /// returns field index of checking figure or -1 if not found
+  /// mask_all is completely prepared, all figures are on their places
+  inline int findDiscovered(int from, Figure::Color acolor, const BitMask & mask_all, const BitMask & brq_mask, int ki_pos) const
+  {
+    const BitMask & from_msk = g_betweenMasks->from(ki_pos, from);
+    BitMask mask_all_ex = mask_all & from_msk;
+    if ( (mask_all_ex & brq_mask) == 0 )
+      return -1;
+
+    int apos = ki_pos < from ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    if ( (set_mask_bit(apos) & brq_mask) == 0 ) // no BRQ on this field
+      return -1;
+
+    const Field & afield = getField(apos);
+    THROW_IF( afield.color() != acolor || afield.type() < Figure::TypeBishop || afield.type() > Figure::TypeQueen, "findDiscovered() - attacking figure isn't BRQ" )
+
+    int dir = g_figureDir->dir(afield.type(), afield.color(), apos, ki_pos);
+    if ( dir < 0 )
+      return -1;
+
+    return apos;
+  }
+
 
   /// data
 private:
@@ -582,27 +668,16 @@ private:
   static const char * stdFEN_;
   static char fen_[FENsize];
 
-  /// index of castle's possibility
-  /// indices: [0 - black, 1 - white] [0 - short (King), 1 - long (Queen)]
-  //bool castle_index_[2][2];
-
-  /// indices of checking figures
-  int8 checking_[2];
-
   /// for chess draw detector
   bool can_win_[2];
 
-  /// game stage - opening, middle-game, etc...
-  uint8 stages_[2];
-
-  /// number of checking figures
-  int8 checkingNum_;
-
-  /// en-passant pawn index. must be cleared (set to -1) after move. it has color different from "color_"
+  /// en-passant field index. must be cleared (set to -1) after move
+  /// this is the field, where capturing pawn will go, it's written in FEN
+  /// it has color different from "color_"
   int8  en_passant_;
 
   /// current state, i.e check, draw, mat, invalid, etc.
-  State  state_;
+  uint8 state_;
 
   /// color to make move from this position
   Figure::Color color_;
@@ -610,16 +685,29 @@ private:
   /// holds number of figures of each color, hash key, masks etc.
   FiguresManager fmgr_;
 
-  /// figures array 2 x 16
-  Figure figures_[2][NumOfFigures];
-
   /// fields array 8 x 8
   Field fields_[NumOfFields];
 
   int fiftyMovesCount_, halfmovesCounter_, movesCounter_;
   uint8 repsCounter_;
 
-  MoveCmd * g_moves;
+  // castling possibility flag
+  // (0, 1) bits block for black
+  // (2, 3) bits block for white
+  // lower bit in block is short (K)
+  // higher bit in block is long (Q)
+  uint8 castling_;
+
+  // check
+  uint8 checkingNum_;
+
+  union
+  {
+  uint8  checking_[2];
+  uint16 checking_figs_;
+  };
+
+  UndoInfo * g_undoStack;
   const MovesTable * g_movesTable;
   const FigureDir * g_figureDir;
   const PawnMasks * g_pawnMasks;

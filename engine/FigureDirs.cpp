@@ -227,9 +227,9 @@ void FigureDir::calcKingDir(int idp)
 		d = 6;
 	if ( dp.x() == -1 && dp.y() == -1)
 		d = 7;
-	if ( dp.x() == -2 && dp.y() == 0 )
-		d = 8;
 	if ( dp.x() == 2 && dp.y() == 0 )
+		d = 8;
+	if ( dp.x() == -2 && dp.y() == 0 )
 		d = 9;
 
 	for (int color = 0; color < 2; ++color)

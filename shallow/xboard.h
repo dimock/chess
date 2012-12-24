@@ -18,6 +18,8 @@ public:
   void write_error(const std::exception * e = 0);
 
   bool peekInput();
+  void printPV(SearchResult * sres);
+  void printStat(SearchData * sres);
 
 #ifdef WRITE_LOG_FILE_
   std::ostream & get_log()
@@ -28,7 +30,7 @@ public:
 
 private:
 
-  void out_state(std::ostream & os, Board::State state, bool white);
+  void out_state(std::ostream & os, uint8 state, bool white);
 
 private:
 

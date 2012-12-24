@@ -9,6 +9,7 @@
 #include <Windows.h>
 
 #undef WRITE_LOG_FILE_
+#define WRITE_ERROR_PGN
 
 class Thinking
 {
@@ -29,18 +30,20 @@ public:
 
 	void save();
   void fen2file(const char * fname);
+  void pgn2file(const char * fname);
   void hash2file(const char * fname);
   void toFEN(char * );
 
   bool fromFEN(xCmd & cmd);
 	void editCmd(xCmd & cmd);
 
-	bool move(xCmd & moveCmd, Board::State & state, bool & white);
-	bool reply(char (&)[256], Board::State & state, bool & white);
+	bool move(xCmd & moveCmd, uint8 & state, bool & white);
+	bool reply(char (&)[256], uint8 & state, bool & white);
   void analyze();
   void stop();
 
-  void setPlayerCallback(PLAYER_CALLBACK );
+  void setPlayerCallbacks(CallbackStruct cs);
+  void clearPlayerCallbacks();
   
   int giveMoreTime();
 
@@ -57,6 +60,7 @@ private:
 	void setFigure(xCmd & cmd);
 
 	Figure::Color boardColor_, figureColor_;
+  Board board_;
 	Player player_;
   int movesLeft_;
   int xtimeMS_;

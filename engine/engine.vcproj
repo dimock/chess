@@ -573,7 +573,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\EscapeGenerator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Evaluation.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FastGenerator.cpp"
 				>
 			</File>
 			<File
@@ -609,6 +617,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PlayerSearch.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\PlayerVerify.cpp"
 				>
 			</File>
@@ -617,7 +629,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\see2.cpp"
+				RelativePath=".\UsualGenerator.cpp"
 				>
 			</File>
 		</Filter>

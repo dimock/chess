@@ -13,7 +13,7 @@ using namespace std;
 
 static xBoardMgr * g_xboard_mgr_ = 0;
 
-void player_callback()
+void queryInput()
 {
   if ( !g_xboard_mgr_ )
     return;
@@ -22,6 +22,22 @@ void player_callback()
     return;
 
   g_xboard_mgr_->do_cmd();
+}
+
+void sendOutput(SearchResult * sres)
+{
+  if ( !g_xboard_mgr_ )
+    return;
+
+  g_xboard_mgr_->printPV(sres);
+}
+
+void sendStatus(SearchData * sdata)
+{
+  if ( !g_xboard_mgr_ )
+    return;
+
+  g_xboard_mgr_->printStat(sdata);
 }
 
 xBoardMgr::xBoardMgr() :
@@ -46,17 +62,22 @@ xBoardMgr::xBoardMgr() :
     in_pipe_ = !GetConsoleMode(hinput_, &mode);
     if ( !in_pipe_ )
     {
-      SetConsoleMode(hinput_, mode & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
+      BOOL ok = SetConsoleMode(hinput_, mode & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
       FlushConsoleInputBuffer(hinput_);
     }
   }
 
-  thk_.setPlayerCallback(player_callback);
+  CallbackStruct cs;
+  cs.sendOutput_ = &sendOutput;
+  cs.sendStatus_ = &sendStatus;
+  cs.queryInput_ = &queryInput;
+  thk_.setPlayerCallbacks(cs);
 }
 
 xBoardMgr::~xBoardMgr()
 {
-  thk_.setPlayerCallback(0);
+  g_xboard_mgr_ = 0;
+  thk_.clearPlayerCallbacks();
 }
   
 bool xBoardMgr::peekInput()
@@ -76,34 +97,48 @@ bool xBoardMgr::peekInput()
   {
     DWORD num = 0;
     if ( GetNumberOfConsoleInputEvents(hinput_, &num) )
-      return num > 0;
+    {
+      if ( num == 0 )
+        return false;
+
+      INPUT_RECORD irecords[256];
+      DWORD nread = 0;
+      if ( PeekConsoleInput(hinput_, irecords, num, &nread) )
+      {
+        for (DWORD i = 0; i < nread; ++i)
+        {
+          if ( irecords[i].EventType & KEY_EVENT )
+            return true;
+        }
+      }
+    }
     return false;
   }
 }
 
 
-void xBoardMgr::out_state(ostream & os, Board::State state, bool white)
+void xBoardMgr::out_state(ostream & os, uint8 state, bool white)
 {
-  if ( Board::ChessMat == state )
+  if ( Board::ChessMat & state )
   {
     if ( white )
       os << "1-0 {White}" << endl;
     else
       os << "0-1 {Black}" << endl;
   }
-  else if ( Board::DrawInsuf == state )
+  else if ( Board::DrawInsuf & state )
   {
     os << "1/2-1/2 {Draw by material insufficient}" << endl;
   }
-  else if ( Board::Stalemat == state )
+  else if ( Board::Stalemat & state )
   {
     os << "1/2-1/2 {Stalemate}" << endl;
   }
-  else if ( Board::DrawReps == state )
+  else if ( Board::DrawReps & state )
   {
     os << "1/2-1/2 {Draw by repetition}" << endl;
   }
-  else if ( Board::Draw50Moves == state )
+  else if ( Board::Draw50Moves & state )
   {
     os << "1/2-1/2 {Draw by fifty moves rule}" << endl;
   }
@@ -116,15 +151,80 @@ void xBoardMgr::write_error(const std::exception * e /*= 0*/)
     ofs_log_ << "exception: " << e->what() << endl;
   else
     ofs_log_ << "exception" << endl;
- 
+#endif
+
+#ifdef WRITE_ERROR_PGN 
   time_t curtime;
   time(&curtime);
   tm * t = localtime(&curtime);
-  char fen_fname[MAX_PATH];
-  strftime(fen_fname, MAX_PATH, "fen_%d-%m-%Y_%H-%M-%S.txt", t);
-  thk_.fen2file(fen_fname);
-//  thk_.hash2file("hash");
+  char pgn_fname[MAX_PATH];
+  strftime(pgn_fname, MAX_PATH, "fen_%d-%m-%Y_%H-%M-%S.pgn", t);
+  thk_.pgn2file(pgn_fname);
 #endif
+}
+
+void xBoardMgr::printPV(SearchResult * sres)
+{
+  if ( !sres || !sres->best_ )
+    return;
+
+  Board board = sres->board_;
+  UndoInfo undoStack[Board::GameLength];
+  board.set_undoStack(undoStack);
+
+  cout << sres->depth_ << " " << sres->score_ << " " << (int)sres->dt_ << " " << sres->totalNodes_;
+  for (int i = 0; i < sres->depth_ && sres->pv_[i]; ++i)
+  {
+    cout << " ";
+
+    Move pv = sres->pv_[i];
+    uint8 captured = pv.capture_;
+    pv.clearFlags();
+    pv.capture_ = captured;
+
+    if ( !board.possibleMove(pv) )
+      break;
+
+    char str[64];
+    if ( !printSAN(board, pv, str) )
+      break;
+
+    THROW_IF( !board.validateMove(pv), "move is invalid but it is not detected by printSAN()");
+
+    board.makeMove(pv);
+
+    cout << str;
+  }
+  cout << std::endl;
+}
+
+void xBoardMgr::printStat(SearchData * sdata)
+{
+  if ( sdata && sdata->depth_ <= 0 )
+    return;
+
+  Board board = sdata->board_;
+  UndoInfo undoStack[Board::GameLength];
+  board.set_undoStack(undoStack);
+
+  char outstr[1024];
+  clock_t t = clock() - sdata->tstart_;
+  int movesLeft = sdata->numOfMoves_ - sdata->counter_;
+  sprintf(outstr, "stat01: %d %d %d %d %d", t/10, sdata->totalNodes_, sdata->depth_-1, movesLeft, sdata->numOfMoves_);
+
+  Move mv = sdata->best_;
+  uint8 captured = mv.capture_;
+  mv.clearFlags();
+  mv.capture_ = captured;
+
+  char str[64];
+  if ( mv && board.validateMove(mv) && printSAN(board, mv, str) )
+  {
+    strcat(outstr, " ");
+    strcat(outstr, str);
+  }
+
+  cout << outstr << std::endl;
 }
 
 bool xBoardMgr::do_cmd()
@@ -308,7 +408,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
     {
       force_ = false;
       char str[256];
-      Board::State state = Board::Invalid;
+      uint8 state = Board::Invalid;
       bool white;
       bool b = thk_.reply(str, state, white);
       if ( b )
@@ -319,7 +419,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
         os_ << str << endl;
 
-        if ( Board::isDraw(state) || state == Board::ChessMat )
+        if ( Board::isDraw(state) || (state & Board::ChessMat) )
         {
           out_state(os_, state, white);
 
@@ -347,11 +447,11 @@ void xBoardMgr::process_cmd(xCmd & cmd)
         ofs_log_ << " can't move - thinking" << endl;
 #endif
 
-      Board::State state;
+      uint8 state;
       bool white;
       if ( thk_.move(cmd, state, white) )
       {
-        if ( Board::isDraw(state) || Board::ChessMat == state )
+        if ( Board::isDraw(state) || (Board::ChessMat & state) )
         {
           out_state(os_, state, white);
 
@@ -372,7 +472,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
 
             os_ << str << endl;
 
-            if ( Board::isDraw(state) || state == Board::ChessMat )
+            if ( Board::isDraw(state) || (state & Board::ChessMat) )
             {
               out_state(os_, state, white);
 

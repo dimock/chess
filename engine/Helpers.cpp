@@ -52,9 +52,9 @@ PawnMasks::PawnMasks()
       if ( y > 0 && y < 7 )
       {
         if ( x < 7 )
-          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x+1) << 3));
+          pmasks_guarded_[color][i] |= set_mask_bit((y+dy) | ((x+1) << 3));
         if ( x > 0 )
-          pmasks_guarded_[color][i] |= 1ULL << ((y+dy) | ((x-1) << 3));
+          pmasks_guarded_[color][i] |= set_mask_bit((y+dy) | ((x-1) << 3));
       }
 
       uint8 pm = 0;
@@ -62,10 +62,10 @@ PawnMasks::PawnMasks()
       if ( color )
       {
         for (int j = y+1; j < 7; ++j)
-          pm |= 1 << j;
+          pm |= set_bit(j);
 
         if ( y < 6 )
-          bm = (1<<y) | (1<<(y+1));
+          bm = set_bit(y) | set_bit(y+1);
       }
       else
       {
@@ -73,7 +73,7 @@ PawnMasks::PawnMasks()
           pm |= 1 << j;
 
         if ( y > 1 )
-          bm = (1<<y) | (1<<(y-1));
+          bm = set_bit(y) | set_bit(y-1);
       }
 
       uint8 * ppmask = (uint8*)&pmasks_passed_[color][i];
@@ -100,7 +100,7 @@ PawnMasks::PawnMasks()
           for (int l = x0; l <= x1; ++l)
           {
             int kp = l | (j<<3);
-            kpk_mask |= 1ULL << kp;
+            kpk_mask |= set_mask_bit(kp);
           }
         }
       }
@@ -111,7 +111,7 @@ PawnMasks::PawnMasks()
           for (int l = x0; l <= x1; ++l)
           {
             int kp = l | (j<<3);
-            kpk_mask |= 1ULL << kp;
+            kpk_mask |= set_mask_bit(kp);
           }
         }
       }
@@ -127,20 +127,20 @@ PawnMasks::PawnMasks()
 
 	  if ( x > 0 )
 	  {
-		  bkmask[x-1] |= 1 << y;
+		  bkmask[x-1] |= set_bit(y);
 		  if ( y > 0 )
-			  bkmask[x-1] |= 1 << (y-1);
+			  bkmask[x-1] |= set_bit(y-1);
 		  if ( y < 7 )
-			  bkmask[x-1] |= 1 << (y+1);
+			  bkmask[x-1] |= set_bit(y+1);
 	  }
 
 	  if ( x < 7 )
 	  {
-		  bkmask[x+1] |= 1 << y;
+		  bkmask[x+1] |= set_bit(y);
 		  if ( y > 0 )
-			  bkmask[x+1] |= 1 << (y-1);
+			  bkmask[x+1] |= set_bit(y-1);
 		  if ( y < 7 )
-			  bkmask[x+1] |= 1 << (y+1);
+			  bkmask[x+1] |= set_bit(y+1);
 	  }
   }
 
@@ -212,14 +212,14 @@ BetweenMask::BetweenMask(DeltaPosCounter * deltaPoscounter)
         FPos q = FPosIndexer::get(j);
 
         for ( ; p && p != q; p += dp)
-          s_between_[i][j] |= 1ULL << p.index();
+          s_between_[i][j] |= set_mask_bit(p.index());
       }
 
       {
         FPos p = FPosIndexer::get(i) + dp;
 
         for ( ; p; p += dp)
-          s_from_[i][j] |= 1ULL << p.index();
+          s_from_[i][j] |= set_mask_bit(p.index());
       }
     }
 
@@ -265,7 +265,7 @@ BetweenMask::BetweenMask(DeltaPosCounter * deltaPoscounter)
 
       FPos p = FPosIndexer::get(i) + dp;
       for ( ; p; p += dp)
-        s_from_dir_[j][i] |= 1ULL << p.index();
+        s_from_dir_[j][i] |= set_mask_bit(p.index());
     }
   }
 }
@@ -291,6 +291,12 @@ bool parseSAN(Board & board, const char * str, Move & move)
 {
   if ( !str )
     return false;
+
+  if ( strcmp(str, "null") == 0 ) // null-move
+  {
+    move.clear();
+    return true;
+  }
 
   Figure::Type type = Figure::TypePawn;
   Figure::Type new_type = Figure::TypeNone;
@@ -391,17 +397,14 @@ bool parseSAN(Board & board, const char * str, Move & move)
     if ( !m )
       break;
 
-    bool valid = false;
-    if ( board.makeMove(m) )
-      valid = true;
-    board.unmakeMove();
-
-    if ( !valid )
+    if ( !board.validateMove(m) )
       continue;
 
     const Field & field = board.getField(m.from_);
-    if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && ((m.rindex_ >= 0) == capture) &&
-        (from > 0 && from == m.from_ || xfrom >= 0 && (m.from_ & 7) == xfrom || yfrom >= 0 && (m.from_ >>3) == yfrom || xfrom < 0 && yfrom < 0))
+
+    if ( to == m.to_ && m.new_type_ == new_type && field.type() == type && ((m.capture_ != 0) == capture) &&
+        (from > 0 && from == m.from_ || xfrom >= 0 && Index(m.from_).x() == xfrom || yfrom >= 0 &&
+        Index(m.from_).y() == yfrom || xfrom < 0 && yfrom < 0))
     {
       move = m;
       return true;
@@ -412,16 +415,25 @@ bool parseSAN(Board & board, const char * str, Move & move)
 
 bool printSAN(Board & board, const Move & move, char * str)
 {
+  if ( !str )
+    return false;
+
+  if ( !move ) // null-move passed
+  {
+    strcpy(str, "null");
+    return true;
+  }
+
   Field field = board.getField(move.from_);
-  Board::State state = Board::Invalid;
 
   bool found = false;
   int disambiguations = 0;
   int same_x = 0, same_y = 0;
-  int xfrom = move.from_ & 7;
-  int yfrom = move.from_ >>3;
-  int xto = move.to_ & 7;
-  int yto = move.to_ >>3;
+  int xfrom = Index(move.from_).x();
+  int yfrom = Index(move.from_).y();
+  int xto = Index(move.to_).x();
+  int yto = Index(move.to_).y();
+  uint8 state = Board::Invalid;
 
 #ifndef NDEBUG
   Board board0(board);
@@ -434,32 +446,33 @@ bool printSAN(Board & board, const Move & move, char * str)
     if ( !m )
       break;
 
-    bool valid = false;
-    if ( board.makeMove(m) )
-      valid = true;
+    if ( !board.validateMove(m) )
+    {
+      THROW_IF(move == m, "invalid move given to printSAN");
+      continue;
+    }
 
     if ( m == move )
     {
-      THROW_IF(!valid, "invalid move given to printSAN");
+      board.makeMove(move);
       board.verifyState();
       state = board.getState();
+      board.unmakeMove();
       found = true;
     }
-
-    board.unmakeMove();
 
     THROW_IF(board0 != board, "board is not restored by undo move method");
 
     const Field & f = board.getField(m.from_);
 
-    if ( !valid || m.to_ != move.to_ || f.type() != field.type() || m.new_type_ != move.new_type_ )
+    if ( m.to_ != move.to_ || f.type() != field.type() || m.new_type_ != move.new_type_ )
       continue;
 
     // check for disambiguation in 'from' position
-    if ( (m.from_ & 7) == xfrom )
+    if ( Index(m.from_).x() == xfrom )
       same_x++;
     
-    if ( (m.from_ >>3) == yfrom )
+    if ( Index(m.from_).y() == yfrom )
       same_y++;
 
     disambiguations++;
@@ -490,7 +503,7 @@ bool printSAN(Board & board, const Move & move, char * str)
       ++s;
     }
     
-    if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.rindex_ >= 0) )
+    if ( disambiguations > 1 || (field.type() == Figure::TypePawn && move.capture_) )
     {
       if ( same_x <= 1 )
       {
@@ -514,7 +527,7 @@ bool printSAN(Board & board, const Move & move, char * str)
       }
     }
     // capture
-    if ( move.rindex_ >= 0 )
+    if ( move.capture_ )
     {
       *s = 'x';
       ++s;
@@ -536,14 +549,14 @@ bool printSAN(Board & board, const Move & move, char * str)
     }
   }
 
-  if ( Board::UnderCheck == state )
-  {
-    *s = '+';
-    ++s;
-  }
-  else if ( Board::ChessMat == state )
+  if ( Board::ChessMat & state )
   {
     *s = '#';
+    ++s;
+  }
+  else if ( Board::UnderCheck & state )
+  {
+    *s = '+';
     ++s;
   }
 
@@ -601,13 +614,17 @@ bool moveToStr(const Move & move, char * str, bool full)
 	return true;
 }
 
-bool strToMove(char * str, const Board & board, Move & move)
+bool strToMove(const char * i_str, const Board & board, Move & move)
 {
-	if ( !str || strlen(str) < 4 )
+  size_t sz = 0;
+	if ( !i_str || (sz = strlen(i_str)) < 4 )
 		return false;
 
+  char str[16];
+  strncpy_s(str, sizeof(str), i_str, sz);
 	_strlwr(str);
-	move.clear();
+
+  move.clear();
 
 	Figure::Color color = board.getColor();
 	Figure::Color ocolor = Figure::otherColor(color);
@@ -642,26 +659,16 @@ bool strToMove(char * str, const Board & board, Move & move)
     return false;
 
   // maybe en-passant
-  if ( ffrom.type() == Figure::TypePawn && board.getEnPassant() >= 0 )
+  if ( ffrom.type() == Figure::TypePawn && board.enpassant() == move.to_ )
   {
-    int dy = (move.to_ >>3) - (move.from_ >>3);
-    int dx = (move.to_ & 7) - (move.from_ & 7);
+    int dx = Index(move.to_).x() - Index(move.from_).x();
     if ( dx != 0 )
-    {
-      int yto = (move.to_ >> 3) - dy;
-      int epos = (move.to_ & 7) | (yto << 3);
-      const Figure & epawn = board.getFigure(ocolor, board.getEnPassant());
-      if ( epawn.where() == epos )
-        to = epos;
-    }
+      to = board.enpassantPos();
   }
 
   const Field & fto = board.getField(to);
   if ( fto && fto.color() == ocolor )
-    move.rindex_ = fto.index();
+    move.capture_ = 1;
 
-	if ( !board.validMove(move) )
-		return false;
-
-	return true;
+	return board.possibleMove(move);
 }

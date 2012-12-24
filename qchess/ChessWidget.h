@@ -58,6 +58,10 @@ public:
   void mouseMoveEvent(QMouseEvent * e);
   void keyReleaseEvent(QKeyEvent * e);
 
+signals:
+
+  void pvUpdated();
+
 private:
 
   void createMenu();
@@ -77,9 +81,15 @@ private slots:
   void onHumanWithHumanMode(bool);
   void onUseOpenBook(bool);
   void onSettings();
+  void onPvUpdated();
+
+public:
+
+  void updatePV(SearchResult * );
 
 private:
 
+  void formatPV();
   void enableActions(bool on);
   void drawState();
   void drawInfo();
@@ -88,7 +98,6 @@ private:
   bool useOpenBook() const;
   bool okToReset();
   bool findInBook();
-
   bool readOpenBook();
 
   QPoint curPt_;
@@ -97,11 +106,10 @@ private:
   ChessPosition cpos_;
   SearchResult sres_;
   int movesCount_;
-  int full_t_, dt_;
   int bs_count_;
   int depth_;
   char pv_str_[256];
-  MoveCmd pv_moves_[Board::GameLength];
+  UndoInfo pvundoStack_[Board::GameLength];
   double moves_avg_base_, depth_avg_, moves_base_;
   ScoreType score_;
   bool goingToClose_;
@@ -110,9 +118,7 @@ private:
   bool autoPlay_;
   int  timelimit_;
   bool useTimer_;
-  //bool computerAnswers_;
   int  depthMax_;
-  int64 ticksAll_;
 
   QAction * onNewAction_;
   QAction * onLoadAction_;

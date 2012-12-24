@@ -1,3 +1,13 @@
+performance test cases:
+r1bqkr2/pppp1ppp/2n1p3/1Bb1P3/6n1/2N2N2/PPPP1PPP/R1BQ1RK1 w q - 1 7 bm d4
+r3kb1r/1p2qppp/p2p1nb1/2pPn3/4PP2/2N3PN/PP2B2P/R1BQK2R b KQkq - 0 12 bm Nxe4
+r4rk1/1p4pp/1q1p3n/p2Pp3/4B3/1PB3Pb/P3QP1P/R4RK1 w - - 0 22 bm Rfc1 
+1r2qrk1/1bp2p1p/1p1p1Bp1/p3nP2/2PQP2R/1P4P1/P4RBP/7K w - - 2 31 bm Rxh7
+2b1rrk1/1p2qp2/1np3p1/p3p2n/2P1P3/2N1QN1B/PP3P2/1K1R2R1 w - - 2 24 bm Qh6 
+
+en-passant escape from check
+r1b1kr2/p1K1qppp/1p2p3/3pP3/5R2/2NB4/PPP3PP/R1BQ4 w q d6 0 17
+
 KPK cases:
 win
 8/8/1k6/8/8/3P4/5K2/8 w - - 0 1 
@@ -106,8 +116,6 @@ FP bug
 rnbqkb1r/pp3pp1/2p1pB1p/3p4/2PP4/2N2N2/PP2PPPP/R2QKB1R b KQkq - 0 6 
 r1b2rk1/ppp2ppp/8/4b3/2B5/B1P5/P1P2PPP/R4RK1 b - - 1 14
 
-performance test case:
-r3kb1r/1p2qppp/p2p1nb1/2pPn3/4PP2/2N3PN/PP2B2P/R1BQK2R b KQkq - 0 12 
 r3kb1r/1p2qppp/p2p4/2pPnb2/5PP1/2P4N/P3B2P/R1BQ1RK1 b kq - 0 15
 
 
@@ -150,12 +158,9 @@ r1b1k2r/p2p1ppp/2p1p3/q3P3/2P2P2/2n5/P1PBB1PP/R2QK2R b KQkq f3 0 12
 
 
 bad move with slow:
-r4rk1/1p4pp/1q1p3n/p2Pp3/4B3/1PB3Pb/P3QP1P/R4RK1 w - - 0 22 
 r4rk1/1p4pp/1q1p3n/p2Pp3/4B3/1PB3Pb/P3QP1P/R3R1K1 b - - 1 22 
 6k1/1p4pp/1q1p4/p2Pp3/6n1/1PB3Pb/P3Qr1P/R3R1K1 w - - 0 26 
 
-mat with slow:
-1r2qrk1/1bp2p1p/1p1p1Bp1/p3nP2/2PQP2R/1P4P1/P4RBP/7K w - - 2 31 
 
 weak game with ALchess:
 r3r2k/pp4pp/n1p1bq2/Q2pN3/P2P1PP1/8/1P4BP/2R1R2K w - - 1 29 
@@ -200,6 +205,9 @@ k2r3q/2p4p/ppn2b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1
 6b1/2K5/4bk2/2N2b2/8/1Q6/B7/5R2 w - - 0 1 
 6k1/1Q6/8/6n1/4B2r/3P4/K7/8 b - - 0 1 
 
+see test. black pawn deiscovers check?
+3rn2q/ppkn3p/3p3b/4p3/8/PP1N2B1/2P1R1BP/K3Q3 w - - 0 1 
+
 see test with check:
 8/3r4/8/8/4n1k1/8/1K1B4/5N2 b - - 0 1 
 8/3r4/8/8/4n1k1/8/1K6/5N2 b - - 0 1 
@@ -208,6 +216,7 @@ see test with check:
 8/8/1K2k3/8/1N1P4/8/8/8 w - - 0 1 
 
 recapture tests:
+1k1r3q/1pp4p/pn3b2/4p3/1P6/P1PN2P1/1K2R1BP/4Q3 w - - 0 1 : Nxe5 is bad
 k2rn2q/ppp4p/5b1b/4p3/1B6/PP1N2P1/2P1R1BP/K3Q3 w - - 0 1 
 k2rn2q/pppn3p/7b/4p3/1B6/PP1N2P1/2P1R1BP/K3Q3 w - - 0 1 
 k2rn2q/pppn3p/7b/4p3/8/PP1N2P1/2P1R1BP/K3Q1N1 w - - 0 1 
