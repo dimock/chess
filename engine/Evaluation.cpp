@@ -25,74 +25,74 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
       // pawn
     {
-      0,  0,  0,   0,   0,   0,   0,  0,
-      50, 50, 50,  50,  50,  50,  50, 50,
-      10, 10, 20,  30,  30,  20,  10, 10,
-      5,  5,  10,  25,  25,  10,  5,  5,
-      0,  0,  0,   20,  20,  0,   0,  0,
-      5, -5, -10,   0,  0,  -10, -5,  5,
-      5,  10, 10, -20, -20,  10,  10, 5,
-      0,  0,  0,   0,   0,   0,   0,  0
+      0,   0,   0,   0,   0,   0,   0,   0,
+      10,  10,  10,  10,  10,  10,  10,  10,
+      4,   4,   6,   8,   8,   6,   4,   4,
+      2,   2,   4,   6,   6,   4,   2,   2,
+      0,   0,   0,   4,   4,   0,   0,   0,
+      2,  -2,  -4,   0,   0,  -4,  -2,   2,
+      2,   4,   4,  -8,  -8,   4,   4,   2,
+      0,   0,   0,   0,   0,   0,   0,   0
     },
 
     // knight
     {
-      -30, -30, -30, -30, -30, -30, -30, -30,
-      -30, -20,  0,   0,   0,   0,  -20, -30,
-      -30,  0,   10,  15,  15,  10,  0,  -30,
-      -30,  5,   15,  20,  20,  15,  5,  -30,
-      -30,  0,   15,  20,  20,  15,  0,  -30,
-      -30,  5,   10,  15,  15,  10,  5,  -30,
-      -30, -20,  0,   5,   5,   0,  -20, -30,
-      -30, -40, -30, -30, -30, -30, -30, -30
+      -10, -10, -10, -10, -10, -10, -10, -10,
+      -10,  -8,   0,   0,   0,   0,  -8, -10,
+      -10,   0,   4,   6,   6,   4,   0, -10,
+      -10,   2,   6,   8,   8,   6,   2, -10,
+      -10,   0,   6,   8,   8,   6,   0, -10,
+      -10,   2,   4,   6,   6,   4,   2, -10,
+      -10,  -8,   0,   2,   2,   0,  -8, -10,
+      -10, -12, -10, -10, -10, -10, -12, -10
     },
 
     // bishop
     {
-      -20, -10, -10, -10, -10, -10, -10, -20,
-      -10,  0,   0,   0,   0,   0,   0,  -10,
-      -10,  0,   5,   20,  20,  5,   0,  -10,
-      -10,  5,   5,   20,  20,  5,   5,  -10,
-      -10,  0,   20,  20,  20,  20,  0,  -10,
-      -10,  20,  20,  20,  20,  20,  20, -10,
-      -10,  5,   0,   0,   0,   0,   5,  -10,
-      -20, -10, -10, -10, -10, -10, -10, -20
+      -8,  -4,  -4,  -4,  -4,  -4,  -4,  -8,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   2,   8,   8,   2,   0,  -2,
+      -2,   2,   2,   8,   8,   2,   2,  -2,
+      -2,   0,   8,   8,   8,   8,   0,  -2,
+      -2,   8,   8,   8,   8,   8,   8,  -2,
+      -2,   2,   0,   0,   0,   0,   2,  -2,
+      -8,  -4,  -8,  -4,  -4,  -8,  -4,  -8
     },
 
     // rook
     {
-      0,  0,  0,  0,  0,  0,  0,   0,
-      5,  10, 10, 10, 10, 10, 10,  5,
-      -5,  0,  0,  0,  0,  0,  0,  -5,
-      -5,  0,  0,  0,  0,  0,  0,  -5,
-      -5,  0,  0,  0,  0,  0,  0,  -5,
-      -5,  0,  0,  0,  0,  0,  0,  -5,
-      -5,  0,  0,  0,  0,  0,  0,  -5,
-      0,  0,  0,  5,  5,  0,  0,   0
+      0,   0,   0,   0,   0,   0,   0,   0,
+      7,   7,   7,   7,   7,   7,   7,   7,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -2,   0,   0,   0,   0,   0,   0,  -2,
+      -5,  -5,   3,   3,   3,   3,  -5,  -5
     },
 
-      // queen
+    // queen
     {
-      -20, -10, -10, -5, -5, -10, -10, -20,
-      -10,  0,   0,   0,  0,  0,   0,  -10,
-      -10,  0,   5,   5,  5,  5,   0,  -10,
-      -5,   0,   5,   5,  5,  5,   0,  -5,
-      0,   0,   5,   5,  5,  5,   0,  -5,
-      -10,  5,   5,   5,  5,  5,   0,  -10,
-      -10,  0,   5,   0,  0,  0,   0,  -10,
-      -20, -10, -10, -5, -5, -10, -10, -20
+      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8,
+      -4,   0,   0,   0,   0,   0,   0,  -4,
+      -4,   0,   2,   2,   2,   2,   0,  -4,
+      -2,   0,   2,   2,   2,   2,   0,  -2,
+      0,   0,   2,   2,   2,   2,   0,  -2,
+      -4,   0,   2,   2,   2,   2,   0,  -4,
+      -4,   0,   2,   0,   0,   0,   0,  -4,
+      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8
     },
 
-      // king
+    // king
     {
-      -30, -40, -40, -50, -50, -40, -40, -30,
-      -30, -40, -40, -50, -50, -40, -40, -30,
-      -30, -40, -40, -50, -50, -40, -40, -30,
-      -30, -40, -40, -50, -50, -40, -40, -30,
-      -20, -30, -30, -40, -40, -30, -30, -20,
-      -10, -20, -20, -20, -20, -20, -20, -10,
-      20, 20,   0,   0,   0,   0,   20,  20,
-      20, 30,   10,  0,   0,   10,  30,  20
+      -12, -16, -16, -20, -20, -16, -16, -12,
+      -12, -16, -16, -20, -20, -16, -16, -12,
+      -12, -16, -16, -20, -20, -16, -16, -12,
+      -12, -16, -16, -20, -20, -16, -16, -12,
+      -8, -12, -12, -16, -16, -12, -12,  -8,
+      -4,  -8,  -8,  -8,  -8,  -8,  -8,  -4,
+       5,   5,   0,   0,   0,   0,   5,   5,
+       10,  12,   6,   0,   0,   0,  16,  14
     },
 
     {}
@@ -105,14 +105,14 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
       // pawn
     {
-      0,  0,  0,  0,  0,  0,  0,  0,
-      50, 50, 50, 50, 50, 50, 50, 50,
-      40, 40, 40, 40, 40, 40, 40, 40,
-      30, 30, 30, 30, 30, 30, 30, 30,
-      20, 20, 20, 20, 20, 20, 20, 20,
-      10, 10, 10, 10, 10, 10, 10, 10,
-      0,  0,  0,  0,  0,  0,  0,  0,
-      0,  0,  0,  0,  0,  0,  0,  0
+      0,   0,   0,   0,   0,   0,   0,   0,
+      14,  16,  16,  18, 18,  16,  16,  14,
+      10,  10,  12,  12, 12,  12,  10,  10,
+      7,   7,   8,   8,   8,   8,   7,   7,
+      5,   5,   6,   6,   6,   6,   5,   5,
+      3,   3,   4,   4,   4,   4,   3,   3,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0
     },
 
     // knight
@@ -129,14 +129,14 @@ ScoreType Figure::positionEvaluations_[2][8][64] = {
 
     // king
     {
-      -50, -40, -30, -30, -30, -30, -40, -50,
-      -40, -20,   0,  0,   0,    0, -20, -40,
-      -30, -10,  20,  30,  30,  20, -10, -30,
-      -30, -10,  30,  40,  40,  30, -10, -30,
-      -30, -10,  30,  40,  40,  30, -10, -30,
-      -30, -10,  20,  30,  30,  20, -10, -30,
-      -40, -20,   0,  0,   0,   0,  -20, -40,
-      -50, -40, -30, -30, -30, -30, -40, -50
+      -14, -12, -10, -10, -10, -10, -12, -14,
+      -12,  -8,   0,   0,   0,   0,  -8, -12,
+      -10,  -4,   6,   8,   8,   6,  -4, -10,
+      -10,  -4,   8,  10,  10,   8,  -4, -10,
+      -10,  -4,   8,  10,  10,   8,  -4, -10,
+      -10,  -4,   6,   8,   8,   6,  -4, -10,
+      -12,  -8,   0,   0,   0,   0,  -8, -12,
+      -14, -12, -10, -10, -10, -10, -12, -14
     },
 
     {}
@@ -159,108 +159,26 @@ extern const ScoreType Figure::bishopKnightMat_[64] =
 extern const ScoreType Figure::pawnDoubled_  = -10;
 extern const ScoreType Figure::pawnIsolated_ = -10;
 extern const ScoreType Figure::pawnBackward_ = -10;
-extern const ScoreType Figure::openRook_     =  8;
-extern const ScoreType Figure::semiopenRook_ =  4;
+extern const ScoreType Figure::openRook_     =  10;
+extern const ScoreType Figure::semiopenRook_ =  5;
 extern const ScoreType Figure::winloseBonus_ =  20;
 extern const ScoreType Figure::kingbishopPressure_ = 10;
 extern const ScoreType Figure::fianchettoBonus_ = 4;
 extern const ScoreType Figure::queenToMyKingDistPenalty_[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-extern const ScoreType Figure::fakecastlePenalty_ = 10;
-extern const ScoreType Figure::castleImpossiblePenalty_ = 10;
+extern const ScoreType Figure::fakecastlePenalty_ = 15;
+extern const ScoreType Figure::unstoppablePawn_ = 50;
 
-#define MAX_PASSED_SCORE 60
+#define MAX_PASSED_SCORE 80
 
 extern const ScoreType Figure::pawnPassed_[2][8] = {
-  { 0, MAX_PASSED_SCORE, 40, 25, 15, 10, 5, 0 },
-  { 0, 5, 10, 15, 25, 40, MAX_PASSED_SCORE, 0 }
+  { 0, MAX_PASSED_SCORE, 50, 25, 15, 10, 5, 0 },
+  { 0, 5, 10, 15, 25, 50, MAX_PASSED_SCORE, 0 }
 };
 
 extern const ScoreType Figure::pawnGuarded_[2][8] = {
   { 0, 16, 12, 10, 6, 4, 0, 0 },
   { 0, 0, 4, 6, 10, 12, 16, 0 },
 };
-
-#undef FAST_ROOK_PAWN_EVAL
-
-//////////////////////////////////////////////////////////////////////////
-#define EVALUATE_OPEN_ROOKS(clr, score)\
-{\
-  uint64 rook_mask = fmgr_.rook_mask(clr);\
-  Figure::Color oclr = Figure::otherColor(clr);\
-  const uint8 * pmsk  = (const uint8*)&fmgr_.pawn_mask_t(clr);\
-  const uint8 * opmsk = (const uint8*)&fmgr_.pawn_mask_t(oclr);\
-  const Figure & oking = getFigure(oclr, KingIndex);\
-  int okx = oking.where() & 7;\
-  for ( ; rook_mask; )\
-  {\
-    int n = clear_lsb(rook_mask);\
-    THROW_IF( (unsigned)n > 63, "invalid rook index" );\
-    THROW_IF( getField(n).color() != clr || getField(n).type() != Figure::TypeRook, "there should be rook on given field" );\
-    int x = n & 7;\
-    if ( !opmsk[x] )\
-    {\
-      if ( !pmsk[x] )\
-        score += Figure::openRook_;\
-      else\
-        score += Figure::semiopenRook_;\
-    }\
-    if ( x == okx || x == okx-1 || x == okx+1 )\
-      score <<= 1;\
-  }\
-}
-
-//////////////////////////////////////////////////////////////////////////
-#define EVALUATE_PAWN_COLUMN(wght, color, icol)\
-{\
-  const Figure & pawn = getFigure(color, (icol));\
-  if ( pawn.getType() == Figure::TypePawn )\
-  {\
-    const uint64 & passmsk = g_pawnMasks->mask_passed(color, pawn.where());\
-    const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, pawn.where());\
-    if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )\
-    {\
-      int y = pawn.where() >> 3;\
-      wght += Figure::pawnPassed_[color][y];\
-      const uint64 & guardmsk = g_pawnMasks->mask_guarded(color, pawn.where());\
-      if ( pmsk & guardmsk )\
-        wght += Figure::pawnGuarded_[color][y];\
-    }\
-    const uint64 & isomask = g_pawnMasks->mask_isolated(pawn.where() & 7);\
-    const uint64 & bkwmask = g_pawnMasks->mask_backward(pawn.where());\
-    if ( !(pmsk & isomask) )\
-      wght += Figure::pawnIsolated_;\
-    else if ( !(pmsk & bkwmask) )\
-      wght += Figure::pawnBackward_;\
-  }\
-  uint8 column = ((uint8*)&pmsk)[(icol)];\
-  int dblNum = BitsCounter::numBitsInByte(column);\
-  ScoreType dblMask = ~((dblNum-1) >> 31);\
-  wght -= ((dblNum-1) << 3) & dblMask;\
-}
-
-#define EVALUATE_PAWNS(wght, color)\
-{\
-  const uint64 & pmsk = fmgr_.pawn_mask_t(color);\
-  Figure::Color ocolor = Figure::otherColor(color);\
-  const uint64 & opmsk = fmgr_.pawn_mask_t(ocolor);\
-  EVALUATE_PAWN_COLUMN(wght, color, 0);\
-  EVALUATE_PAWN_COLUMN(wght, color, 1);\
-  EVALUATE_PAWN_COLUMN(wght, color, 2);\
-  EVALUATE_PAWN_COLUMN(wght, color, 3);\
-  EVALUATE_PAWN_COLUMN(wght, color, 4);\
-  EVALUATE_PAWN_COLUMN(wght, color, 5);\
-  EVALUATE_PAWN_COLUMN(wght, color, 6);\
-  EVALUATE_PAWN_COLUMN(wght, color, 7);\
-}
-
-#define EVALUATE_KING_PAWNS(index, coeff)\
-{\
-  int x = pawns_x[castle][index];\
-  int m = ((pmsk[x] & pmask_king[color]) >> shifts[color]) & 3;\
-  kingEval -= ((king_penalties[color][m])<<(coeff));\
-  int o = ((opmsk[x] & opmask_king[color]) >> oshifts[color]) & 3;\
-  kingEval -= king_o_penalties[color][o];\
-}
 
 //////////////////////////////////////////////////////////////////////////
 ScoreType Board::evaluate() const
@@ -291,79 +209,98 @@ ScoreType Board::calculateEval() const
 {
   ScoreType score = fmgr_.weight();
 
-  int stage = (fmgr().weight(Figure::ColorBlack) <= Figure::figureWeight_[Figure::TypeQueen] &&
-    fmgr().weight(Figure::ColorWhite) <= Figure::figureWeight_[Figure::TypeQueen]) ? 1 : 0;
-
-  score -= fmgr().eval(Figure::ColorBlack, stage);
-  score += fmgr().eval(Figure::ColorWhite, stage);
-
-  return score;
-
-
-  //////////////////////////////////////////////////////////////////////////
-  static const ScoreType fweight_max = Figure::figureWeight_[Figure::TypeQueen] + 2*Figure::figureWeight_[Figure::TypeRook] + 2*Figure::figureWeight_[Figure::TypeBishop] + 2*Figure::figureWeight_[Figure::TypeKnight];
-
-  ScoreType fweight_b = fmgr_.weight(Figure::ColorBlack) - fmgr_.pawns(Figure::ColorBlack)*Figure::figureWeight_[Figure::TypePawn];
-  ScoreType fweight_w = fmgr_.weight(Figure::ColorWhite) - fmgr_.pawns(Figure::ColorWhite)*Figure::figureWeight_[Figure::TypePawn];
-
-  int stage_coef = 128 * (fweight_b + fweight_w) / fweight_max;
-
-  score -= (stage_coef * fmgr_.eval(Figure::ColorBlack, 0) + (256-stage_coef) * fmgr_.eval(Figure::ColorBlack, 1)) >> 8;
-  score += (stage_coef * fmgr_.eval(Figure::ColorWhite, 0) + (256-stage_coef) * fmgr_.eval(Figure::ColorWhite, 1)) >> 8;
-
-  // king's safety
-  score -= (stage_coef * evaluateKing(Figure::ColorBlack) + (256-stage_coef) * evalPawnsEndgame(Figure::ColorBlack)) >> 8;
-  score += (stage_coef * evaluateKing(Figure::ColorWhite) + (256-stage_coef) * evalPawnsEndgame(Figure::ColorWhite)) >> 8;
-
-  // fianchetto
-  score += evaluateFianchetto();
-
-#ifdef FAST_ROOK_PAWN_EVAL
-  ScoreType pws_score = 0;
-  if ( fmgr_.pawns(Figure::ColorBlack) )
+  int wei[2] = {0, 0};
+  for (int c = 0; c < 2; ++c)
   {
-    ScoreType pweight0 = 0;
-    EVALUATE_PAWNS(pweight0, Figure::ColorBlack);
-    pws_score -= pweight0;
+    for (int t = Figure::TypeKnight; t < Figure::TypeKing; ++t)
+      wei[c] += fmgr().tcount((Figure::Type)t, (Figure::Color)c)*Figure::figureWeight_[t];
   }
 
-  if ( fmgr_.pawns(Figure::ColorWhite) )
+  if ( wei[0] > 2*Figure::figureWeight_[Figure::TypeQueen] &&
+       wei[1] > 2*Figure::figureWeight_[Figure::TypeQueen] )
   {
-    ScoreType pweight1 = 0;
-    EVALUATE_PAWNS(pweight1, Figure::ColorWhite);
-    pws_score += pweight1;
-  }
-  score += pws_score;
+    score -= fmgr().eval(Figure::ColorBlack, 0);
+    score += fmgr().eval(Figure::ColorWhite, 0);
 
-  if ( fmgr_.rooks(Figure::ColorBlack) )
-  {
-    ScoreType score0 = 0;
-    EVALUATE_OPEN_ROOKS(Figure::ColorBlack, score0);
-    score0 = (score0 * stage_coef) >> 8;
-    score -= score0;
-  }
+    score -= evaluatePawns(Figure::ColorBlack);
+    score += evaluatePawns(Figure::ColorWhite);
 
-  if ( fmgr_.rooks(Figure::ColorWhite) )
-  {
-    ScoreType score1 = 0;
-    EVALUATE_OPEN_ROOKS(Figure::ColorWhite, score1);
-    score1 = (score1 * stage_coef) >> 8;
-    score += score1;
+    score -= evaluateRooks(Figure::ColorBlack);
+    score += evaluateRooks(Figure::ColorWhite);
+
+    score -= evaluateKing(Figure::ColorBlack);
+    score += evaluateKing(Figure::ColorWhite);
   }
-#else
-  if ( fmgr_.pawns() > 0 )
+  else if ( wei[0] < Figure::figureWeight_[Figure::TypeQueen] &&
+            wei[1] < Figure::figureWeight_[Figure::TypeQueen]  )
+  {
+    score -= fmgr().eval(Figure::ColorBlack, 1);
+    score += fmgr().eval(Figure::ColorWhite, 1);
+
+    score -= evaluatePawns(Figure::ColorBlack);
+    score += evaluatePawns(Figure::ColorWhite);
+
+    score -= evalPawnsEndgame(Figure::ColorBlack);
+    score += evalPawnsEndgame(Figure::ColorWhite);
+  }
+  else
   {
     score -= evaluatePawns(Figure::ColorBlack);
     score += evaluatePawns(Figure::ColorWhite);
-  }
 
-  {
-    score -= (evaluateRooks(Figure::ColorBlack) * stage_coef) >> 8;
-    score += (evaluateRooks(Figure::ColorWhite) * stage_coef) >> 8;
+    int score0 = 0;
+    int score1 = 0;
+
+    score0 -= fmgr().eval(Figure::ColorBlack, 0);
+    score0 += fmgr().eval(Figure::ColorWhite, 0);
+
+    score0 -= evaluateRooks(Figure::ColorBlack);
+    score0 += evaluateRooks(Figure::ColorWhite);
+
+    score0 -= evaluateKing(Figure::ColorBlack);
+    score0 += evaluateKing(Figure::ColorWhite);
+
+    score1 -= fmgr().eval(Figure::ColorBlack, 1);
+    score1 += fmgr().eval(Figure::ColorWhite, 1);
+
+    score1 -= evalPawnsEndgame(Figure::ColorBlack);
+    score1 += evalPawnsEndgame(Figure::ColorWhite);
+
+    static const int wei_max = 2*(Figure::figureWeight_[Figure::TypeQueen] + 2*Figure::figureWeight_[Figure::TypeRook] + 2*Figure::figureWeight_[Figure::TypeBishop] + 2*Figure::figureWeight_[Figure::TypeKnight]);
+    int w = wei[0] + wei[1];
+    if ( w > wei_max )
+      w = wei_max;
+    int w1 = wei_max - w;
+    int s = (score0 * w + score1 * w1) / wei_max;
+    score += s;
   }
-#endif
 
   return score;
+}
+
+inline ScoreType Board::evalKingPawns(Figure::Color color, int index, int coeff, int castle) const
+{
+  ScoreType kingEval = 0;
+  static int8 pawns_x[2][4] = { {5, 6, 7, -1}, {2, 1, 0, -1} };// for left/right castle
+  static uint8 pmask_king[2] = { 96, 6 };
+  static uint8 opmask_king[2] = { 48, 6 };
+  static uint8 shifts[2] = { 5, 1 };
+  static uint8 oshifts[2] = { 4, 2 };
+  static ScoreType king_penalties[2][4] = { {10, 2, 0, 0}, {10, 0, 2, 0} };
+  static ScoreType king_o_penalties[2][4] = { {0, 5, 10, 10}, {0, 10, 5, 10} };
+
+  Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
+
+  const uint8 * pmsk  = (const uint8*)&fmgr_.pawn_mask_t((Figure::Color)color);
+  const uint8 * opmsk = (const uint8*)&fmgr_.pawn_mask_t(ocolor);
+
+  int x = pawns_x[castle][index];
+  int m = ((pmsk[x] & pmask_king[color]) >> shifts[color]) & 3;
+  kingEval -= ((king_penalties[color][m])<<(coeff));
+  int o = ((opmsk[x] & opmask_king[color]) >> oshifts[color]) & 3;
+  kingEval -= king_o_penalties[color][o];
+
+  return kingEval;
 }
 
 inline ScoreType Board::evaluateKing(Figure::Color color) const
@@ -385,12 +322,7 @@ inline ScoreType Board::evaluateKing(Figure::Color color) const
   int8 ky = ki_pos.y();
   bool bCastle = castle && !(ky > 1 && color) && !(ky < 6 && !color);
   if ( !bCastle )
-  {
-    //if ( !castling(color, 0) && !castling(color, 1) )
-    //  kingEval -= Figure::castleImpossiblePenalty_;
-
     return kingEval;
-  }
 
   castle--;
 
@@ -399,19 +331,18 @@ inline ScoreType Board::evaluateKing(Figure::Color color) const
   static uint8 opmask_king[2] = { 48, 6 };
   static uint8 shifts[2] = { 5, 1 };
   static uint8 oshifts[2] = { 4, 2 };
-  static ScoreType king_penalties[2][4] = { {10, 2, 0, 0}, {10, 0, 2, 0} };
+  static ScoreType king_penalties[2][4] = { {8, 1, 0, 0}, {8, 0, 1, 0} };
   static ScoreType king_o_penalties[2][4] = { {0, 5, 10, 10}, {0, 10, 5, 10} };
 
   const uint8 * pmsk  = (const uint8*)&fmgr_.pawn_mask_t((Figure::Color)color);
   const uint8 * opmsk = (const uint8*)&fmgr_.pawn_mask_t(ocolor);
   
-  int ry = color ? A1 : A8;
-
-  EVALUATE_KING_PAWNS(0, 0);
-  EVALUATE_KING_PAWNS(1, 1);
-  EVALUATE_KING_PAWNS(2, 1);
+  kingEval += evalKingPawns(color, 0, 0, castle);
+  kingEval += evalKingPawns(color, 1, 2, castle);
+  kingEval += evalKingPawns(color, 2, 2, castle);
 
   // penalty for fake castle
+  int ry = color ? A1 : A8;
   int rp = pawns_x[castle][1], kp = pawns_x[castle][2];
   rp = rp | ry;
   kp = kp | ry;
@@ -614,76 +545,57 @@ ScoreType Board::evalPawnsEndgame(Figure::Color color) const
   int kx = ki_pos.x();
   int ky = ki_pos.y();
   const BitMask & opmsk = fmgr_.pawn_mask_t(ocolor);
+  static int promo_y[] = { 0, 7 };
 
   // opponent has pawns
   if ( opmsk )
   {
-    BitMask opawn_mask = opmsk;
+    BitMask opawn_mask = fmgr_.pawn_mask_o(ocolor);
     for ( ; opawn_mask; )
     {
       int n = clear_lsb(opawn_mask);
-
-      int py = n >> 3;
-      int y = py;
-      if ( !ocolor )
-        y = 7 -y;
-
-      y |= 1;
 
       const uint64 & opassmsk = g_pawnMasks->mask_passed(ocolor, n);
       const uint64 & oblckmsk = g_pawnMasks->mask_blocked(ocolor, n);
       if ( !(pmsk & opassmsk) && !(opmsk & oblckmsk) )
       {
-        int dist = g_distanceCounter->getDistance(ki_pos, n);
-
+        int y = n >> 3;
         int px = n & 7;
-        int xdist = kx - px;
-        if ( xdist < 0 )
-          xdist = -xdist;
+        int py = promo_y[ocolor];
+        int promo_pos = px | (py<<3);
+        int pawn_dist_promo = py - y;
+        if ( pawn_dist_promo < 0 )
+          pawn_dist_promo = -pawn_dist_promo;
 
-        ScoreType s = 0;
+        int dist_promo = g_distanceCounter->getDistance(ki_pos, promo_pos);
+        if ( color_ == color )
+          dist_promo--;
 
-        if ( ocolor && py < ky || !ocolor && py > ky )
-        {
-          s += ((7 - xdist)*y) >> 1;
-          s += ((7 - dist)*y) >> 1;
-        }
+        if ( pawn_dist_promo < dist_promo )
+          score -= Figure::unstoppablePawn_;
         else
-          s += ((7 - dist)*y);
-
-        score += s;
+          score -= dist_promo<<1;
       }
     }
   }
   // i have pawns
   else if ( pmsk )
   {
-    BitMask pawn_mask = pmsk;
+    BitMask pawn_mask = fmgr_.pawn_mask_o(color);
     for ( ; pawn_mask; )
     {
       int n = clear_lsb(pawn_mask);
-
-      int py = n >> 3;
-      int y = py;
-      if ( !color )
-        y = 7 -y;
-
-      y |= 1;
 
       const uint64 & passmsk = g_pawnMasks->mask_passed(color, n);
       const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, n);
       if ( !(pmsk & passmsk) )
       {
-        int dist = g_distanceCounter->getDistance(ki_pos, n);
-        score += ((7 - dist)*y);
-
         int px = n & 7;
-        int xdist = kx - px;
-        if ( xdist < 0 )
-          xdist = -xdist;
+        int py = promo_y[color];
+        int promo_pos = px | (py<<3);
 
-        if ( color && py < ky || !color && py > ky )
-          score += ((7 - xdist)*y) >> 1;
+        int dist_promo = g_distanceCounter->getDistance(ki_pos, promo_pos);
+        score -= dist_promo<<1;
       }
     }
   }

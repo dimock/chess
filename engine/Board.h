@@ -558,6 +558,7 @@ private:
   /// calculates absolute position evaluation
   ScoreType calculateEval() const;
   inline ScoreType evaluateKing(Figure::Color color) const;
+  inline ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle) const;
   inline ScoreType evaluateFianchetto() const;
   ScoreType evaluatePawns(Figure::Color color) const;
   ScoreType evalPawnsEndgame(Figure::Color color) const;

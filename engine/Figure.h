@@ -26,7 +26,8 @@ namespace Figure
   extern const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
   extern const ScoreType queenToMyKingDistPenalty_[8];
   extern const ScoreType fianchettoBonus_;
-  extern const ScoreType fakecastlePenalty_, castleImpossiblePenalty_;
+  extern const ScoreType fakecastlePenalty_;
+  extern const ScoreType unstoppablePawn_;
   extern const ScoreType kingbishopPressure_;
   extern const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
   extern const BitMask pawnCutoffMasks_[2];
@@ -163,6 +164,7 @@ public:
     }
   }
 
+  inline int tcount(Figure::Type type) const { return type == Figure::TypeBishop ? bishops() : tcount_[type][0]; }
   inline int count() const { return count_; }
   inline int pawns() const { return tcount_[Figure::TypePawn][0]; }
   inline int knights() const { return tcount_[Figure::TypeKnight][0]; }
@@ -287,6 +289,7 @@ public:
   void restoreHash(const BitMask & hcode) { hashCode_ = hcode; }
 
   inline int count(Figure::Color color) const { return fcounter_[color].count(); }
+  inline int tcount(Figure::Type type, Figure::Color color) const { return fcounter_[color].tcount(type); }
   inline int count() const { return fcounter_[0].count() + fcounter_[1].count(); }
   inline int pawns(Figure::Color color) const { return fcounter_[color].pawns(); }
   inline int pawns() const { return pawns(Figure::ColorWhite) + pawns(Figure::ColorBlack); }
