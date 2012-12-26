@@ -11,6 +11,7 @@
 class Board;
 
 // got from chessprogramming.wikispaces.com
+#if ( !(defined _MSC_VER) || (_MSC_VER < 1600) || !(defined _M_X64) )
 inline int pop_count(uint64 n)
 {
   n =  n - ((n >> 1)  & 0x5555555555555555ULL);
@@ -19,6 +20,7 @@ inline int pop_count(uint64 n)
   n = (n * 0x0101010101010101ULL) >> 56;
   return (int)n;
 }
+#endif
 
 inline BitMask set_mask_bit(int bit)
 {
@@ -219,6 +221,15 @@ md_begin:
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
 #pragma intrinsic(_BitScanReverse)
+
+#if ( (defined _MSC_VER) && (_MSC_VER >= 1600) && (defined _M_X64) )
+#pragma intrinsic(__popcnt64)
+
+inline int pop_count(uint64 & n)
+{
+    return (int)__popcnt64(n);
+}
+#endif
 
 inline int clear_lsb(uint64 & mask)
 {

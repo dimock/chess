@@ -190,6 +190,7 @@ if exist $(ARENA_PATH) xcopy /Y /R $(TargetDir)*.exe $(ARENA_PATH)\Engines\shall
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CallingConvention>FastCall</CallingConvention>
     </ClCompile>
     <Link>
       <AdditionalDependencies>..\engine\$(Platform)\release\engine.lib;%(AdditionalDependencies)</AdditionalDependencies>
