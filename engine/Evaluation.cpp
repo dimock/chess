@@ -199,9 +199,6 @@ ScoreType Board::evaluate() const
 
   THROW_IF( score < -32760 || score > 32760, "invalid score" );
 
-  if ( repsCount() > 1 )
-    score >>= 1;
-
   return score;
 }
 
