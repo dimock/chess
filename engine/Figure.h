@@ -12,26 +12,12 @@
 namespace Figure
 {
   enum Weights { DrawScore = 0, MatScore = 32000 };
-  enum Type  { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
-  enum Color { ColorBlack, ColorWhite };
+  enum Type    { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
+  enum Color   { ColorBlack, ColorWhite };
   
-  extern const ScoreType figureWeight_[7], figureWeightSEE_[7];
-  extern const ScoreType positionGain_;
   extern const BitMask pawnCutoffMasks_[2];
-
-  // position evaluation. 0 - opening, 1 - endgame; color,type,pos
-  extern const ScoreType positionEvaluations_[2][8][64];
-  extern const ScoreType bishopKnightMat_[64];
-  extern const ScoreType figureWeight_[7], figureWeightSEE_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-  extern const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
-  extern const ScoreType queenToMyKingDistPenalty_[8];
-  extern const ScoreType fianchettoBonus_;
-  extern const ScoreType fakecastlePenalty_;
-  extern const ScoreType unstoppablePawn_;
-  extern const ScoreType kingbishopPressure_;
-  extern const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
-  extern const BitMask pawnCutoffMasks_[2];
-  extern const uint8 mirrorIndex_[64];
+  extern const ScoreType figureWeight_[7]; // TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
+  extern const uint8     mirrorIndex_[64];
 
   inline Figure::Color otherColor(Figure::Color color)
   {
@@ -40,33 +26,11 @@ namespace Figure
 
   const char * name(Type type);
 
-  inline ScoreType positionEvaluation(int stage, Figure::Color color, Figure::Type type, int pos)
-  {
-    THROW_IF( stage > 1 || color > 1 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
+  ScoreType positionEvaluation(int stage, Figure::Color color, Figure::Type type, int pos);
 
-    uint8 cmask = ((int8)(color << 7)) >> 7;
-    uint8 icmask = ~cmask;
-    uint8 i = (mirrorIndex_[pos] & cmask) | (pos & icmask);
+  Figure::Type toFtype(char c);
 
-    ScoreType e = positionEvaluations_[stage][type][i];
-    return e;
-  }
-}
-
-Figure::Type toFtype(char c);
-char fromFtype(Figure::Type t);
-
-
-inline bool typeLEQ(Figure::Type type1, Figure::Type type2)
-{
-  if ( type1 == type2 ||
-       type1 == Figure::TypeKnight && type2 == Figure::TypeBishop ||
-       type1 == Figure::TypeBishop && type2 == Figure::TypeKnight )
-  {
-    return true;
-  }
-
-  return type1 < type2;
+  char fromFtype(Figure::Type t);
 }
 
 

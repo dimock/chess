@@ -311,7 +311,7 @@ bool parseSAN(Board & board, const char * str, Move & move)
 
   if ( strchr("PNBRQK", *s) )
   {
-    type = toFtype(*s);
+    type = Figure::toFtype(*s);
     s++;
   }
   else if ( strstr(s, "O-O-O") ) // long castle
@@ -371,7 +371,7 @@ bool parseSAN(Board & board, const char * str, Move & move)
     {
       if ( n < 2 )
         return false;
-      new_type = toFtype(s[1]);
+      new_type = Figure::toFtype(s[1]);
       if ( new_type < Figure::TypeKnight || new_type > Figure::TypeQueen )
         return false;
       s += 2;

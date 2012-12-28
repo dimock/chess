@@ -3,11 +3,7 @@
  *************************************************************/
 
 #include "Figure.h"
-
-// TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-extern const ScoreType Figure::figureWeight_[7] = { 0, 100, 325, 335, 505, 975, 0 };
-extern const ScoreType Figure::figureWeightSEE_[7]  = { 0, 100, 330, 330, 505, 975, 0 };
-
+#include "Evaluator.h"
 
 extern const uint8 Figure::mirrorIndex_[64] =
 {
@@ -23,9 +19,22 @@ extern const uint8 Figure::mirrorIndex_[64] =
 
 extern const uint64 Figure::pawnCutoffMasks_[2] = { 0xfefefefefefefefe /* left */, 0x7f7f7f7f7f7f7f7f /* right */ };
 
-extern const ScoreType Figure::positionGain_ = 70;
+// TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
+extern const ScoreType Figure::figureWeight_[7] = { 0, 100, 330, 330, 505, 990, 0 };
 
-Figure::Type toFtype(char c)
+ScoreType Figure::positionEvaluation(int stage, Figure::Color color, Figure::Type type, int pos)
+{
+  THROW_IF( stage > 1 || color > 1 || type > 7 || pos < 0 || pos > 63, "invalid figure params" );
+
+  uint8 cmask = ((int8)(color << 7)) >> 7;
+  uint8 icmask = ~cmask;
+  uint8 i = (mirrorIndex_[pos] & cmask) | (pos & icmask);
+
+  ScoreType e = Evaluator::positionEvaluations_[stage][type][i];
+  return e;
+}
+
+Figure::Type Figure::toFtype(char c)
 {
   if ( 'P' == c )
     return Figure::TypePawn;
@@ -42,7 +51,7 @@ Figure::Type toFtype(char c)
   return Figure::TypeNone;
 }
 
-char fromFtype(Figure::Type t)
+char Figure::fromFtype(Figure::Type t)
 {
   switch ( t )
   {

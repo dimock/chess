@@ -38,8 +38,8 @@ int Board::see(const Move & move) const
   if ( tfield.type() )
   {
     // victim >= attacker
-    if ( Figure::figureWeightSEE_[tfield.type()] >= Figure::figureWeightSEE_[ffield.type()] )
-      return Figure::figureWeightSEE_[tfield.type()] - Figure::figureWeightSEE_[ffield.type()];
+    if ( Figure::figureWeight_[tfield.type()] >= Figure::figureWeight_[ffield.type()] )
+      return Figure::figureWeight_[tfield.type()] - Figure::figureWeight_[ffield.type()];
   }
   // en-passant
   else if ( !tfield && ffield.type() == Figure::TypePawn && move.to_ == en_passant_ )
@@ -56,7 +56,7 @@ int Board::see(const Move & move) const
   ScoreType fscore = 0;
 
   if ( tfield )
-    fscore = Figure::figureWeightSEE_[tfield.type()];
+    fscore = Figure::figureWeight_[tfield.type()];
 
   // collect all attackers for each side
   // lo-byte = type, hi-byte = pos
@@ -258,14 +258,14 @@ int Board::see(const Move & move) const
     score_gain += fscore;
     if ( t == Figure::TypePawn && promotion )
     {
-      int dscore = Figure::figureWeightSEE_[Figure::TypeQueen]-Figure::figureWeightSEE_[Figure::TypePawn];
+      int dscore = Figure::figureWeight_[Figure::TypeQueen]-Figure::figureWeight_[Figure::TypePawn];
       if ( col != color )
         dscore = -dscore;
       score_gain += dscore;
-      fscore = (col != color) ? Figure::figureWeightSEE_[Figure::TypeQueen] : -Figure::figureWeightSEE_[Figure::TypeQueen];
+      fscore = (col != color) ? Figure::figureWeight_[Figure::TypeQueen] : -Figure::figureWeight_[Figure::TypeQueen];
     }
     else
-      fscore = (col != color) ? Figure::figureWeightSEE_[t] : -Figure::figureWeightSEE_[t];
+      fscore = (col != color) ? Figure::figureWeight_[t] : -Figure::figureWeight_[t];
 
     // don't need to continue if we haven't won material after capture
     if ( score_gain > 0 && col != color || score_gain < 0 && col == color )

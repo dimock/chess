@@ -578,7 +578,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Evaluation.cpp"
+				RelativePath=".\Evaluator.cpp"
 				>
 			</File>
 			<File
@@ -645,6 +645,10 @@
 			</File>
 			<File
 				RelativePath=".\Board.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Evaluator.h"
 				>
 			</File>
 			<File

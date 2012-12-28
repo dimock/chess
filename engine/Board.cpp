@@ -6,6 +6,7 @@
 #include "fpos.h"
 #include "FigureDirs.h"
 #include "MovesGenerator.h"
+#include "Evaluator.h"
 
 // static data
 char Board::fen_[FENsize];
@@ -98,6 +99,22 @@ bool Board::isDangerPawn(const Move & move) const
   return false;
 }
 
+ScoreType Board::evaluate() const
+{
+  if ( matState() )
+    return -Figure::MatScore;
+  else if ( drawState() )
+    return Figure::DrawScore;
+
+  Evaluator evaluator(*this);
+
+  ScoreType score = evaluator();
+
+  THROW_IF( score < -32760 || score > 32760, "invalid score" );
+
+  return score;
+}
+
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
 bool Board::fromFEN(const char * fen)
 {
@@ -143,7 +160,7 @@ bool Board::fromFEN(const char * fen)
       if ( isupper(c) )
         color = Figure::ColorWhite;
 
-      ftype = toFtype(toupper(c));
+      ftype = Figure::toFtype(toupper(c));
 
       if ( Figure::TypeNone == ftype )
         return false;

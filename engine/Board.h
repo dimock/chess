@@ -18,6 +18,7 @@ class ChecksGenerator;
 class UsualGenerator;
 class EscapeGeneratorLimited;
 class Player;
+class Evaluator;
 
 #if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) || (defined VERIFY_FAST_GENERATOR) )
 class Player;
@@ -35,6 +36,7 @@ class Board
   friend class UsualGenerator;
   friend class EscapeGeneratorLimited;
   friend class Player;
+  friend class Evaluator;
 
 #if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) || (defined VERIFY_FAST_GENERATOR) )
   friend class Player;
@@ -554,16 +556,6 @@ private:
     int offset = ((c<<1) | t);
     castling_ &= ~set_bit(offset);
   }
-
-  /// calculates absolute position evaluation
-  ScoreType calculateEval() const;
-  inline ScoreType evaluateKing(Figure::Color color) const;
-  inline ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle) const;
-  inline ScoreType evaluateFianchetto() const;
-  ScoreType evaluatePawns(Figure::Color color) const;
-  ScoreType evalPawnsEndgame(Figure::Color color) const;
-  ScoreType evaluateRooks(Figure::Color color) const;
-  ScoreType evaluateWinnerLoser() const;
 
   bool verifyCastling(const Figure::Color , int t) const;
 

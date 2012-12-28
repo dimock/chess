@@ -5,6 +5,7 @@
 
 #include "Player.h"
 #include "MovesGenerator.h"
+#include "Evaluator.h"
 #include <algorithm>
 
 //////////////////////////////////////////////////////////////////////////
@@ -385,7 +386,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         depth == 1 && ply > 1 )
   {
     ScoreType score0 = board_.evaluate();
-    int delta = (int)alpha - (int)score0 - (int)Figure::positionGain_;
+    int delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
     if ( delta > 0 )
       return captures(depth, ply, alpha, betta, pv, score0);
   }
@@ -544,7 +545,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   if ( !board_.underCheck() )
   {
-    delta = (int)alpha - (int)score0 - (int)Figure::positionGain_;
+    delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
     if ( score0 > alpha )
       alpha = score0;
 
