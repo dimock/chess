@@ -377,7 +377,9 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 
 #ifdef USE_FUTILITY_PRUNING
-  if ( !pv && !board_.underCheck() && !board_.isWinnerLoser() &&
+  if ( !pv &&
+       !board_.underCheck() &&
+       !board_.isWinnerLoser() &&
         alpha > -Figure::MatScore+MaxPly &&
         alpha < Figure::MatScore-MaxPly &&
         depth == 1 && ply > 1 )

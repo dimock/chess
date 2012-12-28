@@ -217,7 +217,7 @@ private:
   void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat);
 #endif // USE_HASH
 
-  // analyze move support
+  // analyze mode support
   std::queue<PostedCommand> posted_;
   CallbackStruct callbacks_;
 
