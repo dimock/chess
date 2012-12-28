@@ -32,6 +32,7 @@ private:
   /// calculates absolute position evaluation
   ScoreType evaluate();
   ScoreType evaluateMaterialDiff();
+  ScoreType evaluateMaterialPawnDiff();
   inline ScoreType evaluateKing(Figure::Color color);
   inline ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle);
   ScoreType evaluatePawns(Figure::Color color);

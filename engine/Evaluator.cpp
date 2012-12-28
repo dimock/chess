@@ -166,7 +166,7 @@ const ScoreType Evaluator::semiopenRook_ =  6;
 const ScoreType Evaluator::winloseBonus_ =  20;
 const ScoreType Evaluator::kingbishopPressure_ = 15;
 const ScoreType Evaluator::bishopBonus_ = 10;
-const ScoreType Evaluator::figureAgainstPawnBonus_ = 25;
+const ScoreType Evaluator::figureAgainstPawnBonus_ = 10;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
@@ -232,6 +232,8 @@ ScoreType Evaluator::evaluate()
 
     score -= evaluateKing(Figure::ColorBlack);
     score += evaluateKing(Figure::ColorWhite);
+
+    score += evaluateMaterialPawnDiff();
   }
   else if ( wei[0] < Figure::figureWeight_[Figure::TypeQueen] &&
             wei[1] < Figure::figureWeight_[Figure::TypeQueen]  )
@@ -261,6 +263,8 @@ ScoreType Evaluator::evaluate()
 
     score0 -= evaluateKing(Figure::ColorBlack);
     score0 += evaluateKing(Figure::ColorWhite);
+
+    score0 += evaluateMaterialPawnDiff();
 
     score1 -= fmgr.eval(Figure::ColorBlack, 1);
     score1 += fmgr.eval(Figure::ColorWhite, 1);
@@ -294,20 +298,33 @@ ScoreType Evaluator::evaluateMaterialDiff()
   // 1. Knight - Bishop disbalance
   score = (fmgr.bishops(Figure::ColorWhite) - fmgr.bishops(Figure::ColorBlack))*bishopBonus_;
 
-  // have 2 bishops with different field colors
-  if ( fmgr.bishops_b(Figure::ColorWhite) > 0 && fmgr.bishops_w(Figure::ColorWhite) > 0 )
-    score += bishopBonus_;
-  if ( fmgr.bishops_b(Figure::ColorBlack) > 0 && fmgr.bishops_w(Figure::ColorBlack) > 0 )
-    score -= bishopBonus_;
+  //// have 2 bishops with different field colors
+  //if ( fmgr.bishops_b(Figure::ColorWhite) > 0 && fmgr.bishops_w(Figure::ColorWhite) > 0 )
+  //  score += bishopBonus_;
+  //if ( fmgr.bishops_b(Figure::ColorBlack) > 0 && fmgr.bishops_w(Figure::ColorBlack) > 0 )
+  //  score -= bishopBonus_;
 
+  return score;
+}
+
+ScoreType Evaluator::evaluateMaterialPawnDiff()
+{
+  ScoreType score = 0;
+
+  const FiguresManager & fmgr = board_.fmgr();
+
+  Figure::Color color = board_.getColor();
+  Figure::Color ocolor = Figure::otherColor(color);
 
   // 2. Knight or Bishop against 3 pawns
   int figuresDiff = (fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite)) -
-                    (fmgr.bishops(Figure::ColorBlack)+fmgr.knights(Figure::ColorBlack));
+    (fmgr.bishops(Figure::ColorBlack)+fmgr.knights(Figure::ColorBlack));
 
   int pawnsDiff = fmgr.pawns(Figure::ColorWhite) - fmgr.pawns(Figure::ColorBlack);
+  int rooksDiff = fmgr.rooks(Figure::ColorWhite) - fmgr.rooks(Figure::ColorBlack);
+  int queensDiff = fmgr.queens(Figure::ColorWhite) - fmgr.queens(Figure::ColorBlack);
 
-  if ( figuresDiff*pawnsDiff < 0 )
+  if ( figuresDiff*pawnsDiff < 0 && !rooksDiff && !queensDiff )
     score += figuresDiff * figureAgainstPawnBonus_;
 
   return score;
@@ -540,8 +557,8 @@ ScoreType Evaluator::evalPawnsEndgame(Figure::Color color)
 
   bool opawn_found = false;
 
-  ScoreType score_op = 0, score_my = 0;
-  int passed_dist_op = 100, passed_dist_my = 100;
+  //ScoreType score_op = 0, score_my = 0;
+  //int passed_dist_op = 100, passed_dist_my = 100;
 
   // opponent has passed pawns?
   if ( opmsk )
@@ -563,67 +580,67 @@ ScoreType Evaluator::evalPawnsEndgame(Figure::Color color)
         if ( pawn_dist_promo < 0 )
           pawn_dist_promo = -pawn_dist_promo;
 
-        if ( passed_dist_op > pawn_dist_promo )
-          passed_dist_op = pawn_dist_promo;
+        //if ( passed_dist_op > pawn_dist_promo )
+        //  passed_dist_op = pawn_dist_promo;
 
         int dist_promo = board_.g_distanceCounter->getDistance(ki_pos, promo_pos);
         if ( board_.color_ == color )
           dist_promo--;
 
         if ( pawn_dist_promo < dist_promo )
-          score_op -= unstoppablePawn_;
+          score -= unstoppablePawn_;
         else
-          score_op -= dist_promo<<1;
+          score -= dist_promo<<1;
 
         opawn_found = true;
       }
     }
   }
 
-  // i have passed pawns?
-  if ( pmsk )
-  {
-    BitMask pawn_mask = fmgr.pawn_mask_o(color);
-    for ( ; pawn_mask; )
-    {
-      int n = clear_lsb(pawn_mask);
+  //// i have passed pawns?
+  //if ( pmsk )
+  //{
+  //  BitMask pawn_mask = fmgr.pawn_mask_o(color);
+  //  for ( ; pawn_mask; )
+  //  {
+  //    int n = clear_lsb(pawn_mask);
 
-      const uint64 & passmsk = board_.g_pawnMasks->mask_passed(color, n);
-      const uint64 & blckmsk = board_.g_pawnMasks->mask_blocked(color, n);
-      if ( !(pmsk & passmsk) )
-      {
-        int px = n & 7;
-        int y = n >> 3;
-        int py = promo_y[color];
-        int promo_pos = px | (py<<3);
-        int pawn_dist_promo = py - y;
-        if ( pawn_dist_promo < 0 )
-          pawn_dist_promo = -pawn_dist_promo;
+  //    const uint64 & passmsk = board_.g_pawnMasks->mask_passed(color, n);
+  //    const uint64 & blckmsk = board_.g_pawnMasks->mask_blocked(color, n);
+  //    if ( !(pmsk & passmsk) )
+  //    {
+  //      int px = n & 7;
+  //      int y = n >> 3;
+  //      int py = promo_y[color];
+  //      int promo_pos = px | (py<<3);
+  //      int pawn_dist_promo = py - y;
+  //      if ( pawn_dist_promo < 0 )
+  //        pawn_dist_promo = -pawn_dist_promo;
 
-        if ( passed_dist_my > pawn_dist_promo )
-          passed_dist_my = pawn_dist_promo;
+  //      if ( passed_dist_my > pawn_dist_promo )
+  //        passed_dist_my = pawn_dist_promo;
 
-        int dist_promo = board_.g_distanceCounter->getDistance(ki_pos, promo_pos);
-        score_my -= dist_promo<<1;
-      }
-    }
-  }
+  //      int dist_promo = board_.g_distanceCounter->getDistance(ki_pos, promo_pos);
+  //      score_my -= dist_promo<<1;
+  //    }
+  //  }
+  //}
 
-  if ( !opawn_found )
-    score = score_my;
-  else
-    score_my = score_op;
+  //if ( !opawn_found )
+  //  score = score_my;
+  //else
+  //  score_my = score_op;
 
-  if ( passed_dist_my != 100 && !opawn_found )
-  {
-    if ( color == board_.color_ )
-      passed_dist_my--;
-    else
-      passed_dist_op--;
+  //if ( passed_dist_my != 100 && !opawn_found )
+  //{
+  //  if ( color == board_.color_ )
+  //    passed_dist_my--;
+  //  else
+  //    passed_dist_op--;
 
-    if ( passed_dist_my < passed_dist_op )
-      score += unstoppablePawn_;
-  }
+  //  if ( passed_dist_my < passed_dist_op )
+  //    score += 20;
+  //}
 
   return score;
 }
