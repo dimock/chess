@@ -651,7 +651,7 @@ Move OpenBook::nextMove(const Board & board)
   {
     MovesLine & mline = mtable_[i];
     size_t j = 0;
-    for ( ; j < board.halfmovesCount() && j < mline.size(); ++j)
+    for ( ; j < (size_t)board.halfmovesCount() && j < mline.size(); ++j)
     {
       Move mv = board.undoInfo((int)j);
       if ( mv != mline[j] )

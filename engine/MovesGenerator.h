@@ -88,6 +88,8 @@ public:
   static void clear_history();
   static void normalize_history(int n);
 
+  static const unsigned int vsort_add_ = 10000;
+
   static void save_history(const char * fname);
   static void load_history(const char * fname);
 
@@ -128,6 +130,12 @@ public:
 
 protected:
 
+  inline void adjust_vsort(Move & move, unsigned delta) const
+  {
+    move.vsort_ += delta;
+    move.vsort_ |= 1; // to prevent zero value
+  }
+
   inline void sortValueOfCap(Move & move)
   {
     const Field & fto = board_.getField(move.to_);
@@ -145,20 +153,23 @@ protected:
 
       vtype = Figure::TypePawn;
       move.vsort_ = Figure::figureWeight_[vtype];
+      adjust_vsort(move, vsort_add_);
       return;
     }
+
+    int vsort = 0;
 
     // capture, prefer stronger opponent's figure
     if ( vtype != Figure::TypeNone )
     {
       Figure::Type atype = ffrom.type();
-      move.vsort_ = (Figure::figureWeight_[vtype] << 1) - Figure::figureWeight_[atype];
+      vsort = (int)(Figure::figureWeight_[vtype] << 1) - (int)Figure::figureWeight_[atype];
     }
 
     // pawn promotion
     if ( move.new_type_ > Figure::TypeNone && move.new_type_ < Figure::TypeKing )
     {
-      move.vsort_ += Figure::figureWeight_[move.new_type_];
+      vsort += (int)Figure::figureWeight_[move.new_type_];
     }
 
     // at first we try to eat recently moved opponent's figure
@@ -166,8 +177,12 @@ protected:
     {
       UndoInfo & prev = board_.undoInfoRev(-1);
       if ( prev.to_ == move.to_ )
-        move.vsort_ += Figure::figureWeight_[vtype] >> 1;
+        vsort += (int)(Figure::figureWeight_[vtype] >> 1);
     }
+
+    vsort += vsort_add_;
+    move.vsort_ = (unsigned)vsort;
+    adjust_vsort(move, 0);
   }
 
   int numOfMoves_;
@@ -243,19 +258,18 @@ private:
     if ( move.capture_ || move.new_type_ )
     {
       sortValueOfCap(move);
-      move.vsort_ += 10000000;
-      move.vsort_ |= 1;
+      adjust_vsort(move, 10000000);
       return;
     }
     else if ( move == killer_ )
     {
-      move.vsort_ = 3000000;
-      move.vsort_ |= 1;
+      adjust_vsort(move, 3000000);
       return;
     }
 
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = (hist.score() + 10000) | 1;
+    move.vsort_ = hist.score();
+    adjust_vsort(move, 10000);
   }
 
   Move killer_;
@@ -312,7 +326,8 @@ private:
   {
     THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = (hist.score() + 10) | 1;
+    move.vsort_ = hist.score();
+    adjust_vsort(move, 10);
   }
 
   Move hmove_, killer_;
@@ -368,8 +383,6 @@ private:
       return;
 
     sortValueOfCap(move);
-    move.vsort_ += 10000; // to prevent negative values
-    move.vsort_ |= 1;
     m++;
   }
 
@@ -525,15 +538,13 @@ protected:
     if ( capture || move.new_type_ )
     {
       sortValueOfCap(move);
-      move.vsort_ += 10000000;
+      adjust_vsort(move, 10000000);
     }
     else
     {
       const History & hist = history(move.from_, move.to_);
-      move.vsort_ = hist.score()+10;
+      adjust_vsort(move, 10);
     }
-
-    move.vsort_ |= 1;
 
     ++m;
   }
@@ -631,13 +642,13 @@ private:
     if ( move.capture_ || move.new_type_ )
     {
       sortValueOfCap(move);
-      move.vsort_ += 10000000;
-      move.vsort_ |= 1;
+      adjust_vsort(move, 10000000);
     }
     else
     {
       const History & hist = history(move.from_, move.to_);
-      move.vsort_ = (hist.score()+10) | 1;
+      move.vsort_ = hist.score();
+      adjust_vsort(move, 10);
     }
 
     m++;
