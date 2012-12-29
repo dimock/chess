@@ -244,16 +244,18 @@ private:
     {
       sortValueOfCap(move);
       move.vsort_ += 10000000;
+      move.vsort_ |= 1;
       return;
     }
     else if ( move == killer_ )
     {
       move.vsort_ = 3000000;
+      move.vsort_ |= 1;
       return;
     }
 
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = hist.score() + 10000;
+    move.vsort_ = (hist.score() + 10000) | 1;
   }
 
   Move killer_;
@@ -310,7 +312,7 @@ private:
   {
     THROW_IF( !board_.getField(move.from_), "no figure on field we move from" );
     const History & hist = history(move.from_, move.to_);
-    move.vsort_ = hist.score() + 10;
+    move.vsort_ = (hist.score() + 10) | 1;
   }
 
   Move hmove_, killer_;
@@ -367,6 +369,7 @@ private:
 
     sortValueOfCap(move);
     move.vsort_ += 10000; // to prevent negative values
+    move.vsort_ |= 1;
     m++;
   }
 
@@ -530,6 +533,8 @@ protected:
       move.vsort_ = hist.score()+10;
     }
 
+    move.vsort_ |= 1;
+
     ++m;
   }
 
@@ -627,11 +632,12 @@ private:
     {
       sortValueOfCap(move);
       move.vsort_ += 10000000;
+      move.vsort_ |= 1;
     }
     else
     {
       const History & hist = history(move.from_, move.to_);
-      move.vsort_ = hist.score()+10;
+      move.vsort_ = (hist.score()+10) | 1;
     }
 
     m++;

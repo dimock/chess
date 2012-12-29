@@ -324,7 +324,13 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return alpha;
 
   if ( board_.drawState() || board_.countReps() > 1 )
+  {
+    // clear PV-string, because no move found
+    if ( pv )
+      plystack_[ply].pv_[ply].clear();
+
     return Figure::DrawScore;
+  }
 
   if ( stopped() || ply >= MaxPly )
     return board_.evaluate();
@@ -636,6 +642,11 @@ GHashTable::Flag Player::getHash(int depth, int ply, ScoreType alpha, ScoreType 
     if ( GHashTable::Alpha == hitem->flag_ && hscore <= alpha )
     {
       THROW_IF( !stop_ && alpha < -32760, "invalid hscore" );
+      
+      // clear PV-string
+      if ( pv )
+        plystack_[ply].pv_[ply].clear();
+
       return GHashTable::Alpha;
     }
 
