@@ -55,20 +55,22 @@ void Board::detectCheck(const UndoInfo & undo)
   BitMask mask_all = fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite);
 
   // check through en-passant field
+  int ep_checking = -1;
   if ( undo.en_passant_ == undo.to_ && fto.type() == Figure::TypePawn )
   {
     static int pw_delta[2] = { -8, 8 };
     int ep_pos = undo.en_passant_ + pw_delta[color]; // color == color of captured pawn
 
     // 1. through en-passant pawn field
-    int apos = findDiscovered(ep_pos, ocolor, mask_all, brq_mask, king_pos);
-    if ( apos >= 0 )
-      checking_[checkingNum_++] = apos;
+    ep_checking = findDiscovered(ep_pos, ocolor, mask_all, brq_mask, king_pos);
+    if ( ep_checking >= 0 )
+      checking_[checkingNum_++] = ep_checking;
   }
 
   // 2. through undo.from_ field
   int apos = findDiscovered(undo.from_, ocolor, mask_all, brq_mask, king_pos);
-  if ( apos >= 0 && apos != undo.to_ ) // exclude figure, that's made current undo
+  // exclude figures, that's made current move and checking through en-passant field
+  if ( apos >= 0 && apos != undo.to_ && apos != ep_checking )
     checking_[checkingNum_++] = apos;
 
   THROW_IF( checkingNum_ > 2, "more than 2 figures give check" );
