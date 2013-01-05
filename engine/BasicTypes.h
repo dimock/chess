@@ -52,6 +52,9 @@ namespace nst
     sw, // msb
     we  // msb
   };
+
+  // true - LSB
+  extern bool get_bit_dir_[10];
 };
 
 #define USE_FUTILITY_PRUNING

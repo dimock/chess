@@ -22,6 +22,9 @@ public:
   static const ScoreType figureAgainstPawnBonus_;
   static const ScoreType pawnEndgameBonus_;
   static const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
+  static const ScoreType mobilityBonus_[8][32];
+  static const ScoreType kingDistanceBonus_[8][8];
+  static const ScoreType nearKingAttackBonus_[8];
 
   Evaluator(const Board & board);
 
@@ -40,6 +43,24 @@ private:
   ScoreType evaluateRooks(Figure::Color color);
   ScoreType evaluateWinnerLoser();
 
+  /// calculates attacked fields (masks) and figures mobility
+  void collectFieldsInfo();
+
+  struct FieldsInfo
+  {
+    void reset()
+    {
+      attacked_ = 0;
+      figuresN_ = 0;
+    }
+
+    BitMask attacked_;
+    Figure::Type types_[64];
+    BitMask mobility_[64];
+    int movesN_[64];
+    int kingDist_[64];
+    int figuresN_;
+  } finfo_[2];
 
   const Board & board_;
 };

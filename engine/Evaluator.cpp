@@ -183,6 +183,28 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
   { 0, 0, 4, 6, 10, 12, 20, 0 },
 };
 
+const ScoreType Evaluator::mobilityBonus_[8][32] = {
+  {},
+  {},
+  {-30, -10, -5, 0, 3, 5, 6, 7},
+  {-30, -10, -5, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+  {-15, -5, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+  {-50, -20, -5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
+};
+
+const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
+  {},
+  {},
+  {8, 8, 8, 7, 5, 1, 0, 0},
+  {10, 10, 8, 7, 6, 3, 1, 0},
+  {15, 15, 10, 7, 6, 3, 1, 0},
+  {25, 25, 20, 10, 7, 3, 1, 0},
+};
+const ScoreType Evaluator::nearKingAttackBonus_[8] = {
+  0, 5, 10, 15, 20, 30, 40, 50
+};
+
+
 //////////////////////////////////////////////////////////////////////////
 Evaluator::Evaluator(const Board & board) : board_(board)
 {
@@ -210,6 +232,36 @@ ScoreType Evaluator::evaluate()
   ScoreType score = fmgr.weight();
 
   score += evaluateMaterialDiff();
+
+  collectFieldsInfo();
+
+  ScoreType scores_bw[2] = {};
+  for (int c = 0; c < 2; ++c)
+  {
+    Figure::Color color = (Figure::Color)c;
+    Figure::Color ocolor = Figure::otherColor(color);
+
+    BitMask opw_mask = board_.fmgr().pawn_mask_o(ocolor);
+    opw_mask &= finfo_[c].attacked_;
+    int pw_attacked_num = pop_count(opw_mask);
+    scores_bw[c] += pw_attacked_num*3;
+
+    int oki_pos = board_.kingPos(ocolor);
+    BitMask oki_mask = board_.g_movesTable->caps(Figure::TypeKing, oki_pos);
+    oki_mask &= finfo_[c].attacked_;
+    int oki_num = pop_count(oki_mask);
+    scores_bw[c] += nearKingAttackBonus_[oki_num];
+
+    for(int i = 0; i < finfo_[c].figuresN_; ++i)
+    {
+      Figure::Type t = finfo_[c].types_[i];
+      scores_bw[c] += mobilityBonus_[t][finfo_[c].movesN_[i] & 31];
+      scores_bw[c] += kingDistanceBonus_[t][finfo_[c].kingDist_[i] & 7];
+    }
+  }
+
+  score -= scores_bw[0];
+  score += scores_bw[1];
 
   int wei[2] = {0, 0};
   for (int c = 0; c < 2; ++c)
@@ -284,6 +336,120 @@ ScoreType Evaluator::evaluate()
   }
 
   return score;
+}
+
+void Evaluator::collectFieldsInfo()
+{
+  BitMask mask_all = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
+  BitMask inv_mask_all = ~mask_all;
+
+  // 1. Pawns
+  for (int c = 0; c < 2; ++c)
+  {
+    Figure::Color color = (Figure::Color)c;
+    finfo_[c].reset();
+
+    const BitMask & pawn_msk = board_.fmgr().pawn_mask_o(color);
+    if ( color )
+      finfo_[c].attacked_ = ((pawn_msk << 9) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk << 7) & Figure::pawnCutoffMasks_[1]);
+    else
+      finfo_[c].attacked_ = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
+  }
+
+  // 2. Knights
+  BitMask kn_caps[2] = {};
+  for (int c = 0; c < 2; ++c)
+  {
+    int & num = finfo_[c].figuresN_;
+    Figure::Color color = (Figure::Color)c;
+    Figure::Color ocolor = Figure::otherColor(color);
+    BitMask kn_mask = board_.fmgr().knight_mask(color);
+    for ( ; kn_mask; )
+    {
+      int n = clear_lsb(kn_mask);
+      const BitMask & kn_cap = board_.g_movesTable->caps(Figure::TypeKnight, n);
+      kn_caps[c] |= kn_cap;
+
+      finfo_[c].types_[num] = Figure::TypeKnight;
+      BitMask & mob_mask = finfo_[c].mobility_[num++];
+      mob_mask = kn_cap & ~finfo_[ocolor].attacked_ & inv_mask_all;
+    }
+  }
+
+  // 3. Bishops - Rooks - Queens
+  static const nst::dirs t_dirs[4][8] = { {nst::nw, nst::ne, nst::se, nst::sw},
+    {nst::no, nst::ea, nst::so, nst::we},
+    {nst::nw, nst::no, nst::ne, nst::ea, nst::se, nst::so, nst::sw, nst::we} };
+
+  static const int t_dirs_n[4] = { 4, 4, 8 };
+
+  for (int t = Figure::TypeBishop; t <= Figure::TypeQueen; ++t)
+  {
+    BitMask t_caps[2] = {};
+
+    for (int c = 0; c < 2; ++c)
+    {
+      int & num = finfo_[c].figuresN_;
+      Figure::Color color = (Figure::Color)c;
+      Figure::Color ocolor = Figure::otherColor(color);
+      BitMask t_mask = board_.fmgr().type_mask((Figure::Type)t, color);
+      int oki_pos = board_.kingPos(ocolor);
+      for ( ; t_mask; )
+      {
+        int from = clear_lsb(t_mask);
+        finfo_[c].kingDist_[num] = board_.g_distanceCounter->getDistance(from, oki_pos);
+        finfo_[c].types_[num] = (Figure::Type)t;
+        BitMask & mob_mask = finfo_[c].mobility_[num++];
+
+        int n = t_dirs_n[t - Figure::TypeBishop];
+        for (int i = 0; i < n; ++i)
+        {
+          nst::dirs dir = t_dirs[t - Figure::TypeBishop][i];
+          const BitMask & di_mask = board_.g_betweenMasks->from_dir(from, dir);
+          BitMask msk_from = di_mask & inv_mask_all;
+          if ( msk_from )
+          {
+            int to = nst::get_bit_dir_[dir] ? find_lsb(msk_from) : find_msb(msk_from);
+            const BitMask & btw_mask = board_.g_betweenMasks->between(from, to);
+            mob_mask = btw_mask;
+            t_caps[c] |= btw_mask;
+            t_caps[c] |= set_mask_bit(to);
+          }
+          else
+          {
+            mob_mask = di_mask;
+            t_caps[c] |= di_mask;
+          }
+        }
+
+        mob_mask &= ~finfo_[ocolor].attacked_;
+      }
+    }
+
+    if ( t == Figure::TypeBishop )
+    {
+      finfo_[0].attacked_ |= kn_caps[0];
+      finfo_[1].attacked_ |= kn_caps[1];
+    }
+
+    finfo_[0].attacked_ |= t_caps[0];
+    finfo_[1].attacked_ |= t_caps[1];
+  }
+
+  for (int c = 0; c < 2; ++c)
+  {
+    Figure::Color color = (Figure::Color)c;
+    Figure::Color ocolor = Figure::otherColor(color);
+
+    BitMask o_attacked = finfo_[ocolor].attacked_ & ~finfo_[color].attacked_;
+
+    for (int i = 0; i < finfo_[c].figuresN_; ++i)
+    {
+      BitMask & mob_mask = finfo_[c].mobility_[i];
+      mob_mask &= ~o_attacked;
+      finfo_[c].movesN_[i] = pop_count(mob_mask);
+    }
+  }
 }
 
 ScoreType Evaluator::evaluateMaterialDiff()
