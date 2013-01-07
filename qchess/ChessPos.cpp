@@ -85,6 +85,8 @@ bool ChessPosition::fromFEN(const char * fen)
   //CapsGenerator cg(hmove, vboard_, Figure::TypeKing);
   //ChecksGenerator ckg(hmove, vboard_, Figure::TypeKing);
 
+  ScoreType score = vboard_.evaluate();
+
   return true;
 }
 

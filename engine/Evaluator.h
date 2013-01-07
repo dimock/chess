@@ -16,6 +16,7 @@ public:
   static const ScoreType bishopKnightMat_[64];
   static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
+  static const ScoreType blockedKingPenalty_;
   static const ScoreType unstoppablePawn_;
   static const ScoreType kingbishopPressure_;
   static const ScoreType bishopBonus_;
@@ -52,14 +53,23 @@ private:
     {
       attacked_ = 0;
       figuresN_ = 0;
+      king_pos_ = -1;
+      kingMobility_ = 0;
+      kingCaps_ = 0;
+      pawn_attacked_ = 0;
     }
 
     BitMask attacked_;
+    BitMask pawn_attacked_;
     Figure::Type types_[64];
     BitMask mobility_[64];
+    BitMask caps_[64];
+    BitMask kingMobility_;
+    BitMask kingCaps_;
     int movesN_[64];
     int kingDist_[64];
     int figuresN_;
+    int king_pos_;
   } finfo_[2];
 
   const Board & board_;

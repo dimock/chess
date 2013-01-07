@@ -39,50 +39,50 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
 
     // knight
     {
-      -10, -10, -10, -10, -10, -10, -10, -10,
-      -10,  -8,   0,   0,   0,   0,  -8, -10,
-      -10,   0,   4,   6,   6,   4,   0, -10,
-      -10,   2,   6,   8,   8,   6,   2, -10,
-      -10,   0,   6,   8,   8,   6,   0, -10,
-      -10,   2,   4,   6,   6,   4,   2, -10,
-      -10,  -8,   0,   2,   2,   0,  -8, -10,
-      -10, -12, -10, -10, -10, -10, -12, -10
+      -3,  -3,  -3,  -3,  -3,  -3,  -3, -3,
+      -3,  -2,   0,   0,   0,   0,  -2, -3,
+      -3,   0,   1,   1,   1,   1,   0, -3,
+      -3,   0,   1,   2,   2,   1,   0, -3,
+      -3,   0,   1,   2,   2,   1,   0, -3,
+      -3,   0,   1,   1,   1,   1,   0, -3,
+      -3,  -2,   0,   0,   0,   0,  -2, -3,
+      -3,  -4,  -3,  -3,  -3,  -3,  -4, -3
     },
 
     // bishop
     {
-      -8,  -4,  -4,  -4,  -4,  -4,  -4,  -8,
+      -3,  -1,  -1,  -1,  -1,  -1,  -1,  -3,
       -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   2,   8,   8,   2,   0,  -2,
-      -2,   2,   2,   8,   8,   2,   2,  -2,
-      -2,   0,   8,   8,   8,   8,   0,  -2,
-      -2,   8,   8,   8,   8,   8,   8,  -2,
-      -2,   2,   0,   0,   0,   0,   2,  -2,
-      -8,  -4,  -8,  -4,  -4,  -8,  -4,  -8
+      -2,   0,   2,   2,   2,   2,   0,  -2,
+      -2,   2,   2,   2,   2,   2,   2,  -2,
+      -2,   0,   2,   2,   2,   2,   0,  -2,
+      -2,   2,   2,   2,   2,   2,   2,  -2,
+      -2,   1,   0,   0,   0,   0,   2,  -2,
+      -3,  -1,  -1,  -1,  -1,  -1,  -1,  -3
     },
 
     // rook
     {
-       0,   0,   0,   0,   0,   0,   0,   0,
-       7,   7,   7,   7,   7,   7,   7,   7,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   0,   0,   0,   0,   0,  -2,
-      -5,  -5,   3,   3,   3,   3,  -5,  -5
+       1,   1,   1,   1,   1,   1,   1,   1,
+       5,   5,   5,   5,   5,   5,   5,   5,
+      -1,   0,   0,   0,   0,   0,   0,  -1,
+      -1,   0,   0,   0,   0,   0,   0,  -1,
+      -1,   0,   0,   0,   0,   0,   0,  -1,
+      -1,   0,   0,   0,   0,   0,   0,  -1,
+      -1,   0,   0,   0,   0,   0,   0,  -1,
+      -2,  -2,   2,   2,   2,   2,  -2,  -2
     },
 
     // queen
     {
-      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -4,   0,   2,   2,   2,   2,   0,  -4,
-      -2,   0,   2,   2,   2,   2,   0,  -2,
-       0,   0,   2,   2,   2,   2,   0,  -2,
-      -4,   0,   2,   2,   2,   2,   0,  -4,
-      -4,   0,   2,   0,   0,   0,   0,  -4,
-      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8
+      -2,  -1,  -1,  -1,  -1,  -1,  -1,  -2,
+      -1,   0,   0,   0,   0,   0,   0,  -1,
+      -1,   0,   1,   1,   1,   1,   0,  -1,
+      -1,   0,   1,   1,   1,   1,   0,  -1,
+       0,   0,   1,   1,   1,   1,   0,  -1,
+      -1,   0,   1,   1,   1,   1,   0,  -1,
+      -1,   0,   1,   0,   0,   0,   0,  -1,
+      -2,  -1,  -1,  -1,  -1,  -1,  -1,  -2
     },
 
     // king
@@ -91,7 +91,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -12, -16, -16, -20, -20, -16, -16, -12,
       -12, -16, -16, -20, -20, -16, -16, -12,
       -12, -16, -16, -20, -20, -16, -16, -12,
-      -8, -12, -12, -16, -16, -12, -12,  -8,
+      -8,  -12, -12, -16, -16, -12, -12,  -8,
       -4,  -8,  -8,  -8,  -8,  -8,  -8,  -4,
        5,   5,   0,   0,   0,   0,   5,   5,
        10,  12,   6,   0,   0,   0,  16,  14
@@ -170,6 +170,7 @@ const ScoreType Evaluator::figureAgainstPawnBonus_ = 10;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
+const ScoreType Evaluator::blockedKingPenalty_ = 20;
 
 #define MAX_PASSED_SCORE 80
 
@@ -244,7 +245,7 @@ ScoreType Evaluator::evaluate()
     BitMask opw_mask = board_.fmgr().pawn_mask_o(ocolor);
     opw_mask &= finfo_[c].attacked_;
     int pw_attacked_num = pop_count(opw_mask);
-    scores_bw[c] += pw_attacked_num*3;
+    scores_bw[c] += pw_attacked_num;
 
     int oki_pos = board_.kingPos(ocolor);
     BitMask oki_mask = board_.g_movesTable->caps(Figure::TypeKing, oki_pos);
@@ -258,6 +259,8 @@ ScoreType Evaluator::evaluate()
       scores_bw[c] += mobilityBonus_[t][finfo_[c].movesN_[i] & 31];
       scores_bw[c] += kingDistanceBonus_[t][finfo_[c].kingDist_[i] & 7];
     }
+
+    scores_bw[c] += pop_count(finfo_[c].attacked_);
   }
 
   score -= scores_bw[0];
@@ -343,17 +346,21 @@ void Evaluator::collectFieldsInfo()
   BitMask mask_all = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
   BitMask inv_mask_all = ~mask_all;
 
+  finfo_[0].reset();
+  finfo_[1].reset();
+
+  finfo_[0].king_pos_ = board_.kingPos(Figure::ColorBlack);
+  finfo_[1].king_pos_ = board_.kingPos(Figure::ColorWhite);
+
   // 1. Pawns
   for (int c = 0; c < 2; ++c)
   {
     Figure::Color color = (Figure::Color)c;
-    finfo_[c].reset();
-
     const BitMask & pawn_msk = board_.fmgr().pawn_mask_o(color);
     if ( color )
-      finfo_[c].attacked_ = ((pawn_msk << 9) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk << 7) & Figure::pawnCutoffMasks_[1]);
+      finfo_[c].attacked_ = finfo_[c].pawn_attacked_ = ((pawn_msk << 9) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk << 7) & Figure::pawnCutoffMasks_[1]);
     else
-      finfo_[c].attacked_ = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
+      finfo_[c].attacked_ = finfo_[c].pawn_attacked_ = ((pawn_msk >> 7) & Figure::pawnCutoffMasks_[0]) | ((pawn_msk >> 9) & Figure::pawnCutoffMasks_[1]);
   }
 
   // 2. Knights
@@ -363,15 +370,19 @@ void Evaluator::collectFieldsInfo()
     int & num = finfo_[c].figuresN_;
     Figure::Color color = (Figure::Color)c;
     Figure::Color ocolor = Figure::otherColor(color);
+    int & oki_pos = finfo_[ocolor].king_pos_;
     BitMask kn_mask = board_.fmgr().knight_mask(color);
     for ( ; kn_mask; )
     {
-      int n = clear_lsb(kn_mask);
-      const BitMask & kn_cap = board_.g_movesTable->caps(Figure::TypeKnight, n);
+      int from = clear_lsb(kn_mask);
+      const BitMask & kn_cap = board_.g_movesTable->caps(Figure::TypeKnight, from);
       kn_caps[c] |= kn_cap;
 
       finfo_[c].types_[num] = Figure::TypeKnight;
+      finfo_[c].kingDist_[num] = board_.g_distanceCounter->getDistance(from, oki_pos);
+      BitMask & cap_mask = finfo_[c].caps_[num];
       BitMask & mob_mask = finfo_[c].mobility_[num++];
+      cap_mask = kn_cap;
       mob_mask = kn_cap & ~finfo_[ocolor].attacked_ & inv_mask_all;
     }
   }
@@ -393,35 +404,38 @@ void Evaluator::collectFieldsInfo()
       Figure::Color color = (Figure::Color)c;
       Figure::Color ocolor = Figure::otherColor(color);
       BitMask t_mask = board_.fmgr().type_mask((Figure::Type)t, color);
-      int oki_pos = board_.kingPos(ocolor);
+      int & oki_pos = finfo_[ocolor].king_pos_;
       for ( ; t_mask; )
       {
         int from = clear_lsb(t_mask);
         finfo_[c].kingDist_[num] = board_.g_distanceCounter->getDistance(from, oki_pos);
         finfo_[c].types_[num] = (Figure::Type)t;
+        BitMask & cap_mask = finfo_[c].caps_[num];
         BitMask & mob_mask = finfo_[c].mobility_[num++];
+        mob_mask = 0;
+        cap_mask = 0;
 
         int n = t_dirs_n[t - Figure::TypeBishop];
         for (int i = 0; i < n; ++i)
         {
           nst::dirs dir = t_dirs[t - Figure::TypeBishop][i];
           const BitMask & di_mask = board_.g_betweenMasks->from_dir(from, dir);
-          BitMask msk_from = di_mask & inv_mask_all;
+          BitMask msk_from = di_mask & mask_all;
           if ( msk_from )
           {
             int to = nst::get_bit_dir_[dir] ? find_lsb(msk_from) : find_msb(msk_from);
             const BitMask & btw_mask = board_.g_betweenMasks->between(from, to);
-            mob_mask = btw_mask;
-            t_caps[c] |= btw_mask;
-            t_caps[c] |= set_mask_bit(to);
+            mob_mask |= btw_mask;
+            cap_mask |= btw_mask | set_mask_bit(to);
           }
           else
           {
-            mob_mask = di_mask;
-            t_caps[c] |= di_mask;
+            mob_mask |= di_mask;
+            cap_mask |= di_mask;
           }
         }
 
+        t_caps[c] |= cap_mask;
         mob_mask &= ~finfo_[ocolor].attacked_;
       }
     }
@@ -436,15 +450,33 @@ void Evaluator::collectFieldsInfo()
     finfo_[1].attacked_ |= t_caps[1];
   }
 
+  // 4. King
+  {
+    finfo_[0].kingCaps_ = board_.g_movesTable->caps(Figure::TypeKing, finfo_[0].king_pos_);
+    finfo_[1].kingCaps_ = board_.g_movesTable->caps(Figure::TypeKing, finfo_[1].king_pos_);
+    finfo_[0].attacked_ |= finfo_[0].kingCaps_;
+    finfo_[1].attacked_ |= finfo_[1].kingCaps_;
+    finfo_[0].kingMobility_ = finfo_[0].kingCaps_ & ~finfo_[1].attacked_ & inv_mask_all;
+    finfo_[1].kingMobility_ = finfo_[1].kingCaps_ & ~finfo_[0].attacked_ & inv_mask_all;
+  }
+
   for (int c = 0; c < 2; ++c)
   {
     Figure::Color color = (Figure::Color)c;
     Figure::Color ocolor = Figure::otherColor(color);
 
-    BitMask o_attacked = finfo_[ocolor].attacked_ & ~finfo_[color].attacked_;
 
     for (int i = 0; i < finfo_[c].figuresN_; ++i)
     {
+      BitMask o_attacked = finfo_[c].pawn_attacked_ | finfo_[c].kingCaps_;
+      for (int j = 0; j < finfo_[c].figuresN_; ++j)
+      {
+        if ( j == i )
+          continue;
+        o_attacked |= finfo_[c].caps_[j];
+      }
+      o_attacked = finfo_[ocolor].attacked_ & ~o_attacked;
+
       BitMask & mob_mask = finfo_[c].mobility_[i];
       mob_mask &= ~o_attacked;
       finfo_[c].movesN_[i] = pop_count(mob_mask);
@@ -530,7 +562,7 @@ inline ScoreType Evaluator::evaluateKing(Figure::Color color)
   ScoreType kingEval = 0;
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
 
-  Index ki_pos(board_.kingPos(color));
+  Index ki_pos(/*board_.kingPos(color)*/finfo_[color].king_pos_);
 
   static int8 castle_mask[8] = { 2,2,2, 0,0, 1,1,1 }; // 1 - short (K); 2 - long (Q)
   int8 castle = castle_mask[ki_pos.x()]; // determine by king's x-position
@@ -603,6 +635,12 @@ inline ScoreType Evaluator::evaluateKing(Figure::Color color)
 
   if ( fb0.type() == Figure::TypeBishop && fb0.color() == ocolor || fb1.type() == Figure::TypeBishop && fb1.color() == ocolor )
     kingEval -= kingbishopPressure_;
+
+  // king is blocked
+  if ( !finfo_[color].kingMobility_ )
+  {
+    kingEval -= blockedKingPenalty_;
+  }
 
   return kingEval;
 }
