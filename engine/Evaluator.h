@@ -28,6 +28,7 @@ public:
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
   static const ScoreType nearKingAttackBonus_[8];
+  static const ScoreType attackedByWeakBonus_;
   static const ScoreType forkBonus_;
 
   static const ScoreType rookToKingBonus_;

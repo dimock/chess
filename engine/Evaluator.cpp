@@ -173,6 +173,7 @@ const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
+const ScoreType Evaluator::attackedByWeakBonus_ = 8;
 const ScoreType Evaluator::forkBonus_ = 30;
 
 const ScoreType Evaluator::rookToKingBonus_ = 7;
@@ -348,6 +349,8 @@ ScoreType Evaluator::evaluateForks(Figure::Color color)
 
   if ( pawnsN + knightsN > 1 )
     return forkBonus_;
+  else if ( pawnsN + knightsN > 0 )
+    return ((color == board_.getColor()) ? attackedByWeakBonus_ : (attackedByWeakBonus_>>1));
 
   return 0;
 }
