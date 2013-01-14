@@ -29,61 +29,62 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
     {
       0,   0,   0,   0,   0,   0,   0,   0,
       10,  10,  10,  10,  10,  10,  10,  10,
-      4,   4,   6,   10,  10,  6,   4,   4,
-      2,   2,   4,   8,   8,   4,   2,   2,
-      0,   0,   0,   6,   6,   0,   0,   0,
-      0,  -2,   0,   0,   0,   0,  -2,   0,
+      4,   4,   6,   8,   8,   6,   4,   4,
+      2,   2,   4,   6,   6,   4,   2,   2,
+      0,   0,   0,   4,   4,   0,   0,   0,
+      2,  -2,  -4,   0,   0,  -4,  -2,   2,
       2,   4,   4,  -8,  -8,   4,   4,   2,
       0,   0,   0,   0,   0,   0,   0,   0
     },
 
     // knight
     {
-      -3,  -3,  -3,  -3,  -3,  -3,  -3, -3,
-      -3,  -2,   0,   0,   0,   0,  -2, -3,
-      -3,   0,   1,   1,   1,   1,   0, -3,
-      -3,   0,   1,   2,   2,   1,   0, -3,
-      -3,   0,   1,   2,   2,   1,   0, -3,
-      -3,   0,   1,   1,   1,   1,   0, -3,
-      -3,  -2,   0,   0,   0,   0,  -2, -3,
-      -3,  -4,  -3,  -3,  -3,  -3,  -4, -3
+      -10, -10, -10, -10, -10, -10, -10, -10,
+      -10,  -8,   0,   0,   0,   0,  -8, -10,
+      -10,   0,   4,   6,   6,   4,   0, -10,
+      -10,   2,   6,   8,   8,   6,   2, -10,
+      -10,   0,   6,   8,   8,   6,   0, -10,
+      -10,   2,   4,   6,   6,   4,   2, -10,
+      -10,  -8,   0,   2,   2,   0,  -8, -10,
+      -10, -12, -10, -10, -10, -10, -12, -10
     },
 
     // bishop
     {
-      -3,  -1,  -1,  -1,  -1,  -1,  -1,  -3,
+      -8,  -4,  -4,  -4,  -4,  -4,  -4,  -8,
       -2,   0,   0,   0,   0,   0,   0,  -2,
-      -2,   0,   2,   2,   2,   2,   0,  -2,
-      -2,   2,   2,   2,   2,   2,   2,  -2,
-      -2,   0,   2,   2,   2,   2,   0,  -2,
-      -2,   2,   2,   2,   2,   2,   2,  -2,
-      -2,   1,   0,   0,   0,   0,   2,  -2,
-      -3,  -1,  -1,  -1,  -1,  -1,  -1,  -3
+      -2,   0,   2,   8,   8,   2,   0,  -2,
+      -2,   2,   2,   8,   8,   2,   2,  -2,
+      -2,   0,   8,   8,   8,   8,   0,  -2,
+      -2,   8,   8,   8,   8,   8,   8,  -2,
+      -2,   2,   0,   0,   0,   0,   2,  -2,
+      -8,  -4,  -8,  -4,  -4,  -8,  -4,  -8
     },
 
     // rook
     {
-       1,   1,   1,   1,   1,   1,   1,   1,
-       5,   5,   5,   5,   5,   5,   5,   5,
-      -1,   0,   0,   0,   0,   0,   0,  -1,
-      -1,   0,   0,   0,   0,   0,   0,  -1,
-      -1,   0,   0,   0,   0,   0,   0,  -1,
-      -1,   0,   0,   0,   0,   0,   0,  -1,
-      -1,   0,   0,   0,   0,   0,   0,  -1,
-      -2,  -2,   2,   2,   2,   2,  -2,  -2
+      0,   0,   0,   0,   0,   0,   0,   0,
+      7,   7,   7,   7,   7,   7,   7,   7,
+     -2,   0,   0,   0,   0,   0,   0,  -2,
+     -2,   0,   0,   0,   0,   0,   0,  -2,
+     -2,   0,   0,   0,   0,   0,   0,  -2,
+     -2,   0,   0,   0,   0,   0,   0,  -2,
+     -2,   0,   0,   0,   0,   0,   0,  -2,
+     -5,  -5,   3,   3,   3,   3,  -5,  -5
     },
 
     // queen
     {
-      -2,  -1,  -1,  -1,  -1,  -1,  -1,  -2,
-      -1,   0,   0,   0,   0,   0,   0,  -1,
-      -1,   0,   1,   1,   1,   1,   0,  -1,
-      -1,   0,   1,   1,   1,   1,   0,  -1,
-       0,   0,   1,   1,   1,   1,   0,  -1,
-      -1,   0,   1,   1,   1,   1,   0,  -1,
-      -1,   0,   1,   0,   0,   0,   0,  -1,
-      -2,  -1,  -1,  -1,  -1,  -1,  -1,  -2
+      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8,
+      -4,   0,   0,   0,   0,   0,   0,  -4,
+      -4,   0,   2,   2,   2,   2,   0,  -4,
+      -2,   0,   2,   2,   2,   2,   0,  -2,
+       0,   0,   2,   2,   2,   2,   0,  -2,
+      -4,   0,   2,   2,   2,   2,   0,  -4,
+      -4,   0,   2,   0,   0,   0,   0,  -4,
+      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8
     },
+
 
     // king
     {
@@ -170,7 +171,7 @@ const ScoreType Evaluator::figureAgainstPawnBonus_ = 15;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
-const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
+const ScoreType Evaluator::castleImpossiblePenalty_ = 30;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
 
@@ -385,9 +386,9 @@ void Evaluator::collectFieldsInfo()
 
       finfo_[c].types_[num] = Figure::TypeKnight;
       finfo_[c].kingDist_[num] = board_.g_distanceCounter->getDistance(from, oki_pos);
-      BitMask & cap_mask = finfo_[c].caps_[num];
+      //BitMask & cap_mask = finfo_[c].caps_[num];
       BitMask & mob_mask = finfo_[c].mobility_[num++];
-      cap_mask = kn_cap;
+      //cap_mask = kn_cap;
       mob_mask = kn_cap & ~finfo_[ocolor].attacked_ & inv_mask_all;
     }
   }
@@ -415,10 +416,10 @@ void Evaluator::collectFieldsInfo()
         int from = clear_lsb(t_mask);
         finfo_[c].kingDist_[num] = board_.g_distanceCounter->getDistance(from, oki_pos);
         finfo_[c].types_[num] = (Figure::Type)t;
-        BitMask & cap_mask = finfo_[c].caps_[num];
+        //BitMask & cap_mask = finfo_[c].caps_[num];
         BitMask & mob_mask = finfo_[c].mobility_[num++];
         mob_mask = 0;
-        cap_mask = 0;
+        //cap_mask = 0;
 
         int n = t_dirs_n[t - Figure::TypeBishop];
         for (int i = 0; i < n; ++i)
@@ -431,16 +432,18 @@ void Evaluator::collectFieldsInfo()
             int to = nst::get_bit_dir_[dir] ? find_lsb(msk_from) : find_msb(msk_from);
             const BitMask & btw_mask = board_.g_betweenMasks->between(from, to);
             mob_mask |= btw_mask;
-            cap_mask |= btw_mask | set_mask_bit(to);
+            //cap_mask |= btw_mask | set_mask_bit(to);
+            t_caps[c] |= btw_mask | set_mask_bit(to);
           }
           else
           {
-            mob_mask |= di_mask;
-            cap_mask |= di_mask;
+            mob_mask  |= di_mask;
+            t_caps[c] |= di_mask;
+            //cap_mask |= di_mask;
           }
         }
 
-        t_caps[c] |= cap_mask;
+        //t_caps[c] |= cap_mask;
         mob_mask &= ~finfo_[ocolor].attacked_;
       }
     }
@@ -468,22 +471,22 @@ void Evaluator::collectFieldsInfo()
   for (int c = 0; c < 2; ++c)
   {
     Figure::Color color = (Figure::Color)c;
-    Figure::Color ocolor = Figure::otherColor(color);
+    //Figure::Color ocolor = Figure::otherColor(color);
 
 
     for (int i = 0; i < finfo_[c].figuresN_; ++i)
     {
-      BitMask o_attacked = finfo_[c].pawn_attacked_ | finfo_[c].kingCaps_;
-      for (int j = 0; j < finfo_[c].figuresN_; ++j)
-      {
-        if ( j == i )
-          continue;
-        o_attacked |= finfo_[c].caps_[j];
-      }
-      o_attacked = finfo_[ocolor].attacked_ & ~o_attacked;
+      //BitMask o_attacked = finfo_[c].pawn_attacked_ | finfo_[c].kingCaps_;
+      //for (int j = 0; j < finfo_[c].figuresN_; ++j)
+      //{
+      //  if ( j == i )
+      //    continue;
+      //  o_attacked |= finfo_[c].caps_[j];
+      //}
+      //o_attacked = finfo_[ocolor].attacked_ & ~o_attacked;
 
       BitMask & mob_mask = finfo_[c].mobility_[i];
-      mob_mask &= ~o_attacked;
+      //mob_mask &= ~o_attacked;
       finfo_[c].movesN_[i] = pop_count(mob_mask);
 
       Figure::Type t = finfo_[c].types_[i];

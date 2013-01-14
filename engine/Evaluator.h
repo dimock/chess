@@ -80,7 +80,7 @@ private:
     BitMask pawn_attacked_;
     Figure::Type types_[64];
     BitMask mobility_[64];
-    BitMask caps_[64];
+    //BitMask caps_[64];
     BitMask kingMobility_;
     BitMask kingCaps_;
     int movesN_[64];
