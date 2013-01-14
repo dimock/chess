@@ -14,7 +14,7 @@ public:
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static const ScoreType positionEvaluations_[2][8][64];
   static const ScoreType bishopKnightMat_[64];
-  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, openRook_, semiopenRook_, winloseBonus_;
+  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, semiopenRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
   static const ScoreType castleImpossiblePenalty_;
   static const ScoreType blockedKingPenalty_;
@@ -28,6 +28,9 @@ public:
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
   static const ScoreType nearKingAttackBonus_[8];
+  static const ScoreType forkBonus_;
+
+  static const ScoreType rookToKingBonus_;
 
   // pawns shield. penalty for absent pawn
   static const ScoreType cf_columnOpened_;
@@ -59,36 +62,28 @@ private:
   // 0 - short, 1 - long, -1 - no castle
   int getCastleType(Figure::Color color) const;
 
-  /// calculates attacked fields (masks) and figures mobility
-  void collectFieldsInfo();
+  /// calculates figures mobility
+  void calculateMobility();
+
+  /// find knight and pawn forks
+  ScoreType evaluateForks(Figure::Color color);
 
   struct FieldsInfo
   {
     void reset()
     {
-      attacked_ = 0;
-      figuresN_ = 0;
       king_pos_ = -1;
-      kingMobility_ = 0;
-      kingCaps_ = 0;
       pawn_attacked_ = 0;
       mobilityBonus_ = 0;
       kingPressureBonus_ = 0;
+      kn_caps_ = 0;
     }
 
-    BitMask attacked_;
-    BitMask pawn_attacked_;
-    Figure::Type types_[64];
-    BitMask mobility_[64];
-    //BitMask caps_[64];
-    BitMask kingMobility_;
-    BitMask kingCaps_;
-    int movesN_[64];
-    int kingDist_[64];
-    int figuresN_;
     int king_pos_;
     ScoreType mobilityBonus_;
     ScoreType kingPressureBonus_;
+    BitMask pawn_attacked_;
+    BitMask kn_caps_;
   } finfo_[2];
 
   const Board & board_;
