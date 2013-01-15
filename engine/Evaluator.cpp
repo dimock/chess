@@ -162,6 +162,8 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -15;
 const ScoreType Evaluator::pawnBackward_ = -10;
+const ScoreType Evaluator::assistantBishop_ = 8;
+const ScoreType Evaluator::rookBehindPenalty_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  6;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::kingbishopPressure_ = 10;
@@ -174,7 +176,8 @@ const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 8;
-const ScoreType Evaluator::forkBonus_ = 30;
+const ScoreType Evaluator::forkBonus_ = 35;
+const ScoreType Evaluator::fianchettoBonus_ = 5;
 
 const ScoreType Evaluator::rookToKingBonus_ = 7;
 
@@ -205,10 +208,10 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-20, -10, 0, 3, 5, 7, 9, 11},
-  {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-15, -3, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-30, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
+  {-25, -10, 0, 3, 5, 7, 9, 11},
+  {-19, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-19, -3, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-35, -27, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -276,14 +279,16 @@ ScoreType Evaluator::evaluate()
     score -= fmgr.eval(Figure::ColorBlack, 0);
     score += fmgr.eval(Figure::ColorWhite, 0);
 
-    score -= evaluatePawns(Figure::ColorBlack);
-    score += evaluatePawns(Figure::ColorWhite);
+    score -= evaluatePawns(Figure::ColorBlack, 0);
+    score += evaluatePawns(Figure::ColorWhite, 0);
 
     score -= evaluateRooks(Figure::ColorBlack);
     score += evaluateRooks(Figure::ColorWhite);
 
     score -= evaluateKing(Figure::ColorBlack);
     score += evaluateKing(Figure::ColorWhite);
+
+    score += evaluateFianchetto();
   }
   else if ( wei[0] < Figure::figureWeight_[Figure::TypeQueen] &&
             wei[1] < Figure::figureWeight_[Figure::TypeQueen]  )
@@ -291,16 +296,23 @@ ScoreType Evaluator::evaluate()
     score -= fmgr.eval(Figure::ColorBlack, 1);
     score += fmgr.eval(Figure::ColorWhite, 1);
 
-    score -= evaluatePawns(Figure::ColorBlack);
-    score += evaluatePawns(Figure::ColorWhite);
+    ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
 
-    score -= evalPawnsEndgame(Figure::ColorBlack);
-    score += evalPawnsEndgame(Figure::ColorWhite);
+    score -= evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
+    score += evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
+
+    //ScoreType score_b = evalPawnsEndgame(Figure::ColorBlack);
+    //ScoreType score_w = evalPawnsEndgame(Figure::ColorWhite);
+
+    score -= pwscore_eg_b;
+    score += pwscore_eg_w;
   }
   else
   {
-    score -= evaluatePawns(Figure::ColorBlack);
-    score += evaluatePawns(Figure::ColorWhite);
+    ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
+
+    score -= evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
+    score += evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
 
     int score0 = 0;
     int score1 = 0;
@@ -314,11 +326,16 @@ ScoreType Evaluator::evaluate()
     score0 -= evaluateKing(Figure::ColorBlack);
     score0 += evaluateKing(Figure::ColorWhite);
 
+    score0 += evaluateFianchetto();
+
     score1 -= fmgr.eval(Figure::ColorBlack, 1);
     score1 += fmgr.eval(Figure::ColorWhite, 1);
 
-    score1 -= evalPawnsEndgame(Figure::ColorBlack);
-    score1 += evalPawnsEndgame(Figure::ColorWhite);
+    //ScoreType score_b = evalPawnsEndgame(Figure::ColorBlack);
+    //ScoreType score_w = evalPawnsEndgame(Figure::ColorWhite);
+
+    score1 -= pwscore_eg_b;
+    score1 += pwscore_eg_w;
 
     static const int wei_max = 2*(Figure::figureWeight_[Figure::TypeQueen] +
       2*Figure::figureWeight_[Figure::TypeRook] + 2*Figure::figureWeight_[Figure::TypeBishop] + 2*Figure::figureWeight_[Figure::TypeKnight]);
@@ -333,6 +350,40 @@ ScoreType Evaluator::evaluate()
 
   return score;
 }
+
+ScoreType Evaluator::evaluateFianchetto() const
+{
+  ScoreType score = 0;
+
+  const Field & fb2 = board_.getField(B2);
+  const Field & fb3 = board_.getField(B3);
+
+  const Field & fg2 = board_.getField(G2);
+  const Field & fg3 = board_.getField(G3);
+
+  const Field & fb7 = board_.getField(B7);
+  const Field & fb6 = board_.getField(B6);
+
+  const Field & fg7 = board_.getField(G7);
+  const Field & fg6 = board_.getField(G6);
+
+  // white
+  if ( fb3.color() && fb3.type() == Figure::TypePawn && fb2.color() && fb2.type() == Figure::TypeBishop )
+    score += fianchettoBonus_;
+
+  if ( fg3.color() && fg3.type() == Figure::TypePawn && fg2.color() && fg2.type() == Figure::TypeBishop )
+    score += fianchettoBonus_;
+
+  // black
+  if ( !fb6.color() && fb6.type() == Figure::TypePawn && !fb7.color() && fb7.type() == Figure::TypeBishop )
+    score -= fianchettoBonus_;
+
+  if ( !fg6.color() && fg6.type() == Figure::TypePawn && !fg7.color() && fg7.type() == Figure::TypeBishop )
+    score -= fianchettoBonus_;
+
+  return score;
+}
+
 
 ScoreType Evaluator::evaluateForks(Figure::Color color)
 {
@@ -485,7 +536,7 @@ ScoreType Evaluator::evaluateMaterialDiff()
     score += figuresDiff * figureAgainstPawnBonus_;
 
   // 3. Knight|Bishop+2Pawns vs. Rook
-  else if ( !queensDiff && rooksDiff*figuresDiff == -1 && pawnsDiff == 2*figuresDiff )
+  else if ( !queensDiff && rooksDiff*figuresDiff == -1 /*&& pawnsDiff == 2*figuresDiff*/ )
     score += rooksDiff * rookAgainstFigureBonus_;
 
   return score;
@@ -786,23 +837,39 @@ ScoreType Evaluator::evaluateRooks(Figure::Color color)
 	return score;
 }
 
-ScoreType Evaluator::evaluatePawns(Figure::Color color)
+ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 {
   const FiguresManager & fmgr = board_.fmgr();
-
-  const uint64 & pmsk = fmgr.pawn_mask_t(color);
-
+  const BitMask & pmsk = fmgr.pawn_mask_t(color);
   if ( !pmsk )
     return 0;
 
-  ScoreType weight = 0;
+  if ( score_eg )
+    *score_eg = fmgr.pawns(color)*pawnEndgameBonus_;
+
+  static int promo_y[] = { 0, 7 };
+  static int delta_y[] = { -1, +1 };
+
+  ScoreType score = 0;
   Figure::Color ocolor = Figure::otherColor(color);
   const uint64 & opmsk = fmgr.pawn_mask_t(ocolor);
+
+  BitMask attacked_mask = finfo_[ocolor].pawn_attacked_ & ~finfo_[color].pawn_attacked_;
+
+  int py = promo_y[color];
+
+  // columns, occupied by pawns
+  uint8 pw_columns = 0;
 
   BitMask pawn_mask = fmgr.pawn_mask_o(color);
   for ( ; pawn_mask; )
   {
     int n = clear_lsb(pawn_mask);
+
+    int x = n & 7;
+    int y = n >>3;
+
+    pw_columns |= 1 << x;
 
     const uint64 & passmsk = board_.g_pawnMasks->mask_passed(color, n);
     const uint64 & blckmsk = board_.g_pawnMasks->mask_blocked(color, n);
@@ -811,35 +878,84 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color)
     if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
     {
       int y = n >> 3;
-      weight += pawnPassed_[color][y];
+      score += pawnPassed_[color][y];
 
       // guarded by neighbor pawn
-      const uint64 & guardmsk = board_.g_pawnMasks->mask_guarded(color, n);
+      const BitMask & guardmsk = board_.g_pawnMasks->mask_guarded(color, n);
       if ( pmsk & guardmsk )
-        weight += pawnGuarded_[color][y];
+        score += pawnGuarded_[color][y];
+
+      int promo_pos = x | (py<<3);
+
+      // have bishop with color the same as promotion field's color
+      Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
+      if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
+        score += assistantBishop_;
+
+      if ( score_eg )
+      {
+        int pawn_dist_promo = py - y;
+        if ( pawn_dist_promo < 0 )
+          pawn_dist_promo = -pawn_dist_promo;
+
+        int o_dist_promo = board_.g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
+        if ( board_.color_ == ocolor )
+          o_dist_promo--;
+
+        if ( pawn_dist_promo < o_dist_promo )
+          *score_eg += unstoppablePawn_;
+        else
+          *score_eg += o_dist_promo<<1;
+
+        // give penalty for long distance to my pawns if opponent doesn't have any
+        if ( !opmsk )
+        {
+          int dist_promo = board_.g_distanceCounter->getDistance(finfo_[color].king_pos_, promo_pos);
+          *score_eg -= dist_promo<<1;
+        }
+      }
+    }
+    else if ( score_eg )
+    {
+      int o_dist = board_.g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, n);
+      *score_eg += o_dist;
+
+      if ( !opmsk )
+      {
+        int dist = board_.g_distanceCounter->getDistance(finfo_[color].king_pos_, n);
+        *score_eg -= dist;
+      }
     }
 
-    const uint64 & isomask = board_.g_pawnMasks->mask_isolated(n & 7);
-    const uint64 & bkwmask = board_.g_pawnMasks->mask_backward(n);
+    const BitMask & isomask = board_.g_pawnMasks->mask_isolated(n & 7);
+    //const uint64 & bkwmask = board_.g_pawnMasks->mask_backward(n);
 
     // maybe isolated pawn
     if ( !(pmsk & isomask) )
-      weight += pawnIsolated_;
+      score += pawnIsolated_;
 
-    // if no, it maybe backward
-    else if ( !(pmsk & bkwmask) )
-      weight += pawnBackward_;
+    // backward - ie pawn isn't on last line and not guarded by other pawn and can't safely go to the next line
+    if ( (color && y < 6 || !color && y > 1) && !(finfo_[color].pawn_attacked_ & set_mask_bit(n)) )// if ( !(pmsk & bkwmask) )
+    {
+      int to = x | ((y+delta_y[color]) << 3);
+      BitMask to_mask = set_mask_bit(to);
+      if ( to_mask & attacked_mask )
+        score += pawnBackward_;
+    }
   }
 
-  for (int i = 0; i < 8; ++i)
+  for (int i = 0; pw_columns; pw_columns >>= 1, ++i)
   {
-    uint8 column = ((uint8*)&pmsk)[i];
-    int16 dblNum = BitsCounter::numBitsInByte(column);
-    ScoreType dblMask = ~((dblNum-1) >> 15);
-    weight -= ((dblNum-1) << 3) & dblMask;
+    if ( !(pw_columns & 1) )
+      continue;
+
+    uint8 & column = ((uint8*)&pmsk)[i];
+    const ScoreType dblNum = BitsCounter::numBitsInByte(column);
+    if ( dblNum > 1 )
+      score += pawnDoubled_*(dblNum-1);
   }
 
-  return weight;
+  return score;
 }
 
 ScoreType Evaluator::evalPawnsEndgame(Figure::Color color)
@@ -1137,10 +1253,10 @@ ScoreType Evaluator::evaluateWinnerLoser()
   if ( eval_pawns )
   {
     if ( fmgr.pawns(Figure::ColorBlack) > 0 )
-      weight -= evaluatePawns(Figure::ColorBlack);
+      weight -= evaluatePawns(Figure::ColorBlack, 0);
 
     if ( fmgr.pawns(Figure::ColorWhite) > 0 )
-      weight += evaluatePawns(Figure::ColorWhite);
+      weight += evaluatePawns(Figure::ColorWhite, 0);
   }
 
   return weight;

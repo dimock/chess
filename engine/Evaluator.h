@@ -14,7 +14,9 @@ public:
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static const ScoreType positionEvaluations_[2][8][64];
   static const ScoreType bishopKnightMat_[64];
-  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, semiopenRook_, winloseBonus_;
+  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_;
+  static const ScoreType assistantBishop_, rookBehindPenalty_;
+  static const ScoreType semiopenRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
   static const ScoreType castleImpossiblePenalty_;
   static const ScoreType blockedKingPenalty_;
@@ -30,6 +32,7 @@ public:
   static const ScoreType nearKingAttackBonus_[8];
   static const ScoreType attackedByWeakBonus_;
   static const ScoreType forkBonus_;
+  static const ScoreType fianchettoBonus_;
 
   static const ScoreType rookToKingBonus_;
 
@@ -55,7 +58,8 @@ private:
   ScoreType evaluateMaterialDiff();
   ScoreType evaluateKing(Figure::Color color);
   ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle);
-  ScoreType evaluatePawns(Figure::Color color);
+  ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
+  ScoreType evaluateFianchetto() const;
   ScoreType evalPawnsEndgame(Figure::Color color);
   ScoreType evaluateRooks(Figure::Color color);
   ScoreType evaluateWinnerLoser();

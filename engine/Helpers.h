@@ -289,31 +289,31 @@ public:
 
   PawnMasks();
 
-  inline const uint64 & mask_guarded(int color, int pos) const
+  inline const BitMask & mask_guarded(int color, int pos) const
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_guarded_[color][pos];
   }
 
-  inline const uint64 & mask_backward(int pos) const
+  inline const BitMask & mask_backward(int pos) const
   {
 	  THROW_IF( (unsigned)pos > 63, "invalid pawn pos" );
 	  return pmasks_backward_[pos];
   }
 
-  inline const uint64 & mask_passed(int color, int pos) const
+  inline const BitMask & mask_passed(int color, int pos) const
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_passed_[color][pos];
   }
 
-  inline const uint64 & mask_blocked(int color, int pos) const
+  inline const BitMask & mask_blocked(int color, int pos) const
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)pos > 63, "invalid pawn pos or color" );
     return pmasks_blocked_[color][pos];
   }
 
-  inline const uint64 & mask_isolated(int x) const
+  inline const BitMask & mask_isolated(int x) const
   {
     THROW_IF( (unsigned)x > 7, "invalid pawn x or color" );
     return pmask_isolated_[x];
@@ -326,7 +326,7 @@ public:
     return pawn_dst_color_[color][pos];
   }
 
-  inline const uint64 & mask_kpk(int color, int p) const
+  inline const BitMask & mask_kpk(int color, int p) const
   {
     THROW_IF( (unsigned)color > 1 || (unsigned)p > 63, "invalid pawn pos or color" );
     return pmask_kpk_[color][p];
@@ -336,12 +336,12 @@ private:
 
   void clearAll(int);
 
-  uint64 pmasks_guarded_[2][64];
-  uint64 pmasks_passed_[2][64];
-  uint64 pmasks_blocked_[2][64];
-  uint64 pmasks_backward_[64];
-  uint64 pmask_isolated_[8];
-  uint64 pmask_kpk_[2][64];
+  BitMask pmasks_guarded_[2][64];
+  BitMask pmasks_passed_[2][64];
+  BitMask pmasks_blocked_[2][64];
+  BitMask pmasks_backward_[64];
+  BitMask pmask_isolated_[8];
+  BitMask pmask_kpk_[2][64];
   int8   pawn_dst_color_[2][64];
 };
 
