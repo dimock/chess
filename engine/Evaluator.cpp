@@ -18,7 +18,7 @@ enum {
 };
 
 const ScoreType Evaluator::positionGain_ = 100;
-const ScoreType Evaluator::mobilityGain_ = 50;
+const ScoreType Evaluator::mobilityGain_ = 70;
 
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
@@ -245,8 +245,8 @@ Evaluator::Evaluator(const Board & board, EHashTable * ehash, ScoreType alpha, S
   finfo_[1].king_pos_ = board_.kingPos(Figure::ColorWhite);
 
   int mobility_gain = mobilityGain_;
-  if ( futility_pruning )
-    mobility_gain = mobility_gain >> 2;
+  //if ( futility_pruning )
+  //  mobility_gain = mobility_gain >> 2;
 
   if ( alpha_ > -Figure::MatScore )
     alpha_ = alpha-mobility_gain;
@@ -281,6 +281,9 @@ ScoreType Evaluator::evaluate()
   score += evaluateMaterialDiff();
 
   calculatePawnsKnights();
+
+  score -= finfo_[0].knightPressure_;
+  score += finfo_[1].knightPressure_;
 
   score -= evaluateForks(Figure::ColorBlack);
   score += evaluateForks(Figure::ColorWhite);
@@ -497,7 +500,7 @@ void Evaluator::calculatePawnsKnights()
       finfo_[c].kn_caps_ |= kn_cap;
 
       int ki_dist = board_.g_distanceCounter->getDistance(from, oki_pos);
-      finfo_[c].kingPressureBonus_ += kingDistanceBonus_[Figure::TypeKnight][ki_dist];
+      finfo_[c].knightPressure_ += kingDistanceBonus_[Figure::TypeKnight][ki_dist];
 
       BitMask kmob_mask = kn_cap & not_occupied;
       int movesN = pop_count(kmob_mask);

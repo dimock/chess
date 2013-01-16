@@ -86,12 +86,13 @@ private:
       pawn_attacked_ = 0;
       mobilityBonus_ = 0;
       kingPressureBonus_ = 0;
+      knightPressure_ = 0;
       kn_caps_ = 0;
     }
 
     int king_pos_;
     ScoreType mobilityBonus_;
-    ScoreType kingPressureBonus_;
+    ScoreType kingPressureBonus_, knightPressure_;
     BitMask pawn_attacked_;
     BitMask kn_caps_;
   } finfo_[2];
