@@ -14,7 +14,7 @@ public:
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static const ScoreType positionEvaluations_[2][8][64];
   static const ScoreType bishopKnightMat_[64];
-  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_;
+  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
   static const ScoreType assistantBishop_, rookBehindPenalty_;
   static const ScoreType semiopenRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;

@@ -162,6 +162,8 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -15;
 const ScoreType Evaluator::pawnBackward_ = -10;
+const ScoreType Evaluator::pawnDisconnected_ = -5;
+const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindPenalty_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  6;
@@ -840,8 +842,8 @@ ScoreType Evaluator::evaluateRooks(Figure::Color color)
 ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 {
   const FiguresManager & fmgr = board_.fmgr();
-  const BitMask & pmsk = fmgr.pawn_mask_t(color);
-  if ( !pmsk )
+  const BitMask & pmsk_t = fmgr.pawn_mask_t(color);
+  if ( !pmsk_t )
     return 0;
 
   if ( score_eg )
@@ -852,14 +854,15 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
   ScoreType score = 0;
   Figure::Color ocolor = Figure::otherColor(color);
-  const uint64 & opmsk = fmgr.pawn_mask_t(ocolor);
+  const BitMask & opmsk_t = fmgr.pawn_mask_t(ocolor);
+  const BitMask & opmsk_o = fmgr.pawn_mask_o(ocolor);
 
-  BitMask attacked_mask = finfo_[ocolor].pawn_attacked_ & ~finfo_[color].pawn_attacked_;
+  BitMask attacked_mask = (finfo_[ocolor].pawn_attacked_ & ~finfo_[color].pawn_attacked_);
 
   int py = promo_y[color];
 
   // columns, occupied by pawns
-  uint8 pw_columns = 0;
+  uint8 cols_visited = 0;
 
   BitMask pawn_mask = fmgr.pawn_mask_o(color);
   for ( ; pawn_mask; )
@@ -869,20 +872,28 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
     int x = n & 7;
     int y = n >>3;
 
-    pw_columns |= 1 << x;
+    // doubled pawns
+    if ( !(cols_visited & (1<<x)) )
+    {
+      cols_visited |= 1<<x;
+      uint8 & column = ((uint8*)&pmsk_t)[x];
+      const ScoreType dblNum = BitsCounter::numBitsInByte(column);
+      if ( dblNum > 1 )
+        score += pawnDoubled_*(dblNum-1);
+    }
 
     const uint64 & passmsk = board_.g_pawnMasks->mask_passed(color, n);
     const uint64 & blckmsk = board_.g_pawnMasks->mask_blocked(color, n);
 
     // passed pawn evaluation
-    if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
+    if ( !(opmsk_t & passmsk) && !(pmsk_t & blckmsk) )
     {
       int y = n >> 3;
       score += pawnPassed_[color][y];
 
       // guarded by neighbor pawn
       const BitMask & guardmsk = board_.g_pawnMasks->mask_guarded(color, n);
-      if ( pmsk & guardmsk )
+      if ( pmsk_t & guardmsk )
         score += pawnGuarded_[color][y];
 
       int promo_pos = x | (py<<3);
@@ -908,7 +919,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
           *score_eg += o_dist_promo<<1;
 
         // give penalty for long distance to my pawns if opponent doesn't have any
-        if ( !opmsk )
+        if ( !opmsk_o )
         {
           int dist_promo = board_.g_distanceCounter->getDistance(finfo_[color].king_pos_, promo_pos);
           *score_eg -= dist_promo<<1;
@@ -920,7 +931,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       int o_dist = board_.g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, n);
       *score_eg += o_dist;
 
-      if ( !opmsk )
+      if ( !opmsk_o )
       {
         int dist = board_.g_distanceCounter->getDistance(finfo_[color].king_pos_, n);
         *score_eg -= dist;
@@ -928,31 +939,27 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
     }
 
     const BitMask & isomask = board_.g_pawnMasks->mask_isolated(n & 7);
-    //const uint64 & bkwmask = board_.g_pawnMasks->mask_backward(n);
+    const BitMask & dismask = board_.g_pawnMasks->mask_disconnected(n);
 
     // maybe isolated pawn
-    if ( !(pmsk & isomask) )
+    if ( !(pmsk_t & isomask) )
       score += pawnIsolated_;
 
     // backward - ie pawn isn't on last line and not guarded by other pawn and can't safely go to the next line
-    if ( (color && y < 6 || !color && y > 1) && !(finfo_[color].pawn_attacked_ & set_mask_bit(n)) )// if ( !(pmsk & bkwmask) )
+    if ( (color && y < 6 || !color && y > 1) && !(finfo_[color].pawn_attacked_ & set_mask_bit(n)) )
     {
       int to = x | ((y+delta_y[color]) << 3);
       BitMask to_mask = set_mask_bit(to);
-      if ( to_mask & attacked_mask )
+
+      if ( to_mask & opmsk_o )
+        score += pawnBlocked_;
+      else if ( to_mask & attacked_mask )
         score += pawnBackward_;
     }
-  }
 
-  for (int i = 0; pw_columns; pw_columns >>= 1, ++i)
-  {
-    if ( !(pw_columns & 1) )
-      continue;
-
-    uint8 & column = ((uint8*)&pmsk)[i];
-    const ScoreType dblNum = BitsCounter::numBitsInByte(column);
-    if ( dblNum > 1 )
-      score += pawnDoubled_*(dblNum-1);
+    // disconnected
+    if ( !(pmsk_t & dismask) )
+      score += pawnDisconnected_;
   }
 
   return score;
@@ -1067,12 +1074,16 @@ ScoreType Evaluator::evaluateWinnerLoser()
     int num_lose_figs = fmgr.knights(lose_color) + fmgr.bishops(lose_color);
     ScoreType weight_lose_fig = 10;
 
+    // if winner doesn't have light figure and loser has more than 1 figure we don't want to evaluate them less than a pawn
+    if ( fmgr.knights(lose_color)+fmgr.bishops(lose_color) > 1 && fmgr.knights(win_color) +fmgr.bishops(win_color) == 0 )
+      weight_lose_fig = Figure::figureWeight_[Figure::TypePawn] + (MAX_PASSED_SCORE) + pawnEndgameBonus_;
+
     // if winner has more pawns than loser and also has some figure he must exchange all loser figures to pawns
-    if ( fmgr.knights(lose_color)+fmgr.bishops(lose_color) > 0  &&
+    else if ( fmgr.knights(lose_color)+fmgr.bishops(lose_color) > 0  &&
          fmgr.knights(win_color) +fmgr.bishops(win_color) > 0 &&
          fmgr.knights(lose_color)+fmgr.bishops(lose_color) < fmgr.pawns(win_color) )
     {
-      weight_lose_fig = Figure::figureWeight_[Figure::TypePawn] + (MAX_PASSED_SCORE);
+      weight_lose_fig = Figure::figureWeight_[Figure::TypePawn] + (MAX_PASSED_SCORE) + pawnEndgameBonus_;
       eval_pawns = false;
     }
 
@@ -1144,12 +1155,12 @@ ScoreType Evaluator::evaluateWinnerLoser()
     }
     else if ( fmgr.queens(win_color) == 0 && fmgr.bishops(win_color) == 0 &&
               fmgr.knights(win_color) == 0 && fmgr.pawns(win_color) == 0 && fmgr.rooks(win_color) == 1 &&
-              fmgr.knights(lose_color)+fmgr.bishops(lose_color) > 0 )
+              fmgr.knights(lose_color)+fmgr.bishops(lose_color) > 1 )
     {
-      if ( fmgr.knights(lose_color)+fmgr.bishops(lose_color) == 1 )
-        weight = fmgr.weight();
-      else
-        weight = 15;
+      //if ( fmgr.knights(lose_color)+fmgr.bishops(lose_color) == 1 )
+      //  weight = fmgr.weight();
+      //else
+        weight = 25;
     }
 
     if ( fmgr.pawns(win_color) == 1 )

@@ -295,10 +295,10 @@ public:
     return pmasks_guarded_[color][pos];
   }
 
-  inline const BitMask & mask_backward(int pos) const
+  inline const BitMask & mask_disconnected(int pos) const
   {
 	  THROW_IF( (unsigned)pos > 63, "invalid pawn pos" );
-	  return pmasks_backward_[pos];
+	  return pmasks_disconnected_[pos];
   }
 
   inline const BitMask & mask_passed(int color, int pos) const
@@ -339,10 +339,10 @@ private:
   BitMask pmasks_guarded_[2][64];
   BitMask pmasks_passed_[2][64];
   BitMask pmasks_blocked_[2][64];
-  BitMask pmasks_backward_[64];
+  BitMask pmasks_disconnected_[64];
   BitMask pmask_isolated_[8];
   BitMask pmask_kpk_[2][64];
-  int8   pawn_dst_color_[2][64];
+  int8    pawn_dst_color_[2][64];
 };
 
 class BitsCounter

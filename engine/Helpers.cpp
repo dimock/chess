@@ -125,24 +125,24 @@ PawnMasks::PawnMasks()
 	  int x = i & 7;
 	  int y = i >> 3;
 
-	  uint8 * bkmask = (uint8*)&pmasks_backward_[i];
+	  uint8 * dis_mask = (uint8*)&pmasks_disconnected_[i];
 
 	  if ( x > 0 )
 	  {
-		  bkmask[x-1] |= set_bit(y);
+		  dis_mask[x-1] |= set_bit(y);
 		  if ( y > 0 )
-			  bkmask[x-1] |= set_bit(y-1);
+			  dis_mask[x-1] |= set_bit(y-1);
 		  if ( y < 7 )
-			  bkmask[x-1] |= set_bit(y+1);
+			  dis_mask[x-1] |= set_bit(y+1);
 	  }
 
 	  if ( x < 7 )
 	  {
-		  bkmask[x+1] |= set_bit(y);
+		  dis_mask[x+1] |= set_bit(y);
 		  if ( y > 0 )
-			  bkmask[x+1] |= set_bit(y-1);
+			  dis_mask[x+1] |= set_bit(y-1);
 		  if ( y < 7 )
-			  bkmask[x+1] |= set_bit(y+1);
+			  dis_mask[x+1] |= set_bit(y+1);
 	  }
   }
 
@@ -180,7 +180,7 @@ void PawnMasks::clearAll(int pos)
     pmasks_blocked_[color][pos] = 0;
     pmask_kpk_[color][pos] = 0;
   }
-  pmasks_backward_[pos] = 0;
+  pmasks_disconnected_[pos] = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
