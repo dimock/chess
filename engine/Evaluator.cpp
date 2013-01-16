@@ -179,8 +179,8 @@ const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
-const ScoreType Evaluator::attackedByWeakBonus_ = 8;
-const ScoreType Evaluator::forkBonus_ = 35;
+const ScoreType Evaluator::attackedByWeakBonus_ = 10;
+const ScoreType Evaluator::forkBonus_ = 50;
 const ScoreType Evaluator::fianchettoBonus_ = 5;
 
 const ScoreType Evaluator::rookToKingBonus_ = 7;
@@ -212,7 +212,7 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-25, -10, 0, 3, 5, 7, 9, 11},
+  {-20, -10, 0, 3, 5, 7, 9, 11},
   {-20, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-20, -7, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
@@ -408,12 +408,6 @@ ScoreType Evaluator::evaluate()
     score_mob = -score_mob;
 
   score += score_mob;
-
-  //if ( (lazy < alpha_-mobilityGain_ || lazy > betta_+mobilityGain_) &&
-  //     !(score < alpha_ || score > betta_) )
-  //{
-  //  int ttt = 0;
-  //}
 
   return score;
 }
