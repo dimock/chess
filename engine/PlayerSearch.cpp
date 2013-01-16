@@ -219,12 +219,12 @@ int Player::nextDepth(int depth, const Move & move, bool pv) const
 ScoreType Player::alphaBetta0()
 {
   if ( stopped() )
-    return board_.evaluate(&ehash_);
+    return board_.evaluate(&ehash_, -ScoreMax, +ScoreMax, false);
 
   if ( sdata_.numOfMoves_ == 0 )
   {
     board_.setNoMoves();
-    ScoreType score = board_.evaluate(&ehash_);
+    ScoreType score = board_.evaluate(&ehash_, -ScoreMax, +ScoreMax, false);
     return score;
   }
 
@@ -330,7 +330,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     return Figure::DrawScore;
 
   if ( stopped() || ply >= MaxPly )
-    return board_.evaluate(&ehash_);
+    return board_.evaluate(&ehash_, alpha, betta, false);
 
   ScoreType alpha0 = alpha;
 
@@ -385,7 +385,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
         alpha < Figure::MatScore-MaxPly &&
         depth == 1 && ply > 1 )
   {
-    ScoreType score0 = board_.evaluate(&ehash_);
+    ScoreType score0 = board_.evaluate(&ehash_, alpha, betta, true);
     int delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
     if ( delta > 0 )
       return captures(depth, ply, alpha, betta, pv, score0);
@@ -488,7 +488,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   if ( !counter )
   {
     board_.setNoMoves();
-    scoreBest = board_.evaluate(&ehash_);
+    scoreBest = board_.evaluate(&ehash_, alpha, betta, false);
     if ( board_.matState() )
       scoreBest += ply;
   }
@@ -531,7 +531,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   // not initialized yet
   if ( score0 == -ScoreMax )
-    score0 = board_.evaluate(&ehash_);
+    score0 = board_.evaluate(&ehash_, alpha, betta, false);
 
   if ( stopped() || ply >= MaxPly )
     return score0;

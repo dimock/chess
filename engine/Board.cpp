@@ -99,14 +99,14 @@ bool Board::isDangerPawn(const Move & move) const
   return false;
 }
 
-ScoreType Board::evaluate(EHashTable * ehash) const
+ScoreType Board::evaluate(EHashTable * ehash, int alpha, int betta, bool futility_pruning) const
 {
   if ( matState() )
     return -Figure::MatScore;
   else if ( drawState() )
     return Figure::DrawScore;
 
-  Evaluator evaluator(*this, ehash);
+  Evaluator evaluator(*this, ehash, alpha, betta, futility_pruning);
 
   ScoreType score = evaluator();
 

@@ -305,7 +305,7 @@ public:
   void verifyState();
 
   /// returns position evaluation that depends on color
-  ScoreType evaluate(EHashTable * ehash) const;
+  ScoreType evaluate(EHashTable * ehash, int alpha, int betta, bool futility_pruning) const;
 
   /// add new figure
   bool addFigure(const Figure::Color color, const Figure::Type type, int pos);

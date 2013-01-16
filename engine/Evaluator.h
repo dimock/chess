@@ -10,6 +10,7 @@ class Evaluator
 public:
 
   static const ScoreType positionGain_;
+  static const ScoreType mobilityGain_;
 
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static const ScoreType positionEvaluations_[2][8][64];
@@ -47,7 +48,7 @@ public:
 
   static const ScoreType opponentPawnsToKing_;
 
-  Evaluator(const Board & board, EHashTable * ehash);
+  Evaluator(const Board & board, EHashTable * ehash, ScoreType alpha, ScoreType betta, bool futility_pruning);
 
   ScoreType operator () ();
 
@@ -68,7 +69,10 @@ private:
   // 0 - short, 1 - long, -1 - no castle
   int getCastleType(Figure::Color color) const;
 
-  /// calculates figures mobility
+  /// calculate field (bit-mask) attacked by knights and pawns
+  void calculatePawnsKnights();
+
+  /// calculates figures mobility (BRQ only)
   void calculateMobility();
 
   /// find knight and pawn forks
@@ -94,4 +98,9 @@ private:
 
   const Board & board_;
   EHashTable * ehash_;
+
+  BitMask mask_all_;
+  BitMask inv_mask_all_;
+
+  int alpha_, betta_;
 };
