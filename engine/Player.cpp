@@ -133,7 +133,7 @@ void Player::setMemory(int mb)
   if ( hsize2 >= 10 )
   {
     hash_.resize(hsize2);
-    ehash_.resize(hsize2);
+    ehash_.resize(hsize2+1);
   }
 #endif
 }

@@ -622,6 +622,7 @@ void Board::makeNullMove()
   undo.clearUndo();
 
   undo.zcode_old_ = hashCode();
+  undo.zcode_pawn_ = pawnCode();
   undo.state_ = state_;
 
   if ( en_passant_ >= 0 )
@@ -648,6 +649,7 @@ void Board::unmakeNullMove()
   color_ = Figure::otherColor(color_);
   en_passant_ = undo.en_passant_;
   fmgr_.restoreHash(undo.zcode_old_);
+  fmgr_.restorePawnCode(undo.zcode_pawn_);
   state_ = (State)undo.state_;
 }
 
@@ -677,6 +679,7 @@ bool Board::validateValidator(const Move & mv)
   // store Zobrist key and state
   undo.old_state_ = state_;
   undo.zcode_old_ = fmgr_.hashCode();
+  undo.zcode_pawn_ = fmgr_.pawnCode();
 
   // store checking info
   undo.checking_figs_ = checking_figs_;

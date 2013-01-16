@@ -13,6 +13,10 @@ class Board;
 // got from chessprogramming.wikispaces.com
 inline int pop_count(uint64 n)
 {
+  if ( n == 0ULL )
+    return 0;
+  //else if ( (n & (n-1)) == 0ULL )
+  //  return 1;
   n =  n - ((n >> 1)  & 0x5555555555555555ULL);
   n = (n & 0x3333333333333333ULL) + ((n >> 2) & 0x3333333333333333ULL);
   n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0fULL;

@@ -56,7 +56,8 @@ private:
   /// calculates absolute position evaluation
   ScoreType evaluate();
   ScoreType evaluateMaterialDiff();
-  ScoreType evaluateKing(Figure::Color color);
+  ScoreType evaluatePawnShield(Figure::Color color);
+  ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle);
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
   ScoreType evaluateFianchetto() const;

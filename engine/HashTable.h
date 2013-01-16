@@ -5,6 +5,7 @@
  *************************************************************/
 
 #include "BasicTypes.h"
+#include "Board.h"
 
 __declspec (align(16)) struct HItem
 {
@@ -233,10 +234,10 @@ public:
 
 __declspec (align(16)) struct HEval
 {
-  HEval() : hcode_(0), score_(-ScoreMax), score_eg_(-ScoreMax) {}
+  HEval() : hcode_(0), score_(-ScoreMax), score_eg_(-ScoreMax), score_ps_(-ScoreMax) {}
 
   uint64     hcode_;
-  ScoreType  score_, score_eg_;
+  ScoreType  score_, score_eg_, score_ps_;
 };
 
 class EHashTable : public HashTable<HEval>
@@ -246,12 +247,13 @@ public:
   EHashTable(int size) : HashTable<HEval>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType score, ScoreType score_eg)
+  void push(const uint64 & hcode, ScoreType score, ScoreType score_eg, ScoreType score_ps)
   {
     HEval & heval = this->operator [] (hcode);
     heval.hcode_ = hcode;
     heval.score_ = score;
     heval.score_eg_ = score_eg;
+    heval.score_ps_ = score_ps;
   }
 
   const HEval * find(const uint64 & hcode)

@@ -269,7 +269,12 @@ ScoreType Evaluator::evaluate()
   score -= evaluateForks(Figure::ColorBlack);
   score += evaluateForks(Figure::ColorWhite);
 
-  ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax;
+  ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax, score_ps = -ScoreMax;
+
+  ScoreType score_king = 0;
+
+  score_king -= evaluateCastlePenalty(Figure::ColorBlack);
+  score_king += evaluateCastlePenalty(Figure::ColorWhite);
 
   if ( ehash_ )
   {
@@ -278,23 +283,32 @@ ScoreType Evaluator::evaluate()
     {
       pwscore = heval->score_;
       pwscore_eg = heval->score_eg_;
+      score_ps = heval->score_ps_;
     }
   }
 
-  if ( pwscore == -ScoreMax || pwscore_eg == -ScoreMax )
+  if ( pwscore == -ScoreMax || pwscore_eg == -ScoreMax || score_ps == -ScoreMax )
   {
     ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
     ScoreType pwscore_b = 0, pwscore_w = 0;
+    ScoreType score_ps_b = 0, score_ps_w = 0;
 
     pwscore_b = evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
     pwscore_w = evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
 
+    score_ps_b = evaluatePawnShield(Figure::ColorBlack);
+    score_ps_w = evaluatePawnShield(Figure::ColorWhite);
+
     pwscore = pwscore_w - pwscore_b;
     pwscore_eg = pwscore_eg_w - pwscore_eg_b;
+    score_ps = score_ps_w - score_ps_b;
 
     if ( ehash_ )
-      ehash_->push(board_.pawnCode(), pwscore, pwscore_eg);
+      ehash_->push(board_.pawnCode(), pwscore, pwscore_eg, score_ps);
   }
+
+  score_king += score_ps;
+  score += pwscore;
 
   int wei[2] = {0, 0};
   for (int c = 0; c < 2; ++c)
@@ -302,8 +316,6 @@ ScoreType Evaluator::evaluate()
     for (int t = Figure::TypeKnight; t < Figure::TypeKing; ++t)
       wei[c] += fmgr.tcount((Figure::Type)t, (Figure::Color)c)*Figure::figureWeight_[t];
   }
-
-  score += pwscore;
 
   if ( wei[0] > 2*Figure::figureWeight_[Figure::TypeQueen] &&
        wei[1] > 2*Figure::figureWeight_[Figure::TypeQueen] )
@@ -314,8 +326,7 @@ ScoreType Evaluator::evaluate()
     score -= evaluateRooks(Figure::ColorBlack);
     score += evaluateRooks(Figure::ColorWhite);
 
-    score -= evaluateKing(Figure::ColorBlack);
-    score += evaluateKing(Figure::ColorWhite);
+    score += score_king;
 
     score += evaluateFianchetto();
   }
@@ -338,8 +349,7 @@ ScoreType Evaluator::evaluate()
     score0 -= evaluateRooks(Figure::ColorBlack);
     score0 += evaluateRooks(Figure::ColorWhite);
 
-    score0 -= evaluateKing(Figure::ColorBlack);
-    score0 += evaluateKing(Figure::ColorWhite);
+    score0 += score_king;
 
     score0 += evaluateFianchetto();
 
@@ -596,43 +606,17 @@ int Evaluator::getCastleType(Figure::Color color) const
   return -1;
 }
 
-ScoreType Evaluator::evaluateKing(Figure::Color color)
+ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
 {
   const FiguresManager & fmgr = board_.fmgr();
 
-  ScoreType kingEval = 0;
+  ScoreType score = 0;
   Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
-
   Index ki_pos(finfo_[color].king_pos_);
 
-  static const BitMask fake_castle_rook[2][3] = {
-    { set_mask_bit(G8)|set_mask_bit(H8) | set_mask_bit(G7)|set_mask_bit(H7),
-      set_mask_bit(A8)|set_mask_bit(B8)|set_mask_bit(C8) | set_mask_bit(A7)|set_mask_bit(B7)|set_mask_bit(C7)},
-
-    { set_mask_bit(G1)|set_mask_bit(H1) | set_mask_bit(G2)|set_mask_bit(H2),
-      set_mask_bit(A1)|set_mask_bit(B1)|set_mask_bit(C1) | set_mask_bit(A2)|set_mask_bit(B2)|set_mask_bit(C2)} };
-
   int ctype = getCastleType(color);
-  if ( ctype < 0 && !board_.castling(color) )
-  {
-    kingEval -= castleImpossiblePenalty_;
-    return kingEval;
-  }
-
-  // fake castle
-  if ( !board_.castling(color) && ctype >= 0 )
-  {
-    BitMask r_mask = fmgr.rook_mask(color) & fake_castle_rook[color][ctype];
-    if ( r_mask )
-    {
-      Index r_pos( find_lsb(r_mask) );
-      if ( ctype == 0 && r_pos.x() > ki_pos.x() || ctype == 1 && r_pos.x() < ki_pos.x() )
-        kingEval = -fakecastlePenalty_;
-    }
-  }
-
   if ( ctype < 0 )
-    return kingEval;
+    return 0;
 
   const BitMask & pw_mask = fmgr.pawn_mask_o(color);
   const BitMask & opw_mask = fmgr.pawn_mask_o(ocolor);
@@ -643,7 +627,7 @@ ScoreType Evaluator::evaluateKing(Figure::Color color)
     {0x8080808080808080ULL, 0x4040404040404040ULL, 0x2020202020202020ULL},
     {0x0101010101010101ULL, 0x0202020202020202ULL, 0x0404040404040404ULL} };
 
-    // color, castle type, column number
+  // color, castle type, column number
   static const BitMask abc_mask_two[2][2][3] = {
     { { 0x0080800000000000ULL, 0x0040400000000000ULL, 0x0020200000000000ULL }, { 0x0001010000000000ULL, 0x0002020000000000ULL, 0x0004040000000000ULL } },
     { { 0x0000000000808000ULL, 0x0000000000404000ULL, 0x0000000000202000ULL }, { 0x0000000000010100ULL, 0x0000000000020200ULL, 0x0000000000040400ULL } }
@@ -668,15 +652,9 @@ ScoreType Evaluator::evaluateKing(Figure::Color color)
     const BitMask & two_mask  = abc_mask_two[color][ctype][i];
 
     if ( !(full_mask & pw_mask) )
-    {
-      kingEval -= kingPenalties[0][i];
-      kingEval -= finfo_[ocolor].kingPressureBonus_;
-    }
+      score -= kingPenalties[0][i];
     else if ( !(two_mask & pw_mask) )
-    {
-      kingEval -= kingPenalties[1][i];
-      kingEval -= finfo_[ocolor].kingPressureBonus_ >> 1;
-    }
+      score -= kingPenalties[1][i];
   }
 
   // pawn shield cf columns
@@ -685,28 +663,65 @@ ScoreType Evaluator::evaluateKing(Figure::Color color)
     const BitMask & two_mask  = abc_mask_two[color][ctype][2];
 
     if ( !(full_mask & pw_mask) )
-    {
-      kingEval -= kingPenalties[0][2];
-      kingEval -= finfo_[ocolor].kingPressureBonus_ >> 1;
-    }
+      score -= kingPenalties[0][2];
     else if ( !(two_mask & pw_mask) )
+      score -= kingPenalties[1][2];
+  }
+
+  // opponent pawns pressure
+  if ( opponent_pressure_masks[color][ctype] & opw_mask )
+    score -= opponentPawnsToKing_;
+
+  return score;
+}
+
+ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
+{
+  const FiguresManager & fmgr = board_.fmgr();
+
+  ScoreType score = 0;
+  Figure::Color ocolor = Figure::otherColor((Figure::Color)color);
+  Index ki_pos(finfo_[color].king_pos_);
+
+  static const BitMask fake_castle_rook[2][3] = {
+    { set_mask_bit(G8)|set_mask_bit(H8) | set_mask_bit(G7)|set_mask_bit(H7),
+      set_mask_bit(A8)|set_mask_bit(B8)|set_mask_bit(C8) | set_mask_bit(A7)|set_mask_bit(B7)|set_mask_bit(C7)},
+
+    { set_mask_bit(G1)|set_mask_bit(H1) | set_mask_bit(G2)|set_mask_bit(H2),
+      set_mask_bit(A1)|set_mask_bit(B1)|set_mask_bit(C1) | set_mask_bit(A2)|set_mask_bit(B2)|set_mask_bit(C2)} };
+
+  int ctype = getCastleType(color);
+  if ( ctype < 0 && !board_.castling(color) )
+    return -castleImpossiblePenalty_;
+
+  // fake castle
+  if ( !board_.castling(color) && ctype >= 0 )
+  {
+    BitMask r_mask = fmgr.rook_mask(color) & fake_castle_rook[color][ctype];
+    if ( r_mask )
     {
-      kingEval -= kingPenalties[1][2];
-      kingEval -= finfo_[ocolor].kingPressureBonus_ >> 2;
+      Index r_pos( find_lsb(r_mask) );
+      if ( ctype == 0 && r_pos.x() > ki_pos.x() || ctype == 1 && r_pos.x() < ki_pos.x() )
+        score = -fakecastlePenalty_;
     }
   }
 
-  {
-    // opponent pawns pressure
-    if ( opponent_pressure_masks[color][ctype] & opw_mask )
-      kingEval -= opponentPawnsToKing_;
+  if ( ctype < 0 )
+    return score;
 
-    // opponent bishop pressure
-    if ( opponent_pressure_masks[color][ctype] & obishop_mask )
-      kingEval -= kingbishopPressure_;
-  }
+  const BitMask & obishop_mask = fmgr.bishop_mask(ocolor);
 
-  return kingEval;
+  // color, castle type
+  static const BitMask opponent_pressure_masks[2][2] = {
+    {set_mask_bit(F3)|set_mask_bit(H3), set_mask_bit(C3)|set_mask_bit(A3)},
+    {set_mask_bit(F6)|set_mask_bit(H6), set_mask_bit(C6)|set_mask_bit(A6)}
+  };
+
+  // opponent bishop pressure
+  if ( opponent_pressure_masks[color][ctype] & obishop_mask )
+    score -= kingbishopPressure_;
+
+  return score;
 }
 
 //ScoreType Evaluator::evaluateKing(Figure::Color color)
@@ -1292,20 +1307,18 @@ ScoreType Evaluator::evaluateWinnerLoser()
       pwscore_b = evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
       pwscore_w = evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
 
+      ScoreType score_ps_b = evaluatePawnShield(Figure::ColorBlack);
+      ScoreType score_ps_w = evaluatePawnShield(Figure::ColorWhite);
+
       pwscore = pwscore_w - pwscore_b;
       pwscore_eg = pwscore_eg_w - pwscore_eg_b;
+      ScoreType score_ps = score_ps_w - score_ps_b;
 
       if ( ehash_ )
-        ehash_->push(board_.pawnCode(), pwscore, pwscore_eg);
+        ehash_->push(board_.pawnCode(), pwscore, pwscore_eg, score_ps);
     }
 
     weight += pwscore;
-
-    //if ( fmgr.pawns(Figure::ColorBlack) > 0 )
-    //  weight -= evaluatePawns(Figure::ColorBlack, 0);
-
-    //if ( fmgr.pawns(Figure::ColorWhite) > 0 )
-    //  weight += evaluatePawns(Figure::ColorWhite, 0);
   }
 
   return weight;

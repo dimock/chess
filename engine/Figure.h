@@ -253,6 +253,7 @@ public:
   inline void hashColor()
   {
     hashCode_ ^= s_zobristColor_;
+    pawnCode_ ^= s_zobristColor_;
   }
 
   inline void restoreMasks(const BitMask (& mask)[2])
