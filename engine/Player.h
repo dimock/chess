@@ -241,6 +241,7 @@ private:
 
 #ifdef USE_HASH
   GHashTable hash_;
+  EHashTable ehash_;
 #endif
 
 

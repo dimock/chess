@@ -74,7 +74,8 @@ void SearchData::restart()
 Player::Player() :
   stop_(false)
 #ifdef USE_HASH
-  ,hash_(20)
+  ,hash_(19)
+  ,ehash_(19)
 #endif
 {
   g_undoStack = new UndoInfo[Board::GameLength];
@@ -128,9 +129,12 @@ void Player::setMemory(int mb)
 
 #ifdef USE_HASH
   int hitemSize = sizeof(HItem);
-  int hsize2 = log2(bytesN/hitemSize) - 2;
+  int hsize2 = log2(bytesN/hitemSize) - 3;
   if ( hsize2 >= 10 )
+  {
     hash_.resize(hsize2);
+    ehash_.resize(hsize2);
+  }
 #endif
 }
 

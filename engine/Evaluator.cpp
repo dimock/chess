@@ -4,6 +4,7 @@
 
 #include "Evaluator.h"
 #include "Board.h"
+#include "HashTable.h"
 
 enum {
   A1, B1, C1, D1, E1, F1, G1, H1,
@@ -230,7 +231,7 @@ const ScoreType Evaluator::nearKingAttackBonus_[8] = {
 
 
 //////////////////////////////////////////////////////////////////////////
-Evaluator::Evaluator(const Board & board) : board_(board)
+Evaluator::Evaluator(const Board & board, EHashTable * ehash) : board_(board), ehash_(ehash)
 {
 }
 
@@ -268,6 +269,33 @@ ScoreType Evaluator::evaluate()
   score -= evaluateForks(Figure::ColorBlack);
   score += evaluateForks(Figure::ColorWhite);
 
+  ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax;
+
+  if ( ehash_ )
+  {
+    const HEval * heval = ehash_->find(board_.pawnCode());
+    if ( heval )
+    {
+      pwscore = heval->score_;
+      pwscore_eg = heval->score_eg_;
+    }
+  }
+
+  if ( pwscore == -ScoreMax || pwscore_eg == -ScoreMax )
+  {
+    ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
+    ScoreType pwscore_b = 0, pwscore_w = 0;
+
+    pwscore_b = evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
+    pwscore_w = evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
+
+    pwscore = pwscore_w - pwscore_b;
+    pwscore_eg = pwscore_eg_w - pwscore_eg_b;
+
+    if ( ehash_ )
+      ehash_->push(board_.pawnCode(), pwscore, pwscore_eg);
+  }
+
   int wei[2] = {0, 0};
   for (int c = 0; c < 2; ++c)
   {
@@ -275,14 +303,13 @@ ScoreType Evaluator::evaluate()
       wei[c] += fmgr.tcount((Figure::Type)t, (Figure::Color)c)*Figure::figureWeight_[t];
   }
 
+  score += pwscore;
+
   if ( wei[0] > 2*Figure::figureWeight_[Figure::TypeQueen] &&
        wei[1] > 2*Figure::figureWeight_[Figure::TypeQueen] )
   {
     score -= fmgr.eval(Figure::ColorBlack, 0);
     score += fmgr.eval(Figure::ColorWhite, 0);
-
-    score -= evaluatePawns(Figure::ColorBlack, 0);
-    score += evaluatePawns(Figure::ColorWhite, 0);
 
     score -= evaluateRooks(Figure::ColorBlack);
     score += evaluateRooks(Figure::ColorWhite);
@@ -298,24 +325,10 @@ ScoreType Evaluator::evaluate()
     score -= fmgr.eval(Figure::ColorBlack, 1);
     score += fmgr.eval(Figure::ColorWhite, 1);
 
-    ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
-
-    score -= evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
-    score += evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
-
-    //ScoreType score_b = evalPawnsEndgame(Figure::ColorBlack);
-    //ScoreType score_w = evalPawnsEndgame(Figure::ColorWhite);
-
-    score -= pwscore_eg_b;
-    score += pwscore_eg_w;
+    score += pwscore_eg;
   }
   else
   {
-    ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
-
-    score -= evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
-    score += evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
-
     int score0 = 0;
     int score1 = 0;
 
@@ -333,11 +346,7 @@ ScoreType Evaluator::evaluate()
     score1 -= fmgr.eval(Figure::ColorBlack, 1);
     score1 += fmgr.eval(Figure::ColorWhite, 1);
 
-    //ScoreType score_b = evalPawnsEndgame(Figure::ColorBlack);
-    //ScoreType score_w = evalPawnsEndgame(Figure::ColorWhite);
-
-    score1 -= pwscore_eg_b;
-    score1 += pwscore_eg_w;
+    score1 += pwscore_eg;
 
     static const int wei_max = 2*(Figure::figureWeight_[Figure::TypeQueen] +
       2*Figure::figureWeight_[Figure::TypeRook] + 2*Figure::figureWeight_[Figure::TypeBishop] + 2*Figure::figureWeight_[Figure::TypeKnight]);
@@ -898,10 +907,10 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
       int promo_pos = x | (py<<3);
 
-      // have bishop with color the same as promotion field's color
-      Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
-      if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
-        score += assistantBishop_;
+      //// have bishop with color the same as promotion field's color
+      //Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
+      //if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
+      //  score += assistantBishop_;
 
       if ( score_eg )
       {
@@ -1263,11 +1272,40 @@ ScoreType Evaluator::evaluateWinnerLoser()
 
   if ( eval_pawns )
   {
-    if ( fmgr.pawns(Figure::ColorBlack) > 0 )
-      weight -= evaluatePawns(Figure::ColorBlack, 0);
+    ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax;
 
-    if ( fmgr.pawns(Figure::ColorWhite) > 0 )
-      weight += evaluatePawns(Figure::ColorWhite, 0);
+    if ( ehash_ )
+    {
+      const HEval * heval = ehash_->find(board_.pawnCode());
+      if ( heval )
+      {
+        pwscore = heval->score_;
+        pwscore_eg = heval->score_eg_;
+      }
+    }
+
+    if ( pwscore == -ScoreMax || pwscore_eg == -ScoreMax )
+    {
+      ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
+      ScoreType pwscore_b = 0, pwscore_w = 0;
+
+      pwscore_b = evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
+      pwscore_w = evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
+
+      pwscore = pwscore_w - pwscore_b;
+      pwscore_eg = pwscore_eg_w - pwscore_eg_b;
+
+      if ( ehash_ )
+        ehash_->push(board_.pawnCode(), pwscore, pwscore_eg);
+    }
+
+    weight += pwscore;
+
+    //if ( fmgr.pawns(Figure::ColorBlack) > 0 )
+    //  weight -= evaluatePawns(Figure::ColorBlack, 0);
+
+    //if ( fmgr.pawns(Figure::ColorWhite) > 0 )
+    //  weight += evaluatePawns(Figure::ColorWhite, 0);
   }
 
   return weight;

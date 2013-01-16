@@ -19,6 +19,7 @@ class UsualGenerator;
 class EscapeGeneratorLimited;
 class Player;
 class Evaluator;
+class EHashTable;
 
 #if ( (defined VERIFY_CHECKS_GENERATOR) || (defined VERIFY_ESCAPE_GENERATOR) || (defined VERIFY_CAPS_GENERATOR) || (defined VERIFY_FAST_GENERATOR) )
 class Player;
@@ -304,7 +305,7 @@ public:
   void verifyState();
 
   /// returns position evaluation that depends on color
-  ScoreType evaluate() const;
+  ScoreType evaluate(EHashTable * ehash) const;
 
   /// add new figure
   bool addFigure(const Figure::Color color, const Figure::Type type, int pos);
@@ -437,6 +438,11 @@ public:
   const uint64 & hashCode() const
   {
     return fmgr_.hashCode();
+  }
+
+  const uint64 & pawnCode() const
+  {
+    return fmgr_.pawnCode();
   }
 
   ScoreType material(Figure::Color color) const

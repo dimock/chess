@@ -230,3 +230,35 @@ public:
     return hitem;
   }
 };
+
+__declspec (align(16)) struct HEval
+{
+  HEval() : hcode_(0), score_(-ScoreMax), score_eg_(-ScoreMax) {}
+
+  uint64     hcode_;
+  ScoreType  score_, score_eg_;
+};
+
+class EHashTable : public HashTable<HEval>
+{
+public:
+
+  EHashTable(int size) : HashTable<HEval>(size)
+  {}
+
+  void push(const uint64 & hcode, ScoreType score, ScoreType score_eg)
+  {
+    HEval & heval = this->operator [] (hcode);
+    heval.hcode_ = hcode;
+    heval.score_ = score;
+    heval.score_eg_ = score_eg;
+  }
+
+  const HEval * find(const uint64 & hcode)
+  {
+    const HEval & heval = this->operator [] (hcode);
+    if ( heval.hcode_ == hcode )
+      return &heval;
+    return 0;
+  }
+};

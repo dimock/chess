@@ -162,6 +162,7 @@ struct UndoInfo : public Move
   /// Zobrist key - used in fifty-move-rule detector
   uint64 zcode_;
   uint64 zcode_old_;
+  uint64 zcode_pawn_;
 
   /// figures masks
   BitMask mask_[2];

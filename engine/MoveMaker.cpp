@@ -281,6 +281,7 @@ void Board::makeMove(const Move & mv)
   // store Zobrist key and state
   undo.old_state_ = state_;
   undo.zcode_old_ = fmgr_.hashCode();
+  undo.zcode_pawn_ = fmgr_.pawnCode();
 
   // store checking info
   undo.checking_figs_ = checking_figs_;
@@ -569,6 +570,7 @@ void Board::unmakeMove()
   // restore hash code and state
   state_ = (State)undo.old_state_;
   fmgr_.restoreHash(undo.zcode_old_);
+  fmgr_.restorePawnCode(undo.zcode_pawn_);
 }
 
 bool Board::verifyChessDraw()

@@ -175,6 +175,7 @@ public:
   void clear()
   {
     hashCode_ = 0ULL;
+    pawnCode_ = 0ULL;
     mask_[0] = mask_[1] = 0ULL;
     fcounter_[0].clear();
     fcounter_[1].clear();
@@ -186,6 +187,8 @@ public:
     const BitMask & uc = code(c, t, p);
     hashCode_ ^= uc;
     mask_[c] |= set_mask_bit(p);
+    if ( t == Figure::TypePawn || t == Figure::TypeKing )
+      pawnCode_ ^= uc;      
   }
 
   inline void decr(const Figure::Color c, const Figure::Type t, int p)
@@ -194,6 +197,8 @@ public:
     const BitMask & uc = code(c, t, p);
     hashCode_ ^= uc;
     mask_[c] ^= set_mask_bit(p);
+    if ( t == Figure::TypePawn || t == Figure::TypeKing )
+      pawnCode_ ^= uc;      
   }
 
   inline void move(const Figure::Color c, const Figure::Type t, int from, int to)
@@ -202,6 +207,12 @@ public:
     const BitMask & uc1 = code(c, t, to);
     hashCode_ ^= uc0;
     hashCode_ ^= uc1;
+
+    if ( t == Figure::TypePawn || t == Figure::TypeKing )
+    {
+      pawnCode_ ^= uc0;
+      pawnCode_ ^= uc1;
+    }
 
     fcounter_[c].move(c, t, from, to);
 
@@ -251,6 +262,7 @@ public:
   }
 
   void restoreHash(const BitMask & hcode) { hashCode_ = hcode; }
+  void restorePawnCode(const BitMask & pcode) { pawnCode_ = pcode; }
 
   inline int count(Figure::Color color) const { return fcounter_[color].count(); }
   inline int tcount(Figure::Type type, Figure::Color color) const { return fcounter_[color].tcount(type); }
@@ -268,7 +280,6 @@ public:
   inline ScoreType weight() const { return weight(Figure::ColorWhite) - weight(Figure::ColorBlack); }
   inline ScoreType eval(Figure::Color color, int stage) const { return fcounter_[color].eval(stage); }
   inline ScoreType eval(int stage) const { return fcounter_[Figure::ColorWhite].eval(stage) - fcounter_[Figure::ColorBlack].eval(stage); }
-  inline const BitMask & hashCode() const { return hashCode_; }
   inline const BitMask & pawn_mask_o(Figure::Color color) const { return fcounter_[color].pawn_mask_o(); }
   inline const BitMask & pawn_mask_t(Figure::Color color) const { return fcounter_[color].pawn_mask_t(); }
   inline const BitMask & knight_mask(Figure::Color color) const { return fcounter_[color].knight_mask(); }
@@ -278,6 +289,9 @@ public:
   inline const BitMask & king_mask(Figure::Color color) const { return fcounter_[color].king_mask(); }
   inline const BitMask & mask(Figure::Color color) const { return mask_[color]; }
   inline const BitMask & type_mask(const Figure::Type type, const Figure::Color color) const { return fcounter_[color].type_mask(type); }
+
+  inline const BitMask & hashCode() const { return hashCode_; }
+  inline const BitMask & pawnCode() const { return pawnCode_; }
 
   inline const BitMask & code(const Figure::Color c, const Figure::Type t, int p) const
   {
@@ -306,6 +320,7 @@ private:
 
   FiguresCounter fcounter_[2];
   BitMask hashCode_;
+  BitMask pawnCode_;
 };
 
 

@@ -47,7 +47,7 @@ public:
 
   static const ScoreType opponentPawnsToKing_;
 
-  Evaluator(const Board & board);
+  Evaluator(const Board & board, EHashTable * ehash);
 
   ScoreType operator () ();
 
@@ -92,4 +92,5 @@ private:
   } finfo_[2];
 
   const Board & board_;
+  EHashTable * ehash_;
 };
