@@ -18,7 +18,7 @@ enum {
 };
 
 const ScoreType Evaluator::positionGain_ = 100;
-const ScoreType Evaluator::mobilityGain_ = 70;
+const ScoreType Evaluator::mobilityGain_ = 100;
 
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
@@ -212,16 +212,16 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-20, -10, 0, 3, 5, 7, 9, 11},
-  {-20, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-20, -7, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-18, -8, 0, 3, 5, 7, 9, 11},
+  {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-15, -7, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {8, 12, 10, 8, 6, 1, 0, 0},
+  {10, 9, 8, 7, 6, 1, 0, 0},
   {12, 10, 9, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
   {35, 35, 35, 25, 12, 3, 1, 0},
@@ -301,22 +301,19 @@ ScoreType Evaluator::evaluate()
 
   calculatePawnsAndKnights();
 
-  score -= finfo_[0].knightMobility_;
-  score += finfo_[1].knightMobility_;
-
   score -= finfo_[0].knightPressure_;
   score += finfo_[1].knightPressure_;
 
+  score -= finfo_[0].knightMobility_;
+  score += finfo_[1].knightMobility_;
+
   score -= evaluateForks(Figure::ColorBlack);
   score += evaluateForks(Figure::ColorWhite);
-
-  ScoreType score_king = evaluateCastlePenalty(Figure::ColorWhite) - evaluateCastlePenalty(Figure::ColorBlack);
 
   // take pawns eval. from hash if possible
   ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax, score_ps = -ScoreMax;
   hashedEvaluation(pwscore, pwscore_eg, score_ps);
 
-  score_king += score_ps;
   score += pwscore;
 
   // 2. determine game phase (opening, middle or end game)
@@ -335,6 +332,8 @@ ScoreType Evaluator::evaluate()
     score_o -= evaluateRooks(Figure::ColorBlack);
     score_o += evaluateRooks(Figure::ColorWhite);
 
+    ScoreType score_king = evaluateCastlePenalty(Figure::ColorWhite) - evaluateCastlePenalty(Figure::ColorBlack);
+    score_king += score_ps;
     score_o += score_king;
 
     score_o += evaluateFianchetto();
@@ -360,7 +359,7 @@ ScoreType Evaluator::evaluate()
     score = -score;
 
   /// use lazy evaluation
-  if ( (alpha_ > -Figure::MatScore && score < alpha_) || (betta_ < +Figure::MatScore && score > betta_) )
+  if ( score < alpha_ || score > betta_ )
     return score;
 
 
@@ -397,12 +396,12 @@ Evaluator::GamePhase Evaluator::detectPhase(int & coef_o, int & coef_e)
   GamePhase phase = MiddleGame;
 
   if ( wei[0] > 2*Figure::figureWeight_[Figure::TypeQueen] &&
-    wei[1] > 2*Figure::figureWeight_[Figure::TypeQueen] )
+       wei[1] > 2*Figure::figureWeight_[Figure::TypeQueen] )
   {
     phase = Opening;
   }
   else if ( wei[0] < Figure::figureWeight_[Figure::TypeQueen] &&
-    wei[1] < Figure::figureWeight_[Figure::TypeQueen] )
+            wei[1] < Figure::figureWeight_[Figure::TypeQueen] )
   {
     phase = EndGame;
   }
