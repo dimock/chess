@@ -8,6 +8,7 @@
 
 #include "Board.h"
 #include "HashTable.h"
+#include "Evaluator.h"
 #include <time.h>
 #include <queue>
 
@@ -135,8 +136,8 @@ struct SearchParams
 
   void reset();
 
-  int timeLimitMS_;
-  int depthMax_;
+  int  timeLimitMS_;
+  int  depthMax_;
   bool analyze_mode_;
 };
 
@@ -165,15 +166,8 @@ public:
   // call it to start search
   bool findMove(SearchResult * );
   
-  Board & getBoard()
-  {
-    return board_;
-  }
-  
-  const Board & getBoard() const
-  {
-    return board_;
-  }
+  Board & getBoard() { return scontexts_[0].board_; }  
+  const Board & getBoard() const { return scontexts_[0].board_; }
 
   void pleaseStop();
   
@@ -185,7 +179,6 @@ private:
 
   bool checkForStop();
   void reset();
-
 
   // time control
   void testTimer();
@@ -201,20 +194,20 @@ private:
 
   // search routine
   ScoreType alphaBetta0();
-  ScoreType alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
-  ScoreType captures(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
-  int nextDepth(int depth, const Move & move, bool pv) const;
-  void assemblePV(const Move & move, bool checking, int ply);
+  ScoreType alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
+  ScoreType captures(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
+  int nextDepth(int ictx, int depth, const Move & move, bool pv) const;
+  void assemblePV(int ictx, const Move & move, bool checking, int ply);
 
 
   // is given movement caused by previous. this mean that if we don't do this move we loose
   // we actually check if moved figure was attacked by previously moved one or from direction it was moved from
-  bool isRealThreat(const Move & move);
+  bool isRealThreat(int ictx, const Move & move);
 
 #ifdef USE_HASH
   // we should return alpha if flag is Alpha, or Betta if flag is Betta
-  GHashTable::Flag getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv);
-  void putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat);
+  GHashTable::Flag getHash(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv);
+  void putHash(int ictx, const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat);
 #endif // USE_HASH
 
   // analyze mode support
@@ -222,19 +215,31 @@ private:
   CallbackStruct callbacks_;
 
   // search data
+  static const int depth0_ = 1; // start depth
   volatile bool stop_;
-  Board board_;
+
+  struct SearchContext
+  {
+    SearchContext();
+    ~SearchContext();
+
+    UndoInfo * undoStack_;
+    Evaluator eval_;
+    Board board_;
+    PlyStack plystack_[MaxPly+1];
+    Move moves_[Board::MovesMax];
+  };
+
+  // will be used in multi-threading mode???
+  SearchContext scontexts_[1];
+
   SearchData sdata_;
   SearchParams sparams_;
-  PlyStack plystack_[MaxPly+1];
-  Move moves_[Board::MovesMax];
-  static const int depth0_ = 1;
 
   // global data
-  UndoInfo * g_undoStack;
   MovesTable * g_movesTable;
-  FigureDir * g_figureDir;
-  PawnMasks * g_pawnMasks_;
+  FigureDir  * g_figureDir;
+  PawnMasks  * g_pawnMasks_;
   BetweenMask * g_betweenMasks;
   DeltaPosCounter * g_deltaPosCounter;
   DistanceCounter * g_distanceCounter;
@@ -248,27 +253,27 @@ private:
 /// for DEBUG, verification
 
 #ifdef VERIFY_ESCAPE_GENERATOR
-  void verifyEscapeGen(const Move & hmove);
+  void verifyEscapeGen(int ictx, const Move & hmove);
 #endif
 
 #ifdef VERIFY_CHECKS_GENERATOR
-  void verifyChecksGenerator();
+  void verifyChecksGenerator(int ictx);
 #endif
 
 #ifdef VERIFY_CAPS_GENERATOR
-  void verifyCapsGenerator();
+  void verifyCapsGenerator(int ictx);
 #endif
 
 #ifdef VERIFY_FAST_GENERATOR
-  void verifyFastGenerator(const Move & hmove, const Move & killer);
+  void verifyFastGenerator(int ictx, const Move & hmove, const Move & killer);
 #endif
 
 #ifdef VERIFY_TACTICAL_GENERATOR
-  void verifyTacticalGenerator();
+  void verifyTacticalGenerator(int ictx);
 #endif
 
-  void findSequence(const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const;
-  void verifyGenerators(const Move & hmove);
+  void findSequence(int ictx, const Move & move, int ply, int depth, int counter, ScoreType alpha, ScoreType betta) const;
+  void verifyGenerators(int ictx, const Move & hmove);
 
 public:
   void saveHash(const char * fname) const;

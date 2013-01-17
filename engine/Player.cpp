@@ -71,6 +71,19 @@ void SearchData::restart()
 }
 
 //////////////////////////////////////////////////////////////////////////
+Player::SearchContext::SearchContext()
+{
+  undoStack_ = new UndoInfo[Board::GameLength];
+  board_.set_undoStack(undoStack_);
+}
+
+Player::SearchContext::~SearchContext()
+{
+  board_.set_undoStack(0);
+  delete [] undoStack_;
+}
+
+//////////////////////////////////////////////////////////////////////////
 Player::Player() :
   stop_(false)
 #ifdef USE_HASH
@@ -78,7 +91,6 @@ Player::Player() :
   ,ehash_(19)
 #endif
 {
-  g_undoStack = new UndoInfo[Board::GameLength];
   g_deltaPosCounter = new DeltaPosCounter;
   g_betweenMasks = new BetweenMask(g_deltaPosCounter);
   g_distanceCounter = new DistanceCounter;
@@ -86,26 +98,30 @@ Player::Player() :
   g_figureDir = new FigureDir;
   g_pawnMasks_ = new PawnMasks;
 
-  board_.set_undoStack(g_undoStack);
-  board_.set_MovesTable(g_movesTable);
-  board_.set_FigureDir(g_figureDir);
-  board_.set_DeltaPosCounter(g_deltaPosCounter);
-  board_.set_DistanceCounter(g_distanceCounter);
-  board_.set_BetweenMask(g_betweenMasks);
-  board_.set_PawnMasks(g_pawnMasks_);
+  for (int i = 0; i < sizeof(scontexts_)/sizeof(SearchContext); ++i)
+  {
+    scontexts_[i].eval_.initialize(&scontexts_[i].board_, &ehash_);
+    scontexts_[i].board_.set_MovesTable(g_movesTable);
+    scontexts_[i].board_.set_FigureDir(g_figureDir);
+    scontexts_[i].board_.set_DeltaPosCounter(g_deltaPosCounter);
+    scontexts_[i].board_.set_DistanceCounter(g_distanceCounter);
+    scontexts_[i].board_.set_BetweenMask(g_betweenMasks);
+    scontexts_[i].board_.set_PawnMasks(g_pawnMasks_);
+  }
 }
 
 Player::~Player()
 {
-  board_.set_undoStack(0);
-  board_.set_MovesTable(0);
-  board_.set_FigureDir(0);
-  board_.set_DeltaPosCounter(0);
-  board_.set_DistanceCounter(0);
-  board_.set_BetweenMask(0);
-  board_.set_PawnMasks(0);
+  for (int i = 0; i < sizeof(scontexts_)/sizeof(SearchContext); ++i)
+  {
+    scontexts_[i].board_.set_MovesTable(0);
+    scontexts_[i].board_.set_FigureDir(0);
+    scontexts_[i].board_.set_DeltaPosCounter(0);
+    scontexts_[i].board_.set_DistanceCounter(0);
+    scontexts_[i].board_.set_BetweenMask(0);
+    scontexts_[i].board_.set_PawnMasks(0);
+  }
 
-  delete [] g_undoStack;
   delete g_movesTable;
   delete g_figureDir;
   delete g_betweenMasks;
@@ -143,7 +159,7 @@ bool Player::fromFEN(const char * fen)
 {
   stop_ = false;
 
-  Board tboard(board_);
+  Board tboard(scontexts_[0].board_);
   UndoInfo tundo[16];
   tboard.set_undoStack(tundo);
 
@@ -153,12 +169,12 @@ bool Player::fromFEN(const char * fen)
 
   MovesGenerator::clear_history();
 
-  return board_.fromFEN(fen);
+  return scontexts_[0].board_.fromFEN(fen);
 }
 
 bool Player::toFEN(char * fen) const
 {
-  return board_.toFEN(fen);
+  return scontexts_[0].board_.toFEN(fen);
 }
 
 
@@ -169,7 +185,7 @@ void Player::reset()
   MovesGenerator::clear_history();
 
   for (int i = 0; i < MaxPly; ++i)
-    plystack_[i].clearKiller();
+    scontexts_[0].plystack_[i].clearKiller();
 }
 
 void Player::setCallbacks(CallbackStruct cs)
@@ -259,19 +275,19 @@ void Player::testInput()
   }
 }
 
-void Player::assemblePV(const Move & move, bool checking, int ply)
+void Player::assemblePV(int ictx, const Move & move, bool checking, int ply)
 {
   if ( ply > sdata_.depth_ || ply >= MaxPly )
     return;
 
-  plystack_[ply].pv_[ply] = move;
-  plystack_[ply].pv_[ply].checkFlag_ = checking;
-  plystack_[ply].pv_[ply+1].clear();
+  scontexts_[ictx].plystack_[ply].pv_[ply] = move;
+  scontexts_[ictx].plystack_[ply].pv_[ply].checkFlag_ = checking;
+  scontexts_[ictx].plystack_[ply].pv_[ply+1].clear();
 
   for (int i = ply+1; i < sdata_.depth_; ++i)
   {
-    plystack_[ply].pv_[i] = plystack_[ply+1].pv_[i];
-    if ( !plystack_[ply].pv_[i] )
+    scontexts_[ictx].plystack_[ply].pv_[i] = scontexts_[ictx].plystack_[ply+1].pv_[i];
+    if ( !scontexts_[ictx].plystack_[ply].pv_[i] )
       break;
   }
 }

@@ -9,11 +9,12 @@ class Evaluator
 {
 public:
 
-  static const ScoreType positionGain_;
-  static const ScoreType mobilityGain_;
-
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static const ScoreType positionEvaluations_[2][8][64];
+
+  // evaluation constants
+  static const ScoreType positionGain_;
+  static const ScoreType mobilityGain_;
   static const ScoreType bishopKnightMat_[64];
   static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
   static const ScoreType assistantBishop_, rookBehindPenalty_;
@@ -34,7 +35,6 @@ public:
   static const ScoreType attackedByWeakBonus_;
   static const ScoreType forkBonus_;
   static const ScoreType fianchettoBonus_;
-
   static const ScoreType rookToKingBonus_;
 
   // pawns shield. penalty for absent pawn
@@ -48,29 +48,43 @@ public:
 
   static const ScoreType opponentPawnsToKing_;
 
-  Evaluator(const Board & board, EHashTable * ehash, ScoreType alpha, ScoreType betta, bool futility_pruning);
+  Evaluator();
 
-  ScoreType operator () ();
+  void initialize(const Board * board, EHashTable * ehash);
+
+  ScoreType operator () (ScoreType alpha, ScoreType betta);
 
 private:
 
+  void prepare();
+
   /// calculates absolute position evaluation
   ScoreType evaluate();
-  ScoreType evaluateMaterialDiff();
-  ScoreType evaluatePawnShield(Figure::Color color);
-  ScoreType evaluateCastlePenalty(Figure::Color color);
-  ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle);
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
+  ScoreType evaluatePawnShield(Figure::Color color);
+  ScoreType evaluatePasserAdditional(Figure::Color color);
+
+  ScoreType evaluateMaterialDiff();
+  ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evaluateFianchetto() const;
-  ScoreType evalPawnsEndgame(Figure::Color color);
   ScoreType evaluateRooks(Figure::Color color);
   ScoreType evaluateWinnerLoser();
+
+//  ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle);
+
+  enum GamePhase { Opening = 0, MiddleGame, EndGame };
+
+  // multiple coefficients for opening/endgame
+  GamePhase detectPhase(int & coef_o, int & coef_e);
+
+  // calculate or take from hash - pawns structure for middle & end game; king's pawn shield
+  void hashedEvaluation(ScoreType & pwscore, ScoreType & pwscore_eg, ScoreType & score_ps);
 
   // 0 - short, 1 - long, -1 - no castle
   int getCastleType(Figure::Color color) const;
 
   /// calculate field (bit-mask) attacked by knights and pawns
-  void calculatePawnsKnights();
+  void calculatePawnsAndKnights();
 
   /// calculates figures mobility (BRQ only)
   void calculateMobility();
@@ -85,23 +99,27 @@ private:
       king_pos_ = -1;
       pawn_attacked_ = 0;
       mobilityBonus_ = 0;
+      knightMobility_ = 0;
       kingPressureBonus_ = 0;
       knightPressure_ = 0;
       kn_caps_ = 0;
     }
 
     int king_pos_;
-    ScoreType mobilityBonus_;
+    ScoreType mobilityBonus_, knightMobility_;
     ScoreType kingPressureBonus_, knightPressure_;
     BitMask pawn_attacked_;
     BitMask kn_caps_;
   } finfo_[2];
 
-  const Board & board_;
-  EHashTable * ehash_;
+
+  // sum of weights of all figures
+  int weightMax_;
+
+  const Board * board_;
+  EHashTable  * ehash_;
 
   BitMask mask_all_;
   BitMask inv_mask_all_;
-
-  int alpha_, betta_;
+  ScoreType alpha_, betta_;
 };

@@ -66,15 +66,12 @@ struct History
     if ( ds < 1 )
       ds = 1;
     score_ += ds;
-    //if ( score_ > history_max_ )
-    //  history_max_ = score_;
   }
 
 protected:
 
   unsigned score_;
   unsigned good_count_, bad_count_;
-  //static unsigned history_max_;
 };
 
 
@@ -542,7 +539,6 @@ protected:
     }
     else
     {
-      const History & hist = history(move.from_, move.to_);
       adjust_vsort(move, 10);
     }
 

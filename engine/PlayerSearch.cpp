@@ -69,7 +69,7 @@ bool Player::findMove(SearchResult * sres)
 
       case PostedCommand::ctUNDO:
         {
-          board_.unmakeMove();
+          scontexts_[0].board_.unmakeMove();
           leave = !sparams_.analyze_mode_;
           break;
         }
@@ -101,20 +101,20 @@ bool Player::search(SearchResult * sres)
   reset();
 
   // stash board to correctly print status later
-  sres->board_   = board_;
-  sdata_.board_ = board_;
+  sres->board_   = scontexts_[0].board_;
+  sdata_.board_ = scontexts_[0].board_;
 
   {
-    FastGenerator mg(board_);
+    FastGenerator mg(scontexts_[0].board_);
     for ( ;; )
     {
       const Move & move = mg.move();
       if ( !move )
         break;
-      if ( board_.validateMove(move) )
-        moves_[sdata_.numOfMoves_++] = move;
+      if ( scontexts_[0].board_.validateMove(move) )
+        scontexts_[0].moves_[sdata_.numOfMoves_++] = move;
     }
-    moves_[sdata_.numOfMoves_].clear();
+    scontexts_[0].moves_[sdata_.numOfMoves_].clear();
   }
 
 
@@ -123,7 +123,7 @@ bool Player::search(SearchResult * sres)
 
   for (sdata_.depth_ = depth0_; !stopped() && sdata_.depth_ <= sparams_.depthMax_; ++sdata_.depth_)
   {
-    plystack_[0].clearPV(sparams_.depthMax_);
+    scontexts_[0].plystack_[0].clearPV(sparams_.depthMax_);
 
     sdata_.restart();
 
@@ -162,7 +162,7 @@ bool Player::search(SearchResult * sres)
 
       for (int i = 0; i < sdata_.depth_; ++i)
       {
-        sres->pv_[i] = plystack_[0].pv_[i];
+        sres->pv_[i] = scontexts_[0].plystack_[0].pv_[i];
         if ( !sres->pv_[i] )
           break;
       }
@@ -190,9 +190,9 @@ bool Player::search(SearchResult * sres)
 }
 
 //////////////////////////////////////////////////////////////////////////
-int Player::nextDepth(int depth, const Move & move, bool pv) const
+int Player::nextDepth(int ictx, int depth, const Move & move, bool pv) const
 {
-  if ( board_.underCheck() )
+  if ( scontexts_[ictx].board_.underCheck() )
     return depth;
 
   depth--;
@@ -203,10 +203,10 @@ int Player::nextDepth(int depth, const Move & move, bool pv) const
   if ( move.new_type_ == Figure::TypeQueen )
     return depth+1;
 
-  if ( board_.halfmovesCount() > 1 )
+  if ( scontexts_[ictx].board_.halfmovesCount() > 1 )
   {
-    const UndoInfo & prev = board_.undoInfoRev(-1);
-    const UndoInfo & curr = board_.undoInfoRev(0);
+    const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(-1);
+    const UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
     if ( move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
       return depth+1;
@@ -219,44 +219,44 @@ int Player::nextDepth(int depth, const Move & move, bool pv) const
 ScoreType Player::alphaBetta0()
 {
   if ( stopped() )
-    return board_.evaluate(&ehash_, -ScoreMax, +ScoreMax, false);
+    return scontexts_[0].eval_(-ScoreMax, +ScoreMax);
 
   if ( sdata_.numOfMoves_ == 0 )
   {
-    board_.setNoMoves();
-    ScoreType score = board_.evaluate(&ehash_, -ScoreMax, +ScoreMax, false);
+    scontexts_[0].board_.setNoMoves();
+    ScoreType score = scontexts_[0].eval_(-ScoreMax, +ScoreMax);
     return score;
   }
 
-  ScoreType alpha = -std::numeric_limits<ScoreType>::max();
-  ScoreType betta = +std::numeric_limits<ScoreType>::max();
+  ScoreType alpha = -ScoreMax;
+  ScoreType betta = +ScoreMax;
 
   ScoreType scoreBest = -ScoreMax;
   
-  bool check_escape = board_.underCheck();
+  bool check_escape = scontexts_[0].board_.underCheck();
 
   for (sdata_.counter_ = 0; sdata_.counter_ < sdata_.numOfMoves_; ++sdata_.counter_)
   {
     if ( checkForStop() )
       break;
 
-    Move & move = moves_[sdata_.counter_];
+    Move & move = scontexts_[0].moves_[sdata_.counter_];
     ScoreType score = -ScoreMax;
 
-    if ( board_.isMoveThreat(move) )
+    if ( scontexts_[0].board_.isMoveThreat(move) )
       move.threat_ = 1;
     
-    board_.makeMove(move);
+    scontexts_[0].board_.makeMove(move);
     sdata_.inc_nc();
 
     {
-      int depth1 = nextDepth(sdata_.depth_, move, true);
+      int depth1 = nextDepth(0, sdata_.depth_, move, true);
 
       if ( sdata_.depth_ == depth0_ || !sdata_.counter_ ) // 1st iteration
-        score = -alphaBetta(depth1, 1, -betta, -alpha, true);
+        score = -alphaBetta(0, depth1, 1, -betta, -alpha, true);
       else
       {
-        int depth2 = nextDepth(sdata_.depth_, move, false);
+        int depth2 = nextDepth(0, sdata_.depth_, move, false);
 
         int R = 0;
 
@@ -264,23 +264,23 @@ ScoreType Player::alphaBetta0()
         if ( !check_escape &&
              sdata_.depth_ > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
-             board_.canBeReduced() )
+             scontexts_[0].board_.canBeReduced() )
         {
           R = 1;
         }
 #endif
 
-        score = -alphaBetta(depth2-R, 1, -alpha-1, -alpha, false);
+        score = -alphaBetta(0, depth2-R, 1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta(depth2, 1, -alpha-1, -alpha, false);
+          score = -alphaBetta(0, depth2, 1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha )
-          score = -alphaBetta(depth1, 1, -betta, -alpha, true);
+          score = -alphaBetta(0, depth1, 1, -betta, -alpha, true);
       }
     }
 
-    board_.unmakeMove();
+    scontexts_[0].board_.unmakeMove();
 
     move.vsort_ = score + ScoreMax;
 
@@ -292,15 +292,15 @@ ScoreType Player::alphaBetta0()
       {
         sdata_.best_ = move;
         alpha = score;
-        assemblePV(move, board_.underCheck(), 0);
+        assemblePV(0, move, scontexts_[0].board_.underCheck(), 0);
 
         // bring best move to front, shift other moves 1 position right
         if ( sdata_.depth_ > depth0_ )
         {
-          Move mv = moves_[sdata_.counter_];
+          Move mv = scontexts_[0].moves_[sdata_.counter_];
           for (int j = sdata_.counter_; j > 0; --j)
-            moves_[j] = moves_[j-1];
-          moves_[0] = mv;
+            scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
+          scontexts_[0].moves_[0] = mv;
         }
       }
     }
@@ -312,25 +312,25 @@ ScoreType Player::alphaBetta0()
 
   // sort only on 1st iteration
   if ( sdata_.depth_ == depth0_ )
-    std::sort(moves_, moves_ + sdata_.numOfMoves_);
+    std::sort(scontexts_[0].moves_, scontexts_[0].moves_ + sdata_.numOfMoves_);
 
   return scoreBest;
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
+ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
 {
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
   if ( ply < MaxPly-1 )
-    plystack_[ply].clear(ply);
+    scontexts_[ictx].plystack_[ply].clear(ply);
 
-  if ( board_.drawState() || board_.countReps() > 1 )
+  if ( scontexts_[ictx].board_.drawState() || scontexts_[ictx].board_.countReps() > 1 )
     return Figure::DrawScore;
 
   if ( stopped() || ply >= MaxPly )
-    return board_.evaluate(&ehash_, alpha, betta, false);
+    return scontexts_[ictx].eval_(alpha, betta);
 
   ScoreType alpha0 = alpha;
 
@@ -338,38 +338,38 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef USE_HASH
   ScoreType hscore = -ScoreMax;
-  GHashTable::Flag flag = getHash(depth, ply, alpha, betta, hmove, hscore, pv);
+  GHashTable::Flag flag = getHash(ictx, depth, ply, alpha, betta, hmove, hscore, pv);
   if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
     return hscore;
 #endif
 
   if ( depth <= 0 )
-    return captures(depth, ply, alpha, betta, pv);
+    return captures(ictx, depth, ply, alpha, betta, pv);
 
   bool nm_threat = false, real_threat = false;
 
 #ifdef USE_NULL_MOVE
   if ( !pv &&
-       !board_.underCheck() &&
-        board_.allowNullMove() &&
-        depth >= board_.nullMoveDepthMin() &&
+       !scontexts_[ictx].board_.underCheck() &&
+        scontexts_[ictx].board_.allowNullMove() &&
+        depth >= scontexts_[ictx].board_.nullMoveDepthMin() &&
         betta < Figure::MatScore+MaxPly &&
         betta > -Figure::MatScore-MaxPly )
   {
-    board_.makeNullMove();
+    scontexts_[ictx].board_.makeNullMove();
 
-    int null_depth = depth - board_.nullMoveReduce();
+    int null_depth = depth - scontexts_[ictx].board_.nullMoveReduce();
 
-    ScoreType nullScore = -alphaBetta(null_depth, ply+1, -betta, -(betta-1), false);
+    ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false);
 
-    board_.unmakeNullMove();
+    scontexts_[ictx].board_.unmakeNullMove();
 
     // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
-      depth -= board_.nullMoveReduce();
+      depth -= scontexts_[ictx].board_.nullMoveReduce();
       if ( depth <= 0 )
-        return captures(depth, ply, alpha, betta, pv);
+        return captures(ictx, depth, ply, alpha, betta, pv);
     }
     else // may be we are in danger?
       nm_threat = true;
@@ -379,16 +379,16 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #ifdef USE_FUTILITY_PRUNING
   if ( !pv &&
-       !board_.underCheck() &&
-       !board_.isWinnerLoser() &&
+       !scontexts_[ictx].board_.underCheck() &&
+       !scontexts_[ictx].board_.isWinnerLoser() &&
         alpha > -Figure::MatScore+MaxPly &&
         alpha < Figure::MatScore-MaxPly &&
         depth == 1 && ply > 1 )
   {
-    ScoreType score0 = board_.evaluate(&ehash_, alpha, betta, true);
+    ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
     int delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
     if ( delta > 0 )
-      return captures(depth, ply, alpha, betta, pv, score0);
+      return captures(ictx, depth, ply, alpha, betta, pv, score0);
   }
 #endif
 
@@ -397,15 +397,15 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   Move best(0);
 
   Move killer(0);
-  board_.extractKiller(plystack_[ply].killer_, hmove, killer);
+  scontexts_[ictx].board_.extractKiller(scontexts_[ictx].plystack_[ply].killer_, hmove, killer);
 
-  FastGenerator fg(board_, hmove, killer);
+  FastGenerator fg(scontexts_[ictx].board_, hmove, killer);
 
   if ( fg.singleReply() )
     depth++;
 
-  UndoInfo & prev = board_.undoInfoRev(0);
-  bool check_escape = board_.underCheck();
+  UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
+  bool check_escape = scontexts_[ictx].board_.underCheck();
 
   for ( ; alpha < betta && !checkForStop(); )
   {
@@ -413,31 +413,31 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
     if ( !move )
       break;
 
-    if ( !board_.validateMove(move) )
+    if ( !scontexts_[ictx].board_.validateMove(move) )
       continue;
 
     ScoreType score = -ScoreMax;
 
     // detect some threat, like pawn's attack etc...
     // don't LMR such moves
-    if ( board_.isMoveThreat(move) )
+    if ( scontexts_[ictx].board_.isMoveThreat(move) )
       move.threat_ = 1;
 
-    board_.makeMove(move);
+    scontexts_[ictx].board_.makeMove(move);
     sdata_.inc_nc();
 
     //findSequence(move, ply, depth, counter, alpha, betta);
 
-    UndoInfo & curr = board_.undoInfoRev(0);
+    UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
     {
-      int depth1 = nextDepth(depth, move, pv);
+      int depth1 = nextDepth(ictx, depth, move, pv);
 
       if ( !counter )
-        score = -alphaBetta(depth1, ply+1, -betta, -alpha, pv);
+        score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv);
       else
       {
-        int depth2 = nextDepth(depth, move, false);
+        int depth2 = nextDepth(ictx, depth, move, false);
         int R = 0;
 
 #ifdef USE_LMR
@@ -445,27 +445,27 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
              sdata_.depth_ > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
              alpha > -Figure::MatScore-MaxPly &&             
-             board_.canBeReduced() )
+             scontexts_[ictx].board_.canBeReduced() )
         {
           R = 1;
           curr.reduced_ = true;
         }
 #endif
 
-        score = -alphaBetta(depth2-R, ply+1, -alpha-1, -alpha, false);
+        score = -alphaBetta(ictx, depth2-R, ply+1, -alpha-1, -alpha, false);
         curr.reduced_ = false;
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta(depth2, ply+1, -alpha-1, -alpha, false);
+          score = -alphaBetta(ictx, depth2, ply+1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha && score < betta )
-          score = -alphaBetta(depth1, ply+1, -betta, -alpha, true);
+          score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, true);
       }
     }
 
-    board_.unmakeMove();
+    scontexts_[ictx].board_.unmakeMove();
 
-    plystack_[ply].setKiller(move);
+    scontexts_[ictx].plystack_[ply].setKiller(move);
 
     if ( !stopped() && score > scoreBest )
     {
@@ -475,7 +475,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
       {
         alpha = score;
         if ( pv )
-          assemblePV(move, board_.underCheck(), ply);
+          assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
       }
     }
 
@@ -487,9 +487,11 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
   if ( !counter )
   {
-    board_.setNoMoves();
-    scoreBest = board_.evaluate(&ehash_, alpha, betta, false);
-    if ( board_.matState() )
+    scontexts_[ictx].board_.setNoMoves();
+    
+    scoreBest = scontexts_[ictx].eval_(alpha, betta);
+
+    if ( scontexts_[ictx].board_.matState() )
       scoreBest += ply;
   }
 
@@ -501,7 +503,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 
 #if ((defined USE_LMR) && (defined VERIFY_LMR))
     // have to recalculate with full depth, or indicate threat in hash
-    if ( !stopped() && alpha >= betta && nm_threat && isRealThreat(best) )
+    if ( !stopped() && alpha >= betta && nm_threat && isRealThreat(ictx, best) )
     {
       if ( prev.reduced_ )
         return betta-1;
@@ -512,7 +514,7 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
   }
 
 #ifdef USE_HASH
-  putHash(best, alpha0, betta, scoreBest, depth, ply, real_threat);
+  putHash(ictx, best, alpha0, betta, scoreBest, depth, ply, real_threat);
 #endif
 
   THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );
@@ -521,29 +523,29 @@ ScoreType Player::alphaBetta(int depth, int ply, ScoreType alpha, ScoreType bett
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0)
+ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0)
 {
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
-  if ( board_.drawState() || board_.countReps() > 1 )
+  if ( scontexts_[ictx].board_.drawState() || scontexts_[ictx].board_.countReps() > 1 )
     return Figure::DrawScore;
 
   // not initialized yet
   if ( score0 == -ScoreMax )
-    score0 = board_.evaluate(&ehash_, alpha, betta, false);
+    score0 = scontexts_[ictx].eval_(alpha, betta);
 
   if ( stopped() || ply >= MaxPly )
     return score0;
 
-  if ( !board_.underCheck() && score0 >= betta )
+  if ( !scontexts_[ictx].board_.underCheck() && score0 >= betta )
     return score0;
 
   int counter = 0;
   ScoreType scoreBest = -ScoreMax;
   int delta = 0;
 
-  if ( !board_.underCheck() )
+  if ( !scontexts_[ictx].board_.underCheck() )
   {
     delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
     if ( score0 > alpha )
@@ -553,9 +555,9 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
   }
 
   Move best(0);
-  Figure::Type thresholdType = board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
+  Figure::Type thresholdType = scontexts_[ictx].board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
-  TacticalGenerator tg(board_, thresholdType, depth);
+  TacticalGenerator tg(scontexts_[ictx].board_, thresholdType, depth);
   if ( tg.singleReply() )
     depth++;
 
@@ -565,20 +567,20 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
     if ( !move )
       break;
 
-    if ( !board_.validateMove(move) )
+    if ( !scontexts_[ictx].board_.validateMove(move) )
       continue;
 
     ScoreType score = -ScoreMax;
     
-    board_.makeMove(move);
+    scontexts_[ictx].board_.makeMove(move);
     sdata_.inc_nc();
 
     {
-      int depth1 = nextDepth(depth, move, false);
-      score = -captures(depth1, ply+1, -betta, -alpha, pv, -ScoreMax);
+      int depth1 = nextDepth(ictx, depth, move, false);
+      score = -captures(ictx, depth1, ply+1, -betta, -alpha, pv, -ScoreMax);
     }
 
-    board_.unmakeMove();
+    scontexts_[ictx].board_.unmakeMove();
 
     if ( !stopped() && score > scoreBest )
     {
@@ -596,7 +598,7 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
   if ( !counter )
   {
-    if ( board_.underCheck() )
+    if ( scontexts_[ictx].board_.underCheck() )
       scoreBest = -Figure::MatScore+ply;
     else
       scoreBest = score0;
@@ -610,15 +612,15 @@ ScoreType Player::captures(int depth, int ply, ScoreType alpha, ScoreType betta,
 
 /// extract data from hash table
 #ifdef USE_HASH
-GHashTable::Flag Player::getHash(int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)
+GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)
 {
-  const HItem * hitem = hash_.find(board_.hashCode());
+  const HItem * hitem = hash_.find(scontexts_[ictx].board_.hashCode());
   if ( !hitem )
     return GHashTable::NoFlag;
 
-  THROW_IF( hitem->hcode_ != board_.hashCode(), "invalid hash item found" );
+  THROW_IF( hitem->hcode_ != scontexts_[ictx].board_.hashCode(), "invalid hash item found" );
 
-  board_.unpack(hitem->move_, hmove);
+  scontexts_[ictx].board_.unpack(hitem->move_, hmove);
 
   if ( pv || hitem->mode_ != GHashTable::General )
     return GHashTable::AlphaBetta;
@@ -641,13 +643,13 @@ GHashTable::Flag Player::getHash(int depth, int ply, ScoreType alpha, ScoreType 
 
     if ( hitem->flag_ > GHashTable::Alpha && hscore >= betta && hmove )
     {
-      if ( board_.calculateReps(hmove) < 2 )
+      if ( scontexts_[ictx].board_.calculateReps(hmove) < 2 )
       {
         if ( pv )
-          assemblePV(hmove, false, ply);
+          assemblePV(ictx, hmove, false, ply);
 
         /// danger move was reduced - recalculate it with full depth
-        const UndoInfo & prev = board_.undoInfoRev(0);
+        const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
         if ( hitem->threat_ && prev.reduced_ )
         {
           hscore = betta-1;
@@ -663,14 +665,14 @@ GHashTable::Flag Player::getHash(int depth, int ply, ScoreType alpha, ScoreType 
 }
 
 /// insert data to hash table
-void Player::putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat)
+void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat)
 {
-  if ( board_.repsCount() >= 3 )
+  if ( scontexts_[ictx].board_.repsCount() >= 3 )
     return;
 
-  PackedMove pm = board_.pack(move);
+  PackedMove pm = scontexts_[ictx].board_.pack(move);
   GHashTable::Flag flag = GHashTable::NoFlag;
-  if ( board_.repsCount() < 2 )
+  if ( scontexts_[ictx].board_.repsCount() < 2 )
   {
     if ( score <= alpha || !move )
       flag = GHashTable::Alpha;
@@ -683,7 +685,7 @@ void Player::putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreT
     score += ply;
   else if ( score <= -Figure::MatScore+MaxPly )
     score -= ply;
-  hash_.push(board_.hashCode(), score, depth, flag, pm, threat);
+  hash_.push(scontexts_[ictx].board_.hashCode(), score, depth, flag, pm, threat);
 }
 #endif
 
@@ -693,20 +695,20 @@ void Player::putHash(const Move & move, ScoreType alpha, ScoreType betta, ScoreT
 // we actually test if moved figure was/will be attacked by previously moved one or from direction it was moved from
 // or we should move our king even if we have a lot of other figures
 //////////////////////////////////////////////////////////////////////////
-bool Player::isRealThreat(const Move & move)
+bool Player::isRealThreat(int ictx, const Move & move)
 {
   // don't need to forbid if our answer is capture or check ???
   if ( move.capture_ || move.checkFlag_ )
     return false;
 
-  const UndoInfo & prev = board_.undoInfoRev(0);
+  const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
   if ( !prev ) // null-move
     return false;
 
-  Figure::Color  color = board_.getColor();
+  Figure::Color  color = scontexts_[ictx].board_.getColor();
   Figure::Color ocolor = Figure::otherColor(color);
 
-  const Field & pfield = board_.getField(prev.to_);
+  const Field & pfield = scontexts_[ictx].board_.getField(prev.to_);
   THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
@@ -714,31 +716,31 @@ bool Player::isRealThreat(const Move & move)
     return false;
 
   /// we have to move king even if there a lot of figures
-  if ( board_.getField(move.from_).type() == Figure::TypeKing &&
-       board_.fmgr().queens(color) > 0 &&
-       board_.fmgr().rooks(color) > 0 &&
-       board_.fmgr().knights(color)+board_.fmgr().bishops(color) > 0 )
+  if ( scontexts_[ictx].board_.getField(move.from_).type() == Figure::TypeKing &&
+       scontexts_[ictx].board_.fmgr().queens(color) > 0 &&
+       scontexts_[ictx].board_.fmgr().rooks(color) > 0 &&
+       scontexts_[ictx].board_.fmgr().knights(color) + scontexts_[ictx].board_.fmgr().bishops(color) > 0 )
   {
     return true;
   }
 
-  const Field & cfield = board_.getField(move.from_);
+  const Field & cfield = scontexts_[ictx].board_.getField(move.from_);
   THROW_IF( !cfield || cfield.color() != color, "no figure of required color in while detecting threat" );
 
   // we have to put figure under attack
-  if ( board_.ptAttackedBy(move.to_, prev.to_) )
+  if ( scontexts_[ictx].board_.ptAttackedBy(move.to_, prev.to_) )
     return true;
 
   // put our figure under attack, opened by prev movement
-  if ( board_.getAttackedFrom(ocolor, move.to_, prev.from_) >= 0 )
+  if ( scontexts_[ictx].board_.getAttackedFrom(ocolor, move.to_, prev.from_) >= 0 )
     return true;
 
   // prev move was attack, and we should escape from it
-  if ( board_.ptAttackedBy(move.from_, prev.to_) )
+  if ( scontexts_[ictx].board_.ptAttackedBy(move.from_, prev.to_) )
     return true;
 
   // our figure was attacked from direction, opened by prev movement
-  if ( board_.getAttackedFrom(ocolor, move.from_, prev.from_) >= 0 )
+  if ( scontexts_[ictx].board_.getAttackedFrom(ocolor, move.from_, prev.from_) >= 0 )
     return true;
 
   return false;

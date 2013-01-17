@@ -99,22 +99,6 @@ bool Board::isDangerPawn(const Move & move) const
   return false;
 }
 
-ScoreType Board::evaluate(EHashTable * ehash, int alpha, int betta, bool futility_pruning) const
-{
-  if ( matState() )
-    return -Figure::MatScore;
-  else if ( drawState() )
-    return Figure::DrawScore;
-
-  Evaluator evaluator(*this, ehash, alpha, betta, futility_pruning);
-
-  ScoreType score = evaluator();
-
-  THROW_IF( score < -32760 || score > 32760, "invalid score" );
-
-  return score;
-}
-
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
 bool Board::fromFEN(const char * fen)
 {
