@@ -100,7 +100,12 @@ Player::Player() :
 
   for (int i = 0; i < sizeof(scontexts_)/sizeof(SearchContext); ++i)
   {
+#ifdef USE_HASH
     scontexts_[i].eval_.initialize(&scontexts_[i].board_, &ehash_);
+#else
+    scontexts_[i].eval_.initialize(&scontexts_[i].board_, 0);
+#endif
+
     scontexts_[i].board_.set_MovesTable(g_movesTable);
     scontexts_[i].board_.set_FigureDir(g_figureDir);
     scontexts_[i].board_.set_DeltaPosCounter(g_deltaPosCounter);
