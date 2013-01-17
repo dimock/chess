@@ -549,7 +549,7 @@ void Evaluator::calculateMobility()
     BitMask not_occupied = ~finfo_[ocolor].pawn_attacked_ & inv_mask_all_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
-    // 3. Bishops
+    // 1. Bishops
     BitMask bi_mask = board_->fmgr().bishop_mask(color);
     for ( ; bi_mask; )
     {
@@ -583,7 +583,7 @@ void Evaluator::calculateMobility()
       finfo_[c].mobilityBonus_ += mobilityBonus_[Figure::TypeBishop][movesN];
     }
 
-    // 4. Rooks
+    // 2. Rooks
     BitMask ro_mask = board_->fmgr().rook_mask(color);
     for ( ; ro_mask; )
     {
@@ -596,6 +596,7 @@ void Evaluator::calculateMobility()
       finfo_[c].mobilityBonus_ += mobilityBonus_[Figure::TypeRook][movesN];
     }
 
+    // 3. Queens
     BitMask q_mask = board_->fmgr().queen_mask(color);
     for ( ; q_mask; )
     {
