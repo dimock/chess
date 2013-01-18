@@ -119,7 +119,7 @@ int Thinking::giveMoreTime()
     return 0;
 
   givetimeCounter_++;
-  if ( movesLeft_ <= 0 && xtimeMS_ > 30 )
+  if ( movesLeft_ <= 0 && xtimeMS_ > 400 )
     return xtimeMS_/40;
 
   if ( movesLeft_ > 0 )

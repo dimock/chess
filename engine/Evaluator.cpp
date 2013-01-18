@@ -163,8 +163,8 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 
 const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -15;
-const ScoreType Evaluator::pawnBackward_ = -10;
-const ScoreType Evaluator::pawnDisconnected_ = -5;
+const ScoreType Evaluator::pawnBackward_ = -15;
+const ScoreType Evaluator::pawnDisconnected_ = -8;
 const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindPenalty_ = 7;

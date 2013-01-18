@@ -172,6 +172,22 @@ bool Player::search(SearchResult * sres)
       if ( callbacks_.sendOutput_ )
         (callbacks_.sendOutput_ )(sres);
     }
+    // we haven't found move and spend more time for search it than on prev. iteration
+    else if ( stop_ && sdata_.depth_ > 2 && callbacks_.giveTime_ && !sparams_.analyze_mode_ )
+    {
+      clock_t t  = clock();
+      if ( (t - sdata_.tprev_) >= (sdata_.tprev_ - sdata_.tstart_) )
+      {
+        int t_add = (callbacks_.giveTime_)();
+        if ( t_add > 0 )
+        {
+          stop_ = false;
+          sparams_.timeLimitMS_ += t_add;
+          sdata_.depth_--;
+          continue;
+        }
+      }
+    }
 
     if ( !sdata_.best_ ||
          ( (score >= Figure::MatScore-MaxPly || score <= MaxPly-Figure::MatScore) &&
