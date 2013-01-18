@@ -179,7 +179,7 @@ const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
-const ScoreType Evaluator::forkBonus_ = 40;
+const ScoreType Evaluator::forkBonus_ = 50;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
