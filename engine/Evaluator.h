@@ -92,6 +92,9 @@ private:
   /// find knight and pawn forks
   ScoreType evaluateForks(Figure::Color color);
 
+  /// after lazy eval.
+  ScoreType evaluateExpensive(GamePhase phase, int coef_o);
+
   struct FieldsInfo
   {
     void reset()
@@ -103,11 +106,13 @@ private:
       kingPressureBonus_ = 0;
       knightPressure_ = 0;
       kn_caps_ = 0;
+      rookScore_ = 0;
     }
 
     int king_pos_;
     ScoreType mobilityBonus_, knightMobility_;
     ScoreType kingPressureBonus_, knightPressure_;
+    ScoreType rookScore_;
     BitMask pawn_attacked_;
     BitMask kn_caps_;
   } finfo_[2];

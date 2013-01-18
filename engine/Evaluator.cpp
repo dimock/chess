@@ -221,7 +221,7 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {10, 9, 8, 7, 6, 1, 0, 0},
+  {11, 9, 8, 7, 6, 1, 0, 0},
   {12, 10, 9, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
   {35, 35, 35, 25, 12, 3, 1, 0},
@@ -329,9 +329,6 @@ ScoreType Evaluator::evaluate()
     score_o -= fmgr.eval(Figure::ColorBlack, 0);
     score_o += fmgr.eval(Figure::ColorWhite, 0);
 
-    score_o -= evaluateRooks(Figure::ColorBlack);
-    score_o += evaluateRooks(Figure::ColorWhite);
-
     ScoreType score_king = evaluateCastlePenalty(Figure::ColorWhite) - evaluateCastlePenalty(Figure::ColorBlack);
     score_king += score_ps;
     score_o += score_king;
@@ -362,22 +359,33 @@ ScoreType Evaluator::evaluate()
   if ( score < alpha_ || score > betta_ )
     return score;
 
+  score += evaluateExpensive(phase, coef_o);
 
-  ScoreType score_add = 0;
+  return score;
+}
 
-  // most expensive part
+// most expensive part
+ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o)
+{
+  ScoreType score = 0;
+
   calculateMobility();
 
-  score_add -= evaluatePasserAdditional(Figure::ColorBlack);
-  score_add += evaluatePasserAdditional(Figure::ColorWhite);
+  ScoreType score_r = finfo_[1].rookScore_ - finfo_[0].rookScore_;
 
-  score_add += finfo_[1].mobilityBonus_ - finfo_[0].mobilityBonus_;
-  score_add += finfo_[1].kingPressureBonus_ - finfo_[0].kingPressureBonus_;
+  if ( phase == MiddleGame )
+    score_r = (score_r * coef_o) / weightMax_;
+
+  score += score_r;
+
+  score -= evaluatePasserAdditional(Figure::ColorBlack);
+  score += evaluatePasserAdditional(Figure::ColorWhite);
+
+  score += finfo_[1].mobilityBonus_ - finfo_[0].mobilityBonus_;
+  score += finfo_[1].kingPressureBonus_ - finfo_[0].kingPressureBonus_;
 
   if ( Figure::ColorBlack  == board_->getColor() )
-    score_add = -score_add;
-
-  score += score_add;
+    score = -score;
 
   return score;
 }
@@ -548,6 +556,10 @@ void Evaluator::calculateMobility()
     BitMask not_occupied = ~finfo_[ocolor].pawn_attacked_ & inv_mask_all_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
+    Index oki_p(oki_pos);
+    int okx = oki_p.x();
+    int oky = oki_p.y();
+
     // 1. Bishops
     BitMask bi_mask = board_->fmgr().bishop_mask(color);
     for ( ; bi_mask; )
@@ -583,6 +595,8 @@ void Evaluator::calculateMobility()
     }
 
     // 2. Rooks
+    const uint8 * pmsk_t  = (const uint8*)&board_->fmgr().pawn_mask_t(color);
+    const uint8 * opmsk_t = (const uint8*)&board_->fmgr().pawn_mask_t(ocolor);
     BitMask ro_mask = board_->fmgr().rook_mask(color);
     for ( ; ro_mask; )
     {
@@ -593,6 +607,29 @@ void Evaluator::calculateMobility()
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
       finfo_[c].kingPressureBonus_ = kingDistanceBonus_[Figure::TypeRook][ki_dist];
       finfo_[c].mobilityBonus_ += mobilityBonus_[Figure::TypeRook][movesN];
+
+      // rook on open file
+      Index rp(from);
+      int x = rp.x();
+      int y = rp.y();
+
+      // no pawns of some color
+      if ( !opmsk_t[rp.x()] || !pmsk_t[rp.x()] )
+      {
+        finfo_[c].rookScore_ += semiopenRook_;
+
+        // near opponent's king
+        if ( x == okx || x == okx-1 || x == okx+1 )
+          finfo_[c].rookScore_ += rookToKingBonus_;
+      }
+
+      // no pawns at all
+      if ( !(opmsk_t[x] | pmsk_t[x]) )
+        finfo_[c].rookScore_ += semiopenRook_;
+
+      // looks to the opponent king
+      if ( y == oky || y == oky-1 || y == oky+1 )
+        finfo_[c].rookScore_ += rookToKingBonus_;
     }
 
     // 3. Queens
