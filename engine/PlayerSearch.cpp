@@ -620,7 +620,7 @@ GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, 
 
   THROW_IF( hitem->hcode_ != scontexts_[ictx].board_.hashCode(), "invalid hash item found" );
 
-  scontexts_[ictx].board_.unpack(hitem->move_, hmove);
+  scontexts_[ictx].board_.unpackMove(hitem->move_, hmove);
 
   if ( pv || hitem->mode_ != GHashTable::General )
     return GHashTable::AlphaBetta;
@@ -670,7 +670,7 @@ void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType bet
   if ( scontexts_[ictx].board_.repsCount() >= 3 )
     return;
 
-  PackedMove pm = scontexts_[ictx].board_.pack(move);
+  PackedMove pm = scontexts_[ictx].board_.packMove(move);
   GHashTable::Flag flag = GHashTable::NoFlag;
   if ( scontexts_[ictx].board_.repsCount() < 2 )
   {

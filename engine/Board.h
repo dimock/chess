@@ -109,7 +109,7 @@ public:
   }
 
   /// unpack from hash, move have to be physically possible
-  bool unpack(const PackedMove & pm, Move & move) const
+  bool unpackMove(const PackedMove & pm, Move & move) const
   {
     move.clear();
 
@@ -129,7 +129,7 @@ public:
   }
 
   /// put move to hash
-  PackedMove pack(const Move & move) const
+  PackedMove packMove(const Move & move) const
   {
     PackedMove pm;
     if ( !move )
