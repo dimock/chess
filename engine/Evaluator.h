@@ -70,8 +70,6 @@ private:
   ScoreType evaluateRooks(Figure::Color color);
   ScoreType evaluateWinnerLoser();
 
-//  ScoreType evalKingPawns(Figure::Color color, int index, int coeff, int castle);
-
   enum GamePhase { Opening = 0, MiddleGame, EndGame };
 
   // multiple coefficients for opening/endgame
