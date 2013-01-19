@@ -46,6 +46,10 @@ public:
   static const ScoreType bg_columnSemiopened_;
   static const ScoreType ah_columnSemiopened_;
 
+  static const ScoreType cf_columnCracked_;
+  static const ScoreType bg_columnCracked_;
+  static const ScoreType ah_columnCracked_;
+
   static const ScoreType opponentPawnsToKing_;
 
   Evaluator();

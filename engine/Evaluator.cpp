@@ -163,8 +163,8 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 
 const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -15;
-const ScoreType Evaluator::pawnBackward_ = -15;
-const ScoreType Evaluator::pawnDisconnected_ = -8;
+const ScoreType Evaluator::pawnBackward_ = -12;
+const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindPenalty_ = 7;
@@ -188,15 +188,19 @@ const ScoreType Evaluator::cf_columnOpened_ = 8;
 const ScoreType Evaluator::bg_columnOpened_ = 20;
 const ScoreType Evaluator::ah_columnOpened_ = 16;
 
-const ScoreType Evaluator::cf_columnSemiopened_ = 4;
+const ScoreType Evaluator::cf_columnSemiopened_ = 5;
 const ScoreType Evaluator::bg_columnSemiopened_ = 12;
 const ScoreType Evaluator::ah_columnSemiopened_ = 8;
+
+const ScoreType Evaluator::cf_columnCracked_ = 2;
+const ScoreType Evaluator::bg_columnCracked_ = 4;
+const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
 const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
 // pressure to king by opponents bishop
-const ScoreType Evaluator::kingbishopPressure_ = 10;
+const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 #define MAX_PASSED_SCORE 80
 
@@ -213,19 +217,19 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-18, -8, 0, 3, 5, 7, 9, 11},
+  {-20, -10, 0, 3, 5, 7, 9, 11},
   {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-15, -7, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
+  {-15, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {11, 9, 8, 7, 6, 1, 0, 0},
-  {10, 9, 8, 7, 5, 3, 1, 0},
+  {15, 10, 8, 7, 6, 1, 0, 0},
+  {13, 11, 8, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
-  {35, 35, 35, 25, 12, 3, 1, 0},
+  {40, 55, 45, 25, 12, 3, 1, 0},
 };
 const ScoreType Evaluator::nearKingAttackBonus_[8] = {
   0, 10, 20, 30, 40, 50, 60, 70
@@ -329,6 +333,9 @@ ScoreType Evaluator::evaluate()
     // PSQ - evaluation
     score_o -= fmgr.eval(Figure::ColorBlack, 0);
     score_o += fmgr.eval(Figure::ColorWhite, 0);
+
+    //score_o -= evaluateRooks(Figure::ColorBlack);
+    //score_o += evaluateRooks(Figure::ColorWhite);
 
     ScoreType score_king = evaluateCastlePenalty(Figure::ColorWhite) - evaluateCastlePenalty(Figure::ColorBlack);
     score_king += score_ps;
@@ -731,9 +738,10 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
   };
 
   // first 2 lines empty, full line empty
-  static const ScoreType kingPenalties[2][3] = {
+  static const ScoreType kingPenalties[3][3] = {
     {ah_columnOpened_, bg_columnOpened_, cf_columnOpened_},
-    {ah_columnSemiopened_, bg_columnSemiopened_, cf_columnSemiopened_}
+    {ah_columnSemiopened_, bg_columnSemiopened_, cf_columnSemiopened_},
+    {ah_columnCracked_, bg_columnCracked_, cf_columnCracked_}
   };
 
   // color, castle type
@@ -754,7 +762,7 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
     else if ( !(two_mask & pw_mask) )
       score -= kingPenalties[1][i];
     else if ( !(one_mask & pw_mask) )
-      score -= (kingPenalties[1][i] >> 1);
+      score -= kingPenalties[2][i];
   }
 
   // opponent pawns pressure
