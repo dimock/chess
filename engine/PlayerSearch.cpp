@@ -256,6 +256,8 @@ ScoreType Player::alphaBetta0()
     half_S0 = ((int)scontexts_[0].moves_[0].vsort_ - (int)ScoreMax);
   if ( half_S0 > 0 )
     half_S0 >>= 1;
+  else if ( half_S0 < 0 )
+    half_S0 <<= 1;
 
   for (sdata_.counter_ = 0; sdata_.counter_ < sdata_.numOfMoves_; ++sdata_.counter_)
   {
@@ -286,7 +288,6 @@ ScoreType Player::alphaBetta0()
 
 #ifdef USE_LMR
         if ( !check_escape && 
-             sdata_.counter_ > 3 &&
              s < half_S0 &&
              sdata_.depth_ > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
