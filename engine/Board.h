@@ -342,6 +342,12 @@ public:
     return fields_[index];
   }
 
+  inline bool isFigure(int n, Figure::Color color, Figure::Type type) const
+  {
+    const Field & field = getField(n);
+    return field.type() == type && field.color() == color;
+  }
+
   /// returns number of moves. starts from 1
   int movesCount() const { return movesCounter_; }
 

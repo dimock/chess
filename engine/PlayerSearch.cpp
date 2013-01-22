@@ -251,14 +251,6 @@ ScoreType Player::alphaBetta0()
   
   bool check_escape = scontexts_[0].board_.underCheck();
 
-  int half_S0 = -ScoreMax;
-  if ( sdata_.depth_ > 1 && sdata_.numOfMoves_ > 0 )
-    half_S0 = ((int)scontexts_[0].moves_[0].vsort_ - (int)ScoreMax);
-  if ( half_S0 > 0 )
-    half_S0 >>= 1;
-  else if ( half_S0 < 0 )
-    half_S0 <<= 1;
-
   for (sdata_.counter_ = 0; sdata_.counter_ < sdata_.numOfMoves_; ++sdata_.counter_)
   {
     if ( checkForStop() )
@@ -284,11 +276,8 @@ ScoreType Player::alphaBetta0()
 
         int R = 0;
 
-        int s = (int)move.vsort_-((int)ScoreMax);
-
 #ifdef USE_LMR
         if ( !check_escape && 
-             s < half_S0 &&
              sdata_.depth_ > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
              scontexts_[0].board_.canBeReduced() )
@@ -337,9 +326,10 @@ ScoreType Player::alphaBetta0()
   if ( !stopped() && sdata_.counter_ == 1 && !sparams_.analyze_mode_ )
     pleaseStop();
 
-  // sort only on 1st iteration
+  // full sort only on 1st iteration
   if ( sdata_.depth_ == depth0_ )
     std::sort(scontexts_[0].moves_, scontexts_[0].moves_ + sdata_.numOfMoves_);
+  // then sort all but 1st moves
   else if ( sdata_.numOfMoves_ > 2 )
     std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
 

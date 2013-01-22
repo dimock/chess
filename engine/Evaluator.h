@@ -15,6 +15,7 @@ public:
   // evaluation constants
   static const ScoreType positionGain_;
   static const ScoreType mobilityGain_;
+  static const ScoreType patternsGain_;
   static const ScoreType bishopKnightMat_[64];
   static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
   static const ScoreType assistantBishop_, rookBehindPenalty_;
@@ -25,6 +26,7 @@ public:
   static const ScoreType unstoppablePawn_;
   static const ScoreType kingbishopPressure_;
   static const ScoreType bishopBonus_;
+  static const ScoreType twoBishopsBonus_;
   static const ScoreType figureAgainstPawnBonus_;
   static const ScoreType rookAgainstFigureBonus_;
   static const ScoreType pawnEndgameBonus_;
@@ -85,8 +87,11 @@ private:
   // 0 - short, 1 - long, -1 - no castle
   int getCastleType(Figure::Color color) const;
 
-  /// calculate field (bit-mask) attacked by knights and pawns
-  void calculatePawnsAndKnights();
+  /// bishops mobility and attacks
+  ScoreType evaluateBishops();
+
+  /// calculate field (bit-mask) attacked by knights, and mobility
+  ScoreType evaluateKnights();
 
   /// calculates figures mobility (BRQ only)
   void calculateMobility();
@@ -95,6 +100,7 @@ private:
   ScoreType evaluateForks(Figure::Color color);
 
   /// after lazy eval.
+  ScoreType evaluateImportant();
   ScoreType evaluateExpensive(GamePhase phase, int coef_o);
 
   struct FieldsInfo
@@ -105,15 +111,17 @@ private:
       pawn_attacked_ = 0;
       mobilityBonus_ = 0;
       knightMobility_ = 0;
+      bishopMobility_ = 0;
       kingPressureBonus_ = 0;
       knightPressure_ = 0;
+      bishopPressure_ = 0;
       kn_caps_ = 0;
       rookScore_ = 0;
     }
 
     int king_pos_;
-    ScoreType mobilityBonus_, knightMobility_;
-    ScoreType kingPressureBonus_, knightPressure_;
+    ScoreType mobilityBonus_, knightMobility_, bishopMobility_;
+    ScoreType kingPressureBonus_, knightPressure_, bishopPressure_;
     ScoreType rookScore_;
     BitMask pawn_attacked_;
     BitMask kn_caps_;
@@ -129,4 +137,5 @@ private:
   BitMask mask_all_;
   BitMask inv_mask_all_;
   ScoreType alpha_, betta_;
+  ScoreType alphaStrong_, bettaStrong_;
 };
