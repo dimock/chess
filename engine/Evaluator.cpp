@@ -98,7 +98,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -8,  -12, -12, -16, -16, -12, -12,  -8,
       -4,  -8,   -8,  -8,  -8,  -8,  -8,  -4,
        5,   5,    0,   0,   0,   0,   5,   5,
-       12,  14,   7,   0,   0,   0,  18,  16
+       10,  12,   6,   0,   0,   0,  16,  15
     },
 
     {}
@@ -170,19 +170,19 @@ const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindPenalty_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  10;
-const ScoreType Evaluator::openRook_ =  15;
+const ScoreType Evaluator::openRook_ =  10;
 const ScoreType Evaluator::winloseBonus_ =  25;
-const ScoreType Evaluator::bishopBonus_ = 10;
-const ScoreType Evaluator::twoBishopsBonus_ = 15;
+const ScoreType Evaluator::bishopBonus_ = 15;
+const ScoreType Evaluator::twoBishopsBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
-const ScoreType Evaluator::unstoppablePawn_ = 60;
+const ScoreType Evaluator::unstoppablePawn_ = 65;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
-const ScoreType Evaluator::forkBonus_ = 40;
+const ScoreType Evaluator::forkBonus_ = 50;
 const ScoreType Evaluator::doubleBishopAttackBonus_ = 25;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
@@ -201,7 +201,7 @@ const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 8;
+const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
 // pressure to king by opponents bishop
 const ScoreType Evaluator::kingbishopPressure_ = 8;
@@ -221,8 +221,8 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-25, -10, 0, 3, 5, 7, 9, 11},
-  {-20, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-20, -10, 0, 3, 5, 7, 9, 11},
+  {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-15, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
