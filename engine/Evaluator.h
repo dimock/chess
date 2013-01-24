@@ -19,7 +19,7 @@ public:
   static const ScoreType bishopKnightMat_[64];
   static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
   static const ScoreType assistantBishop_, rookBehindPenalty_;
-  static const ScoreType semiopenRook_, winloseBonus_;
+  static const ScoreType semiopenRook_, openRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
   static const ScoreType castleImpossiblePenalty_;
   static const ScoreType blockedKingPenalty_;
@@ -36,6 +36,7 @@ public:
   static const ScoreType nearKingAttackBonus_[8];
   static const ScoreType attackedByWeakBonus_;
   static const ScoreType forkBonus_;
+  static const ScoreType doubleBishopAttackBonus_;
   static const ScoreType fianchettoBonus_;
   static const ScoreType rookToKingBonus_;
 

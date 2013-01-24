@@ -98,7 +98,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -8,  -12, -12, -16, -16, -12, -12,  -8,
       -4,  -8,   -8,  -8,  -8,  -8,  -8,  -4,
        5,   5,    0,   0,   0,   0,   5,   5,
-       10,  12,   6,   0,   0,   0,  16,  14
+       12,  14,   7,   0,   0,   0,  18,  16
     },
 
     {}
@@ -170,9 +170,10 @@ const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindPenalty_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  10;
+const ScoreType Evaluator::openRook_ =  15;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
-const ScoreType Evaluator::twoBishopsBonus_ = 20;
+const ScoreType Evaluator::twoBishopsBonus_ = 15;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
@@ -181,7 +182,8 @@ const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
-const ScoreType Evaluator::forkBonus_ = 50;
+const ScoreType Evaluator::forkBonus_ = 40;
+const ScoreType Evaluator::doubleBishopAttackBonus_ = 25;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
@@ -199,7 +201,7 @@ const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 10;
+const ScoreType Evaluator::opponentPawnsToKing_ = 8;
 
 // pressure to king by opponents bishop
 const ScoreType Evaluator::kingbishopPressure_ = 8;
@@ -219,8 +221,8 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-40, -10, 0, 3, 5, 7, 9, 11},
-  {-35, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-25, -10, 0, 3, 5, 7, 9, 11},
+  {-20, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-15, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
@@ -231,7 +233,7 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {15, 10, 8, 7, 6, 1, 0, 0},
   {13, 11, 8, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
-  {40, 55, 45, 25, 12, 3, 1, 0},
+  {40, 60, 50, 25, 12, 3, 1, 0},
 };
 const ScoreType Evaluator::nearKingAttackBonus_[8] = {
   0, 10, 20, 30, 40, 50, 60, 70
@@ -413,10 +415,10 @@ ScoreType Evaluator::evaluateBishops()
 {
   ScoreType score = 0;
 
-  BitMask rq_mask[2] = { board_->fmgr().rook_mask(Figure::ColorBlack) | board_->fmgr().queen_mask(Figure::ColorBlack),
-    board_->fmgr().rook_mask(Figure::ColorWhite) | board_->fmgr().queen_mask(Figure::ColorWhite) };
+  //BitMask rq_mask[2] = { board_->fmgr().rook_mask(Figure::ColorBlack) | board_->fmgr().queen_mask(Figure::ColorBlack),
+  //  board_->fmgr().rook_mask(Figure::ColorWhite) | board_->fmgr().queen_mask(Figure::ColorWhite) };
 
-  int forkBonuses[2] = { -forkBonus_, +forkBonus_ };
+  //int attackBonuses[2] = { -doubleBishopAttackBonus_, +doubleBishopAttackBonus_ };
 
   for (int c = 0; c < 2; ++c)
   {
@@ -426,23 +428,26 @@ ScoreType Evaluator::evaluateBishops()
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
     BitMask bimask = board_->fmgr().bishop_mask(color);
+    //int attackedCount = 0;
     for ( ; bimask; )
     {
       int from = clear_lsb(bimask);
 
-      // evaluate bishops attack
-      BitMask bi_caps = board_->g_movesTable->caps(Figure::TypeBishop, from) & rq_mask[ocolor];
-      int count = 0;
-      for ( ; bi_caps; )
-      {
-        int to = clear_lsb(bi_caps);
-        const BitMask & btw_msk = board_->g_betweenMasks->between(from, to);
-        if ( ((btw_msk & inv_mask_all_) == btw_msk) || (((btw_msk & mask_all_) & ~rq_mask[ocolor]) == 0) )
-          count++;
-      }
+      //// find doubled bishops attack
+      //BitMask bi_caps = board_->g_movesTable->caps(Figure::TypeBishop, from) & rq_mask[ocolor];
+      //for ( ; attackedCount < 2 && bi_caps; )
+      //{
+      //  int to = clear_lsb(bi_caps);
+      //  const BitMask & btw_msk = board_->g_betweenMasks->between(from, to);
+      //  if ( ((btw_msk & inv_mask_all_) == btw_msk) || (((btw_msk & mask_all_) & ~rq_mask[ocolor]) == 0) )
+      //    attackedCount++;
 
-      if ( count > 1 )
-        score += forkBonuses[c];
+      //  if ( attackedCount > 1 )
+      //  {
+      //    score += attackBonuses[c];
+      //    break;
+      //  }
+      //}
 
       // mobility
       const BitMask & di_mask_nw = board_->g_betweenMasks->from_dir(from, nst::nw);
@@ -616,15 +621,17 @@ ScoreType Evaluator::evaluateForks(Figure::Color color)
   BitMask o_mask = board_->fmgr().knight_mask(ocolor) | board_->fmgr().bishop_mask(ocolor) | rq_mask;
 
   BitMask pawn_fork = o_mask & finfo_[color].pawn_attacked_;
-  BitMask kn_fork = rq_mask & finfo_[color].kn_caps_;
-
   int pawnsN = pop_count(pawn_fork);
-  int knightsN = pop_count(kn_fork);
-
-  if ( pawnsN + knightsN > 1 )
+  if ( pawnsN > 1 )
     return forkBonus_;
-  else if ( pawnsN + knightsN > 0 )
-    return ((color == board_->getColor()) ? attackedByWeakBonus_ : (attackedByWeakBonus_>>1));
+
+  BitMask kn_fork = rq_mask & finfo_[color].kn_caps_;
+  int knightsN = pop_count(kn_fork);
+  if ( pawnsN+knightsN > 1 )
+    return forkBonus_;
+
+  if ( pawnsN+knightsN > 0 && color == board_->getColor() )
+    return attackedByWeakBonus_;
 
   return 0;
 }
@@ -746,7 +753,7 @@ void Evaluator::calculateMobility()
 
       // no pawns at all
       if ( !(opmsk_t[x] | pmsk_t[x]) )
-        finfo_[c].rookScore_ += semiopenRook_;
+        finfo_[c].rookScore_ += openRook_;
 
       // looks to the opponent king
       if ( y == oky || y == oky-1 || y == oky+1 )
@@ -868,8 +875,8 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
 
   // color, castle type
   static const BitMask opponent_pressure_masks[2][2] = {
-    {set_mask_bit(F6)|set_mask_bit(H6), set_mask_bit(C6)|set_mask_bit(A6)},
-    {set_mask_bit(F3)|set_mask_bit(H3), set_mask_bit(C3)|set_mask_bit(A3)}
+    {set_mask_bit(F6)|set_mask_bit(G6)|set_mask_bit(H6), set_mask_bit(A6)|set_mask_bit(B6)|set_mask_bit(C6)},
+    {set_mask_bit(F3)|set_mask_bit(G3)|set_mask_bit(H3), set_mask_bit(A3)|set_mask_bit(B3)|set_mask_bit(C3)}
   };
 
   // pawn shield ab, gh, cf columns
