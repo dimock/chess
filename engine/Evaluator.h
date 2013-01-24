@@ -14,8 +14,7 @@ public:
 
   // evaluation constants
   static const ScoreType positionGain_;
-  static const ScoreType mobilityGain_;
-  static const ScoreType patternsGain_;
+  static const ScoreType lazyThresholds_[2];
   static const ScoreType bishopKnightMat_[64];
   static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
   static const ScoreType assistantBishop_, rookBehindPenalty_;
@@ -74,7 +73,6 @@ private:
   ScoreType evaluateMaterialDiff();
   ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evaluateFianchetto() const;
-  ScoreType evaluateRooks(Figure::Color color);
   ScoreType evaluateWinnerLoser();
 
   enum GamePhase { Opening = 0, MiddleGame, EndGame };
@@ -94,8 +92,11 @@ private:
   /// calculate field (bit-mask) attacked by knights, and mobility
   ScoreType evaluateKnights();
 
-  /// calculates figures mobility (BRQ only)
-  void calculateMobility();
+  // evaluate rooks mobility and open column
+  void evaluateRooks(bool eval_open);
+
+  // queens mobility
+  void evaluateQueens();
 
   /// find knight and pawn forks
   ScoreType evaluateForks(Figure::Color color);
@@ -109,23 +110,31 @@ private:
     void reset()
     {
       king_pos_ = -1;
-      pawn_attacked_ = 0;
-      mobilityBonus_ = 0;
+      
+      pw_attack_mask_ = 0;
+      kn_attack_mask_ = 0;
+      attack_mask_ = 0;
+
       knightMobility_ = 0;
       bishopMobility_ = 0;
-      kingPressureBonus_ = 0;
+      rookMobility_ = 0;
+      queenMobility_ = 0;
+
       knightPressure_ = 0;
       bishopPressure_ = 0;
-      kn_caps_ = 0;
-      rookScore_ = 0;
+      rookPressure_ = 0;
+      queenPressure_ = 0;
+
+      rookOpenScore_ = 0;
     }
 
     int king_pos_;
-    ScoreType mobilityBonus_, knightMobility_, bishopMobility_;
-    ScoreType kingPressureBonus_, knightPressure_, bishopPressure_;
-    ScoreType rookScore_;
-    BitMask pawn_attacked_;
-    BitMask kn_caps_;
+    ScoreType knightMobility_, bishopMobility_, rookMobility_, queenMobility_;
+    ScoreType knightPressure_, bishopPressure_, rookPressure_, queenPressure_;
+    ScoreType rookOpenScore_;
+    BitMask pw_attack_mask_;
+    BitMask kn_attack_mask_;
+    BitMask attack_mask_;
   } finfo_[2];
 
 
@@ -137,6 +146,5 @@ private:
 
   BitMask mask_all_;
   BitMask inv_mask_all_;
-  ScoreType alpha_, betta_;
-  ScoreType alphaStrong_, bettaStrong_;
+  ScoreType alpha_[2], betta_[2];
 };
