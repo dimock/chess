@@ -276,12 +276,13 @@ ScoreType Player::alphaBetta0()
 
         int R = 0;
 
-        ScoreType s = move.vsort_ - ScoreMax;
+        int s_limit = scoreBest > 0 ? (((int)scoreBest) >> 1) : (((int)scoreBest) << 1);
+        int s = (int)move.vsort_ - ScoreMax;
 
 
 #ifdef USE_LMR
         if ( !check_escape &&
-             sdata_.counter_ &&
+             (sdata_.counter_ > 2 || s < s_limit) &&
              sdata_.depth_ > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
              scontexts_[0].board_.canBeReduced() )
@@ -430,7 +431,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
   bool check_escape = scontexts_[ictx].board_.underCheck();
 
-  for ( ; alpha < betta && !checkForStop(); )
+  for ( ; alpha < betta && !checkForStop(); ++counter)
   {
     Move & move = fg.move();
     if ( !move )
@@ -501,8 +502,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
           assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
       }
     }
-
-    counter++;
   }
 
   if ( stopped() )

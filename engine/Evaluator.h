@@ -39,6 +39,11 @@ public:
   static const ScoreType fianchettoBonus_;
   static const ScoreType rookToKingBonus_;
 
+  // pinned
+  static const ScoreType pinnedKnight_;
+  static const ScoreType pinnedBishop_;
+  static const ScoreType pinnedRook_;
+
   // pawns shield. penalty for absent pawn
   static const ScoreType cf_columnOpened_;
   static const ScoreType bg_columnOpened_;
@@ -136,6 +141,12 @@ private:
     BitMask kn_attack_mask_;
     BitMask attack_mask_;
   } finfo_[2];
+
+
+  // used to find pinned figures
+  enum PinType { ptAll, ptOrtho, ptDiag };
+  // acolor - color of attacking side, ki_pos - attacked king pos
+  bool discoveredCheck(int pt, Figure::Color acolor, const BitMask & brq_mask, int ki_pos, enum PinType pinType) const;
 
 
   // sum of weights of all figures
