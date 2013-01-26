@@ -276,13 +276,13 @@ ScoreType Player::alphaBetta0()
 
         int R = 0;
 
-        int s_limit = scoreBest > 0 ? (((int)scoreBest) >> 1) : (((int)scoreBest) << 1);
-        int s = (int)move.vsort_ - ScoreMax;
+        //int s_limit = scoreBest > 0 ? (((int)scoreBest) >> 1) : (((int)scoreBest) << 1);
+        //int s = (int)move.vsort_ - ScoreMax;
 
 
 #ifdef USE_LMR
         if ( !check_escape &&
-             (sdata_.counter_ > 2 || s < s_limit) &&
+             //(sdata_.counter_ > 2 || s < s_limit) &&
              sdata_.depth_ > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
              scontexts_[0].board_.canBeReduced() )

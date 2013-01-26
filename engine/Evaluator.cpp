@@ -161,9 +161,9 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -17;
-const ScoreType Evaluator::pawnIsolated_ = -17;
-const ScoreType Evaluator::pawnBackward_ = -15;
+const ScoreType Evaluator::pawnDoubled_  = -15;
+const ScoreType Evaluator::pawnIsolated_ = -15;
+const ScoreType Evaluator::pawnBackward_ = -12;
 const ScoreType Evaluator::pawnDisconnected_ = -8;
 const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
@@ -187,8 +187,8 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 const ScoreType Evaluator::pinnedKnight_ = -15;
-const ScoreType Evaluator::pinnedBishop_ = -10;
-const ScoreType Evaluator::pinnedRook_ = -10;
+const ScoreType Evaluator::pinnedBishop_ = -15;
+const ScoreType Evaluator::pinnedRook_ = -15;
 
 // pawns shield
 const ScoreType Evaluator::cf_columnOpened_ = 8;
@@ -226,7 +226,7 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {-20, -10, 0, 3, 5, 7, 9, 11},
   {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-10, -5, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-20, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 13},
 };
 
@@ -471,23 +471,21 @@ ScoreType Evaluator::evaluateKnights()
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
       finfo_[c].knightPressure_ += kingDistanceBonus_[Figure::TypeKnight][ki_dist];
 
+      // can't move
+      if ( discoveredCheck(from, ocolor, brq_mask, ki_pos, ptAll) )
+      {
+        finfo_[c].knightMobility_ += pinnedKnight_;
+        continue;
+      }
+
       const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
       finfo_[c].kn_attack_mask_ |= kn_cap;
 
       finfo_[c].attack_mask_ |= kn_cap;
 
       BitMask kmob_mask = kn_cap & not_occupied;
-
-      // can't move
-      if ( discoveredCheck(from, ocolor, brq_mask, ki_pos, ptAll) )
-      {
-        finfo_[c].knightMobility_ += pinnedKnight_;
-      }
-      else
-      {
-        int movesN = pop_count(kmob_mask);
-        finfo_[c].knightMobility_ += mobilityBonus_[Figure::TypeKnight][movesN];
-      }
+      int movesN = pop_count(kmob_mask);
+      finfo_[c].knightMobility_ += mobilityBonus_[Figure::TypeKnight][movesN];
     }
   }
 
@@ -521,6 +519,13 @@ ScoreType Evaluator::evaluateBishops()
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
       finfo_[c].bishopPressure_ = kingDistanceBonus_[Figure::TypeBishop][ki_dist];
 
+      // can't move
+      if ( discoveredCheck(from, ocolor, rq_mask, ki_pos, ptOrtho) )
+      {
+        finfo_[c].bishopMobility_ += pinnedBishop_;
+        continue;
+      }
+
       const BitMask & di_mask_nw = board_->g_betweenMasks->from_dir(from, nst::nw);
       const BitMask & di_mask_ne = board_->g_betweenMasks->from_dir(from, nst::ne);
       const BitMask & di_mask_se = board_->g_betweenMasks->from_dir(from, nst::se);
@@ -543,17 +548,8 @@ ScoreType Evaluator::evaluateBishops()
 
       bmob_mask &= not_attacked;
 
-
-      // can't move
-      if ( discoveredCheck(from, ocolor, rq_mask, ki_pos, ptOrtho) )
-      {
-        finfo_[c].bishopMobility_ += pinnedBishop_;
-      }
-      else
-      {
-        int movesN = pop_count(bmob_mask);
-        finfo_[c].bishopMobility_ += mobilityBonus_[Figure::TypeBishop][movesN];
-      }
+      int movesN = pop_count(bmob_mask);
+      finfo_[c].bishopMobility_ += mobilityBonus_[Figure::TypeBishop][movesN];
     }
   }
 
@@ -627,31 +623,6 @@ void Evaluator::evaluateRooks(bool eval_open)
     {
       int from = clear_lsb(ro_mask);
 
-      const BitMask & di_mask_no = board_->g_betweenMasks->from_dir(from, nst::no);
-      const BitMask & di_mask_ea = board_->g_betweenMasks->from_dir(from, nst::ea);
-      const BitMask & di_mask_so = board_->g_betweenMasks->from_dir(from, nst::so);
-      const BitMask & di_mask_we = board_->g_betweenMasks->from_dir(from, nst::we);
-
-      BitMask rmob_mask = 0;
-      BitMask mask_from = di_mask_no & mask_all_;
-      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_no);
-
-      mask_from = di_mask_ea & mask_all_;
-      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_ea);
-
-      mask_from = di_mask_so & mask_all_;
-      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_so);
-
-      mask_from = di_mask_we & mask_all_;
-      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_we);
-
-      rattack_mask[c] |= rmob_mask;
-
-      rmob_mask &= not_attacked;
-
-      int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
-      finfo_[c].rookPressure_ = kingDistanceBonus_[Figure::TypeRook][ki_dist];
-
       // can move?
       if ( discoveredCheck(from, ocolor, q_mask, ki_pos, ptDiag) )
       {
@@ -659,9 +630,34 @@ void Evaluator::evaluateRooks(bool eval_open)
       }
       else
       {
+        const BitMask & di_mask_no = board_->g_betweenMasks->from_dir(from, nst::no);
+        const BitMask & di_mask_ea = board_->g_betweenMasks->from_dir(from, nst::ea);
+        const BitMask & di_mask_so = board_->g_betweenMasks->from_dir(from, nst::so);
+        const BitMask & di_mask_we = board_->g_betweenMasks->from_dir(from, nst::we);
+
+        BitMask rmob_mask = 0;
+        BitMask mask_from = di_mask_no & mask_all_;
+        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_no);
+
+        mask_from = di_mask_ea & mask_all_;
+        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_ea);
+
+        mask_from = di_mask_so & mask_all_;
+        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_so);
+
+        mask_from = di_mask_we & mask_all_;
+        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_we);
+
+        rattack_mask[c] |= rmob_mask;
+
+        rmob_mask &= not_attacked;
+
         int movesN = pop_count(rmob_mask);
         finfo_[c].rookMobility_ += mobilityBonus_[Figure::TypeRook][movesN];
       }
+
+      int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
+      finfo_[c].rookPressure_ = kingDistanceBonus_[Figure::TypeRook][ki_dist];
 
       // rook on open column
       if ( eval_open )
