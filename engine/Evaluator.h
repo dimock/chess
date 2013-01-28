@@ -25,7 +25,6 @@ public:
   static const ScoreType unstoppablePawn_;
   static const ScoreType kingbishopPressure_;
   static const ScoreType bishopBonus_;
-  static const ScoreType twoBishopsBonus_;
   static const ScoreType figureAgainstPawnBonus_;
   static const ScoreType rookAgainstFigureBonus_;
   static const ScoreType pawnEndgameBonus_;

@@ -19,7 +19,7 @@ enum {
 
 const ScoreType Evaluator::positionGain_ = 100;
 
-const ScoreType Evaluator::lazyThresholds_[2] = { 150, 100 };
+const ScoreType Evaluator::lazyThresholds_[2] = { 200, 100 };
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -164,21 +164,20 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -15;
 const ScoreType Evaluator::pawnBackward_ = -12;
-const ScoreType Evaluator::pawnDisconnected_ = -8;
+const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindPenalty_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  10;
-const ScoreType Evaluator::openRook_ =  12;
+const ScoreType Evaluator::openRook_ =  10;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
-const ScoreType Evaluator::twoBishopsBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
-const ScoreType Evaluator::unstoppablePawn_ = 50;
+const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::blockedKingPenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
 const ScoreType Evaluator::forkBonus_ = 50;
@@ -186,30 +185,30 @@ const ScoreType Evaluator::doubleBishopAttackBonus_ = 25;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
-const ScoreType Evaluator::pinnedKnight_ = -15;
-const ScoreType Evaluator::pinnedBishop_ = -15;
-const ScoreType Evaluator::pinnedRook_ = -15;
+const ScoreType Evaluator::pinnedKnight_ = -5;
+const ScoreType Evaluator::pinnedBishop_ = -5;
+const ScoreType Evaluator::pinnedRook_ = -5;
 
 // pawns shield
 const ScoreType Evaluator::cf_columnOpened_ = 8;
-const ScoreType Evaluator::bg_columnOpened_ = 22;
-const ScoreType Evaluator::ah_columnOpened_ = 18;
+const ScoreType Evaluator::bg_columnOpened_ = 20;
+const ScoreType Evaluator::ah_columnOpened_ = 16;
 
 const ScoreType Evaluator::cf_columnSemiopened_ = 5;
-const ScoreType Evaluator::bg_columnSemiopened_ = 14;
-const ScoreType Evaluator::ah_columnSemiopened_ = 10;
+const ScoreType Evaluator::bg_columnSemiopened_ = 12;
+const ScoreType Evaluator::ah_columnSemiopened_ = 8;
 
 const ScoreType Evaluator::cf_columnCracked_ = 2;
 const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 12;
+const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
 // pressure to king by opponents bishop
-const ScoreType Evaluator::kingbishopPressure_ = 9;
+const ScoreType Evaluator::kingbishopPressure_ = 8;
 
-#define MAX_PASSED_SCORE 85
+#define MAX_PASSED_SCORE 80
 
 const ScoreType Evaluator::pawnPassed_[2][8] = {
   { 0, MAX_PASSED_SCORE, 60, 40, 20, 12, 5, 0 },
@@ -226,16 +225,16 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {-20, -10, 0, 3, 5, 7, 9, 11},
   {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-20, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 13},
+  {-10, -5, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-30, -20, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {15, 12, 10, 7, 6, 1, 0, 0},
+  {15, 10, 8, 7, 6, 1, 0, 0},
   {13, 11, 8, 7, 5, 3, 1, 0},
-  {20, 15, 10, 9, 7, 3, 1, 0},
+  {20, 18, 13, 9, 7, 3, 1, 0},
   {40, 60, 50, 25, 12, 3, 1, 0},
 };
 const ScoreType Evaluator::nearKingAttackBonus_[8] = {
@@ -467,25 +466,21 @@ ScoreType Evaluator::evaluateKnights()
     for ( ; kn_mask; )
     {
       int from = clear_lsb(kn_mask);
+      const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
+      finfo_[c].kn_attack_mask_ |= kn_cap;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
       finfo_[c].knightPressure_ += kingDistanceBonus_[Figure::TypeKnight][ki_dist];
-
-      // can't move
-      if ( discoveredCheck(from, ocolor, brq_mask, ki_pos, ptAll) )
-      {
-        finfo_[c].knightMobility_ += pinnedKnight_;
-        continue;
-      }
-
-      const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
-      finfo_[c].kn_attack_mask_ |= kn_cap;
 
       finfo_[c].attack_mask_ |= kn_cap;
 
       BitMask kmob_mask = kn_cap & not_occupied;
       int movesN = pop_count(kmob_mask);
       finfo_[c].knightMobility_ += mobilityBonus_[Figure::TypeKnight][movesN];
+
+      // give penalty for pinned knight
+      if ( discoveredCheck(from, ocolor, brq_mask, ki_pos, ptAll) )
+        finfo_[c].knightMobility_ += pinnedKnight_;
     }
   }
 
@@ -516,16 +511,6 @@ ScoreType Evaluator::evaluateBishops()
     {
       int from = clear_lsb(bimask);
 
-      int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
-      finfo_[c].bishopPressure_ = kingDistanceBonus_[Figure::TypeBishop][ki_dist];
-
-      // can't move
-      if ( discoveredCheck(from, ocolor, rq_mask, ki_pos, ptOrtho) )
-      {
-        finfo_[c].bishopMobility_ += pinnedBishop_;
-        continue;
-      }
-
       const BitMask & di_mask_nw = board_->g_betweenMasks->from_dir(from, nst::nw);
       const BitMask & di_mask_ne = board_->g_betweenMasks->from_dir(from, nst::ne);
       const BitMask & di_mask_se = board_->g_betweenMasks->from_dir(from, nst::se);
@@ -548,8 +533,15 @@ ScoreType Evaluator::evaluateBishops()
 
       bmob_mask &= not_attacked;
 
+      int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
+      finfo_[c].bishopPressure_ = kingDistanceBonus_[Figure::TypeBishop][ki_dist];
+
       int movesN = pop_count(bmob_mask);
       finfo_[c].bishopMobility_ += mobilityBonus_[Figure::TypeBishop][movesN];
+
+      // give penalty for pinned bishop
+      if ( discoveredCheck(from, ocolor, rq_mask, ki_pos, ptOrtho) )
+        finfo_[c].bishopMobility_ += pinnedBishop_;
     }
   }
 
@@ -623,41 +615,37 @@ void Evaluator::evaluateRooks(bool eval_open)
     {
       int from = clear_lsb(ro_mask);
 
-      // can move?
-      if ( discoveredCheck(from, ocolor, q_mask, ki_pos, ptDiag) )
-      {
-        finfo_[c].rookMobility_ += pinnedRook_;
-      }
-      else
-      {
-        const BitMask & di_mask_no = board_->g_betweenMasks->from_dir(from, nst::no);
-        const BitMask & di_mask_ea = board_->g_betweenMasks->from_dir(from, nst::ea);
-        const BitMask & di_mask_so = board_->g_betweenMasks->from_dir(from, nst::so);
-        const BitMask & di_mask_we = board_->g_betweenMasks->from_dir(from, nst::we);
+      const BitMask & di_mask_no = board_->g_betweenMasks->from_dir(from, nst::no);
+      const BitMask & di_mask_ea = board_->g_betweenMasks->from_dir(from, nst::ea);
+      const BitMask & di_mask_so = board_->g_betweenMasks->from_dir(from, nst::so);
+      const BitMask & di_mask_we = board_->g_betweenMasks->from_dir(from, nst::we);
 
-        BitMask rmob_mask = 0;
-        BitMask mask_from = di_mask_no & mask_all_;
-        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_no);
+      BitMask rmob_mask = 0;
+      BitMask mask_from = di_mask_no & mask_all_;
+      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_no);
 
-        mask_from = di_mask_ea & mask_all_;
-        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_ea);
+      mask_from = di_mask_ea & mask_all_;
+      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask_ea);
 
-        mask_from = di_mask_so & mask_all_;
-        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_so);
+      mask_from = di_mask_so & mask_all_;
+      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_so);
 
-        mask_from = di_mask_we & mask_all_;
-        rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_we);
+      mask_from = di_mask_we & mask_all_;
+      rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_we);
 
-        rattack_mask[c] |= rmob_mask;
+      rattack_mask[c] |= rmob_mask;
 
-        rmob_mask &= not_attacked;
-
-        int movesN = pop_count(rmob_mask);
-        finfo_[c].rookMobility_ += mobilityBonus_[Figure::TypeRook][movesN];
-      }
+      rmob_mask &= not_attacked;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
       finfo_[c].rookPressure_ = kingDistanceBonus_[Figure::TypeRook][ki_dist];
+
+      int movesN = pop_count(rmob_mask);
+      finfo_[c].rookMobility_ += mobilityBonus_[Figure::TypeRook][movesN];
+
+      // give penalty for pinned rook
+      if ( discoveredCheck(from, ocolor, q_mask, ki_pos, ptDiag) )
+        finfo_[c].rookMobility_ += pinnedRook_;
 
       // rook on open column
       if ( eval_open )
@@ -896,15 +884,6 @@ ScoreType Evaluator::evaluateMaterialDiff()
   
   // 1. Knight - Bishop disbalance
   score += (fmgr.bishops(Figure::ColorWhite) - fmgr.bishops(Figure::ColorBlack))*bishopBonus_;
-
-  //// 2. Two Bishops
-  //{
-  //  if ( fmgr.bishops_w(Figure::ColorWhite) > 0 && fmgr.bishops_b(Figure::ColorWhite) > 0 )
-  //    score += twoBishopsBonus_;
-
-  //  if ( fmgr.bishops_w(Figure::ColorWhite) > 0 && fmgr.bishops_b(Figure::ColorWhite) > 0 )
-  //    score -= twoBishopsBonus_;
-  //}
 
   // 3. Knight or Bishop against 3 pawns
   int figuresDiff = (fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite)) -
