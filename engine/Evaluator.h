@@ -7,6 +7,9 @@
 
 class Evaluator
 {
+
+  enum GamePhase { Opening = 0, MiddleGame, EndGame };
+
 public:
 
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
@@ -14,7 +17,7 @@ public:
 
   // evaluation constants
   static const ScoreType positionGain_;
-  static const ScoreType lazyThresholds_[2];
+  static const ScoreType lazyThresholds_[3];
   static const ScoreType bishopKnightMat_[64];
   static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
   static const ScoreType assistantBishop_, rookBehindPenalty_;
@@ -31,12 +34,15 @@ public:
   static const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
-  static const ScoreType nearKingAttackBonus_[8];
   static const ScoreType attackedByWeakBonus_;
   static const ScoreType forkBonus_;
   static const ScoreType doubleBishopAttackBonus_;
   static const ScoreType fianchettoBonus_;
   static const ScoreType rookToKingBonus_;
+
+  // king pressure
+  static const ScoreType kingAttackBonus_[8];
+  static const ScoreType kingImmobility_[8];
 
   // pinned
   static const ScoreType pinnedKnight_;
@@ -74,12 +80,13 @@ private:
   ScoreType evaluatePawnShield(Figure::Color color);
   ScoreType evaluatePasserAdditional(Figure::Color color);
 
+  ScoreType evaluateKingPressure(GamePhase phase, int coef_o);
+  ScoreType evaluateKingPressure(Figure::Color color);
+
   ScoreType evaluateMaterialDiff();
   ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evaluateFianchetto() const;
   ScoreType evaluateWinnerLoser();
-
-  enum GamePhase { Opening = 0, MiddleGame, EndGame };
 
   // multiple coefficients for opening/endgame
   GamePhase detectPhase(int & coef_o, int & coef_e);
