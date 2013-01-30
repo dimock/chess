@@ -169,7 +169,7 @@ const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindPenalty_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  10;
-const ScoreType Evaluator::openRook_ =  15;
+const ScoreType Evaluator::openRook_ =  10;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
@@ -185,28 +185,28 @@ const ScoreType Evaluator::doubleBishopAttackBonus_ = 25;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
-const ScoreType Evaluator::pinnedKnight_ = -10;
-const ScoreType Evaluator::pinnedBishop_ = -10;
-const ScoreType Evaluator::pinnedRook_ = -10;
+const ScoreType Evaluator::pinnedKnight_ = -5;
+const ScoreType Evaluator::pinnedBishop_ = -5;
+const ScoreType Evaluator::pinnedRook_ = -5;
 
 // pawns shield
 const ScoreType Evaluator::cf_columnOpened_ = 8;
-const ScoreType Evaluator::bg_columnOpened_ = 22;
-const ScoreType Evaluator::ah_columnOpened_ = 18;
+const ScoreType Evaluator::bg_columnOpened_ = 20;
+const ScoreType Evaluator::ah_columnOpened_ = 16;
 
 const ScoreType Evaluator::cf_columnSemiopened_ = 5;
-const ScoreType Evaluator::bg_columnSemiopened_ = 14;
-const ScoreType Evaluator::ah_columnSemiopened_ = 10;
+const ScoreType Evaluator::bg_columnSemiopened_ = 12;
+const ScoreType Evaluator::ah_columnSemiopened_ = 8;
 
 const ScoreType Evaluator::cf_columnCracked_ = 2;
 const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 6;
+const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
 // pressure to king by opponents bishop
-const ScoreType Evaluator::kingbishopPressure_ = 5;
+const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 #define MAX_PASSED_SCORE 80
 
@@ -239,11 +239,11 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
-  0, 10, 40, 80, 120, 200, 300, 500
+  0, 10, 40, 80, 120, 150, 200, 250
 };
 
 const ScoreType Evaluator::kingImmobility_[8] = {
-  25, 10
+  15, 5
 };
 
 
@@ -468,15 +468,20 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
 
   BitMask xray_masks[2] = { ~(~mask_diag & mask_all_), ~(~mask_ortho & mask_all_) };
 
-  uint8 attacked_fields[64] = {};
+  int attacked_fields[64] = {};
   BitMask attacked_mask = 0;
+  int attackersN = 0;
+  uint8 attackerTypes = 0;
+  int fieldAttacksN = 0;
 
   BitMask pw_mask = finfo_[color].pw_attack_mask_ & oki_mask;
   for ( ; pw_mask; )
   {
     int to = clear_lsb(pw_mask);
     attacked_mask |= set_mask_bit(to);
-    attacked_fields[to] |= (uint8)set_bit(Figure::TypePawn);
+    attackerTypes |= (uint8)set_bit(Figure::TypePawn);
+    attacked_fields[to] = 1;
+    attackersN++;
   }
 
   BitMask kn_mask = board_->fmgr().knight_mask(color);
@@ -489,7 +494,11 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
     {
       int to = clear_lsb(oki_attack_mask);
       attacked_mask |= set_mask_bit(to);
-      attacked_fields[to] |= (uint8)set_bit(Figure::TypeKnight);
+      attackerTypes |= (uint8)set_bit(Figure::TypeKnight);
+      attacked_fields[to]++;
+      if ( attacked_fields[to] > fieldAttacksN )
+        fieldAttacksN = attacked_fields[to];
+      attackersN++;
     }
   }
 
@@ -508,27 +517,34 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
         int to = clear_lsb(oki_attack_mask);
         const BitMask & btw_mask = board_->g_betweenMasks->between(from, to);
 
+        bool attackFound = false;
+
         // 1. nothing between
         if ( (btw_mask & inv_mask_all_) == btw_mask )
-        {
-          attacked_mask |= set_mask_bit(to);
-          attacked_fields[to] |= (uint8)set_bit(type);
-          continue;
-        }
+          attackFound = true;
 
         // 2. X-ray attack
-        nst::dirs dir = board_->g_figureDir->dir(from, to);
+        if ( !attackFound )
+        {
+          nst::dirs dir = board_->g_figureDir->dir(from, to);
 
-        THROW_IF(nst::no_dir == dir, "no direction between fields");
+          THROW_IF(nst::no_dir == dir, "no direction between fields");
 
-        int xray_type = (dir-1) & 1;
-        const BitMask & xray_mask = xray_masks[xray_type];
+          int xray_type = (dir-1) & 1;
+          const BitMask & xray_mask = xray_masks[xray_type];
 
-        if ( (btw_mask & xray_mask) == btw_mask )
+          if ( (btw_mask & xray_mask) == btw_mask )
+            attackFound = true;
+        }
+
+        if ( attackFound )
         {
           attacked_mask |= set_mask_bit(to);
-          attacked_fields[to] |= (uint8)set_bit(type);
-          continue;
+          attackerTypes |= (uint8)set_bit(type);
+          attacked_fields[to]++;
+          attackersN++;
+          if ( attacked_fields[to] > fieldAttacksN )
+            fieldAttacksN = attacked_fields[to];
         }
       }
     }
@@ -544,28 +560,15 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
   if ( !attacked_mask )
     return score;
 
-  //int attacksN = pop_count(attacked_mask);
-  //bool doubleAttack = false;
+  score += kingAttackBonus_[attackersN&7];
 
-  for ( ; attacked_mask; )
-  {
-    int n = clear_lsb(attacked_mask);
-    uint8 b = attacked_fields[n];
-    int count = BitsCounter::numBitsInByte(b);
-    score += kingAttackBonus_[count];
-    if ( b & set_bit(Figure::TypeQueen) )
-      score += 15*(count-1);
-    //if ( count > 1 )
-    //  doubleAttack = true;
-  }
+  if ( fieldAttacksN > 2 )
+    score += 20;
+  else if ( fieldAttacksN > 1 )
+    score += 10;
 
-  //if ( (doubleAttack || attacksN > 1) )
-  //{
-  //  if ( !movesN )
-  //    score += 20;
-  //  else if ( movesN == 1 )
-  //    score += 10;
-  //}
+  if ( attackerTypes & set_bit(Figure::TypeQueen) && attackersN > 1 )
+    score += 10;
 
   return score;
 }
