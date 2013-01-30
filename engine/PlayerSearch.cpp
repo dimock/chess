@@ -431,7 +431,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
   bool check_escape = scontexts_[ictx].board_.underCheck();
 
-  for ( ; alpha < betta && !checkForStop(); ++counter)
+  for ( ; alpha < betta && !checkForStop(); )
   {
     Move & move = fg.move();
     if ( !move )
@@ -502,6 +502,9 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
           assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
       }
     }
+
+    // should be increased here to consider invalid moves!!!
+     ++counter;
   }
 
   if ( stopped() )
