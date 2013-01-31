@@ -42,7 +42,7 @@ public:
 
   // king pressure
   static const ScoreType kingAttackBonus_[8];
-  static const ScoreType kingImmobility_[8];
+  static const ScoreType kingImmobility_[10];
 
   // pinned
   static const ScoreType pinnedKnight_;
@@ -63,6 +63,8 @@ public:
   static const ScoreType ah_columnCracked_;
 
   static const ScoreType opponentPawnsToKing_;
+
+  static const ScoreType queenAttackBonus_;
 
   Evaluator();
 

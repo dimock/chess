@@ -208,6 +208,9 @@ const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 // pressure to king by opponents bishop
 const ScoreType Evaluator::kingbishopPressure_ = 8;
 
+// queen attacks opponent's king (give only if supported by other figure)
+const ScoreType Evaluator::queenAttackBonus_ = 10;
+
 #define MAX_PASSED_SCORE 80
 
 const ScoreType Evaluator::pawnPassed_[2][8] = {
@@ -223,8 +226,8 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-25, -15, 0, 3, 5, 7, 9, 11},
-  {-20, -10, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-30, -15, 0, 3, 5, 7, 9, 11},
+  {-25, -10, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-15, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-40, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
 };
@@ -232,18 +235,18 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {15, 10, 8, 7, 6, 1, 0, 0},
-  {13, 11, 8, 7, 5, 3, 1, 0},
-  {20, 18, 13, 9, 7, 3, 1, 0},
-  {40, 50, 40, 25, 12, 3, 1, 0},
+  {10, 10, 8, 7, 6, 1, 0, 0},
+  {10, 10, 8, 7, 5, 3, 1, 0},
+  {15, 12, 8, 7, 5, 3, 1, 0},
+  {40, 35, 30, 25, 12, 3, 1, 0},
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
-  0, 10, 40, 80, 120, 150, 200, 250
+  0, 5, 20, 50, 80, 150, 200, 250
 };
 
-const ScoreType Evaluator::kingImmobility_[8] = {
-  15, 5
+const ScoreType Evaluator::kingImmobility_[10] = {
+  10, 5, 2
 };
 
 
@@ -518,10 +521,14 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
         const BitMask & btw_mask = board_->g_betweenMasks->between(from, to);
 
         bool attackFound = false;
+        bool directAttack = false;
 
         // 1. nothing between
         if ( (btw_mask & inv_mask_all_) == btw_mask )
+        {
           attackFound = true;
+          directAttack = true;
+        }
 
         // 2. X-ray attack
         if ( !attackFound )
@@ -540,11 +547,12 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
         if ( attackFound )
         {
           attacked_mask |= set_mask_bit(to);
-          attackerTypes |= (uint8)set_bit(type);
           attacked_fields[to]++;
           attackersN++;
           if ( attacked_fields[to] > fieldAttacksN )
             fieldAttacksN = attacked_fields[to];
+          if ( directAttack )
+            attackerTypes |= (uint8)set_bit(type);
         }
       }
     }
@@ -555,20 +563,15 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
 
   ScoreType score = 0;
 
-  score += kingImmobility_[movesN & 7];
+  score += kingImmobility_[movesN];
 
-  if ( !attacked_mask )
+  if ( 0 == attackersN )
     return score;
 
-  score += kingAttackBonus_[attackersN&7];
+  score += kingAttackBonus_[attackersN & 7];
 
-  if ( fieldAttacksN > 2 )
-    score += 20;
-  else if ( fieldAttacksN > 1 )
-    score += 10;
-
-  if ( attackerTypes & set_bit(Figure::TypeQueen) && attackersN > 1 )
-    score += 10;
+  if ( attackerTypes & set_bit(Figure::TypeQueen) )
+    score += queenAttackBonus_*(attackersN-1);
 
   return score;
 }

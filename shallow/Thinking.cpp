@@ -118,24 +118,26 @@ int Thinking::giveMoreTime()
   if ( timePerMoveMS_ > 0 || xtimeMS_ <= 0 || givetimeCounter_ > 0 )
     return 0;
 
-  givetimeCounter_++;
+  int add_t = 0;
   if ( movesLeft_ <= 0 && xtimeMS_ > 400 )
-    return xtimeMS_/40;
-
-  if ( movesLeft_ > 0 )
+    add_t = xtimeMS_/40;
+  else if ( movesLeft_ > 0 )
   {
     int mcount = player_.getBoard().movesCount();
     mcount = movesLeft_ - (mcount-1) % movesLeft_;
     if ( mcount > movesLeft_/2 )
-      return xtimeMS_/mcount;
+      add_t = xtimeMS_/mcount;
     else if ( mcount > movesLeft_/3 )
-      return (xtimeMS_/mcount)/2;
+      add_t = (xtimeMS_/mcount)/2;
     else if ( mcount > movesLeft_/6 )
-      return (xtimeMS_/mcount)/4;
+      add_t = (xtimeMS_/mcount)/4;
     else if ( mcount > 0 )
-      return (xtimeMS_/mcount)/8;
+      add_t = (xtimeMS_/mcount)/8;
   }
-  return 0;
+
+  givetimeCounter_++;
+
+  return add_t;
 }
 
 void Thinking::enableBook(int v)

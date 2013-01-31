@@ -246,8 +246,6 @@ ScoreType Player::alphaBetta0()
 
   ScoreType alpha = -ScoreMax;
   ScoreType betta = +ScoreMax;
-
-  ScoreType scoreBest = -ScoreMax;
   
   bool check_escape = scontexts_[0].board_.underCheck();
 
@@ -303,25 +301,23 @@ ScoreType Player::alphaBetta0()
 
     scontexts_[0].board_.unmakeMove();
 
-    move.vsort_ = score + ScoreMax;
-
-    if ( !stopped() && score > scoreBest )
+    if ( !stopped() )
     {
-      scoreBest = score;
+      move.vsort_ = score + ScoreMax;
 
       if ( score > alpha )
       {
         sdata_.best_ = move;
         alpha = score;
+
         assemblePV(0, move, scontexts_[0].board_.underCheck(), 0);
 
         // bring best move to front, shift other moves 1 position right
         if ( sdata_.depth_ > depth0_ )
         {
-          Move mv = scontexts_[0].moves_[sdata_.counter_];
           for (int j = sdata_.counter_; j > 0; --j)
             scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
-          scontexts_[0].moves_[0] = mv;
+          scontexts_[0].moves_[0] = sdata_.best_;
         }
       }
     }
@@ -331,14 +327,17 @@ ScoreType Player::alphaBetta0()
   if ( !stopped() && sdata_.counter_ == 1 && !sparams_.analyze_mode_ )
     pleaseStop();
 
-  // full sort only on 1st iteration
-  if ( sdata_.depth_ == depth0_ )
-    std::sort(scontexts_[0].moves_, scontexts_[0].moves_ + sdata_.numOfMoves_);
-  // then sort all but 1st moves
-  else if ( sdata_.numOfMoves_ > 2 )
-    std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
+  if ( !stopped() )
+  {
+    // full sort only on 1st iteration
+    if ( sdata_.depth_ == depth0_ )
+      std::sort(scontexts_[0].moves_, scontexts_[0].moves_ + sdata_.numOfMoves_);
+    // then sort all moves but 1st
+    else if ( sdata_.numOfMoves_ > 2 )
+      std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
+  }
 
-  return scoreBest;
+  return alpha;
 }
 
 //////////////////////////////////////////////////////////////////////////
