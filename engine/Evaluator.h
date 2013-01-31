@@ -165,5 +165,5 @@ private:
 
   BitMask mask_all_;
   BitMask inv_mask_all_;
-  ScoreType alpha_[2], betta_[2];
+  ScoreType alpha_[3], betta_[3];
 };

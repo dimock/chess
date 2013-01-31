@@ -226,10 +226,10 @@ const ScoreType Evaluator::pawnGuarded_[2][8] = {
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-30, -15, 0, 3, 5, 7, 9, 11},
-  {-25, -10, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-15, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-40, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
+  {-20, -10, 0, 3, 5, 7, 9, 11},
+  {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-10, -5, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-30, -20, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -238,11 +238,11 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {10, 10, 8, 7, 6, 1, 0, 0},
   {10, 10, 8, 7, 5, 3, 1, 0},
   {15, 12, 8, 7, 5, 3, 1, 0},
-  {40, 35, 30, 25, 12, 3, 1, 0},
+  {40, 40, 35, 25, 12, 3, 1, 0},
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
-  0, 5, 20, 50, 80, 150, 200, 250
+  0, 5, 25, 50, 80, 150, 200, 250
 };
 
 const ScoreType Evaluator::kingImmobility_[10] = {
@@ -493,6 +493,8 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
     int from = clear_lsb(kn_mask);
     const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
     BitMask oki_attack_mask = kn_cap & oki_mask;
+    if ( oki_attack_mask )
+      attackersN++;
     for ( ; oki_attack_mask; )
     {
       int to = clear_lsb(oki_attack_mask);
@@ -501,7 +503,6 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
       attacked_fields[to]++;
       if ( attacked_fields[to] > fieldAttacksN )
         fieldAttacksN = attacked_fields[to];
-      attackersN++;
     }
   }
 
@@ -514,6 +515,8 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
       
       const BitMask & cap_mask = board_->g_movesTable->caps((Figure::Type)type, from);
       BitMask oki_attack_mask = cap_mask & oki_mask;
+
+      bool haveAttack = false;
 
       for ( ; oki_attack_mask; )
       {
@@ -546,15 +549,18 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
 
         if ( attackFound )
         {
+          haveAttack = true;
           attacked_mask |= set_mask_bit(to);
           attacked_fields[to]++;
-          attackersN++;
           if ( attacked_fields[to] > fieldAttacksN )
             fieldAttacksN = attacked_fields[to];
           if ( directAttack )
             attackerTypes |= (uint8)set_bit(type);
         }
       }
+
+      if ( haveAttack )
+        attackersN++;
     }
   }
 
