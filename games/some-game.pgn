@@ -1,0 +1,20 @@
+[Event "?"]
+[Site "?"]
+[Date "?"]
+[Round "?"]
+[White "Shallow-10-64-ja"]
+[Black "Shallow-10-64-ja"]
+[Result "*"]
+[BlackElo "2200"]
+[Time "14:47:50"]
+[WhiteElo "2200"]
+[TimeControl "40/240:40/240:40/240"]
+[Termination "unterminated"]
+[PlyCount "35"]
+[WhiteType "program"]
+[BlackType "program"]
+
+1. d4 Nf6 2. e3 d5 3. Be2 Nc6 4. Nf3 g6 5. Bb5 Bg7 6. Bxc6+ bxc6 7. O-O O-O
+8. Ne5 Qd6 9. b3 c5 10. Ba3 Ne4 11. f3 Bxe5 12. dxe5 Qxe5 13. fxe4 Qxa1 14.
+Bxc5 dxe4 15. Bxe7 Re8 16. Qd5 Be6 17. Qg5 Qxa2 18. Bf6 *
+
