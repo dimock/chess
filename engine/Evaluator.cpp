@@ -209,7 +209,16 @@ const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
-const ScoreType Evaluator::queenAttackBonus_ = 10;
+const ScoreType Evaluator::queenAttackBonus_ = 15;
+
+// rook attacks opponent's king (give only if supported by other figure)
+const ScoreType Evaluator::rookAttackBonus_ = 5;
+
+// give bonus for each attacked field near king
+const ScoreType Evaluator::kingFieldAttackBonus_ = 3;
+
+// additional bonus for double-triple-etc... attack to some field near king
+const ScoreType Evaluator::multiAttackBonus_ = 5;
 
 #define MAX_PASSED_SCORE 80
 
@@ -242,7 +251,7 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
-  0, 5, 25, 50, 80, 150, 200, 250
+  0, 5, 30, 60, 90, 150, 200, 250
 };
 
 const ScoreType Evaluator::kingImmobility_[10] = {
@@ -475,7 +484,7 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
   BitMask attacked_mask = 0;
   int attackersN = 0;
   uint8 attackerTypes = 0;
-  int fieldAttacksN = 0;
+  int fieldAttackersN = 0;
 
   BitMask pw_mask = finfo_[color].pw_attack_mask_ & oki_mask;
   for ( ; pw_mask; )
@@ -501,8 +510,8 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
       attacked_mask |= set_mask_bit(to);
       attackerTypes |= (uint8)set_bit(Figure::TypeKnight);
       attacked_fields[to]++;
-      if ( attacked_fields[to] > fieldAttacksN )
-        fieldAttacksN = attacked_fields[to];
+      if ( attacked_fields[to] > fieldAttackersN )
+        fieldAttackersN = attacked_fields[to];
     }
   }
 
@@ -552,8 +561,8 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
           haveAttack = true;
           attacked_mask |= set_mask_bit(to);
           attacked_fields[to]++;
-          if ( attacked_fields[to] > fieldAttacksN )
-            fieldAttacksN = attacked_fields[to];
+          if ( attacked_fields[to] > fieldAttackersN )
+            fieldAttackersN = attacked_fields[to];
           if ( directAttack )
             attackerTypes |= (uint8)set_bit(type);
         }
@@ -574,6 +583,9 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
   if ( 0 == attackersN )
     return score;
 
+  int fattackedN = pop_count(attacked_mask);
+
+  score += fattackedN * kingFieldAttackBonus_;
   score += kingAttackBonus_[attackersN & 7];
 
   if ( attackerTypes & set_bit(Figure::TypeQueen) )

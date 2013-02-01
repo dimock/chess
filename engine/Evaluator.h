@@ -62,9 +62,12 @@ public:
   static const ScoreType bg_columnCracked_;
   static const ScoreType ah_columnCracked_;
 
+  // pressure to opponent's king
   static const ScoreType opponentPawnsToKing_;
-
   static const ScoreType queenAttackBonus_;
+  static const ScoreType rookAttackBonus_;
+  static const ScoreType kingFieldAttackBonus_;
+  static const ScoreType multiAttackBonus_;
 
   Evaluator();
 
