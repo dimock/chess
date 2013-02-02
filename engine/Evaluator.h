@@ -30,7 +30,7 @@ public:
   static const ScoreType figureAgainstPawnBonus_;
   static const ScoreType rookAgainstFigureBonus_;
   static const ScoreType pawnEndgameBonus_;
-  static const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8], passerCandidate_[2][8];
+  static const ScoreType pawnPassed_[8], pawnGuarded_[8], passerCandidate_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
   static const ScoreType attackedByWeakBonus_;
