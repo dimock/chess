@@ -20,23 +20,21 @@ public:
   static const ScoreType lazyThresholds_[3];
   static const ScoreType bishopKnightMat_[64];
   static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
-  static const ScoreType assistantBishop_, rookBehindPenalty_;
+  static const ScoreType assistantBishop_, rookBehindBonus_;
   static const ScoreType semiopenRook_, openRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
   static const ScoreType castleImpossiblePenalty_;
-  static const ScoreType blockedKingPenalty_;
   static const ScoreType unstoppablePawn_;
-  static const ScoreType kingbishopPressure_;
+  //static const ScoreType kingbishopPressure_;
   static const ScoreType bishopBonus_;
   static const ScoreType figureAgainstPawnBonus_;
   static const ScoreType rookAgainstFigureBonus_;
   static const ScoreType pawnEndgameBonus_;
-  static const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8];
+  static const ScoreType pawnPassed_[2][8], pawnGuarded_[2][8], passerCandidate_[2][8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
   static const ScoreType attackedByWeakBonus_;
   static const ScoreType forkBonus_;
-  static const ScoreType doubleBishopAttackBonus_;
   static const ScoreType fianchettoBonus_;
   static const ScoreType rookToKingBonus_;
 
@@ -65,10 +63,8 @@ public:
   // pressure to opponent's king
   static const ScoreType opponentPawnsToKing_;
   static const ScoreType queenAttackBonus_;
-  static const ScoreType rookAttackBonus_;
   static const ScoreType kingFieldAttackBonus_;
-  static const ScoreType multiAttackBonus_;
-
+  
   Evaluator();
 
   void initialize(const Board * board, EHashTable * ehash);
@@ -82,6 +78,7 @@ private:
   /// calculates absolute position evaluation
   ScoreType evaluate();
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
+  ScoreType evaluatePawnShield2(Figure::Color color);
   ScoreType evaluatePawnShield(Figure::Color color);
   ScoreType evaluatePasserAdditional(Figure::Color color);
 
