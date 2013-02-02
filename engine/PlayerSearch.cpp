@@ -248,6 +248,7 @@ ScoreType Player::alphaBetta0()
   ScoreType betta = +ScoreMax;
   
   bool check_escape = scontexts_[0].board_.underCheck();
+  bool null_move = false;
 
   for (sdata_.counter_ = 0; sdata_.counter_ < sdata_.numOfMoves_; ++sdata_.counter_)
   {
@@ -267,7 +268,7 @@ ScoreType Player::alphaBetta0()
       int depth1 = nextDepth(0, sdata_.depth_, move, true);
 
       if ( sdata_.depth_ == depth0_ || !sdata_.counter_ ) // 1st iteration
-        score = -alphaBetta(0, depth1, 1, -betta, -alpha, true);
+        score = -alphaBetta(0, depth1, 1, -betta, -alpha, true, null_move);
       else
       {
         int depth2 = nextDepth(0, sdata_.depth_, move, false);
@@ -289,13 +290,13 @@ ScoreType Player::alphaBetta0()
         }
 #endif
 
-        score = -alphaBetta(0, depth2-R, 1, -alpha-1, -alpha, false);
+        score = -alphaBetta(0, depth2-R, 1, -alpha-1, -alpha, false, null_move);
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta(0, depth2, 1, -alpha-1, -alpha, false);
+          score = -alphaBetta(0, depth2, 1, -alpha-1, -alpha, false, null_move);
 
         if ( !stopped() && score > alpha )
-          score = -alphaBetta(0, depth1, 1, -betta, -alpha, true);
+          score = -alphaBetta(0, depth1, 1, -betta, -alpha, true, null_move);
       }
     }
 
@@ -341,7 +342,7 @@ ScoreType Player::alphaBetta0()
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
+ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, bool null_move)
 {
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
@@ -373,26 +374,29 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_NULL_MOVE
   if ( !pv &&
+       !null_move &&
        !scontexts_[ictx].board_.underCheck() &&
         scontexts_[ictx].board_.allowNullMove() &&
         depth >= scontexts_[ictx].board_.nullMoveDepthMin() &&
         betta < Figure::MatScore+MaxPly &&
         betta > -Figure::MatScore-MaxPly )
   {
+    int null_depth = scontexts_[ictx].board_.nullMoveDepth(depth);//depth - scontexts_[ictx].board_.nullMoveReduce();
+
     scontexts_[ictx].board_.makeNullMove();
 
-    int null_depth = depth - scontexts_[ictx].board_.nullMoveReduce();
-
-    ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false);
+    ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, true);
 
     scontexts_[ictx].board_.unmakeNullMove();
 
     // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
-      depth -= scontexts_[ictx].board_.nullMoveReduce();
+      depth = null_depth;
+      //depth -= scontexts_[ictx].board_.nullMoveReduce();
       if ( depth <= 0 )
         return captures(ictx, depth, ply, alpha, betta, pv);
+      null_move = true;
     }
     else // may be we are in danger?
       nm_threat = true;
@@ -457,7 +461,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       int depth1 = nextDepth(ictx, depth, move, pv);
 
       if ( !counter )
-        score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv);
+        score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv, null_move);
       else
       {
         int depth2 = nextDepth(ictx, depth, move, false);
@@ -475,14 +479,14 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         }
 #endif
 
-        score = -alphaBetta(ictx, depth2-R, ply+1, -alpha-1, -alpha, false);
+        score = -alphaBetta(ictx, depth2-R, ply+1, -alpha-1, -alpha, false, null_move);
         curr.reduced_ = false;
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta(ictx, depth2, ply+1, -alpha-1, -alpha, false);
+          score = -alphaBetta(ictx, depth2, ply+1, -alpha-1, -alpha, false, null_move);
 
         if ( !stopped() && score > alpha && score < betta )
-          score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, true);
+          score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, true, null_move);
       }
     }
 

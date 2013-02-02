@@ -234,6 +234,17 @@ public:
       return NullMove_PlyReduce-1;
   }
 
+  inline int nullMoveDepth(int depth) const
+  {
+    int null_depth = depth - nullMoveReduce();
+    int null_depth2 = depth / 2;
+    if ( null_depth2 < null_depth )
+      null_depth = null_depth2;
+    if ( null_depth < 1 )
+      null_depth = 1;
+    return null_depth;
+  }
+
   inline bool shortNullMoveReduction() const
   {
     return fmgr_.weight(color_) <= Figure::figureWeight_[Figure::TypeRook]+Figure::figureWeight_[Figure::TypePawn];
