@@ -275,7 +275,7 @@ ScoreType Player::alphaBetta0()
 
         int R = 0;
 
-        //int s_limit = scoreBest > 0 ? (((int)scoreBest) >> 1) : (((int)scoreBest) << 1);
+        //int s_limit = alpha > 0 ? (((int)alpha) >> 1) : (((int)alpha) << 1);
         //int s = (int)move.vsort_ - ScoreMax;
 
 
@@ -469,6 +469,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_LMR
         if ( !check_escape &&
+//             counter > 2 &&
              sdata_.depth_ > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
              alpha > -Figure::MatScore-MaxPly &&             
