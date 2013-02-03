@@ -232,7 +232,7 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {16, 13, 11, 7, 6, 1, 0, 0},
+  {16, 14, 12, 7, 6, 1, 0, 0},
   {14, 11, 8, 7, 5, 3, 1, 0},
   {16, 13, 8, 7, 5, 3, 1, 0},
   {40, 45, 36, 25, 12, 3, 1, 0},
