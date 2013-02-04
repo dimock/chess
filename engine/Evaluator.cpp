@@ -168,8 +168,8 @@ const ScoreType Evaluator::pawnDisconnected_ = -6;
 const ScoreType Evaluator::pawnBlocked_ = 3;
 const ScoreType Evaluator::assistantBishop_ = 9;
 const ScoreType Evaluator::rookBehindBonus_ = 8;
-const ScoreType Evaluator::semiopenRook_ =  15;
-const ScoreType Evaluator::openRook_ =  15;
+const ScoreType Evaluator::semiopenRook_ =  12;
+const ScoreType Evaluator::openRook_ =  12;
 const ScoreType Evaluator::winloseBonus_ =  30;
 const ScoreType Evaluator::bishopBonus_ = 12;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
@@ -189,7 +189,7 @@ const ScoreType Evaluator::pinnedRook_ = -6;
 
 // pawns shield
 const ScoreType Evaluator::cf_columnOpened_ = 8;
-const ScoreType Evaluator::bg_columnOpened_ = 24;
+const ScoreType Evaluator::bg_columnOpened_ = 22;
 const ScoreType Evaluator::ah_columnOpened_ = 18;
 
 const ScoreType Evaluator::cf_columnSemiopened_ = 5;
@@ -207,7 +207,7 @@ const ScoreType Evaluator::opponentPawnsToKing_ = 12;
 //const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
-const ScoreType Evaluator::queenAttackBonus_ = 17;
+const ScoreType Evaluator::queenAttackBonus_ = 10;
 
 // give bonus for each attacked field near king
 const ScoreType Evaluator::kingFieldAttackBonus_ = 2;
@@ -223,10 +223,10 @@ const ScoreType Evaluator::passerCandidate_[8] = { 0, 4, 6, 8, 10, 13, 15, 0 };
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-27, -12, 0, 3, 5, 7, 9, 11},
+  {-25, -12, 0, 3, 5, 7, 9, 11},
   {-22, -9, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-11, -6, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-40, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
+  {-35, -20, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -235,11 +235,11 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {16, 14, 12, 7, 6, 1, 0, 0},
   {14, 11, 8, 7, 5, 3, 1, 0},
   {16, 13, 8, 7, 5, 3, 1, 0},
-  {40, 45, 36, 25, 12, 3, 1, 0},
+  {40, 40, 30, 20, 12, 3, 1, 0},
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
-  0, 5, 25, 60, 80, 120, 150, 200
+  0, 5, 30, 60, 80, 120, 150, 200
 };
 
 const ScoreType Evaluator::kingImmobility_[10] = {
@@ -451,8 +451,8 @@ ScoreType Evaluator::evaluateKingPressure(GamePhase phase, int coef_o)
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
 
-  if ( phase == MiddleGame )
-    score = (score * coef_o) / weightMax_;
+  //if ( phase == MiddleGame )
+  //  score = (score * coef_o) / weightMax_;
 
   return score;
 }
@@ -573,13 +573,13 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
 
   int fattackedN = pop_count(attacked_mask);
 
-  score += fattackedN * kingFieldAttackBonus_;
+  //score += fattackedN * kingFieldAttackBonus_;
   score += kingAttackBonus_[attackersN & 7];
 
   if ( attackerTypes & set_bit(Figure::TypeQueen) )
   {
-    score += queenAttackBonus_*(attackersN-1);
-    score += kingImmobility_[movesN]*(attackersN-1);
+    score += queenAttackBonus_*attackersN;
+    //score += kingImmobility_[movesN]*(attackersN-1);
   }
 
   if ( attackerTypes && set_bit(Figure::TypePawn) )
