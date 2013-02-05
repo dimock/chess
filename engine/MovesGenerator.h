@@ -361,6 +361,7 @@ public:
       if ( !filter(*move) )
         continue;
 
+      counter_++;
       return *move;
     }
   }
@@ -402,7 +403,8 @@ private:
     else if ( board_.en_passant_ == move.to_ && board_.getField(move.from_).type() == Figure::TypePawn ) // en-passant capture
       type = Figure::TypePawn;
 
-    if ( !check && type < thresholdType_ )
+    // always return 1st move (assuming it is the best one)
+    if ( !check && type < thresholdType_ /*&& counter_ > 0*/ )
       return false;
 
     int s = board_.see(move);
@@ -413,6 +415,7 @@ private:
 
   Figure::Type thresholdType_;
   Move hcap_;
+  int counter_;
 
   // for checks detector
   BitMask mask_all_, mask_brq_;

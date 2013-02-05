@@ -374,14 +374,14 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_NULL_MOVE
   if ( !pv &&
-       !null_move &&
+       //!null_move &&
        !scontexts_[ictx].board_.underCheck() &&
         scontexts_[ictx].board_.allowNullMove() &&
         depth >= scontexts_[ictx].board_.nullMoveDepthMin() &&
         betta < Figure::MatScore+MaxPly &&
         betta > -Figure::MatScore-MaxPly )
   {
-    int null_depth = scontexts_[ictx].board_.nullMoveDepth(depth);//depth - scontexts_[ictx].board_.nullMoveReduce();
+    int null_depth = depth - scontexts_[ictx].board_.nullMoveReduce();//scontexts_[ictx].board_.nullMoveDepth(depth);//
 
     scontexts_[ictx].board_.makeNullMove();
 
@@ -486,7 +486,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         if ( !stopped() && score > alpha && R > 0 )
           score = -alphaBetta(ictx, depth2, ply+1, -alpha-1, -alpha, false, null_move);
 
-        if ( !stopped() && score > alpha )//&& score < betta )
+        if ( !stopped() && score > alpha && score < betta )
           score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv, null_move);
       }
     }

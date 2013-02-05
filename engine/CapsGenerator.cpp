@@ -7,7 +7,10 @@
 
 //////////////////////////////////////////////////////////////////////////
 CapsGenerator::CapsGenerator(const Move & hcap, Board & board) :
-  MovesGeneratorBase(board), hcap_(hcap), thresholdType_(Figure::TypeNone)
+  MovesGeneratorBase(board),
+  hcap_(hcap),
+  thresholdType_(Figure::TypeNone),
+  counter_(0)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
@@ -20,7 +23,9 @@ CapsGenerator::CapsGenerator(const Move & hcap, Board & board) :
 }
 
 CapsGenerator::CapsGenerator(Board & board) :
-  MovesGeneratorBase(board), thresholdType_(Figure::TypeNone)
+  MovesGeneratorBase(board),
+  thresholdType_(Figure::TypeNone),
+  counter_(0)
 {
   hcap_.clear();
 
@@ -33,6 +38,7 @@ CapsGenerator::CapsGenerator(Board & board) :
 
 int CapsGenerator::generate(const Move & hcap, Figure::Type thresholdType)
 {
+  counter_ = 0;
   hcap_ = hcap;
   thresholdType_ = thresholdType;
 

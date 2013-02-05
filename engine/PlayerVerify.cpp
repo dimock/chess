@@ -696,7 +696,9 @@ void Player::findSequence(int ictx, const Move & move, int ply, int depth, int c
   bool identical = false;
   static MOVE sequence[] = {
     {52, 45},
-    {55, 47}
+    {55, 47},
+    {38, 47},
+    {9, 45}
      };
 
     if ( ply < sizeof(sequence)/sizeof(MOVE) && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
@@ -718,17 +720,17 @@ void Player::findSequence(int ictx, const Move & move, int ply, int depth, int c
 
     if ( identical )
     {
-      if ( sdata_.depth_ == 4  )
+      if ( sdata_.depth_ == 4 && ply == 3 )
       {
         int ttt = 0;
       }
-      std::stringstream sstm;
-      Board::save(scontexts_[ictx].board_, sstm, false);
-      std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
-      ofs << "PLY: " << ply << std::endl;
-      std::string s = sstm.str();
-      ofs << s;
-      ofs << "depth_ = " << sdata_.depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
-      ofs << "===================================================================" << std::endl << std::endl;
+      //std::stringstream sstm;
+      //Board::save(scontexts_[ictx].board_, sstm, false);
+      //std::ofstream ofs("D:\\Projects\\git_tests\\temp\\report.txt", std::ios_base::app);
+      //ofs << "PLY: " << ply << std::endl;
+      //std::string s = sstm.str();
+      //ofs << s;
+      //ofs << "depth_ = " << sdata_.depth_ << "; depth = " << depth << "; ply = " << ply << "; alpha = " << alpha << "; betta = " << betta << "; counter = " << counter << std::endl;
+      //ofs << "===================================================================" << std::endl << std::endl;
     }
 }
