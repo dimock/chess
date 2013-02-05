@@ -453,7 +453,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     scontexts_[ictx].board_.makeMove(move);
     sdata_.inc_nc();
 
-    //findSequence(move, ply, depth, counter, alpha, betta);
+    //findSequence(ictx, move, ply, depth, counter, alpha, betta);
 
     UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
@@ -486,8 +486,8 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         if ( !stopped() && score > alpha && R > 0 )
           score = -alphaBetta(ictx, depth2, ply+1, -alpha-1, -alpha, false, null_move);
 
-        if ( !stopped() && score > alpha && score < betta )
-          score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, true, null_move);
+        if ( !stopped() && score > alpha )//&& score < betta )
+          score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv, null_move);
       }
     }
 
