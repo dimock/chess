@@ -207,7 +207,7 @@ const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 //const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
-const ScoreType Evaluator::queenAttackBonus_ = 10;
+const ScoreType Evaluator::queenAttackBonus_ = 15;
 
 #define MAX_PASSED_SCORE 80
 
@@ -220,10 +220,10 @@ const ScoreType Evaluator::passerCandidate_[8] = { 0, 2, 5, 8, 10, 12, 15, 0 };
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-20, -10, 0, 3, 5, 7, 9, 11},
+  {-22, -10, 0, 3, 5, 7, 9, 11},
   {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-10, -5, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-30, -20, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
+  {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -236,7 +236,7 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
-  0, 5, 25, 50, 80, 120, 150, 200
+  0, 5, 25, 60, 80, 120, 150, 200
 };
 
 const ScoreType Evaluator::kingImmobility_[10] = {
