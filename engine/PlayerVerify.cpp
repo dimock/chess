@@ -696,9 +696,7 @@ void Player::findSequence(int ictx, const Move & move, int ply, int depth, int c
   bool identical = false;
   static MOVE sequence[] = {
     {52, 45},
-    {55, 47},
-    {38, 47},
-    {9, 45}
+    {9, 8},
      };
 
     if ( ply < sizeof(sequence)/sizeof(MOVE) && move.from_ == sequence[ply].from_ && move.to_ == sequence[ply].to_ )
@@ -720,7 +718,7 @@ void Player::findSequence(int ictx, const Move & move, int ply, int depth, int c
 
     if ( identical )
     {
-      if ( sdata_.depth_ == 4 && ply == 3 )
+      if ( sdata_.depth_ == 5 && ply == 1 )
       {
         int ttt = 0;
       }
