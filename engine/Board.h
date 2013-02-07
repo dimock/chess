@@ -234,18 +234,23 @@ public:
       return NullMove_PlyReduce-1;
   }
 
-  inline int nullMoveDepth(int depth) const
+  inline int nullMoveDepth(int depth, ScoreType betta) const
   {
-    if ( depth < 4 )
-      return 0;
-    else if ( depth < 5 )
-      return 1;
-    else if ( depth < 6 )
-      return 2;
+    Figure::Color ocolor = Figure::otherColor(color_);
+    ScoreType score = fmgr().weight(color_) - fmgr().weight(ocolor);
+    if ( score < betta + (Figure::figureWeight_[Figure::TypePawn]<<1) )
+    {
+      if ( depth < 4 )
+        return 0;
+      else if ( depth < 5 )
+        return 1;
+      else if ( depth < 6 )
+        return 2;
+    }
 
     int null_depth = depth - nullMoveReduce();
-
-    THROW_IF( null_depth < 0, "null move depth < 0" );
+    if ( null_depth < 0 )
+      null_depth = 0;
     
     return null_depth;
   }

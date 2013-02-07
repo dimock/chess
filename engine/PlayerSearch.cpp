@@ -381,7 +381,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         betta < Figure::MatScore+MaxPly &&
         betta > -Figure::MatScore-MaxPly )
   {
-    int null_depth = scontexts_[ictx].board_.nullMoveDepth(depth);//depth - scontexts_[ictx].board_.nullMoveReduce();//
+    int null_depth = scontexts_[ictx].board_.nullMoveDepth(depth, betta);//depth - scontexts_[ictx].board_.nullMoveReduce();//
 
     scontexts_[ictx].board_.makeNullMove();
 
