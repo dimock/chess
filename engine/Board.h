@@ -236,12 +236,17 @@ public:
 
   inline int nullMoveDepth(int depth) const
   {
+    if ( depth < 4 )
+      return 0;
+    else if ( depth < 5 )
+      return 1;
+    else if ( depth < 6 )
+      return 2;
+
     int null_depth = depth - nullMoveReduce();
-    int null_depth2 = depth / 2;
-    if ( null_depth2 < null_depth )
-      null_depth = null_depth2;
-    if ( null_depth < 1 )
-      null_depth = 1;
+
+    THROW_IF( null_depth < 0, "null move depth < 0" );
+    
     return null_depth;
   }
 
