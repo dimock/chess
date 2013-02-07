@@ -27,6 +27,8 @@ r1bqkr2/pppp1ppp/2n1p3/1Bb1P3/6n1/2N2N2/PPPP1PPP/R1BQ1RK1 w q - 1 7 bm d4; "dimo
 4r3/R3nkpp/p4p2/1p1Np3/4P3/P4PP1/1r5P/3R2K1 w - - 2 32 bm Rc1; "dimock.025"
 1r1r2k1/pppbqppp/2n5/3P4/2R5/P4BP1/PB3P1P/3Q1RK1 b - - 0 17 bm Ne5; "dimock.026"
 r3r1k1/p1p1Bp1p/4b1p1/6Q1/4p3/1P2P3/P1P3PP/qN3RK1 b - - 4 17 bm h6; "dimock.027"
+6k1/1ppr1p1p/p1q3p1/P1Pn2br/3BB3/4PP2/4Q1PP/1R1R2K1 b - - 6 30 bm Rh4; "dimock.028"
+3r2k1/1pp2p1p/p1q3p1/P1Pn2br/3BB3/4PP2/4Q1PP/1R1R2K1 w - - 7 31 bm f4; "dimock.029"
 8/8/p1p5/1p5p/1P5p/8/PPP2K1p/4R1rk w - - 0 1 bm Rf1; id "zugzwang.001";
 1q1k4/2Rr4/8/2Q3K1/8/8/8/8 w - - 0 1 bm Kh6;  id "zugzwang.002";
 7k/5K2/5P1p/3p4/6P1/3p4/8/8 w - - 0 1 bm g5; id "zugzwang.003";
