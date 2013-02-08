@@ -413,7 +413,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
     int delta = (int)alpha - (int)score0;// - (int)Evaluator::positionGain_;
 
-    static const int margin[] = {0, Evaluator::positionGain_, 600, 1000 };
+    static const int margin[] = {0, Evaluator::positionGain_, 450, 800 };
 
     if ( delta > margin[depth] )
       return futilityPruning(ictx, hmove, depth, ply, alpha, betta, score0);
@@ -563,7 +563,7 @@ ScoreType Player::futilityPruning(int ictx, const Move & hmove, int depth, int p
   ScoreType alpha0 = alpha;
   Move best(0);
 
-  FutilityGenerator fg(scontexts_[ictx].board_, hmove, Figure::TypePawn);
+  FutilityGenerator fg(scontexts_[ictx].board_, hmove, Figure::TypeNone);
   if ( fg.singleReply() )
     depth++;
 

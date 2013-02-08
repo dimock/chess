@@ -62,7 +62,7 @@ bool Board::canBeReduced() const
 
   History & hist = MovesGenerator::history(undo.from_, undo.to_);
 
-  return  ((hist.good()<<4) <= hist.bad()) &&
+  return  ((hist.good()<<5) <= hist.bad()) &&
     !(undo.capture_ || undo.new_type_ > 0 || undo.threat_ || undo.castle_ || underCheck());
 }
 
