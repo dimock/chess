@@ -7,13 +7,21 @@
 
 //////////////////////////////////////////////////////////////////////////
 ChecksGenerator::ChecksGenerator(Board & board) :
-  MovesGeneratorBase(board)
+  MovesGeneratorBase(board), hmove_(0)
 {
   moves_[0].clear();
 }
 
 int ChecksGenerator::generate()
 {
+  numOfMoves_ = genChecks();
+  moves_[numOfMoves_].clear();
+  return numOfMoves_;
+}
+
+int ChecksGenerator::generate(const Move & hmove)
+{
+  hmove_ = hmove;
   numOfMoves_ = genChecks();
   moves_[numOfMoves_].clear();
   return numOfMoves_;

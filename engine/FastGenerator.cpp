@@ -186,3 +186,76 @@ Move & TacticalGenerator::next()
 
   return fake_;
 }
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+FutilityGenerator::FutilityGenerator(Board & board, const Move & hmove, Figure::Type thresholdType) :
+  eg_(board), cg_(board), chg_(board), ug_(board), thresholdType_(thresholdType), board_(board),
+  order_(oHash), fake_(0), counter_(0), hmove_(0)
+{
+  if ( board_.underCheck() )
+  {
+    eg_.generate(hmove);
+    order_ = oEscape;
+  }
+}
+
+Move & FutilityGenerator::next()
+{
+  if ( order_ == oHash )
+  {
+    order_ = oGenCaps;
+    if ( hmove_ )
+      return hmove_;
+  }
+
+  if ( order_ == oEscape )
+  {
+    return eg_.escape();
+  }
+
+  if ( order_ == oGenCaps )
+  {
+    cg_.generate(hmove_, thresholdType_);
+    order_ = oCaps;
+  }
+
+  if ( order_ == oCaps )
+  {
+    Move & cap = cg_.capture();
+    if ( cap )
+      return cap;
+
+    order_ = oGenChecks;
+  }
+
+  if ( order_ == oGenChecks )
+  {
+    chg_.generate(hmove_);
+    order_ = oChecks;
+  }
+
+  if ( order_ == oChecks )
+  {
+    Move & move = chg_.check();
+    if ( move )
+      return move;
+
+    order_ = oGenUsual;
+  }
+
+  if ( order_ == oGenUsual && counter_ == 0 )
+  {
+    Move killer(0);
+    ug_.generate(hmove_, killer);
+    order_ = oUsual;
+  }
+
+  if ( order_ == oUsual && counter_ == 0 )
+  {
+    Move & move = ug_.move();
+    return move;
+  }
+
+  return fake_;
+}
