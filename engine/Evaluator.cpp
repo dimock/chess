@@ -97,7 +97,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -8,  -12, -12, -16, -16, -12, -12,  -8,
       -4,  -8,   -8,  -8,  -8,  -8,  -8,  -4,
        5,   5,    0,   0,   0,   0,   5,   5,
-       10,  12,   6,   0,   0,   0,  16,  15
+       10,  12,   6,   0,   0,   0,  16,  14
     },
 
     {}
@@ -177,15 +177,15 @@ const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
-const ScoreType Evaluator::unstoppablePawn_ = 65;
+const ScoreType Evaluator::unstoppablePawn_ = 70;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
 const ScoreType Evaluator::forkBonus_ = 50;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
-const ScoreType Evaluator::pinnedKnight_ = -5;
-const ScoreType Evaluator::pinnedBishop_ = -5;
-const ScoreType Evaluator::pinnedRook_ = -5;
+const ScoreType Evaluator::pinnedKnight_ = 0;//-5;
+const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
+const ScoreType Evaluator::pinnedRook_ = 0;//-5;
 
 // pawns shield
 const ScoreType Evaluator::cf_columnOpened_ = 8;
@@ -207,7 +207,7 @@ const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 //const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
-const ScoreType Evaluator::queenAttackBonus_ = 15;
+const ScoreType Evaluator::queenAttackBonus_ = 20;
 
 #define MAX_PASSED_SCORE 80
 
@@ -220,10 +220,10 @@ const ScoreType Evaluator::passerCandidate_[8] = { 0, 2, 5, 8, 10, 12, 15, 0 };
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-20, -10, 0, 3, 5, 7, 9, 11},
-  {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-10, -5, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
+  {-40, -10, 0, 3, 5, 7, 9, 11},
+  {-35, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-20, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -232,7 +232,7 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {15, 10, 8, 7, 6, 1, 0, 0},
   {13, 11, 8, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
-  {40, 50, 45, 25, 12, 3, 1, 0},
+  {40, 50, 40, 25, 12, 3, 1, 0},
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
@@ -426,7 +426,7 @@ ScoreType Evaluator::evaluate()
   if ( score < alpha_[1] || score > betta_[1] )
     return score;
 
-  score += evaluateImportant();
+  score += evaluateKnightsBishops();
 
   // 3rd level
   if ( score < alpha_[2] || score > betta_[2] )
@@ -466,6 +466,7 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
   BitMask xray_masks[2] = { ~(~mask_diag & mask_all_), ~(~mask_ortho & mask_all_) };
 
   int attacked_fields[64] = {};
+  uint8 attacked_field_types[64] = {};
   BitMask attacked_mask = 0;
   int attackersN = 0;
   uint8 attackerTypes = 0;
@@ -476,7 +477,9 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
   {
     int to = clear_lsb(pw_mask);
     attacked_mask |= set_mask_bit(to);
-    attackerTypes |= (uint8)set_bit(Figure::TypePawn);
+    uint8 a_mask = (uint8)set_bit(Figure::TypePawn);
+    attackerTypes |= a_mask;
+    attacked_field_types[to] |= a_mask;
     attacked_fields[to] = 1;
     attackersN++;
   }
@@ -493,8 +496,10 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
     {
       int to = clear_lsb(oki_attack_mask);
       attacked_mask |= set_mask_bit(to);
-      attackerTypes |= (uint8)set_bit(Figure::TypeKnight);
+      uint8 a_mask = (uint8)set_bit(Figure::TypeKnight);
+      attackerTypes |= a_mask;
       attacked_fields[to]++;
+      attacked_field_types[to] |= a_mask;
       if ( attacked_fields[to] > fieldAttackersN )
         fieldAttackersN = attacked_fields[to];
     }
@@ -549,7 +554,11 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
           if ( attacked_fields[to] > fieldAttackersN )
             fieldAttackersN = attacked_fields[to];
           if ( directAttack )
-            attackerTypes |= (uint8)set_bit(type);
+          {
+            uint8 a_mask = (uint8)set_bit(type);
+            attackerTypes |= a_mask;
+            attacked_field_types[to] |= a_mask;
+          }
         }
       }
 
@@ -570,13 +579,30 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
 
   score += kingAttackBonus_[attackersN & 7];
 
-  if ( attackerTypes & set_bit(Figure::TypeQueen) )
-    score += queenAttackBonus_*(attackersN-1);
+  // queen's attack
+  if ( (attackerTypes & set_bit(Figure::TypeQueen)) && attackersN > 1 )
+  {
+    score += queenAttackBonus_;
+
+    // give additional bonus for double attacked field that isn't protected by pawn
+    BitMask a_mask = attacked_mask;
+    for ( ; a_mask; )
+    {
+      int n = clear_lsb(a_mask);
+      if ( attacked_fields[n] > 1 &&
+          (attacked_field_types[n] & set_bit(Figure::TypeQueen)) &&
+          !(finfo_[ocolor].pw_attack_mask_ & set_mask_bit(n)) )
+      {
+        score += (queenAttackBonus_<<1) * attacked_fields[n];
+        break;
+      }
+    }
+  }
 
   return score;
 }
 
-ScoreType Evaluator::evaluateImportant()
+ScoreType Evaluator::evaluateKnightsBishops()
 {
   ScoreType score = 0;
 
@@ -624,9 +650,9 @@ ScoreType Evaluator::evaluateKnights()
       int movesN = pop_count(kmob_mask);
       finfo_[c].knightMobility_ += mobilityBonus_[Figure::TypeKnight][movesN];
 
-      // give penalty for pinned knight
-      if ( discoveredCheck(from, ocolor, brq_mask, ki_pos, ptAll) )
-        finfo_[c].knightMobility_ += pinnedKnight_;
+      //// give penalty for pinned knight
+      //if ( discoveredCheck(from, ocolor, brq_mask, ki_pos, ptAll) )
+      //  finfo_[c].knightMobility_ += pinnedKnight_;
     }
   }
 
@@ -685,9 +711,9 @@ ScoreType Evaluator::evaluateBishops()
       int movesN = pop_count(bmob_mask);
       finfo_[c].bishopMobility_ += mobilityBonus_[Figure::TypeBishop][movesN];
 
-      // give penalty for pinned bishop
-      if ( discoveredCheck(from, ocolor, rq_mask, ki_pos, ptOrtho) )
-        finfo_[c].bishopMobility_ += pinnedBishop_;
+      //// give penalty for pinned bishop
+      //if ( discoveredCheck(from, ocolor, rq_mask, ki_pos, ptOrtho) )
+      //  finfo_[c].bishopMobility_ += pinnedBishop_;
     }
   }
 
@@ -789,9 +815,9 @@ void Evaluator::evaluateRooks(bool eval_open)
       int movesN = pop_count(rmob_mask);
       finfo_[c].rookMobility_ += mobilityBonus_[Figure::TypeRook][movesN];
 
-      // give penalty for pinned rook
-      if ( discoveredCheck(from, ocolor, q_mask, ki_pos, ptDiag) )
-        finfo_[c].rookMobility_ += pinnedRook_;
+      //// give penalty for pinned rook
+      //if ( discoveredCheck(from, ocolor, q_mask, ki_pos, ptDiag) )
+      //  finfo_[c].rookMobility_ += pinnedRook_;
 
       // rook on open column
       if ( eval_open )
@@ -1316,13 +1342,13 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
         if ( pawn_dist_promo < o_dist_promo )
           *score_eg += unstoppablePawn_;
         else
-          *score_eg += o_dist_promo<<1;
+          *score_eg += o_dist_promo<<2;
 
         // give penalty for long distance to my pawns if opponent doesn't have any
         if ( !opmsk_o )
         {
           int dist_promo = board_->g_distanceCounter->getDistance(finfo_[color].king_pos_, promo_pos);
-          *score_eg -= dist_promo<<1;
+          *score_eg -= dist_promo<<2;
         }
       }
     }

@@ -115,7 +115,7 @@ private:
   ScoreType evaluateForks(Figure::Color color);
 
   /// after lazy eval.
-  ScoreType evaluateImportant();
+  ScoreType evaluateKnightsBishops();
   ScoreType evaluateExpensive(GamePhase phase, int coef_o);
 
   struct FieldsInfo
