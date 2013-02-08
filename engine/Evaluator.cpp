@@ -177,7 +177,7 @@ const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
-const ScoreType Evaluator::unstoppablePawn_ = 60;
+const ScoreType Evaluator::unstoppablePawn_ = 65;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
 const ScoreType Evaluator::forkBonus_ = 50;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
@@ -220,7 +220,7 @@ const ScoreType Evaluator::passerCandidate_[8] = { 0, 2, 5, 8, 10, 12, 15, 0 };
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-22, -10, 0, 3, 5, 7, 9, 11},
+  {-20, -10, 0, 3, 5, 7, 9, 11},
   {-15, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-10, -5, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-35, -25, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14},
@@ -229,10 +229,10 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {10, 10, 8, 7, 6, 1, 0, 0},
-  {10, 10, 8, 7, 5, 3, 1, 0},
-  {15, 12, 8, 7, 5, 3, 1, 0},
-  {40, 40, 35, 25, 12, 3, 1, 0},
+  {15, 10, 8, 7, 6, 1, 0, 0},
+  {13, 11, 8, 7, 5, 3, 1, 0},
+  {20, 18, 13, 9, 7, 3, 1, 0},
+  {40, 50, 45, 25, 12, 3, 1, 0},
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {

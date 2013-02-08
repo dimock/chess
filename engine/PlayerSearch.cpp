@@ -408,15 +408,16 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
        !scontexts_[ictx].board_.isWinnerLoser() &&
         alpha > -Figure::MatScore+MaxPly &&
         alpha < Figure::MatScore-MaxPly &&
-        depth <= 3 && ply > 1 )
+        depth == 1 && ply > 1 )
   {
     ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
-    int delta = (int)alpha - (int)score0;// - (int)Evaluator::positionGain_;
+    int delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
+    if ( delta > 0 )
+      return captures(ictx, depth, ply, alpha, betta, pv, score0);
 
-    static const int margin[] = {0, Evaluator::positionGain_, 450, 800 };
-
-    if ( delta > margin[depth] )
-      return futilityPruning(ictx, hmove, depth, ply, alpha, betta, score0);
+    //static const int margin[] = {0, Evaluator::positionGain_, 450, 800 };
+    //if ( delta > margin[depth] )
+    //  return futilityPruning(ictx, hmove, depth, ply, alpha, betta, score0);
   }
 #endif
 
