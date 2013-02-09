@@ -957,36 +957,47 @@ Evaluator::GamePhase Evaluator::detectPhase(int & coef_o, int & coef_e)
 
 void Evaluator::hashedEvaluation(ScoreType & pwscore, ScoreType & pwscore_eg, ScoreType & score_ps)
 {
+  HEval * heval = 0;
+
+  const uint64 & code = board_->pawnCode();
+  uint32 hkey = (uint32)(code >> 32);
+
   if ( ehash_ )
   {
-    const HEval * heval = ehash_->find(board_->pawnCode());
-    if ( heval )
+    heval = ehash_->get(code);
+
+    if ( heval->hkey_ == hkey && heval->initizalized_ )
     {
-      pwscore = heval->score_;
-      pwscore_eg = heval->score_eg_;
+      pwscore = heval->pwscore_;
+      pwscore_eg = heval->pwscore_eg_;
       score_ps = heval->score_ps_;
+      return;
     }
   }
 
-  if ( pwscore == -ScoreMax || pwscore_eg == -ScoreMax || score_ps == -ScoreMax )
+  ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
+  ScoreType pwscore_b = 0, pwscore_w = 0;
+  ScoreType score_ps_b = 0, score_ps_w = 0;
+
+  pwscore_b = evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
+  pwscore_w = evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
+
+  score_ps_b = evaluatePawnShield(Figure::ColorBlack);
+  score_ps_w = evaluatePawnShield(Figure::ColorWhite);
+
+  pwscore = pwscore_w - pwscore_b;
+  pwscore_eg = pwscore_eg_w - pwscore_eg_b;
+  score_ps = score_ps_w - score_ps_b;
+
+  if ( heval )
   {
-    ScoreType pwscore_eg_b = 0, pwscore_eg_w = 0;
-    ScoreType pwscore_b = 0, pwscore_w = 0;
-    ScoreType score_ps_b = 0, score_ps_w = 0;
-
-    pwscore_b = evaluatePawns(Figure::ColorBlack, &pwscore_eg_b);
-    pwscore_w = evaluatePawns(Figure::ColorWhite, &pwscore_eg_w);
-
-    score_ps_b = evaluatePawnShield(Figure::ColorBlack);
-    score_ps_w = evaluatePawnShield(Figure::ColorWhite);
-
-    pwscore = pwscore_w - pwscore_b;
-    pwscore_eg = pwscore_eg_w - pwscore_eg_b;
-    score_ps = score_ps_w - score_ps_b;
-
-    if ( ehash_ )
-      ehash_->push(board_->pawnCode(), pwscore, pwscore_eg, score_ps);
+    heval->hkey_     = hkey;
+    heval->pwscore_  = pwscore;
+    heval->pwscore_eg_ = pwscore_eg;
+    heval->score_ps_ = score_ps;
+    heval->initizalized_ = 1;
   }
+
 }
 
 ScoreType Evaluator::evaluateFianchetto() const

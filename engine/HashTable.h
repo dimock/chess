@@ -9,10 +9,10 @@
 
 __declspec (align(16)) struct HItem
 {
-  HItem() : hcode_(0), score_(0), mask_(0), movesCount_(0)
+  HItem() : hkey_(0), score_(0), mask_(0), movesCount_(0)
   {}
 
-  operator bool () const { return hcode_ != 0; }
+  operator bool () const { return hkey_ != 0; }
 
   void clear()
   {
@@ -21,20 +21,19 @@ __declspec (align(16)) struct HItem
     score_ = 0;
   }
 
-  uint64     hcode_;
+  uint32     hkey_;
   ScoreType  score_;
 
   union {
 
   struct
   {
-  uint16     depth_  : 6,
+  uint8      depth_  : 5,
              flag_   : 2,
-             threat_ : 1,
-             mode_   : 2;
+             threat_ : 1;
   };
 
-  uint16     mask_;
+  uint8      mask_;
   };
 
   uint8      movesCount_;
@@ -47,38 +46,27 @@ struct HBucket
 {
   static const int BucketSize = 4;
 
-  const HItem * find(const uint64 & hcode) const
+  const HItem * find(const uint32 & hkey) const
   {
     for (int i = 0; i < BucketSize; ++i)
     {
-      if ( items_[i].hcode_ == hcode )
+      if ( items_[i].hkey_ == hkey )
         return items_ + i;
     }
     return 0;
   }
 
-  HItem * get(const uint64 & hcode)
+  HItem * get(const uint32 & hkey)
   {
-    uint8 movesCount = +std::numeric_limits<uint8>::max();
     HItem * hfar = 0;
-    HItem * hempty = 0;
     for (int i = 0; i < BucketSize; ++i)
     {
-      if ( items_[i].hcode_ == hcode )
+      if ( !items_[i].hkey_ || items_[i].hkey_ == hkey )
         return items_ + i;
-
-      if ( !items_[i].hcode_ && !hempty )
-        hempty = items_ + i;
       
-      if ( !hfar || (int)items_[i].movesCount_ < movesCount )
-      {
-        movesCount = items_[i].movesCount_;
+      if ( !hfar || (int)items_[i].movesCount_ < hfar->movesCount_ )
         hfar = items_ + i;
-      }
     }
-
-    if ( hempty )
-      return hempty;
 
     return hfar;
   }
@@ -102,29 +90,23 @@ public:
     delete [] buffer_;
   }
 
-  void clear()
-  {
-    if ( size_ > 0 )
-      resize(size_);
-  }
-
-  void resize(int size)
+  void resize(size_t sz)
   {
     delete [] buffer_;
     buffer_ = 0;
     szMask_ = 0;
-    size_ = size;
+    size_ = sz;
     movesCount_ = 0;
 
-    THROW_IF((unsigned)size > 24, "hash table size if too large");
+    THROW_IF(sz > 24, "hash table size if too large");
 
-    buffer_ = new ITEM[((size_t)1) << size_];
-    szMask_ = (((size_t)1) << size_) - 1;
+    buffer_ = new ITEM[size()];
+    szMask_ = size() - 1;
   }
 
-  int size() const
+  size_t size() const
   {
-    return (((size_t)1) << size_) - 1;
+    return (((size_t)1) << size_);
   }
 
   void inc()
@@ -137,13 +119,13 @@ public:
     FILE * f = fopen(fname, "rb");
     if ( !f )
       return false;
-    int n = 0;
+    size_t n = 0;
     if ( fread(&size_, sizeof(size_), 1, f) == 1 && size_ > 0 && size_ <= 24 )
     {
       delete [] buffer_;
-      buffer_ = new ITEM[((size_t)1) << size_];
-      szMask_ = (((size_t)1) << size_) - 1;
-      n = (int)fread(buffer_, sizeof(ITEM), size(), f);
+      buffer_ = new ITEM[size()];
+      szMask_ = size() - 1;
+      n = fread(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);
     return n == size();
@@ -154,10 +136,10 @@ public:
     FILE * f = fopen(fname, "wb");
     if ( !f )
       return false;
-    int n = 0;
+    size_t n = 0;
     if ( fwrite(&size_, sizeof(size_), 1, f) == 1 )
     {
-      n = (int)fwrite(buffer_, sizeof(ITEM), size(), f);
+      n = fwrite(buffer_, sizeof(ITEM), size(), f);
     }
     fclose(f);
     return n == size();
@@ -176,8 +158,8 @@ protected:
   }
 
   ITEM * buffer_;
-  int size_;
-  uint32 szMask_;
+  size_t size_;
+  size_t szMask_;
   uint8 movesCount_;
 };
 
@@ -186,20 +168,19 @@ class GHashTable : public HashTable<HBucket>
 public:
 
   enum Flag { NoFlag, Alpha, AlphaBetta, Betta };
-  enum Mode { NoMode, General, Eval };
 
   GHashTable(int size) : HashTable<HBucket>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
+  void push(const uint64 & code, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
   {
-    HBucket & hb = (*this)[hcode];
-    HItem * hitem = hb.get(hcode);
+    HBucket & hb = (*this)[code];
+    uint32 hkey = (uint32)(code >> 32);
+    HItem * hitem = hb.get(hkey);
     if( !hitem )
       return;
 
-    if ( (hitem->mode_ == General) &&
-         (hitem->hcode_ == hcode) &&
+    if ( (hitem->hkey_ == hkey) &&
           ( (hitem->depth_ > depth) || 
             (depth == hitem->depth_ && Alpha == flag && hitem->flag_ > Alpha) ||
             (depth == hitem->depth_ && Alpha == flag && hitem->flag_ == Alpha && score >= hitem->score_) ) )
@@ -209,35 +190,42 @@ public:
 
     THROW_IF(score > 32760, "wrong value to hash");
 
-    if ( hitem->hcode_ && hitem->hcode_ != hcode )
-      hitem->clear();
-
-    hitem->hcode_ = hcode;
-    hitem->score_ = score;
-    hitem->depth_ = depth;
-    hitem->flag_  = flag;
-    hitem->mode_  = General;
+    hitem->hkey_   = hkey;
+    hitem->score_  = score;
+    hitem->depth_  = depth;
+    hitem->flag_   = flag;
     hitem->threat_ = threat;
     hitem->movesCount_ = movesCount_;
-
-    if ( move )
-      hitem->move_ = move;
+    hitem->move_ = move;
   }
 
-  const HItem * find(const uint64 & hcode) const
+  const HItem * find(const uint64 & code) const
   {
-    const HBucket & hb = this->operator [] (hcode);
-    const HItem * hitem = hb.find(hcode);
+    const HBucket & hb = this->operator [] (code);
+    uint32 hkey = (uint32)(code >> 32);
+    const HItem * hitem = hb.find(hkey);
     return hitem;
   }
 };
 
-__declspec (align(16)) struct HEval
+__declspec (align(8)) struct HEval
 {
-  HEval() : hcode_(0), score_(-ScoreMax), score_eg_(-ScoreMax), score_ps_(-ScoreMax) {}
+  HEval() : hkey_(0), mask_(0) {}
 
-  uint64     hcode_;
-  ScoreType  score_, score_eg_, score_ps_;
+  uint32     hkey_;
+
+  union
+  {
+  struct
+  {
+    int32  pwscore_  : 10,
+           pwscore_eg_ : 10,
+           score_ps_ : 10,
+           initizalized_ : 1;
+  };
+
+  uint32    mask_;
+  };
 };
 
 class EHashTable : public HashTable<HEval>
@@ -247,20 +235,9 @@ public:
   EHashTable(int size) : HashTable<HEval>(size)
   {}
 
-  void push(const uint64 & hcode, ScoreType score, ScoreType score_eg, ScoreType score_ps)
+  HEval * get(const uint64 & code)
   {
-    HEval & heval = this->operator [] (hcode);
-    heval.hcode_ = hcode;
-    heval.score_ = score;
-    heval.score_eg_ = score_eg;
-    heval.score_ps_ = score_ps;
-  }
-
-  const HEval * find(const uint64 & hcode)
-  {
-    const HEval & heval = this->operator [] (hcode);
-    if ( heval.hcode_ == hcode )
-      return &heval;
-    return 0;
+    HEval & heval = operator [] (code);
+    return &heval;
   }
 };

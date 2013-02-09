@@ -58,6 +58,7 @@ bool ChessPosition::initialize(int depthMax)
     return false;
 
   player_.setMaxDepth(depthMax);
+  player_.setMemory(128);
 
   return fromFEN(0);
 }
