@@ -220,8 +220,8 @@ const ScoreType Evaluator::passerCandidate_[8] = { 0, 2, 5, 8, 10, 12, 15, 0 };
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-40, -10, 0, 3, 5, 7, 9, 11},
-  {-35, -8, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-40, -15, 0, 3, 5, 7, 9, 11},
+  {-35, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-20, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
@@ -232,7 +232,7 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {15, 10, 8, 7, 6, 1, 0, 0},
   {13, 11, 8, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
-  {40, 50, 40, 25, 12, 3, 1, 0},
+  {40, 50, 45, 25, 12, 3, 1, 0},
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
@@ -416,11 +416,11 @@ ScoreType Evaluator::evaluate()
 
   /// use lazy evaluation
   
-  /// 1st level
-  if ( score < alpha_[0] || score > betta_[0] )
-    return score;
+  ///// 1st level
+  //if ( score < alpha_[0] || score > betta_[0] )
+  //  return score;
 
-  score += evaluateKingPressure(phase, coef_o);
+  //score += evaluateKingPressure(phase, coef_o);
 
   // 2nd level
   if ( score < alpha_[1] || score > betta_[1] )
