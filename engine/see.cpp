@@ -34,6 +34,7 @@ int Board::see(const Move & move) const
   const Field & tfield = getField(move.to_);
 
   int score_gain = 0;
+  bool promotion = ((move.to_ >> 3) == 0 || (move.to_ >> 3) == 7) && (ffield.type() == Figure::TypePawn);
 
   if ( tfield.type() )
   {
@@ -47,7 +48,11 @@ int Board::see(const Move & move) const
     THROW_IF(getField(enpassantPos()).type() != Figure::TypePawn || getField(enpassantPos()).color() == color_, "no en-passant pawn");
     return 0;
   }
-
+  // promotion with capture
+  else if ( promotion && tfield )
+  {
+    return Figure::figureWeight_[tfield.type()]-Figure::figureWeight_[Figure::TypePawn];
+  }
 
   Figure::Color color = ffield.color();
   Figure::Color ocolor = Figure::otherColor(color);
@@ -64,16 +69,35 @@ int Board::see(const Move & move) const
   int figsN[2] = {0, 0}; 
   bool king_found[2] = { false, false };
   uint64 brq_masks[2] = {0ULL, 0ULL};
-  int ki_pos[2] = { -1, -1 };
+  int ki_pos[2] = { kingPos(Figure::ColorBlack), kingPos(Figure::ColorWhite) };
 
   // push 1st move
   attackers[color][figsN[color]++] = see_pack_tp(ffield.type(), move.from_);
 
-  for (int c = 0; c < 2; ++c)
+  // prepare mask of all figures 
+  Figure::Color col = color;
+  uint64 all_mask_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
+
+  {
+    BitMask to_mask_inv = ~set_mask_bit(move.to_);
+    brq_masks[0] = fmgr_.bishop_mask(Figure::ColorBlack) | fmgr_.rook_mask(Figure::ColorBlack) | fmgr_.queen_mask(Figure::ColorBlack);
+    brq_masks[0] &= to_mask_inv;
+
+    brq_masks[1] = fmgr_.bishop_mask(Figure::ColorWhite) | fmgr_.rook_mask(Figure::ColorWhite) | fmgr_.queen_mask(Figure::ColorWhite);
+    brq_masks[1] &= to_mask_inv;
+  }
+
+
+  // our move is discovered check
+  if ( see_check(ocolor, move.from_, ki_pos[ocolor], all_mask_inv, brq_masks[color]) )
+    return fscore;
+
+  BitMask mask_all_inv_express = all_mask_inv | set_mask_bit(move.from_);
+
+  int  c = ocolor;
+  for (int i = 0; i < 2; ++i, c = (c+1) & 1 )
   {
     int & num = figsN[c];
-    brq_masks[c] = fmgr_.bishop_mask((Figure::Color)c) | fmgr_.rook_mask((Figure::Color)c) | fmgr_.queen_mask((Figure::Color)c);
-    brq_masks[c] &= ~set_mask_bit(move.to_);
 
     // pawns
     uint64 pmask = fmgr_.pawn_mask_o((Figure::Color)c) & g_movesTable->pawnCaps_o(Figure::otherColor((Figure::Color)c), move.to_);
@@ -81,7 +105,20 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(pmask);
       if ( n != move.from_ )
+      {
         attackers[c][num++] = see_pack_tp(Figure::TypePawn, n);
+
+        // try 1st opponent's capture
+        // if it's winning we don't need to continue, because we definitely loose 
+        if ( c == ocolor && !promotion && ffield.type() > Figure::TypePawn )
+        {
+          ScoreType gain = fscore - Figure::figureWeight_[ffield.type()] + Figure::figureWeight_[Figure::TypePawn];
+          
+          // we loose and opponent's move valid
+          if ( gain < 0 && !see_check(ocolor, n, ki_pos[ocolor], mask_all_inv_express, brq_masks[color]) )
+            return gain;
+        }
+      }
     }
 
     // knights
@@ -90,7 +127,20 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(nmask);
       if ( n != move.from_ )
+      {
         attackers[c][num++] = see_pack_tp(Figure::TypeKnight, n);
+
+        // try 1st opponent's capture
+        // if it's winning we don't need to continue, because we definitely loose 
+        if ( c == ocolor && !promotion && ffield.type() > Figure::TypeBishop )
+        {
+          ScoreType gain = fscore - Figure::figureWeight_[ffield.type()] + Figure::figureWeight_[Figure::TypeKnight];
+
+          // we loose and opponent's move valid
+          if ( gain < 0 && !see_check(ocolor, n, ki_pos[ocolor], mask_all_inv_express, brq_masks[color]) )
+            return gain;
+        }
+      }
     }
 
     // bishops
@@ -99,7 +149,23 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(bmask);
       if ( n != move.from_ )
+      {
         attackers[c][num++] = see_pack_tp(Figure::TypeBishop, n);
+
+        // try 1st opponent's capture
+        // if it's winning we don't need to continue, because we definitely loose 
+        if ( c == ocolor && !promotion && ffield.type() > Figure::TypeBishop )
+        {
+          ScoreType gain = fscore - Figure::figureWeight_[ffield.type()] + Figure::figureWeight_[Figure::TypeBishop];
+
+          // we loose and opponent's move valid
+          if ( gain < 0 && !is_something_between(n, move.to_, all_mask_inv) &&
+              !see_check(ocolor, n, ki_pos[ocolor], mask_all_inv_express, brq_masks[color]) )
+          {
+            return gain;
+          }
+        }
+      }
     }
 
     // rooks
@@ -108,7 +174,23 @@ int Board::see(const Move & move) const
     {
       int n = clear_lsb(rmask);
       if ( n != move.from_ )
+      {
         attackers[c][num++] = see_pack_tp(Figure::TypeRook, n);
+
+        // try 1st opponent's capture
+        // if it's winning we don't need to continue, because we definitely loose 
+        if ( c == ocolor && !promotion && ffield.type() > Figure::TypeRook )
+        {
+          ScoreType gain = fscore - Figure::figureWeight_[ffield.type()] + Figure::figureWeight_[Figure::TypeRook];
+
+          // we loose and opponent's move valid
+          if ( gain < 0 && !is_something_between(n, move.to_, all_mask_inv) &&
+              !see_check(ocolor, n, ki_pos[ocolor], mask_all_inv_express, brq_masks[color]) )
+          {
+            return gain;
+          }
+        }
+      }
     }
 
     // queens
@@ -124,14 +206,10 @@ int Board::see(const Move & move) const
     BitMask kmask = fmgr_.king_mask((Figure::Color)c) & g_movesTable->caps(Figure::TypeKing, move.to_);
     if ( kmask )
     {
-      int n = find_lsb(kmask);
-
       // save kings positions
-      ki_pos[c] = n;
-
-      if ( n != move.from_ )
+      if ( ki_pos[c] != move.from_ )
       {
-        attackers[c][num++] = see_pack_tp(Figure::TypeKing, n);
+        attackers[c][num++] = see_pack_tp(Figure::TypeKing, ki_pos[c]);
         king_found[c] = true;
       }
       else
@@ -139,11 +217,6 @@ int Board::see(const Move & move) const
         // if king's movement is 1st its is last. we can't make recapture after it
         num = 1;
       }
-    }
-    else // no king's attack found
-    {
-      // save kings positions
-      ki_pos[c] = kingPos((Figure::Color)c);
     }
 
     attackers[c][num] = see_tp_endl;
@@ -161,10 +234,6 @@ int Board::see(const Move & move) const
     return score_gain;
 
   // starting calculation
-  Figure::Color col = color;
-  uint64 all_mask_inv = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));
-  bool promotion = (move.to_ >> 3) == 0 || (move.to_ >> 3) == 7;
-
   for ( ;; )
   {
     // find attacker with minimal value
@@ -271,10 +340,9 @@ int Board::see(const Move & move) const
     if ( score_gain > 0 && col != color || score_gain < 0 && col == color )
       break;
 
-    // if we give check we don't need to continue
+    // if we discovers check we don't need to continue
     Figure::Color ki_col = Figure::otherColor(col);
-    bool give_check = see_check(ki_col, pos, ki_pos[ki_col], all_mask_inv, brq_masks[col]);
-    if ( give_check )
+    if ( pos != move.from_ && see_check(ki_col, pos, ki_pos[ki_col], all_mask_inv, brq_masks[col]) )
       break;
 
     // remove from (inverted) mask
