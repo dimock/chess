@@ -203,11 +203,11 @@ const ScoreType Evaluator::ah_columnCracked_ = 3;
 // pressure to king by opponents pawn
 const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
-// pressure to king by opponents bishop
-//const ScoreType Evaluator::kingbishopPressure_ = 8;
+//pressure to king by opponents bishop
+const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
-const ScoreType Evaluator::queenAttackBonus_ = 20;
+const ScoreType Evaluator::queenAttackBonus_ = 15;
 
 #define MAX_PASSED_SCORE 80
 
@@ -229,10 +229,10 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {15, 10, 8, 7, 6, 1, 0, 0},
-  {13, 11, 8, 7, 5, 3, 1, 0},
+  {15, 12, 10, 7, 6, 1, 0, 0},
+  {15, 12, 10, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
-  {40, 50, 45, 25, 12, 3, 1, 0},
+  {40, 55, 45, 25, 12, 3, 1, 0},
 };
 
 const ScoreType Evaluator::kingAttackBonus_[8] = {
@@ -1154,6 +1154,19 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
       score -= kingPenalties[1][i]; // semi-opened (no pawns on 1st & 2nd lines after king)
   }
 
+  // color, castle type
+  static const BitMask opponent_pressure_masks[2][2] = {
+    {set_mask_bit(F6)|set_mask_bit(G6)|set_mask_bit(H6), set_mask_bit(A6)|set_mask_bit(B6)|set_mask_bit(C6)},
+    {set_mask_bit(F3)|set_mask_bit(G3)|set_mask_bit(H3), set_mask_bit(A3)|set_mask_bit(B3)|set_mask_bit(C3)}
+  };
+
+  if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
+  {
+    // opponent pawns pressure
+    if ( opponent_pressure_masks[color][ctype] & opw_mask )
+      score -= opponentPawnsToKing_;
+  }
+
   return score;
 }
 
@@ -1259,20 +1272,28 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
     }
   }
 
-  //if ( ctype < 0 )
-  //  return score;
+  if ( ctype < 0 )
+    return score;
 
-  //const BitMask & obishop_mask = fmgr.bishop_mask(ocolor);
+  const BitMask & obishop_mask = fmgr.bishop_mask(ocolor);
+  const BitMask & oqueen_mask  = fmgr.queen_mask(ocolor);
 
-  //// color, castle type
-  //static const BitMask opponent_pressure_masks[2][2] = {
-  //  {set_mask_bit(F6)|set_mask_bit(H6), set_mask_bit(C6)|set_mask_bit(A6)},
-  //  {set_mask_bit(F3)|set_mask_bit(H3), set_mask_bit(C3)|set_mask_bit(A3)}
-  //};
+  // color, castle type
+  static const BitMask opponent_pressure_masks[2][2] = {
+    {set_mask_bit(F6)|set_mask_bit(H6), set_mask_bit(C6)|set_mask_bit(A6)},
+    {set_mask_bit(F3)|set_mask_bit(H3), set_mask_bit(C3)|set_mask_bit(A3)}
+  };
 
-  //// opponent bishop pressure
-  //if ( opponent_pressure_masks[color][ctype] & obishop_mask )
-  //  score -= kingbishopPressure_;
+  if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
+  {
+    // opponent bishop pressure
+    if ( opponent_pressure_masks[color][ctype] & obishop_mask )
+      score -= kingbishopPressure_;
+
+    // opponent bishop pressure
+    if ( opponent_pressure_masks[color][ctype] & oqueen_mask )
+      score -= queenAttackBonus_;
+  }
 
   return score;
 }
