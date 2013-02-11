@@ -436,6 +436,10 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
   bool check_escape = scontexts_[ictx].board_.underCheck();
 
+  int above_alpha_count = 0;
+  bool best_was_ext = false;
+  Move above_alpha_move(0);
+
   for ( ; alpha < betta && !checkForStop(); )
   {
     Move & move = fg.move();
@@ -459,8 +463,9 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
     UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
+    int depth1 = nextDepth(ictx, depth, move, pv);
+
     {
-      int depth1 = nextDepth(ictx, depth, move, pv);
 
       if ( !counter )
         score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv);
@@ -496,15 +501,25 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
     scontexts_[ictx].plystack_[ply].setKiller(move);
 
-    if ( !stopped() && score > scoreBest )
+    if ( !stopped() )
     {
-      best = move;
-      scoreBest = score;
-      if ( score > alpha )
+      if ( pv && score > alpha0 )
       {
-        alpha = score;
-        if ( pv )
-          assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
+        above_alpha_count++;
+        above_alpha_move = move;
+        best_was_ext = depth1 >= depth;
+      }
+
+      if ( score > scoreBest )
+      {
+        best = move;
+        scoreBest = score;
+        if ( score > alpha )
+        {
+          alpha = score;
+          if ( pv )
+            assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
+        }
       }
     }
 
@@ -525,6 +540,31 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       scoreBest += ply;
   }
 
+#ifdef SINGULAR_EXT
+  if ( above_alpha_move && above_alpha_count == 1 && !fg.singleReply() && !best_was_ext )
+  {
+    THROW_IF( above_alpha_move != best, "best move in singular extension is wrong" );
+
+    scontexts_[ictx].board_.makeMove(above_alpha_move);
+    sdata_.inc_nc();
+
+    alpha = alpha0;
+    ScoreType score = -alphaBetta(ictx, depth, ply+1, -betta, -alpha, pv);
+
+    scontexts_[ictx].board_.unmakeMove();
+
+    if ( !stopped() )
+    {
+      best = above_alpha_move;
+      scoreBest = score;
+      if ( score > alpha )
+      {
+        alpha = score;
+        assemblePV(ictx, best, scontexts_[ictx].board_.underCheck(), ply);
+      }
+    }
+  }
+#endif
 
   if ( best )
   {

@@ -63,6 +63,7 @@ namespace nst
 #define USE_NULL_MOVE
 #define USE_LMR
 #define VERIFY_LMR
+#define SINGULAR_EXT
 
 //#define VERIFY_ESCAPE_GENERATOR
 //#define VERIFY_CHECKS_GENERATOR
