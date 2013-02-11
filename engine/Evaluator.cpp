@@ -1125,7 +1125,6 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
 
   int y = ki_pos.y();
   int dy = delta_y[color];
-  //int pw_y[3] = { y, y+dy, y+dy+dy };
   int pw_x[2][3] = { {5, 6, 7}, {2, 1, 0} };
 
   // first 2 lines empty, full line empty
@@ -1250,11 +1249,11 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
   Index ki_pos(finfo_[color].king_pos_);
 
   static const BitMask fake_castle_rook[2][3] = {
-    { set_mask_bit(G8)|set_mask_bit(H8) | set_mask_bit(G7)|set_mask_bit(H7),
-      set_mask_bit(A8)|set_mask_bit(B8)|set_mask_bit(C8) | set_mask_bit(A7)|set_mask_bit(B7)|set_mask_bit(C7)},
+    { set_mask_bit(G8)|set_mask_bit(H8)|set_mask_bit(G7)|set_mask_bit(H7),
+      set_mask_bit(A8)|set_mask_bit(B8)|set_mask_bit(C8)|set_mask_bit(A7)|set_mask_bit(B7)|set_mask_bit(C7)},
 
-    { set_mask_bit(G1)|set_mask_bit(H1) | set_mask_bit(G2)|set_mask_bit(H2),
-      set_mask_bit(A1)|set_mask_bit(B1)|set_mask_bit(C1) | set_mask_bit(A2)|set_mask_bit(B2)|set_mask_bit(C2)} };
+    { set_mask_bit(G1)|set_mask_bit(H1)|set_mask_bit(G2)|set_mask_bit(H2),
+      set_mask_bit(A1)|set_mask_bit(B1)|set_mask_bit(C1)|set_mask_bit(A2)|set_mask_bit(B2)|set_mask_bit(C2)} };
 
   int ctype = getCastleType(color);
   if ( ctype < 0 && !board_->castling(color) )

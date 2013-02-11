@@ -21,19 +21,19 @@ __declspec (align(16)) struct HItem
     score_ = 0;
   }
 
-  uint32     hkey_;
+  uint64     hkey_;
   ScoreType  score_;
 
   union {
 
   struct
   {
-  uint8      depth_  : 5,
+  uint16     depth_  : 6,
              flag_   : 2,
              threat_ : 1;
   };
 
-  uint8      mask_;
+  uint16     mask_;
   };
 
   uint8      movesCount_;
@@ -46,7 +46,7 @@ struct HBucket
 {
   static const int BucketSize = 4;
 
-  const HItem * find(const uint32 & hkey) const
+  const HItem * find(const uint64 & hkey) const
   {
     for (int i = 0; i < BucketSize; ++i)
     {
@@ -56,7 +56,7 @@ struct HBucket
     return 0;
   }
 
-  HItem * get(const uint32 & hkey)
+  HItem * get(const uint64 & hkey)
   {
     HItem * hfar = 0;
     for (int i = 0; i < BucketSize; ++i)
@@ -172,10 +172,9 @@ public:
   GHashTable(int size) : HashTable<HBucket>(size)
   {}
 
-  void push(const uint64 & code, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
+  void push(const uint64 & hkey, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
   {
-    HBucket & hb = (*this)[code];
-    uint32 hkey = (uint32)(code >> 32);
+    HBucket & hb = (*this)[hkey];
     HItem * hitem = hb.get(hkey);
     if( !hitem )
       return;
@@ -199,10 +198,9 @@ public:
     hitem->move_ = move;
   }
 
-  const HItem * find(const uint64 & code) const
+  const HItem * find(const uint64 & hkey) const
   {
-    const HBucket & hb = this->operator [] (code);
-    uint32 hkey = (uint32)(code >> 32);
+    const HBucket & hb = this->operator [] (hkey);
     const HItem * hitem = hb.find(hkey);
     return hitem;
   }

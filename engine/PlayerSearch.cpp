@@ -723,7 +723,7 @@ GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, 
   if ( !hitem )
     return GHashTable::NoFlag;
 
-  THROW_IF( hitem->hkey_ != (uint32)(scontexts_[ictx].board_.hashCode() >> 32), "invalid hash item found" );
+  THROW_IF( hitem->hkey_ != scontexts_[ictx].board_.hashCode(), "invalid hash item found" );
 
   scontexts_[ictx].board_.unpackMove(hitem->move_, hmove);
 
