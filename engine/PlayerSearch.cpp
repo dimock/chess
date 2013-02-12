@@ -437,13 +437,13 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   bool check_escape = scontexts_[ictx].board_.underCheck();
 
 #ifdef USE_MULTICUT
-  if ( !pv && depth >= 5 && alpha > -Figure::MatScore+MaxPly && /*betta < Figure::MatScore-MaxPly && */!check_escape )
+  if ( !pv && depth >= MultiCut_DepthStart && alpha > -Figure::MatScore+MaxPly && !check_escape )
   {
     int count = 0;
     int cutN = 0;
     Move moveCut(0);
     ScoreType scoreCut = -ScoreMax;
-    for ( ; alpha < betta && !checkForStop() && count < 10 && cutN < 3; )
+    for ( ; alpha < betta && !checkForStop() && count < MultiCut_MovesMax && cutN < MultiCut_MovesCut; )
     {
       Move & move = fg.move();
       if ( !move )
@@ -455,7 +455,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       int depth1 = nextDepth(ictx, depth, move, pv);
       ScoreType score = -ScoreMax;
 
-      int R = count ? 3 : 0;
+      int R = count ? MultiCut_DepthReduce : 0;
 
       scontexts_[ictx].board_.makeMove(move);
       sdata_.inc_nc();
@@ -493,7 +493,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       count++;
     }
 
-    if ( cutN >= 3 )
+    if ( cutN >= MultiCut_MovesCut )
     {
       THROW_IF( scoreCut < betta, "scoreCut < betta" );
 
@@ -508,13 +508,17 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
   int above_alpha_count = 0;
   bool best_was_ext = false;
+  bool all_moves_iterated = false;
   Move above_alpha_move(0);
 
   for ( ; alpha < betta && !checkForStop(); )
   {
     Move & move = fg.move();
     if ( !move )
+    {
+      all_moves_iterated = true;
       break;
+    }
 
     if ( !scontexts_[ictx].board_.validateMove(move) )
       continue;
@@ -618,7 +622,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   }
 
 #ifdef SINGULAR_EXT
-  if ( above_alpha_move && above_alpha_count == 1 && !fg.singleReply() && !best_was_ext )
+  if ( above_alpha_move && above_alpha_count == 1 && !fg.singleReply() && !best_was_ext && all_moves_iterated )
   {
     THROW_IF( above_alpha_move != best, "best move in singular extension is wrong" );
 
