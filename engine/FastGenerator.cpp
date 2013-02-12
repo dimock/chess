@@ -58,7 +58,7 @@ Move & FastGenerator::move()
     order_ = oGenCaps;
     if ( hmove_ )
     {
-      hmove_.see_good_ = (board_.see(hmove_) >= 0);
+      hmove_.see_good_ = hmove_.capture_ || hmove_.new_type_ > 0;//(board_.see(hmove_) >= 0);
       return hmove_;
     }
   }
@@ -97,14 +97,14 @@ Move & FastGenerator::move()
         move->seen_ = 1;
       }
 
-      move->alreadyDone_ = 1;
-
       if ( !move->see_good_ )
       {
         weak_[weakN_++] = *move;
+        move->alreadyDone_ = 1;
         continue;
       }
 
+      move->alreadyDone_ = 1;
       return *move;
     }
 

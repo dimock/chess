@@ -436,11 +436,13 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
   bool check_escape = scontexts_[ictx].board_.underCheck();
 
-#ifdef USE_MULTICAT
+#ifdef USE_MULTICUT
   if ( !pv && depth >= 5 && alpha > -Figure::MatScore+MaxPly && /*betta < Figure::MatScore-MaxPly && */!check_escape )
   {
     int count = 0;
     int cutN = 0;
+    Move moveCut(0);
+    ScoreType scoreCut = -ScoreMax;
     for ( ; alpha < betta && !checkForStop() && count < 10 && cutN < 3; )
     {
       Move & move = fg.move();
@@ -451,25 +453,54 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         continue;
 
       int depth1 = nextDepth(ictx, depth, move, pv);
+      ScoreType score = -ScoreMax;
+
+      int R = count ? 3 : 0;
 
       scontexts_[ictx].board_.makeMove(move);
       sdata_.inc_nc();
 
-      ScoreType score = -alphaBetta(ictx, depth1-3, ply+1, -betta, -alpha, false);
-
-      //if ( !stopped() && score > alpha && score < betta )
-      //  score = -alphaBetta(ictx, depth1-2, ply+1, -betta, -alpha, false);
+      score = -alphaBetta(ictx, depth1-R, ply+1, -betta, -alpha, false);
 
       if ( !stopped() && score >= betta )
         cutN++;
 
       scontexts_[ictx].board_.unmakeMove();
 
+      if ( !stopped() )
+      {
+        if ( score > scoreCut )
+        {
+          scoreCut = score;
+          moveCut = move;
+        }
+
+        if ( !count )
+        {
+          scoreBest = score;
+          best = move;
+          if ( score > alpha )
+            alpha = score;
+
+          if ( score >= betta )
+          {
+            counter = 1;
+            break;
+          }
+        }
+      }
+
       count++;
     }
 
     if ( cutN >= 3 )
-      return betta;
+    {
+      THROW_IF( scoreCut < betta, "scoreCut < betta" );
+
+      scoreBest = alpha = scoreCut;
+      counter = count;
+      best = moveCut;
+    }
 
     fg.restart();
   }
@@ -507,7 +538,14 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     {
 
       if ( !counter )
-        score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv);
+      {
+#ifdef USE_MULTICUT
+        if ( scoreBest != -ScoreMax )
+          score = scoreBest;
+        else
+#endif
+          score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv);
+      }
       else
       {
         int depth2 = nextDepth(ictx, depth, move, false);
@@ -550,16 +588,16 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       }
 
       if ( score > scoreBest )
-    {
-      best = move;
-      scoreBest = score;
-      if ( score > alpha )
       {
-        alpha = score;
-        if ( pv )
-          assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
+        best = move;
+        scoreBest = score;
+        if ( score > alpha )
+        {
+          alpha = score;
+          if ( pv )
+            assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
+        }
       }
-    }
     }
 
     // should be increased here to consider invalid moves!!!
