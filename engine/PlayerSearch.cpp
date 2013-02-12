@@ -391,7 +391,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
-      depth = null_depth;
+      depth = null_depth;//scontexts_[ictx].board_.nullMoveDepthVerify(depth);
       //depth -= scontexts_[ictx].board_.nullMoveReduce();
       if ( depth <= 0 )
         return captures(ictx, depth, ply, alpha, betta, pv);
