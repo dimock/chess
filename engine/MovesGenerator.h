@@ -283,6 +283,8 @@ public:
   /// returns number of moves found
   int generate(const Move & hmove, const Move & killer);
 
+  void restart();
+
   Move & move()
   {
     for ( ;; )
@@ -339,6 +341,8 @@ public:
   CapsGenerator(const Move & hcap, Board & );
 
   int generate(const Move & hcap, Figure::Type thresholdType);
+
+  void restart();
 
   inline Move & capture()
   {
@@ -431,6 +435,8 @@ public:
   EscapeGenerator(const Move & hmove, Board & );
 
   void generate(const Move & hmove);
+
+  void restart();
 
   int count() const
   {
@@ -573,6 +579,8 @@ public:
   {
     return board_.underCheck() && eg_.count() == 1;
   }
+
+  void restart();
 
 private:
 

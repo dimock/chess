@@ -36,11 +36,23 @@ CapsGenerator::CapsGenerator(Board & board) :
   oking_pos_ = board_.kingPos(ocolor);
 }
 
+void CapsGenerator::restart()
+{
+  if ( !numOfMoves_ )
+    return;
+
+  for (int i = 0; i < numOfMoves_; ++i)
+    moves_[i].alreadyDone_ = 0;
+}
+
 int CapsGenerator::generate(const Move & hcap, Figure::Type thresholdType)
 {
   counter_ = 0;
   hcap_ = hcap;
   thresholdType_ = thresholdType;
+
+  if ( numOfMoves_ > 0 ) // already generated
+    return numOfMoves_;
 
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();

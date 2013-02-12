@@ -22,8 +22,23 @@ EscapeGenerator::EscapeGenerator(const Move & hmove, Board & board) :
   movesCount_ = numOfMoves_ + takeHash_;
 }
 
+void EscapeGenerator::restart()
+{
+  if ( !numOfMoves_ )
+    return;
+
+  weak_[0].clear();
+  weakN_ = 0;
+
+  for (int i = 0; i < numOfMoves_; ++i)
+    moves_[i].alreadyDone_ = 0;
+}
+
 void EscapeGenerator::generate(const Move & hmove)
 {
+  if ( movesCount_ > 0 )
+    return;
+
   hmove_ = hmove;
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();

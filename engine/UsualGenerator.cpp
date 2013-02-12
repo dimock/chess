@@ -14,8 +14,20 @@ UsualGenerator::UsualGenerator(Board & board) :
   killer_.clear();
 }
 
+void UsualGenerator::restart()
+{
+  if ( !numOfMoves_ )
+    return;
+
+  for (int i = 0; i < numOfMoves_; ++i)
+    moves_[i].alreadyDone_ = 0;
+}
+
 int UsualGenerator::generate(const Move & hmove, const Move & killer)
 {
+  if ( numOfMoves_ > 0 )
+    return numOfMoves_;
+
   hmove_  = hmove;
   killer_ = killer;
   numOfMoves_ = 0;

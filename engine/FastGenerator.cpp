@@ -34,6 +34,23 @@ FastGenerator::FastGenerator(Board & board, const Move & hmove, const Move & kil
   }
 }
 
+void FastGenerator::restart()
+{
+  if ( board_.underCheck() )
+  {
+    eg_.restart();
+    order_ = oEscapes;
+    return;
+  }
+
+  order_ = oHash;
+  weak_[0].clear();
+  weakN_ = 0;
+
+  cg_.restart();
+  ug_.restart();
+}
+
 Move & FastGenerator::move()
 {
   if ( order_ == oHash )
@@ -74,15 +91,20 @@ Move & FastGenerator::move()
         break;
 
 
-      if ( board_.see(*move) < 0 )
+      if ( !move->seen_ )
       {
-        weak_[weakN_++] = *move;
-        move->alreadyDone_ = 1;
-        continue;
+        move->see_good_ = board_.see(*move) >= 0;
+        move->seen_ = 1;
       }
 
       move->alreadyDone_ = 1;
-      move->see_good_ = 1;
+
+      if ( !move->see_good_ )
+      {
+        weak_[weakN_++] = *move;
+        continue;
+      }
+
       return *move;
     }
 

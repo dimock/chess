@@ -436,6 +436,45 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
   bool check_escape = scontexts_[ictx].board_.underCheck();
 
+#ifdef USE_MULTICAT
+  if ( !pv && depth >= 5 && alpha > -Figure::MatScore+MaxPly && /*betta < Figure::MatScore-MaxPly && */!check_escape )
+  {
+    int count = 0;
+    int cutN = 0;
+    for ( ; alpha < betta && !checkForStop() && count < 10 && cutN < 3; )
+    {
+      Move & move = fg.move();
+      if ( !move )
+        break;
+
+      if ( !scontexts_[ictx].board_.validateMove(move) )
+        continue;
+
+      int depth1 = nextDepth(ictx, depth, move, pv);
+
+      scontexts_[ictx].board_.makeMove(move);
+      sdata_.inc_nc();
+
+      ScoreType score = -alphaBetta(ictx, depth1-3, ply+1, -betta, -alpha, false);
+
+      //if ( !stopped() && score > alpha && score < betta )
+      //  score = -alphaBetta(ictx, depth1-2, ply+1, -betta, -alpha, false);
+
+      if ( !stopped() && score >= betta )
+        cutN++;
+
+      scontexts_[ictx].board_.unmakeMove();
+
+      count++;
+    }
+
+    if ( cutN >= 3 )
+      return betta;
+
+    fg.restart();
+  }
+#endif
+
   int above_alpha_count = 0;
   bool best_was_ext = false;
   Move above_alpha_move(0);
@@ -511,16 +550,16 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       }
 
       if ( score > scoreBest )
+    {
+      best = move;
+      scoreBest = score;
+      if ( score > alpha )
       {
-        best = move;
-        scoreBest = score;
-        if ( score > alpha )
-        {
-          alpha = score;
-          if ( pv )
-            assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
-        }
+        alpha = score;
+        if ( pv )
+          assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
       }
+    }
     }
 
     // should be increased here to consider invalid moves!!!
