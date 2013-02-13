@@ -99,6 +99,38 @@ bool Board::isDangerPawn(const Move & move) const
   return false;
 }
 
+bool Board::isDangerQueen(const Move & move) const
+{
+  const Field & ffrom = getField(move.from_);
+  if ( ffrom.type() != Figure::TypeQueen )
+    return false;
+
+  if ( move.capture_ )
+    return true;
+
+  Figure::Color  color = color_;
+  Figure::Color ocolor = Figure::otherColor(color);
+
+  int oki_pos = kingPos(ocolor);
+  int dist = g_distanceCounter->getDistance(oki_pos, move.to_);
+  if ( dist > 2 )
+    return false;
+
+  BitMask mask_all = fmgr().mask(Figure::ColorBlack) | fmgr().mask(Figure::ColorWhite);
+  BitMask oki_caps = g_movesTable->caps(Figure::TypeKing, oki_pos);
+  BitMask q_caps = g_movesTable->caps(Figure::TypeQueen, move.to_);
+  BitMask attacked_mask = (oki_caps & q_caps) & ~mask_all;
+  BitMask ki_moves = oki_caps & ~(mask_all | attacked_mask);
+  int movesN = pop_count(ki_moves);
+  if ( !attacked_mask || movesN > 2 )
+    return false;
+
+  if ( see(move) < 0 )
+    return false;
+
+  return true;
+}
+
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
 bool Board::fromFEN(const char * fen)
 {

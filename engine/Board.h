@@ -147,10 +147,13 @@ public:
   /// don't allow LMR of strong pawn's moves
   bool isDangerPawn(const Move & move) const;
 
+  /// don't allow LMR of strong queen's moves - ie queen near opponent's king and king is immobile
+  bool isDangerQueen(const Move & move) const;
+
   /// don't allow LMR of strong moves
   bool isMoveThreat(const Move & move) const
   {
-    return isDangerPawn(move);
+    return isDangerPawn(move) || isDangerQueen(move);
   }
 
   // becomes passed
