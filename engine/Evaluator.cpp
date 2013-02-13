@@ -178,8 +178,8 @@ const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 70;
-const ScoreType Evaluator::attackedByWeakBonus_ = 10;
-const ScoreType Evaluator::forkBonus_ = 50;
+const ScoreType Evaluator::attackedByWeakBonus_ = 15;
+const ScoreType Evaluator::forkBonus_ = 70;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
