@@ -622,7 +622,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   }
 
 #ifdef SINGULAR_EXT
-  if ( above_alpha_move && above_alpha_count == 1 && !fg.singleReply() && !best_was_ext && all_moves_iterated )
+  if ( above_alpha_move && above_alpha_count == 1 && !fg.singleReply() && !best_was_ext /*&& all_moves_iterated*/ )
   {
     THROW_IF( above_alpha_move != best, "best move in singular extension is wrong" );
 
