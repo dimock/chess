@@ -89,6 +89,16 @@ private:
   ScoreType evaluateMaterialDiff();
   ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evaluateFianchetto() const;
+
+  // special cases
+
+  enum SpecialCases
+  {
+    SC_None, SC_RBR_W, SC_RNR_W, SC_RBR_B, SC_RNR_B
+  };
+
+  SpecialCases findSpecialCase() const;
+  ScoreType evaluateSpecial(SpecialCases sc) const;
   ScoreType evaluateWinnerLoser();
 
   // multiple coefficients for opening/endgame

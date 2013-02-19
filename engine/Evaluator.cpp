@@ -353,7 +353,13 @@ ScoreType Evaluator::operator () (ScoreType alpha, ScoreType betta)
   if ( board_->isWinnerLoser() )
     score = evaluateWinnerLoser();
   else
-    score = evaluate();
+  {
+    SpecialCases sc = findSpecialCase();
+    if ( sc != SC_None )
+      score = evaluateSpecial(sc);
+    else
+      score = evaluate();
+  }
 
   THROW_IF( score <= -ScoreMax || score >= ScoreMax, "invalid score" );
 
@@ -1527,6 +1533,131 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color)
   return score;
 }
 
+//////////////////////////////////////////////////////////////////////////
+/// special cases
+
+// not winner-loser
+Evaluator::SpecialCases Evaluator::findSpecialCase() const
+{
+  const FiguresManager & fmgr = board_->fmgr();
+
+  if ( fmgr.queens(Figure::ColorBlack)+fmgr.queens(Figure::ColorWhite) > 0 ||
+       fmgr.pawns(Figure::ColorBlack)+fmgr.pawns(Figure::ColorWhite) > 0 )
+  {
+    return SC_None;
+  }
+
+  if ( fmgr.rooks(Figure::ColorBlack) != 1 || fmgr.rooks(Figure::ColorWhite) != 1 )
+  {
+    return SC_None;
+  }
+
+  if ( fmgr.bishops(Figure::ColorBlack) == 0 && fmgr.knights(Figure::ColorBlack) == 0 && 
+       fmgr.bishops(Figure::ColorWhite) == 1 && fmgr.knights(Figure::ColorWhite) == 0 )
+  {
+    return SC_RBR_W;
+  }
+
+  if ( fmgr.bishops(Figure::ColorBlack) == 0 && fmgr.knights(Figure::ColorBlack) == 0 && 
+       fmgr.bishops(Figure::ColorWhite) == 0 && fmgr.knights(Figure::ColorWhite) == 1 )
+  {
+    return SC_RNR_W;
+  }
+
+  if ( fmgr.bishops(Figure::ColorBlack) == 1 && fmgr.knights(Figure::ColorBlack) == 0 && 
+       fmgr.bishops(Figure::ColorWhite) == 0 && fmgr.knights(Figure::ColorWhite) == 0 )
+  {
+    return SC_RBR_B;
+  }
+
+  if ( fmgr.bishops(Figure::ColorBlack) == 0 && fmgr.knights(Figure::ColorBlack) == 1 && 
+       fmgr.bishops(Figure::ColorWhite) == 0 && fmgr.knights(Figure::ColorWhite) == 0 )
+  {
+    return SC_RNR_B;
+  }
+
+  return SC_None;
+}
+
+ScoreType Evaluator::evaluateSpecial(SpecialCases sc) const
+{
+  ScoreType score = 0;
+
+  switch ( sc )
+  {
+  case SC_RBR_B:
+  case SC_RNR_B:
+    score = -Figure::figureWeight_[Figure::TypePawn] >> 1;
+    break;
+
+  case SC_RBR_W:
+  case SC_RNR_W:
+    score = +Figure::figureWeight_[Figure::TypePawn] >> 1;
+    break;
+
+  default:
+    THROW_IF(true, "invalid special case given");
+    break;
+  }
+
+  const int & kpb = finfo_[0].king_pos_;
+  const int & kpw = finfo_[1].king_pos_;
+
+  const FiguresManager & fmgr = board_->fmgr();
+
+  // opponent's NB should be as far as possible from my king
+  BitMask fmsk = 0;
+  switch ( sc )
+  {
+  case SC_RBR_W:
+    fmsk = fmgr.bishop_mask(Figure::ColorWhite);
+    break;
+
+  case SC_RNR_W:
+    fmsk = fmgr.knight_mask(Figure::ColorWhite);
+    break;
+
+  case SC_RBR_B:
+    fmsk = fmgr.bishop_mask(Figure::ColorBlack);
+    break;
+
+  case SC_RNR_B:
+    fmsk = fmgr.knight_mask(Figure::ColorBlack);
+    break;
+  }
+
+  int pos = find_lsb(fmsk);
+
+  // loser king's position should be near to center
+  // winner king should be near to loser king
+  int ki_dist = board_->g_distanceCounter->getDistance(kpw, kpb);
+
+  if ( sc == SC_RBR_W || sc == SC_RNR_W ) // white is winner
+  {
+    int dist = board_->g_distanceCounter->getDistance(pos, kpb);
+    score -= dist << 1;
+
+    score -= positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, kpb);
+    score += positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, kpw) >> 1;
+    score -= ki_dist << 1;
+  }
+  else // back is winner
+  {
+    int dist = board_->g_distanceCounter->getDistance(pos, kpw);
+    score += dist << 1;
+
+    score -= positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, kpb) >> 1;
+    score += positionEvaluation(1, Figure::ColorWhite, Figure::TypeKing, kpw);
+    score += ki_dist << 1;
+  }
+
+  if ( Figure::ColorBlack  == board_->getColor() )
+    score = -score;
+
+  return score;
+}
+
+// winner-loser
 ScoreType Evaluator::evaluateWinnerLoser()
 {
   const FiguresManager & fmgr = board_->fmgr();
@@ -1628,11 +1759,19 @@ ScoreType Evaluator::evaluateWinnerLoser()
         eval_pawns = false;
       }
     }
+    // Rook against 2 or more Bishops|Knights
     else if ( fmgr.queens(win_color) == 0 && fmgr.bishops(win_color) == 0 &&
               fmgr.knights(win_color) == 0 && fmgr.pawns(win_color) == 0 && fmgr.rooks(win_color) == 1 &&
               fmgr.knights(lose_color)+fmgr.bishops(lose_color) > 1 )
     {
       score = 25;
+    }
+    // Rook against Knight|Bishop
+    else if ( fmgr.queens(win_color) == 0 && fmgr.bishops(win_color) == 0 &&
+              fmgr.knights(win_color) == 0 && fmgr.pawns(win_color) == 0 && fmgr.rooks(win_color) == 1 &&
+              fmgr.knights(lose_color)+fmgr.bishops(lose_color) == 1 )
+    {
+      score = 35;
     }
 
     if ( fmgr.pawns(win_color) == 1 )
@@ -1727,6 +1866,7 @@ ScoreType Evaluator::evaluateWinnerLoser()
       int dist  = board_->g_distanceCounter->getDistance(king_pos_w, king_pos_l);
       score -= dist << 1;
       score -= positionEvaluation(1, lose_color, Figure::TypeKing, king_pos_l);
+      score += positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, king_pos_w) >> 1;
     }
   }
 
