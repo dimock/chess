@@ -365,7 +365,6 @@ public:
       if ( !filter(*move) )
         continue;
 
-      counter_++;
       return *move;
     }
   }
@@ -396,7 +395,7 @@ private:
     bool check = expressCheck(move);
 
     if ( move.discoveredCheck_ )
-      return true; // always ok
+      return true; // always good
 
     Figure::Type type = Figure::TypeNone;
     const Field & tfield = board_.getField(move.to_);
@@ -407,8 +406,7 @@ private:
     else if ( board_.en_passant_ == move.to_ && board_.getField(move.from_).type() == Figure::TypePawn ) // en-passant capture
       type = Figure::TypePawn;
 
-    // always return 1st move (assuming it is the best one)
-    if ( !check && type < thresholdType_ /*&& counter_ > 0*/ )
+    if ( !check && type < thresholdType_ )
       return false;
 
     int s = board_.see(move);
@@ -419,7 +417,6 @@ private:
 
   Figure::Type thresholdType_;
   Move hcap_;
-  int counter_;
 
   // for checks detector
   BitMask mask_all_, mask_brq_;
