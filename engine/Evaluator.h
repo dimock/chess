@@ -30,7 +30,7 @@ public:
   static const ScoreType figureAgainstPawnBonus_;
   static const ScoreType rookAgainstFigureBonus_;
   static const ScoreType pawnEndgameBonus_;
-  static const ScoreType pawnPassed_[8], pawnGuarded_[8], passerCandidate_[8];
+  static const ScoreType pawnPassed_[8], pawnGuarded_[8], passerCandidate_[8], pawnCanGo_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
   static const ScoreType attackedByWeakBonus_;
@@ -79,9 +79,11 @@ private:
   /// calculates absolute position evaluation
   ScoreType evaluate();
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
-  ScoreType evaluatePawnShield2(Figure::Color color);
   ScoreType evaluatePawnShield(Figure::Color color);
   ScoreType evaluatePasserAdditional(Figure::Color color);
+
+  // experimental
+  ScoreType evaluatePawnShield2(Figure::Color color);
 
   ScoreType evaluateKingPressure(GamePhase phase, int coef_o);
   ScoreType evaluateKingPressure(Figure::Color color);
