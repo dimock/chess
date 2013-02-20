@@ -24,13 +24,12 @@ public:
   static const ScoreType semiopenRook_, openRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
   static const ScoreType castleImpossiblePenalty_;
-  static const ScoreType unstoppablePawn_;
   //static const ScoreType kingbishopPressure_;
   static const ScoreType bishopBonus_;
   static const ScoreType figureAgainstPawnBonus_;
   static const ScoreType rookAgainstFigureBonus_;
   static const ScoreType pawnEndgameBonus_;
-  static const ScoreType pawnPassed_[8], pawnGuarded_[8], passerCandidate_[8], pawnCanGo_[8];
+  static const ScoreType pawnPassed_[8], pawnGuarded_[8], passerCandidate_[8], pawnCanGo_[8], kingFarFromPasser_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
   static const ScoreType attackedByWeakBonus_;
@@ -80,7 +79,7 @@ private:
   ScoreType evaluate();
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
   ScoreType evaluatePawnShield(Figure::Color color);
-  ScoreType evaluatePasserAdditional(Figure::Color color);
+  ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg);
 
   // experimental
   ScoreType evaluatePawnShield2(Figure::Color color);
@@ -129,7 +128,7 @@ private:
 
   /// after lazy eval.
   ScoreType evaluateKnightsBishops();
-  ScoreType evaluateExpensive(GamePhase phase, int coef_o);
+  ScoreType evaluateExpensive(GamePhase phase, int coef_o, int coef_e);
 
   struct FieldsInfo
   {

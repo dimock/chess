@@ -174,10 +174,9 @@ const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
-const ScoreType Evaluator::pawnEndgameBonus_ = 10;
+const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
-const ScoreType Evaluator::unstoppablePawn_ = 50;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
 const ScoreType Evaluator::forkBonus_ = 60;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
@@ -216,7 +215,7 @@ const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 30, 45, MAX_PASSED_S
 const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
 const ScoreType Evaluator::passerCandidate_[8] = { 0, 2, 5, 8, 10, 12, 15, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 8, 10, 12, 15, 20, 0 };
-
+const ScoreType Evaluator::kingFarFromPasser_[8] = { 0, 10, 15, 20, 25, 30, 35, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
@@ -435,11 +434,11 @@ ScoreType Evaluator::evaluate()
 
   score += evaluateKnightsBishops();
 
-  // 3rd level
-  if ( score < alpha_[2] || score > betta_[2] )
-    return score;
+  //// 3rd level
+  //if ( score < alpha_[2] || score > betta_[2] )
+  //  return score;
 
-  score += evaluateExpensive(phase, coef_o);
+  score += evaluateExpensive(phase, coef_o, coef_e);
 
   return score;
 }
@@ -734,7 +733,7 @@ ScoreType Evaluator::evaluateBishops()
 }
 
 // most expensive part: mobility of rooks and queens, rooks on open columns
-ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o)
+ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
 {
   ScoreType score = 0;
 
@@ -761,8 +760,14 @@ ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o)
   score -= finfo_[0].queenPressure_;
   score += finfo_[1].queenPressure_;
 
-  score -= evaluatePasserAdditional(Figure::ColorBlack);
-  score += evaluatePasserAdditional(Figure::ColorWhite);
+  ScoreType pw_score_eg = 0;
+  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg);
+  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg);
+
+  if ( phase == MiddleGame )
+    pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
+
+  score += pw_score_eg;
 
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
@@ -1301,24 +1306,24 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
       if ( score_eg )
       {
-        int pawn_dist_promo = py - y;
-        if ( pawn_dist_promo < 0 )
-          pawn_dist_promo = -pawn_dist_promo;
+        //int pawn_dist_promo = py - y;
+        //if ( pawn_dist_promo < 0 )
+        //  pawn_dist_promo = -pawn_dist_promo;
 
         int o_dist_promo = board_->g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
         if ( board_->color_ == ocolor )
           o_dist_promo--;
 
-        if ( pawn_dist_promo < o_dist_promo )
-          *score_eg += unstoppablePawn_;
-        else
-          *score_eg += o_dist_promo<<2;
+        //if ( pawn_dist_promo < o_dist_promo )
+        //  *score_eg += kingFarFromPasser_[cy];
+        //else
+        *score_eg += o_dist_promo<<1;
 
         // give penalty for long distance to my pawns if opponent doesn't have any
         if ( !opmsk_o )
         {
           int dist_promo = board_->g_distanceCounter->getDistance(finfo_[color].king_pos_, promo_pos);
-          *score_eg -= dist_promo<<2;
+          *score_eg -= dist_promo<<1;
         }
       }
     }
@@ -1414,7 +1419,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
   return score;
 }
 
-ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color)
+ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg)
 {
   const FiguresManager & fmgr = board_->fmgr();
   Figure::Color ocolor = Figure::otherColor(color);
@@ -1424,7 +1429,7 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color)
   if ( !pmsk_t )
     return 0;
 
-  ScoreType score = 0;
+  ScoreType score = 0, score_eg = 0;
 
   static int delta_y[] = { -1, 1 };
   static int promo_y[] = {  0, 7 };
@@ -1448,40 +1453,72 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color)
     if ( !(opmsk_t & passmsk) && !(pmsk_t & blckmsk) )
     {
       int promo_pos = x | (py<<3);
+      int pawn_dist_promo = py - y;
+      int cy = color ? y : 7-y;
 
-      // have bishop with color the same as promotion field's color
-      Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
-      if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
-        score += assistantBishop_;
+      //// have bishop with color the same as promotion field's color
+      //Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
+      //if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
+      //  score += assistantBishop_;
 
-      // have rook behind passed pawn
-      BitMask behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(color) ;
-      if ( behind_msk )
-      {
-        int rpos = color ? find_msb(behind_msk) : find_lsb(behind_msk);
-        if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
-          score += rookBehindBonus_;
-      }
+      //// have rook behind passed pawn
+      //BitMask behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(color) ;
+      //if ( behind_msk )
+      //{
+      //  int rpos = color ? find_msb(behind_msk) : find_lsb(behind_msk);
+      //  if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
+      //    score += rookBehindBonus_;
+      //}
 
       // pawn can go to the next line
       int next_pos = x | ((y+dy)<<3);
       THROW_IF( ((y+dy)) > 7 || ((y+dy)) < 0, "pawn goes to invalid line" );
 
+      bool can_go = false;
+
       // field is empty
       // check is it attacked by opponent
       if ( !board_->getField(next_pos) )
       {
-        int yy = color ? y : 7-y;
         BitMask next_mask = set_mask_bit(next_pos);
-        if ( (next_mask & finfo_[ocolor].attack_mask_) == 0 )
-          score += pawnCanGo_[yy];
+        if ( (next_mask & finfo_[ocolor].attack_mask_) != 0 )
+        {
+          Move move;
+          Figure::Type type = Figure::TypeNone;
+          if ( next_pos == promo_pos )
+            type = Figure::TypeQueen;
+
+          move.set(n, next_pos, type, false);
+          ScoreType see_score = board_->see(move);
+          if ( see_score >= 0 )
+            can_go = true;
+        }
+        else
+          can_go = true;
       }
 
-      //// king can't go to pawn's promotion field
-      //if ( !findKingTrack(ocolor, promo_pos) )
-      //  score += unstoppablePawn_;
+      // additional bonus if opponent's king is too far from my pawn's promotion field
+      if ( can_go )
+      {
+        score += pawnCanGo_[cy];
+
+        if ( pawn_dist_promo < 0 )
+          pawn_dist_promo = -pawn_dist_promo;
+
+        int o_dist_promo = board_->g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
+        if ( board_->color_ == ocolor )
+          o_dist_promo--;
+
+        if ( pawn_dist_promo < o_dist_promo )
+          score_eg += kingFarFromPasser_[cy];
+      }
     }
   }
+
+  if ( !color )
+    score_eg = -score_eg;
+
+  pw_score_eg += score_eg;
 
   return score;
 }
@@ -1831,9 +1868,11 @@ ScoreType Evaluator::evaluateWinnerLoser()
     ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax, score_ps = -ScoreMax;
     hashedEvaluation(pwscore, pwscore_eg, score_ps);
 
-    score -= evaluatePasserAdditional(Figure::ColorBlack);
-    score += evaluatePasserAdditional(Figure::ColorWhite);
+    ScoreType score_eg = 0;
+    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg);
+    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg);
 
+    score += score_eg;
     score += pwscore;
   }
 
