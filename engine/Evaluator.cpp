@@ -166,7 +166,7 @@ const ScoreType Evaluator::pawnIsolated_ = -15;
 const ScoreType Evaluator::pawnBackward_ = -12;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
-const ScoreType Evaluator::assistantBishop_ = 8;
+const ScoreType Evaluator::assistantBishop_ = 6;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  10;
 const ScoreType Evaluator::openRook_ =  10;
@@ -1456,10 +1456,10 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       int pawn_dist_promo = py - y;
       int cy = color ? y : 7-y;
 
-      //// have bishop with color the same as promotion field's color
-      //Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
-      //if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
-      //  score += assistantBishop_;
+      // have bishop with color the same as promotion field's color
+      Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
+      if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
+        score += assistantBishop_;
 
       //// have rook behind passed pawn
       //BitMask behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(color) ;
