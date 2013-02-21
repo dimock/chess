@@ -238,6 +238,11 @@ int ChecksGenerator::genChecks()
 
         for ( ; *table >= 0 && !board_.getField(*table); ++table)
         {
+          // don't generate promotions twice
+          int y = (*table) >> 3;
+          if ( y == 0 || y == 7 )
+            break;
+
           // pawn shouldn't cover opponents king in its new position - i.e it shouldn't go to the same line
           if ( from_oki_mask & set_mask_bit(*table) )
             break;

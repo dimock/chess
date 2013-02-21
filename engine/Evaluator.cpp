@@ -161,8 +161,8 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -15;
-const ScoreType Evaluator::pawnIsolated_ = -15;
+const ScoreType Evaluator::pawnDoubled_  = -12;
+const ScoreType Evaluator::pawnIsolated_ = -20;
 const ScoreType Evaluator::pawnBackward_ = -12;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
@@ -175,6 +175,7 @@ const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
+const ScoreType Evaluator::unstoppablePawn_ = 30;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
@@ -209,13 +210,13 @@ const ScoreType Evaluator::kingbishopPressure_ = 8;
 const ScoreType Evaluator::queenAttackBonus_ = 15;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 60
+#define MAX_PASSED_SCORE 65
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 30, 45, MAX_PASSED_SCORE, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 10, 15, 25, 35, 50, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
-const ScoreType Evaluator::passerCandidate_[8] = { 0, 2, 5, 8, 10, 12, 15, 0 };
+const ScoreType Evaluator::passerCandidate_[8] = { 0, 3, 7, 10, 12, 15, 20, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 8, 10, 12, 15, 20, 0 };
-const ScoreType Evaluator::kingFarFromPasser_[8] = { 0, 10, 15, 20, 25, 30, 35, 0 };
+//const ScoreType Evaluator::kingFarFromPasser_[8] = { 0, 10, 15, 20, 25, 30, 40, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
@@ -761,8 +762,8 @@ ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
   score += finfo_[1].queenPressure_;
 
   ScoreType pw_score_eg = 0;
-  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg);
-  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg);
+  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg, phase);
+  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg, phase);
 
   if ( phase == MiddleGame )
     pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
@@ -1315,9 +1316,9 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
           o_dist_promo--;
 
         //if ( pawn_dist_promo < o_dist_promo )
-        //  *score_eg += kingFarFromPasser_[cy];
+        //  *score_eg += unstoppablePawn_;
         //else
-        *score_eg += o_dist_promo<<1;
+          *score_eg += o_dist_promo<<1;
 
         // give penalty for long distance to my pawns if opponent doesn't have any
         if ( !opmsk_o )
@@ -1419,7 +1420,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
   return score;
 }
 
-ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg)
+ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, GamePhase phase)
 {
   const FiguresManager & fmgr = board_->fmgr();
   Figure::Color ocolor = Figure::otherColor(color);
@@ -1502,15 +1503,18 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       {
         score += pawnCanGo_[cy];
 
-        if ( pawn_dist_promo < 0 )
-          pawn_dist_promo = -pawn_dist_promo;
+        if ( phase != Opening )
+        {
+          if ( pawn_dist_promo < 0 )
+            pawn_dist_promo = -pawn_dist_promo;
 
-        int o_dist_promo = board_->g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
-        if ( board_->color_ == ocolor )
-          o_dist_promo--;
+          int o_dist_promo = board_->g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
+          if ( board_->color_ == ocolor )
+            pawn_dist_promo++;
 
-        if ( pawn_dist_promo < o_dist_promo )
-          score_eg += kingFarFromPasser_[cy];
+          if ( pawn_dist_promo < o_dist_promo || !findRootToPawn(color, pawn_dist_promo, promo_pos) )
+            score_eg += unstoppablePawn_;
+        }
       }
     }
   }
@@ -1521,6 +1525,66 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
   pw_score_eg += score_eg;
 
   return score;
+}
+
+bool Evaluator::findRootToPawn(Figure::Color color, int pawn_dist_promo, int promo_pos) const
+{
+  Figure::Color ocolor = Figure::otherColor(color);
+  int oki_pos = finfo_[ocolor].king_pos_;
+
+  struct RootNode
+  {
+    int p;
+    int d;
+    BitMask vis;
+  };
+
+  RootNode looked[128];
+  int lookedN = 1;
+  looked[0].p = oki_pos;
+  looked[0].d = 0;
+  looked[0].vis = (mask_all_ | finfo_[color].attack_mask_) & ~set_mask_bit(promo_pos);
+
+  for ( ; lookedN > 0; )
+  {
+    THROW_IF(lookedN > 128, "searching root. out of memory" );
+
+    lookedN--;
+    int pos = looked[lookedN].p;
+    int dis = looked[lookedN].d;
+
+    if ( dis > pawn_dist_promo ||
+         dis + board_->g_distanceCounter->getDistance(promo_pos, pos) > pawn_dist_promo )
+    {
+      continue;
+    }
+
+    if ( pos == promo_pos )
+      return true;
+
+    BitMask visited = looked[lookedN].vis | set_mask_bit(pos);
+
+    BitMask mask = board_->g_movesTable->caps(Figure::TypeKing, pos);
+    mask &= ~visited;
+
+    dis++;
+    if ( dis > pawn_dist_promo )
+      continue;
+
+    for ( ; mask; )
+    {
+      int n = clear_lsb(mask);
+      if ( dis + board_->g_distanceCounter->getDistance(promo_pos, n) > pawn_dist_promo )
+        continue;
+
+      looked[lookedN].p = n;
+      looked[lookedN].d = dis;
+      looked[lookedN].vis = visited;
+      lookedN++;
+    }
+  }
+
+  return false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1869,8 +1933,8 @@ ScoreType Evaluator::evaluateWinnerLoser()
     hashedEvaluation(pwscore, pwscore_eg, score_ps);
 
     ScoreType score_eg = 0;
-    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg);
-    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg);
+    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg, EndGame);
+    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg, EndGame);
 
     score += score_eg;
     score += pwscore;
