@@ -19,7 +19,7 @@ enum {
 
 const ScoreType Evaluator::positionGain_ = 100;
 
-const ScoreType Evaluator::lazyThresholds_[3] = { 300, 200, 100 };
+const ScoreType Evaluator::lazyThresholds_[3] = { 300, 250, 150 };
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -161,7 +161,7 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -12;
+const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -20;
 const ScoreType Evaluator::pawnBackward_ = -12;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
@@ -175,7 +175,7 @@ const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
-const ScoreType Evaluator::unstoppablePawn_ = 30;
+const ScoreType Evaluator::unstoppablePawn_ = 50;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
@@ -435,9 +435,9 @@ ScoreType Evaluator::evaluate()
 
   score += evaluateKnightsBishops();
 
-  //// 3rd level
-  //if ( score < alpha_[2] || score > betta_[2] )
-  //  return score;
+  // 3rd level
+  if ( score < alpha_[2] || score > betta_[2] )
+    return score;
 
   score += evaluateExpensive(phase, coef_o, coef_e);
 
