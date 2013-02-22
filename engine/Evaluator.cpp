@@ -19,7 +19,7 @@ enum {
 
 const ScoreType Evaluator::positionGain_ = 100;
 
-const ScoreType Evaluator::lazyThresholds_[3] = { 300, 250, 150 };
+const ScoreType Evaluator::lazyThresholds_[3] = { 300, 300, 175 };
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -162,11 +162,11 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 };
 
 const ScoreType Evaluator::pawnDoubled_  = -15;
-const ScoreType Evaluator::pawnIsolated_ = -20;
-const ScoreType Evaluator::pawnBackward_ = -10;
+const ScoreType Evaluator::pawnIsolated_ = -15;
+const ScoreType Evaluator::pawnBackward_ = -12;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
-const ScoreType Evaluator::assistantBishop_ = 6;
+const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  10;
 const ScoreType Evaluator::openRook_ =  10;
@@ -178,7 +178,7 @@ const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 50;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
-const ScoreType Evaluator::attackedByWeakBonus_ = 10;
+const ScoreType Evaluator::attackedByWeakBonus_ = 12;
 const ScoreType Evaluator::forkBonus_ = 60;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
@@ -201,22 +201,22 @@ const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 12;
+const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
 //pressure to king by opponents bishop
-const ScoreType Evaluator::kingbishopPressure_ = 10;
+const ScoreType Evaluator::kingbishopPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
 const ScoreType Evaluator::queenAttackBonus_ = 15;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 80
+#define MAX_PASSED_SCORE 70
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 7, 12, 20, 40, 60, MAX_PASSED_SCORE, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 7, 12, 20, 40, 55, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
-const ScoreType Evaluator::passerCandidate_[8] = { 0, 3, 7, 10, 12, 18, 20, 0 };
-const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 2, 4, 6, 8, 10, 12, 0 };
-const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 8, 10, 12, 15, 20, 0 };
+const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 5, 8, 10, 12, 15, 0 };
+const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 2, 3, 5, 7, 9, 12, 0 };
+const ScoreType Evaluator::pawnCanGo_[8] = { 0, 3, 5, 7, 10, 12, 15, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
@@ -1483,14 +1483,14 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
         score += assistantBishop_;
 
-      //// have rook behind passed pawn
-      //BitMask behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(color) ;
-      //if ( behind_msk )
-      //{
-      //  int rpos = color ? find_msb(behind_msk) : find_lsb(behind_msk);
-      //  if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
-      //    score += rookBehindBonus_;
-      //}
+      // have rook behind passed pawn
+      BitMask behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(color) ;
+      if ( behind_msk )
+      {
+        int rpos = color ? find_msb(behind_msk) : find_lsb(behind_msk);
+        if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
+          score += rookBehindBonus_;
+      }
 
       // pawn can go to the next line
       int next_pos = x | ((y+dy)<<3);
