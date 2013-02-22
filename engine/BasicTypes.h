@@ -12,9 +12,9 @@
 #include <limits>
 #include <stdio.h>
 #include <string.h>
+#include <intrin.h>
 
 #ifdef _M_X64
-  #include <intrin.h>
   #pragma intrinsic(__rdtsc)
 #endif
 

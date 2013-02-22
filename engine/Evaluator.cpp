@@ -163,7 +163,7 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 
 const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -20;
-const ScoreType Evaluator::pawnBackward_ = -12;
+const ScoreType Evaluator::pawnBackward_ = -10;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::assistantBishop_ = 6;
@@ -201,22 +201,22 @@ const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 10;
+const ScoreType Evaluator::opponentPawnsToKing_ = 12;
 
 //pressure to king by opponents bishop
-const ScoreType Evaluator::kingbishopPressure_ = 8;
+const ScoreType Evaluator::kingbishopPressure_ = 10;
 
 // queen attacks opponent's king (give only if supported by other figure)
 const ScoreType Evaluator::queenAttackBonus_ = 15;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 65
+#define MAX_PASSED_SCORE 80
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 10, 15, 25, 35, 50, MAX_PASSED_SCORE, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 7, 12, 20, 40, 60, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
-const ScoreType Evaluator::passerCandidate_[8] = { 0, 3, 7, 10, 12, 15, 20, 0 };
+const ScoreType Evaluator::passerCandidate_[8] = { 0, 3, 7, 10, 12, 18, 20, 0 };
+const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 2, 4, 6, 8, 10, 12, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 8, 10, 12, 15, 20, 0 };
-//const ScoreType Evaluator::kingFarFromPasser_[8] = { 0, 10, 15, 20, 25, 30, 40, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
@@ -1104,17 +1104,17 @@ int Evaluator::getCastleType(Figure::Color color) const
   Index ki_pos(finfo_[color].king_pos_);
 
   // short
-  if ( ki_pos.x() > 4 && (ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color) )
+  if ( ki_pos.x() > 4 /*&& (ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color)*/ )
     return 0;
 
   // long
-  if ( ki_pos.x() < 3 && (ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color) )
+  if ( ki_pos.x() < 3 /*&& (ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color)*/ )
     return 1;
 
   return -1;
 }
 
-ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
+ScoreType Evaluator::evaluatePawnShield2(Figure::Color color)
 {
   const FiguresManager & fmgr = board_->fmgr();
 
@@ -1219,25 +1219,25 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
   if ( ctype < 0 )
     return score;
 
-  //const BitMask & obishop_mask = fmgr.bishop_mask(ocolor);
-  //const BitMask & oqueen_mask  = fmgr.queen_mask(ocolor);
+  const BitMask & obishop_mask = fmgr.bishop_mask(ocolor);
+  const BitMask & oqueen_mask  = fmgr.queen_mask(ocolor);
 
-  //// color, castle type
-  //static const BitMask opponent_pressure_masks[2][2] = {
-  //  {set_mask_bit(F6)|set_mask_bit(H6), set_mask_bit(C6)|set_mask_bit(A6)},
-  //  {set_mask_bit(F3)|set_mask_bit(H3), set_mask_bit(C3)|set_mask_bit(A3)}
-  //};
+  // color, castle type
+  static const BitMask opponent_pressure_masks[2][2] = {
+    {set_mask_bit(F6)|set_mask_bit(H6), set_mask_bit(C6)|set_mask_bit(A6)},
+    {set_mask_bit(F3)|set_mask_bit(H3), set_mask_bit(C3)|set_mask_bit(A3)}
+  };
 
-  //if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
-  //{
-  //  // opponent bishop pressure
-  //  if ( opponent_pressure_masks[color][ctype] & obishop_mask )
-  //    score -= kingbishopPressure_;
+  if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
+  {
+    // opponent bishop pressure
+    if ( opponent_pressure_masks[color][ctype] & obishop_mask )
+      score -= kingbishopPressure_;
 
-  //  // opponent bishop pressure
-  //  if ( opponent_pressure_masks[color][ctype] & oqueen_mask )
-  //    score -= queenAttackBonus_;
-  //}
+    //// opponent bishop pressure
+    //if ( opponent_pressure_masks[color][ctype] & oqueen_mask )
+    //  score -= queenAttackBonus_;
+  }
 
   return score;
 }
@@ -1267,7 +1267,8 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
   // columns, occupied by pawns
   uint8 cols_visited = 0;
 
-  BitMask pawn_mask = fmgr.pawn_mask_o(color);
+  const BitMask & pw_mask_o = fmgr.pawn_mask_o(color);
+  BitMask pawn_mask = pw_mask_o;
   for ( ; pawn_mask; )
   {
     int n = clear_lsb(pawn_mask);
@@ -1277,14 +1278,32 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
     int cy = color ? y : 7-y;
 
-    // doubled pawns
+    // double pawns
     if ( !(cols_visited & (1<<x)) )
     {
       cols_visited |= 1<<x;
-      uint8 & column = ((uint8*)&pmsk_t)[x];
-      const ScoreType dblNum = BitsCounter::numBitsInByte(column);
+      uint8 column = ((uint8*)&pmsk_t)[x];
+      int dblNum = BitsCounter::numBitsInByte(column);
       if ( dblNum > 1 )
-        score += pawnDoubled_*(dblNum-1);
+      {
+
+        // iterate from upper pawn to lower
+        for ( ; column && dblNum > 1; --dblNum )
+        {
+          int py = color ? find_msb_32(column) : find_lsb_32(column);
+          int p = x | (py << 3);
+
+          THROW_IF( board_->getField(p).color() != color || board_->getField(p).type() != Figure::TypePawn, "no pawn found on double line" );
+
+          const BitMask & pw_cap = board_->g_movesTable->pawnCaps_o(ocolor, p);
+
+          /// give big penalty if upper pawn isn't defended or small otherwise
+          if ( pw_cap & pw_mask_o ) // defended
+            score += pawnDoubled_ >> 1;
+          else
+            score += pawnDoubled_;
+        }
+      }
     }
 
     const uint64 & passmsk = board_->g_pawnMasks->mask_passed(color, n);
@@ -1346,6 +1365,9 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
     // maybe isolated pawn
     if ( !(pmsk_t & isomask) )
       score += pawnIsolated_;
+    // or disconnected
+    else if ( !(pmsk_t & dismask) )
+      score += pawnDisconnected_;
 
     // backward - ie pawn isn't on last line and not guarded by other pawn and can't safely go to the next line
     if ( (color && y < 6 || !color && y > 1) && !(finfo_[color].pw_attack_mask_ & set_mask_bit(n)) )
@@ -1358,10 +1380,6 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       else if ( to_mask & attacked_mask )
         score += pawnBackward_;
     }
-
-    // disconnected
-    if ( !(pmsk_t & dismask) )
-      score += pawnDisconnected_;
 
     // check if it is passer candidate - column after pawn is opened and has more defenders than opponent's sentries
     if ( !passed && !(pmsk_t & blckmsk) && !(opmsk_t & blckmsk) )
@@ -1412,8 +1430,11 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
         }
       }
 
+      // passer candidate
       if ( defendersN >= sentriesN )
         score += passerCandidate_[cy];
+      else // give bonus for pawn on open column
+        score += pawnOnOpenColumn_[cy];
     }
   }
 
@@ -1950,7 +1971,7 @@ ScoreType Evaluator::evaluateWinnerLoser()
 //////////////////////////////////////////////////////////////////////////
 /// experimental
 
-ScoreType Evaluator::evaluatePawnShield2(Figure::Color color)
+ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
 {
   const FiguresManager & fmgr = board_->fmgr();
   const uint8 * pmsk_t  = (const uint8*)&board_->fmgr().pawn_mask_t(color);

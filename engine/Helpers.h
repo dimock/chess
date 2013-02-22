@@ -34,6 +34,31 @@ inline int set_bit(int bit)
   return 1 << bit;
 }
 
+#pragma intrinsic(_BitScanForward)
+#pragma intrinsic(_BitScanReverse)
+
+inline int find_lsb_32(unsigned long n)
+{
+  unsigned long i;
+#ifndef NDEBUG
+  uint8 b =
+#endif
+    _BitScanForward(&i, n);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  return i;
+}
+
+inline int find_msb_32(unsigned long n)
+{
+  unsigned long i;
+#ifndef NDEBUG
+  uint8 b =
+#endif
+    _BitScanReverse(&i, n);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  return i;
+}
+
 /*
 GCC asm version
 inline int find_lsb(const BitMask & mask)
@@ -222,7 +247,6 @@ md_begin:
 
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
-#pragma intrinsic(_BitScanReverse)
 
 inline int clear_lsb(uint64 & mask)
 {
