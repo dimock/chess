@@ -182,7 +182,7 @@ const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
 const ScoreType Evaluator::forkBonus_ = 60;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
-const ScoreType Evaluator::rookToKingBonus_ = 10;
+const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 const ScoreType Evaluator::pinnedKnight_ = 0;//-5;
 const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
@@ -190,22 +190,22 @@ const ScoreType Evaluator::pinnedRook_ = 0;//-5;
 
 // pawns shield
 const ScoreType Evaluator::cf_columnOpened_ = 8;
-const ScoreType Evaluator::bg_columnOpened_ = 30;
-const ScoreType Evaluator::ah_columnOpened_ = 25;
+const ScoreType Evaluator::bg_columnOpened_ = 20;
+const ScoreType Evaluator::ah_columnOpened_ = 16;
 
-const ScoreType Evaluator::cf_columnSemiopened_ = 4;
-const ScoreType Evaluator::bg_columnSemiopened_ = 15;
-const ScoreType Evaluator::ah_columnSemiopened_ = 12;
+const ScoreType Evaluator::cf_columnSemiopened_ = 5;
+const ScoreType Evaluator::bg_columnSemiopened_ = 12;
+const ScoreType Evaluator::ah_columnSemiopened_ = 8;
 
-const ScoreType Evaluator::cf_columnCracked_ = 4;
-const ScoreType Evaluator::bg_columnCracked_ = 6;
-const ScoreType Evaluator::ah_columnCracked_ = 5;
+const ScoreType Evaluator::cf_columnCracked_ = 2;
+const ScoreType Evaluator::bg_columnCracked_ = 4;
+const ScoreType Evaluator::ah_columnCracked_ = 3;
 
 // pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 12;
+const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
 //pressure to king by opponents bishop & knight
-const ScoreType Evaluator::kingbishopPressure_ = 10;
+const ScoreType Evaluator::kingbishopPressure_ = 8;
 const ScoreType Evaluator::kingknightPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
@@ -224,9 +224,9 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
   {-40, -15, 0, 3, 5, 7, 9, 11},
-  {-35, -12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
-  {-20, -8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
-  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28},
+  {-35, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-20, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
