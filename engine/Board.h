@@ -260,7 +260,7 @@ public:
 
   inline int nullMoveDepthVerify(int depth) const
   {
-    int null_depth = depth - NullMove_PlyReduce;
+    int null_depth = depth - nullMoveReduce();
     if ( null_depth > (depth>>1) )
       null_depth = depth>>1;
     if ( null_depth < 0 )

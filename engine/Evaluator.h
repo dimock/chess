@@ -63,6 +63,7 @@ public:
   // pressure to opponent's king
   static const ScoreType opponentPawnsToKing_;
   static const ScoreType kingbishopPressure_;
+  static const ScoreType kingknightPressure_;
   static const ScoreType queenAttackBonus_;
   static const ScoreType kingFieldAttackBonus_;
   

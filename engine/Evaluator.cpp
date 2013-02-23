@@ -19,7 +19,7 @@ enum {
 
 const ScoreType Evaluator::positionGain_ = 100;
 
-const ScoreType Evaluator::lazyThresholds_[3] = { 300, 300, 175 };
+const ScoreType Evaluator::lazyThresholds_[3] = { 300, 300, 200 };
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -97,7 +97,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -8,  -12, -12, -16, -16, -12, -12,  -8,
       -4,  -8,   -8,  -8,  -8,  -8,  -8,  -4,
        5,   5,    0,   0,   0,   0,   5,   5,
-       10,  12,   6,   0,   0,   0,  16,  14
+       10,  12,   0,   0,   0,   0,  12,  10
     },
 
     {}
@@ -162,23 +162,23 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 };
 
 const ScoreType Evaluator::pawnDoubled_  = -15;
-const ScoreType Evaluator::pawnIsolated_ = -15;
-const ScoreType Evaluator::pawnBackward_ = -12;
+const ScoreType Evaluator::pawnIsolated_ = -20;
+const ScoreType Evaluator::pawnBackward_ = -10;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
-const ScoreType Evaluator::assistantBishop_ = 8;
+const ScoreType Evaluator::assistantBishop_ = 6;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  10;
 const ScoreType Evaluator::openRook_ =  10;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
-const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
-const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
+const ScoreType Evaluator::figureAgainstPawnBonus_ = 15;
+const ScoreType Evaluator::rookAgainstFigureBonus_ = 20;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 50;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
-const ScoreType Evaluator::attackedByWeakBonus_ = 12;
+const ScoreType Evaluator::attackedByWeakBonus_ = 10;
 const ScoreType Evaluator::forkBonus_ = 60;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
@@ -203,28 +203,29 @@ const ScoreType Evaluator::ah_columnCracked_ = 3;
 // pressure to king by opponents pawn
 const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
-//pressure to king by opponents bishop
+//pressure to king by opponents bishop & knight
 const ScoreType Evaluator::kingbishopPressure_ = 8;
+const ScoreType Evaluator::kingknightPressure_ = 6;
 
 // queen attacks opponent's king (give only if supported by other figure)
-const ScoreType Evaluator::queenAttackBonus_ = 15;
+const ScoreType Evaluator::queenAttackBonus_ = 8;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 70
+#define MAX_PASSED_SCORE 60
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 7, 12, 20, 40, 55, MAX_PASSED_SCORE, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 7, 12, 20, 40, 50, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
 const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 5, 8, 10, 12, 15, 0 };
 const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 2, 3, 5, 7, 9, 12, 0 };
-const ScoreType Evaluator::pawnCanGo_[8] = { 0, 3, 5, 7, 10, 12, 15, 0 };
+const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 7, 9, 12, 15, 20, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
   {-40, -15, 0, 3, 5, 7, 9, 11},
-  {-35, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-20, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
+  {-35, -12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+  {-20, -8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -1221,21 +1222,44 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
 
   const BitMask & obishop_mask = fmgr.bishop_mask(ocolor);
   const BitMask & oqueen_mask  = fmgr.queen_mask(ocolor);
+  const BitMask & oknight_mask = fmgr.knight_mask(ocolor);
 
   // color, castle type
-  static const BitMask opponent_pressure_masks[2][2] = {
+  static const BitMask opponent_bishop_masks[2][2] = {
     {set_mask_bit(F6)|set_mask_bit(H6), set_mask_bit(C6)|set_mask_bit(A6)},
     {set_mask_bit(F3)|set_mask_bit(H3), set_mask_bit(C3)|set_mask_bit(A3)}
   };
 
+  static const BitMask opponent_knight_masks[2][2] = {
+    {set_mask_bit(G5), set_mask_bit(B5)},
+    {set_mask_bit(G4), set_mask_bit(B4)}
+  };
+
+  static const BitMask opponent_queen_masks[2][2] = {
+    {set_mask_bit(F6)|set_mask_bit(H6)|set_mask_bit(H5)|set_mask_bit(H4), set_mask_bit(C6)|set_mask_bit(A6)|set_mask_bit(A5)|set_mask_bit(A4)},
+    {set_mask_bit(F3)|set_mask_bit(H3)|set_mask_bit(H4)|set_mask_bit(H5), set_mask_bit(C3)|set_mask_bit(A3)|set_mask_bit(A4)|set_mask_bit(A5)}
+  };
+
+  // some attack patterns
   if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
   {
+    bool kn_or_bi = false;
     // opponent bishop pressure
-    if ( opponent_pressure_masks[color][ctype] & obishop_mask )
+    if ( opponent_bishop_masks[color][ctype] & obishop_mask )
+    {
+      kn_or_bi = true;
       score -= kingbishopPressure_;
+    }
 
-    //// opponent bishop pressure
-    //if ( opponent_pressure_masks[color][ctype] & oqueen_mask )
+    // opponent's knight pressure
+    if ( opponent_knight_masks[color][ctype] & oknight_mask )
+    {
+      kn_or_bi = true;
+      score -= kingknightPressure_;
+    }
+
+    //// opponent queen pressure
+    //if ( kn_or_bi && (opponent_queen_masks[color][ctype] & oqueen_mask) )
     //  score -= queenAttackBonus_;
   }
 
