@@ -212,9 +212,9 @@ const ScoreType Evaluator::kingknightPressure_ = 8;
 const ScoreType Evaluator::queenAttackBonus_ = 10;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 65
+#define MAX_PASSED_SCORE 80
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 7, 12, 20, 40, 50, MAX_PASSED_SCORE, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 40, 60, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
 const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 5, 8, 10, 12, 15, 0 };
 const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 2, 3, 5, 7, 9, 12, 0 };

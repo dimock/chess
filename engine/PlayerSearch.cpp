@@ -807,8 +807,8 @@ GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, 
     {
       if ( scontexts_[ictx].board_.calculateReps(hmove) < 2 )
       {
-        if ( pv )
-          assemblePV(ictx, hmove, false, ply);
+        //if ( pv )
+        //  assemblePV(ictx, hmove, false, ply);
 
         /// danger move was reduced - recalculate it with full depth
         const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
