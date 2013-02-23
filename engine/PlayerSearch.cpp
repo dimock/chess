@@ -29,6 +29,11 @@ inline Figure::Type delta2type(int delta)
   return minimalType;
 }
 
+inline int calculateDelta(ScoreType alpha, ScoreType score)
+{
+  int delta = (int)alpha - (int)score - (int)Evaluator::positionGain_;
+  return delta;
+}
 
 //////////////////////////////////////////////////////////////////////////
 bool Player::findMove(SearchResult * sres)
@@ -410,7 +415,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         depth == 1 && ply > 1 )
   {
     ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
-    int delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
+    int delta = calculateDelta(alpha, score0);//(int)alpha - (int)score0 - (int)Evaluator::positionGain_;
     if ( delta > 0 )
       return captures(ictx, depth, ply, alpha, betta, pv, score0);
 
@@ -704,7 +709,7 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
 
   if ( !scontexts_[ictx].board_.underCheck() )
   {
-    delta = (int)alpha - (int)score0 - (int)Evaluator::positionGain_;
+    delta = calculateDelta(alpha, score0);//(int)alpha - (int)score0 - (int)Evaluator::positionGain_;
     if ( score0 > alpha )
       alpha = score0;
 

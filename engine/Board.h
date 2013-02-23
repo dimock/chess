@@ -252,6 +252,7 @@ public:
     }
 
     int null_depth = depth - nullMoveReduce();
+
     if ( null_depth < 0 )
       null_depth = 0;
     
