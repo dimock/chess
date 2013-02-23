@@ -19,7 +19,7 @@ enum {
 
 const ScoreType Evaluator::positionGain_ = 100;
 
-const ScoreType Evaluator::lazyThresholds_[3] = { 300, 300, 200 };
+const ScoreType Evaluator::lazyThresholds_[3] = { 300, 250, 100 };
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -176,6 +176,7 @@ const ScoreType Evaluator::figureAgainstPawnBonus_ = 15;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 20;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 50;
+const ScoreType Evaluator::kingFarBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
@@ -434,7 +435,7 @@ ScoreType Evaluator::evaluate()
   if ( score < alpha_[1] || score > betta_[1] )
     return score;
 
-  score += evaluateKnightsBishops();
+  score += evaluateWorth(phase, coef_o, coef_e);
 
   // 3rd level
   if ( score < alpha_[2] || score > betta_[2] )
@@ -610,7 +611,7 @@ ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
   return score;
 }
 
-ScoreType Evaluator::evaluateKnightsBishops()
+ScoreType Evaluator::evaluateWorth(GamePhase phase, int coef_o, int coef_e)
 {
   ScoreType score = 0;
 
@@ -622,6 +623,15 @@ ScoreType Evaluator::evaluateKnightsBishops()
 
   score -= evaluateForks(Figure::ColorBlack);
   score += evaluateForks(Figure::ColorWhite);
+
+  ScoreType pw_score_eg = 0;
+  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg, phase);
+  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg, phase);
+
+  if ( phase == MiddleGame )
+    pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
+
+  score += pw_score_eg;
 
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
@@ -761,15 +771,6 @@ ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
 
   score -= finfo_[0].queenPressure_;
   score += finfo_[1].queenPressure_;
-
-  ScoreType pw_score_eg = 0;
-  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg, phase);
-  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg, phase);
-
-  if ( phase == MiddleGame )
-    pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
-
-  score += pw_score_eg;
 
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
@@ -1350,17 +1351,17 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
       if ( score_eg )
       {
-        //int pawn_dist_promo = py - y;
-        //if ( pawn_dist_promo < 0 )
-        //  pawn_dist_promo = -pawn_dist_promo;
+        int pawn_dist_promo = py - y;
+        if ( pawn_dist_promo < 0 )
+          pawn_dist_promo = -pawn_dist_promo;
 
         int o_dist_promo = board_->g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
         if ( board_->color_ == ocolor )
           o_dist_promo--;
 
-        //if ( pawn_dist_promo < o_dist_promo )
-        //  *score_eg += unstoppablePawn_;
-        //else
+        if ( pawn_dist_promo < o_dist_promo )
+          *score_eg += kingFarBonus_;
+        else
           *score_eg += o_dist_promo<<1;
 
         // give penalty for long distance to my pawns if opponent doesn't have any
@@ -1526,21 +1527,14 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       // check is it attacked by opponent
       if ( !board_->getField(next_pos) )
       {
-        BitMask next_mask = set_mask_bit(next_pos);
-        if ( (next_mask & finfo_[ocolor].attack_mask_) != 0 )
-        {
-          Move move;
-          Figure::Type type = Figure::TypeNone;
-          if ( next_pos == promo_pos )
-            type = Figure::TypeQueen;
+        Move move;
+        Figure::Type type = Figure::TypeNone;
+        if ( next_pos == promo_pos )
+          type = Figure::TypeQueen;
 
-          move.set(n, next_pos, type, false);
-          ScoreType see_score = board_->see(move);
-          if ( see_score >= 0 )
-            can_go = true;
-        }
-        else
-          can_go = true;
+        move.set(n, next_pos, type, false);
+        ScoreType see_score = board_->see(move);
+        can_go = see_score >= 0;
       }
 
       // additional bonus if opponent's king is too far from my pawn's promotion field
