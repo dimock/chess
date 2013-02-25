@@ -375,7 +375,10 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   if ( depth <= 0 )
     return captures(ictx, depth, ply, alpha, betta, pv);
 
-  bool nm_threat = false, real_threat = false;
+  bool nm_threat = false, real_threat = false, mat_threat = false;
+
+  UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
+  bool check_escape = scontexts_[ictx].board_.underCheck();
 
 #ifdef USE_NULL_MOVE
   if ( !pv &&
@@ -401,7 +404,17 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         return captures(ictx, depth, ply, alpha, betta, pv);
     }
     else // may be we are in danger?
+    {
+      if ( nullScore <= -Figure::MatScore+MaxPly ) // mat threat?
+      {
+        if ( prev.reduced_ )
+          return betta-1;
+        else
+          mat_threat = true;
+      }
+
       nm_threat = true;
+    }
   }
 #endif
 
@@ -436,9 +449,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
   if ( fg.singleReply() )
     depth++;
-
-  UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
-  bool check_escape = scontexts_[ictx].board_.underCheck();
 
 #ifdef SINGULAR_EXT
   int  aboveAlphaN = 0;
@@ -590,7 +600,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #if ((defined USE_LMR) && (defined VERIFY_LMR))
     // have to recalculate with full depth, or indicate threat in hash
-    if ( !stopped() && alpha >= betta && nm_threat && isRealThreat(ictx, best) )
+    if ( !stopped() && (mat_threat || (alpha >= betta && nm_threat && isRealThreat(ictx, best))) )
     {
       if ( prev.reduced_ )
         return betta-1;
