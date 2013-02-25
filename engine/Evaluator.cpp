@@ -72,7 +72,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
-     -5,  -5,   3,   3,   3,   3,  -5,  -5
+     -5,  -5,   0,   3,   3,   0,  -5,  -5
     },
 
     // queen
@@ -2003,16 +2003,34 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
 
   int delta_y[] = {-1, +1};
 
+  uint8 semiopen_mask = 0;
+  uint8 closed_mask = 0;
+
+  {
+    int kyplus  = ky + delta_y[color];
+    int kyplus2 = kyplus + delta_y[color];
+
+    if ( kyplus < 1 )
+      kyplus = 1;
+    else if ( kyplus > 6 )
+      kyplus = 6;
+
+    if ( kyplus2 < 1 )
+      kyplus2 = 1;
+    else if ( kyplus2 > 6 )
+      kyplus2 = 6;
+
+    closed_mask   = set_bit(ky) | set_bit(kyplus);
+    semiopen_mask = set_bit(ky) | set_bit(kyplus) | set_bit(kyplus2);
+  }
+
   int ctype = getCastleType(color);
 
   // in castle
   if ( ctype >= 0 )
   {
-    const BitMask & pw_mask = fmgr.pawn_mask_o(color);
-    const BitMask & opw_mask = fmgr.pawn_mask_o(ocolor);
-
     int dy = delta_y[color];
-    int pw_x[2][3] = { {5, 6, 7}, {2, 1, 0} };
+    static const int pw_x[2][3] = { {5, 6, 7}, {2, 1, 0} };
 
     // first 2 lines empty, full line empty
     static const ScoreType kingPenalties[3][3] = {
@@ -2024,60 +2042,31 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
     // f, g, h - short; b, c, a - long
     for (int i = 0; i < 3; ++i)
     {
-      int & x = pw_x[ctype][i];
-      Index ppy(x, ky), ppy1(x, ky+dy);
-      BitMask y_mask = set_mask_bit(ppy) | set_mask_bit(ppy1);
-      if ( pw_mask & y_mask )
+      const int & x = pw_x[ctype][i];
+      if ( pmsk_t[x] & closed_mask ) // have pawn before king. everything's ok
         continue;
 
-      Index ppy2(x, ky+dy+dy);
-      BitMask y_mask2 = set_mask_bit(ppy2);
-      if ( pw_mask & y_mask2 )
+      if ( pmsk_t[x] & semiopen_mask )
         score -= kingPenalties[2][i]; // cracked
-      else if ( !pmsk_t[x] )
-        score -= kingPenalties[0][i]; // completely opened
+      else if ( pmsk_t[x] )
+        score -= kingPenalties[1][i]; // semi-opened (no pawns on 1st & 2nd raws before king)
       else
-        score -= kingPenalties[1][i]; // semi-opened (no pawns on 1st & 2nd lines after king)
+        score -= kingPenalties[0][i]; // completely opened column
     }
-  }
 
-  // give penalty if there is no pawn before king
-  {
-    int yplus  = ky + delta_y[color];
-    int yplus2 = yplus + delta_y[color];
-
-    if ( yplus < 1 )
-      yplus = 1;
-    else if ( yplus > 6 )
-      yplus = 6;
-
-    if ( yplus2 < 1 )
-      yplus2 = 1;
-    else if ( yplus2 > 6 )
-      yplus2 = 6;
-
-    uint8 pp_mask = set_bit(ky) | set_bit(yplus) | set_bit(yplus2);
-    if ( (pmsk_t[kx] & pp_mask) == 0 )
+    // additional penalty is bg-column is opened and king is in the corner
+    bool bg_opened = pmsk_t[ pw_x[ctype][1] ] == 0;
+    if ( bg_opened && (kx == 0 || kx == 7) )
       score -= bg_columnSemiopened_;
   }
 
-  // try to put king under pawn's shield anyway
+  // try to put king under pawn's shield
+
+  // give additional penalty if there is no pawn before king
+  if ( (pmsk_t[kx] & semiopen_mask) == 0 )
+    score -= bg_columnSemiopened_;
+  else // or give small bonus for each pawn otherwise
   {
-    int yplus  = ky + delta_y[color];
-    int yplus2 = yplus + delta_y[color];
-
-    if ( yplus < 1 )
-      yplus = 1;
-    else if ( yplus > 6 )
-      yplus = 6;
-
-    if ( yplus2 < 1 )
-      yplus2 = 1;
-    else if ( yplus2 > 6 )
-      yplus2 = 6;
-
-    uint8 pp_mask = set_bit(ky) | set_bit(yplus) | set_bit(yplus2);
-
     int xle = kx-1;
     if ( xle < 0 )
       xle = 0;
@@ -2089,13 +2078,12 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
     int pw_count = 0;
     for (int x = xle; x <= xri; ++x)
     {
-      if ( pmsk_t[x] & pp_mask )
+      if ( pmsk_t[x] & semiopen_mask )
         pw_count++;
     }
 
-    // give small bonus if king is under pawn's shield
     static const int pawns_count_bonus[4] = { 0, 5, 10, 15 };
-    score -= pawns_count_bonus[pw_count & 3];
+    score += pawns_count_bonus[pw_count & 3];
   }
 
   // color, castle type
@@ -2115,139 +2103,3 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
 
   return score;
 }
-
-//int kx = ki_pos.x();
-//int ky = ki_pos.y();
-//
-//int y0 = ky + delta_y[color];
-//int y1 = y0 + delta_y[color];
-//
-//if ( y0 > 6 || y0 < 1 )
-//return -20;
-//
-//if ( y1 > 6 || y1 < 1 )
-//return -15;
-//
-//// check if there some pawn 2 lines higher than king
-//uint8 half_mask = 0;
-//int y2 = y1 + delta_y[color];
-//if ( y2 < 7 && y2 > 0 )
-//half_mask = set_bit(y2);
-//
-//// 1st - pawns under king
-//int pp0 = kx | (y0 << 3);
-//int pp1 = kx | (y1 << 3);
-//
-//int pawnsCount = 0;
-//
-//if ( board_->getField(pp0).type() != Figure::TypePawn || board_->getField(pp0).color() != color )
-//{
-//  if ( board_->getField(pp1).type() == Figure::TypePawn && board_->getField(pp1).color() == color )
-//  {
-//    score -= bg_columnCracked_;
-//    pawnsCount++;
-//  }
-//  else if ( pmsk_t[kx] )
-//  {
-//    score -= bg_columnSemiopened_;
-//    pawnsCount++;
-//  }
-//  else // no pawn in column
-//    score -= bg_columnOpened_;
-//}
-//else
-//pawnsCount++;
-//
-//// 2nd - pawn left to king
-//int kx_le = kx-1;
-//if ( kx_le >= 0 )
-//{
-//  int fullPenalty = 0, halfPenalty = 0, crackedPenalty = 0;
-//
-//  // in case of right castle give small penalty or big otherwise
-//  if ( ctype == 0 )
-//  {
-//    fullPenalty = cf_columnOpened_;
-//    halfPenalty = cf_columnCracked_;
-//    crackedPenalty = cf_columnSemiopened_;
-//  }
-//  else
-//  {
-//    fullPenalty = ah_columnOpened_;
-//    halfPenalty = ah_columnSemiopened_;
-//    crackedPenalty = ah_columnCracked_;
-//  }
-//
-//  int ppk = kx_le | (ky << 3);
-//  pp0 = kx_le | (y0 << 3);
-//  pp1 = kx_le | (y1 << 3);
-//
-//  // no pawn on upper or the same row
-//  if ( (board_->getField(pp0).type() != Figure::TypePawn || board_->getField(pp0).color() != color) &&
-//    (board_->getField(ppk).type() != Figure::TypePawn || board_->getField(ppk).color() != color) )
-//  {
-//    if ( board_->getField(pp1).type() == Figure::TypePawn && board_->getField(pp1).color() == color )
-//    {
-//      score -= crackedPenalty;
-//      pawnsCount++;
-//    }
-//    else if ( pmsk_t[kx_le] )
-//    {
-//      score -= halfPenalty;
-//      pawnsCount++;
-//    }
-//    else
-//      score -= fullPenalty;
-//  }
-//  else
-//    pawnsCount++;
-//}
-//
-//// 3rd - pawn right to king
-//int kx_ri = kx+1;
-//if ( kx_ri < 8 )
-//{
-//  int fullPenalty = 0, halfPenalty = 0, crackedPenalty = 0;
-//
-//  // the same penalty but for left castle type
-//  if ( ctype == 1 )
-//  {
-//    fullPenalty = cf_columnOpened_;
-//    halfPenalty = cf_columnSemiopened_;
-//    crackedPenalty = cf_columnCracked_;
-//  }
-//  else
-//  {
-//    fullPenalty = ah_columnOpened_;
-//    halfPenalty = ah_columnSemiopened_;
-//    crackedPenalty = ah_columnCracked_;
-//  }
-//
-//  int ppk = kx_ri | (ky << 3);
-//  pp0 = kx_ri | (y0 << 3);
-//  pp1 = kx_ri | (y1 << 3);
-//
-//  // no pawn on upper or the same row
-//  if ( (board_->getField(pp0).type() != Figure::TypePawn || board_->getField(pp0).color() != color) &&
-//    (board_->getField(ppk).type() != Figure::TypePawn || board_->getField(ppk).color() != color) )
-//  {
-//    // no pawn at all
-//    if ( board_->getField(pp1).type() == Figure::TypePawn && board_->getField(pp1).color() == color )
-//    {
-//      score -= crackedPenalty;
-//      pawnsCount++;
-//    }
-//    else if ( pmsk_t[kx_ri] )
-//    {
-//      score -= halfPenalty;
-//      pawnsCount++;
-//    }
-//    else
-//      score -= fullPenalty;
-//  }
-//  else
-//    pawnsCount++;
-//}
-//
-//static int pawns_count_penalty[4] = { 25, 15, 4, 0 };
-//score -= pawns_count_penalty[pawnsCount & 3];
