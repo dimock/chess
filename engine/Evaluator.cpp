@@ -218,11 +218,12 @@ const ScoreType Evaluator::kingknightPressure_ = 8;
 const ScoreType Evaluator::queenAttackBonus_ = 10;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 80
+#define MAX_PASSED_SCORE 60
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 7, 10, 20, 30, (MAX_PASSED_SCORE >> 1), 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 3, 5, 7, 12, 15, 20, 0 };
+const ScoreType Evaluator::pawnPassedEg_[8] = { 0, 5, 10, 15, 20, 30, (MAX_PASSED_SCORE - 20), 0 };
 const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
-const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 5, 7, 9, 11, 13, 0 };
+const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 3, 5, 7, 9, 11, 0 };
 const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 1, 2, 3, 4, 5, 6, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
 
@@ -1352,7 +1353,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       score += pawnPassed_[cy];
 
       if ( score_eg )
-        *score_eg += pawnPassed_[cy];
+        *score_eg += pawnPassedEg_[cy];
 
       // additional bonus if guarded
       if ( guarded )
