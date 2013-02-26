@@ -428,7 +428,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         depth == 1 && ply > 1 )
   {
     ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
-    int delta = calculateDelta(alpha, score0);//(int)alpha - (int)score0 - (int)Evaluator::positionGain_;
+    int delta = calculateDelta(alpha, score0);
     if ( delta > 0 )
       return captures(ictx, depth, ply, alpha, betta, pv, score0);
 
@@ -703,15 +703,8 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
   if ( scontexts_[ictx].board_.drawState() || scontexts_[ictx].board_.countReps() > 1 )
     return Figure::DrawScore;
 
-  // not initialized yet
-  if ( score0 == -ScoreMax )
-    score0 = scontexts_[ictx].eval_(alpha, betta);
-
   if ( stopped() || ply >= MaxPly )
-    return score0;
-
-  if ( !scontexts_[ictx].board_.underCheck() && score0 >= betta )
-    return score0;
+    return Figure::DrawScore;
 
   int counter = 0;
   ScoreType scoreBest = -ScoreMax;
@@ -719,7 +712,14 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
 
   if ( !scontexts_[ictx].board_.underCheck() )
   {
-    delta = calculateDelta(alpha, score0);//(int)alpha - (int)score0 - (int)Evaluator::positionGain_;
+    // not initialized yet
+    if ( score0 == -ScoreMax )
+      score0 = scontexts_[ictx].eval_(alpha, betta);
+
+    if ( score0 >= betta )
+      return score0;
+
+    delta = calculateDelta(alpha, score0);
     if ( score0 > alpha )
       alpha = score0;
 

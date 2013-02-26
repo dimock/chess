@@ -12,14 +12,17 @@ class Evaluator
 
 public:
 
+  static int score_ex_max_;
+
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
   static const ScoreType positionEvaluations_[2][8][64];
 
-  // evaluation constants
   static const ScoreType positionGain_;
-  static const ScoreType lazyThresholds_[3];
+  static const ScoreType lazyThreshold_;
+
+  // evaluation constants
   static const ScoreType bishopKnightMat_[64];
-  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_;
+  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_, guardedBonus_;
   static const ScoreType assistantBishop_, rookBehindBonus_;
   static const ScoreType semiopenRook_, openRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
@@ -79,12 +82,10 @@ private:
 
   /// calculates absolute position evaluation
   ScoreType evaluate();
+
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
   ScoreType evaluatePawnShield(Figure::Color color);
   ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, GamePhase phase);
-
-  // experimental
-  ScoreType evaluatePawnShield2(Figure::Color color);
 
   ScoreType evaluateKingPressure(GamePhase phase, int coef_o);
   ScoreType evaluateKingPressure(Figure::Color color);
@@ -93,8 +94,8 @@ private:
   ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evaluateFianchetto() const;
 
-  // search shortest path from opponent king to pawns with 'color'
-  bool findRootToPawn(Figure::Color color, int pawn_dist_promo, int promo_pos) const;
+  // search path from opponent king to pawn's promotion of given color
+  bool findRootToPawn(Figure::Color color, int promo_pos) const;
 
   // special cases
 
@@ -131,8 +132,7 @@ private:
   /// find knight and pawn forks
   ScoreType evaluateForks(Figure::Color color);
 
-  /// after lazy eval.
-  ScoreType evaluateWorth(GamePhase phase, int coef_o, int coef_e);
+  /// lazy eval.
   ScoreType evaluateExpensive(GamePhase phase, int coef_o, int coef_e);
 
   struct FieldsInfo
@@ -182,5 +182,5 @@ private:
 
   BitMask mask_all_;
   BitMask inv_mask_all_;
-  ScoreType alpha_[3], betta_[3];
+  ScoreType alpha_, betta_;
 };
