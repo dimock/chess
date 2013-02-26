@@ -187,6 +187,9 @@ const ScoreType Evaluator::forkBonus_ = 60;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
+const ScoreType Evaluator::bishopBlocked_ = 50;
+const ScoreType Evaluator::knightBlocked_ = 50;
+
 const ScoreType Evaluator::pinnedKnight_ = 0;//-5;
 const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
 const ScoreType Evaluator::pinnedRook_ = 0;//-5;
@@ -375,6 +378,10 @@ ScoreType Evaluator::evaluate()
 
   score += pwscore;
 
+  // blocked by opponent pawns
+  score += evaluateBlockedBishops();
+  score += evaluateBlockedKnights();
+
   // 2. determine game phase (opening, middle or end game)
   int coef_o = 0, coef_e = 0;
   GamePhase phase = detectPhase(coef_o, coef_e);
@@ -424,6 +431,165 @@ ScoreType Evaluator::evaluate()
 
   score += score_ex;
 
+  return score;
+}
+
+ScoreType Evaluator::evaluateBlockedBishops()
+{
+  ScoreType score_b = 0, score_w = 0;
+
+  BitMask bimask_w = board_->fmgr().bishop_mask(Figure::ColorWhite);
+  for ( ; bimask_w; )
+  {
+    int n = clear_lsb(bimask_w);
+    switch ( n )
+    {
+    case A7:
+      if ( board_->isFigure(B6, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= bishopBlocked_;
+      break;
+
+    case B8:
+      if ( board_->isFigure(C7, Figure::ColorBlack, Figure::TypePawn) &&
+           board_->isFigure(B6, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= bishopBlocked_;
+      break;
+
+    case H7:
+      if ( board_->isFigure(G6, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= bishopBlocked_;
+      break;
+
+    case G8:
+      if ( board_->isFigure(F7, Figure::ColorBlack, Figure::TypePawn) &&
+           board_->isFigure(G6, Figure::ColorBlack, Figure::TypePawn))
+        score_w -= bishopBlocked_;
+      break;
+
+    case A6:
+      if ( board_->isFigure(B5, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= bishopBlocked_;
+      break;
+
+    case H6:
+      if ( board_->isFigure(G5, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= bishopBlocked_;
+      break;
+    }
+  }
+
+  BitMask bimask_b = board_->fmgr().bishop_mask(Figure::ColorBlack);
+  for ( ; bimask_b; )
+  {
+    int n = clear_lsb(bimask_b);
+
+    switch ( n )
+    {
+    case A2:
+      if ( board_->isFigure(B3, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= bishopBlocked_;
+      break;
+
+    case B1:
+      if ( board_->isFigure(C2, Figure::ColorWhite, Figure::TypePawn) &&
+           board_->isFigure(B3, Figure::ColorWhite, Figure::TypePawn))
+        score_b -= bishopBlocked_;
+      break;
+
+    case H2:
+      if ( board_->isFigure(G3, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= bishopBlocked_;
+      break;
+
+    case G1:
+      if ( board_->isFigure(F2, Figure::ColorWhite, Figure::TypePawn) &&
+           board_->isFigure(G3, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= bishopBlocked_;
+      break;
+
+    case A3:
+      if ( board_->isFigure(B4, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= bishopBlocked_;
+      break;
+
+    case H3:
+      if ( board_->isFigure(G4, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= bishopBlocked_;
+      break;
+    }
+  }
+
+  ScoreType score = score_w - score_b;
+  return score;
+}
+
+ScoreType Evaluator::evaluateBlockedKnights()
+{
+  ScoreType score_b = 0, score_w = 0;
+
+  BitMask knight_w = board_->fmgr().knight_mask(Figure::ColorWhite);
+  for ( ; knight_w; )
+  {
+    int n = clear_lsb(knight_w);
+
+    switch ( n )
+    {
+    case A8:
+      if ( board_->isFigure(C7, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= knightBlocked_;
+      break;
+
+    case A7:
+      if ( board_->isFigure(A6, Figure::ColorBlack, Figure::TypePawn) &&
+           board_->isFigure(B7, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= knightBlocked_;
+      break;
+
+    case H8:
+      if ( board_->isFigure(F7, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= knightBlocked_;
+      break;
+
+    case H7:
+      if ( board_->isFigure(H6, Figure::ColorBlack, Figure::TypePawn) &&
+           board_->isFigure(G7, Figure::ColorBlack, Figure::TypePawn) )
+        score_w -= knightBlocked_;
+      break;
+    }
+  }
+
+  BitMask knight_b = board_->fmgr().knight_mask(Figure::ColorBlack);
+  for ( ; knight_b; )
+  {
+    int n = clear_lsb(knight_b);
+
+    switch ( n )
+    {
+    case A1:
+      if ( board_->isFigure(C2, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= knightBlocked_;
+      break;
+
+    case A2:
+      if ( board_->isFigure(A3, Figure::ColorWhite, Figure::TypePawn) &&
+           board_->isFigure(B2, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= knightBlocked_;
+      break;
+
+    case H1:
+      if ( board_->isFigure(F2, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= knightBlocked_;
+      break;
+
+    case H2:
+      if ( board_->isFigure(H3, Figure::ColorWhite, Figure::TypePawn) &&
+           board_->isFigure(G2, Figure::ColorWhite, Figure::TypePawn) )
+        score_b -= knightBlocked_;
+      break;
+    }
+  }
+
+  ScoreType score = score_w - score_b;
   return score;
 }
 

@@ -41,6 +41,10 @@ public:
   static const ScoreType fianchettoBonus_;
   static const ScoreType rookToKingBonus_;
 
+  // blocked bishop & knight
+  static const ScoreType bishopBlocked_;
+  static const ScoreType knightBlocked_;
+
   // king pressure
   static const ScoreType kingAttackBonus_[8];
   static const ScoreType kingImmobility_[10];
@@ -86,6 +90,9 @@ private:
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
   ScoreType evaluatePawnShield(Figure::Color color);
   ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, GamePhase phase);
+
+  ScoreType evaluateBlockedBishops();
+  ScoreType evaluateBlockedKnights();
 
   ScoreType evaluateKingPressure(GamePhase phase, int coef_o);
   ScoreType evaluateKingPressure(Figure::Color color);
