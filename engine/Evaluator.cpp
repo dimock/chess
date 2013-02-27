@@ -32,8 +32,8 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       // pawn
     {
       0,   0,   0,   0,   0,   0,   0,   0,
-      10,  10,  10,  10,  10,  10,  10,  10,
-      4,   4,   6,   8,   8,   6,   4,   4,
+      8,   8,   8,   8,   8,   8,   8,   8,
+      4,   4,   6,   7,   7,   6,   4,   4,
       2,   2,   4,   6,   6,   4,   2,   2,
       0,   0,   0,   4,   4,   0,   0,   0,
       2,  -2,  -4,   0,   0,  -4,  -2,   2,
@@ -67,9 +67,9 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
 
     // rook
     {
-      7,   7,   7,   7,   7,   7,   7,   7,
-      7,   7,   7,   7,   7,   7,   7,   7,
-     -2,   0,   0,   0,   0,   0,   0,  -2,
+      9,   9,   9,   9,   9,   9,   9,   9,
+      9,   9,   9,   9,   9,   9,   9,   9,
+      0,   0,   0,   0,   0,   0,   0,   0,
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
@@ -113,11 +113,11 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       // pawn
     {
       0,   0,   0,   0,   0,   0,   0,   0,
-      14,  16,  16,  18, 18,  16,  16,  14,
-      10,  10,  12,  12, 12,  12,  10,  10,
-      7,   7,   8,   8,   8,   8,   7,   7,
-      5,   5,   6,   6,   6,   6,   5,   5,
-      3,   3,   4,   4,   4,   4,   3,   3,
+     10,  10,  10,  10,  10,  10,  10,  10,
+     10,  10,  10,  10,  10,  10,  10,  10,
+      8,   8,   8,   8,   8,   8,   8,   8,
+      6,   6,   6,   6,   6,   6,   6,   6,
+      4,   4,   4,   4,   4,   4,   4,   4,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0
     },
@@ -171,8 +171,8 @@ const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::guardedBonus_ = 5;
 const ScoreType Evaluator::assistantBishop_ = 6;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
-const ScoreType Evaluator::semiopenRook_ =  10;
-const ScoreType Evaluator::openRook_ =  10;
+const ScoreType Evaluator::semiopenRook_ =  12;
+const ScoreType Evaluator::openRook_ =  12;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
@@ -232,7 +232,7 @@ const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {-40, -15, 0, 3, 5, 7, 9, 11},
   {-35, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-20, -8, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-25, -12, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
   {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
