@@ -67,8 +67,8 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
 
     // rook
     {
-      9,   9,   9,   9,   9,   9,   9,   9,
-      9,   9,   9,   9,   9,   9,   9,   9,
+     12,  12,  12,  12,  12,  12,  12,  12,
+     12,  12,  12,  12,  12,  12,  12,  12,
       0,   0,   0,   0,   0,   0,   0,   0,
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
@@ -178,9 +178,9 @@ const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
-const ScoreType Evaluator::pawnEndgameBonus_ = 10;
+const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
-const ScoreType Evaluator::kingFarBonus_ = 25;
+const ScoreType Evaluator::kingFarBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
@@ -196,13 +196,13 @@ const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
 const ScoreType Evaluator::pinnedRook_ = 0;//-5;
 
 // pawns shield
-const ScoreType Evaluator::cf_columnOpened_ = 8;
-const ScoreType Evaluator::bg_columnOpened_ = 25;
-const ScoreType Evaluator::ah_columnOpened_ = 20;
+const ScoreType Evaluator::cf_columnOpened_ = 10;
+const ScoreType Evaluator::bg_columnOpened_ = 28;
+const ScoreType Evaluator::ah_columnOpened_ = 24;
 
-const ScoreType Evaluator::cf_columnSemiopened_ = 4;
-const ScoreType Evaluator::bg_columnSemiopened_ = 8;
-const ScoreType Evaluator::ah_columnSemiopened_ = 8;
+const ScoreType Evaluator::cf_columnSemiopened_ = 5;
+const ScoreType Evaluator::bg_columnSemiopened_ = 14;
+const ScoreType Evaluator::ah_columnSemiopened_ = 12;
 
 const ScoreType Evaluator::cf_columnCracked_ = 1;
 const ScoreType Evaluator::bg_columnCracked_ = 4;
@@ -222,7 +222,7 @@ const ScoreType Evaluator::queenAttackBonus_ = 10;
 #define MAX_PASSED_SCORE 60
 
 const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 7, 9, 12, 15, 20, 0 };
-const ScoreType Evaluator::passersGroup_[8] = { 0, 3, 5, 7, 9, 12, 15, 0 };
+const ScoreType Evaluator::passersGroup_[8] = { 0, 5, 7, 9, 11, 13, 15, 0 };
 const ScoreType Evaluator::pawnPassedEg_[8] = { 0, 6, 10, 15, 20, 30, (MAX_PASSED_SCORE - 20), 0 };
 const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 3, 5, 7, 9, 11, 0 };
 const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 1, 2, 3, 4, 5, 6, 0 };
