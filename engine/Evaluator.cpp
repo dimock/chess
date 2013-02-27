@@ -168,18 +168,19 @@ const ScoreType Evaluator::pawnIsolated_ = -20;
 const ScoreType Evaluator::pawnBackward_ = -10;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
-const ScoreType Evaluator::guardedBonus_ = 5;
+const ScoreType Evaluator::defendedBonus_ = 5;
+const ScoreType Evaluator::groupsPenalty_ = 2;
 const ScoreType Evaluator::assistantBishop_ = 6;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  12;
-const ScoreType Evaluator::openRook_ =  12;
+const ScoreType Evaluator::openRook_ =  15;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
 const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
 const ScoreType Evaluator::pawnEndgameBonus_ = 10;
-const ScoreType Evaluator::unstoppablePawn_ = 50;
-const ScoreType Evaluator::kingFarBonus_ = 20;
+const ScoreType Evaluator::unstoppablePawn_ = 60;
+const ScoreType Evaluator::kingFarBonus_ = 25;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
@@ -220,9 +221,9 @@ const ScoreType Evaluator::queenAttackBonus_ = 10;
 /// pawns evaluation
 #define MAX_PASSED_SCORE 60
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 3, 5, 7, 12, 15, 20, 0 };
-const ScoreType Evaluator::pawnPassedEg_[8] = { 0, 5, 10, 15, 20, 30, (MAX_PASSED_SCORE - 20), 0 };
-const ScoreType Evaluator::pawnGuarded_[8] = { 0, 0, 4, 6, 10, 12, 15, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 7, 9, 12, 15, 20, 0 };
+const ScoreType Evaluator::passersGroup_[8] = { 0, 3, 5, 7, 9, 12, 15, 0 };
+const ScoreType Evaluator::pawnPassedEg_[8] = { 0, 6, 10, 15, 20, 30, (MAX_PASSED_SCORE - 20), 0 };
 const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 3, 5, 7, 9, 11, 0 };
 const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 1, 2, 3, 4, 5, 6, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
@@ -1294,6 +1295,8 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
   // columns, occupied by pawns
   uint8 cols_visited = 0;
+  uint8 cols_passer = 0;
+  int passers_y[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
 
   const BitMask & pw_mask_o = fmgr.pawn_mask_o(color);
   BitMask pawn_mask = pw_mask_o;
@@ -1334,12 +1337,12 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       }
     }
 
-    // guarded by neighbor pawn
+    // defended by neighbor pawn
     const BitMask & guardmsk = board_->g_pawnMasks->mask_guarded(color, n);
-    bool guarded = (pmsk_t & guardmsk) != 0;
+    bool defended = (pmsk_t & guardmsk) != 0;
 
-    if ( guarded )
-      score += guardedBonus_;
+    if ( defended )
+      score += defendedBonus_;
 
     const uint64 & passmsk = board_->g_pawnMasks->mask_passed(color, n);
     const uint64 & blckmsk = board_->g_pawnMasks->mask_blocked(color, n);
@@ -1349,20 +1352,16 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
     // passed pawn evaluation
     if ( !(opmsk_t & passmsk) && !(pmsk_t & blckmsk) )
     {
+      THROW_IF( cols_passer & set_bit(x), "more than 1 passed pawn in column" );
+
+      passers_y[x] = y;
+      cols_passer |= set_bit(x);
+
       passed = true;
       score += pawnPassed_[cy];
 
       if ( score_eg )
         *score_eg += pawnPassedEg_[cy];
-
-      // additional bonus if guarded
-      if ( guarded )
-      {
-        score += pawnGuarded_[cy];
-
-        if ( score_eg )
-          *score_eg += pawnGuarded_[cy];
-      }
 
       int promo_pos = x | (py<<3);
 
@@ -1487,6 +1486,131 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       }
     }
   }
+
+
+  // calculate number of pawn groups - pawns on neighbor columns
+  // give small penalty if number  > 1
+  if ( cols_visited )
+  {
+    uint8 mask = cols_visited;
+    int num = 0;
+    bool group = false;
+    for ( ; mask; mask >>= 1)
+    {
+      if ( mask & 1 )
+      {
+        if ( group )
+          continue;
+        else
+        {
+          group = true;
+          num++;
+        }
+      }
+      else
+        group = false;
+    }
+
+    THROW_IF( num < 1, "no groups found" );
+    score -= (num-1) * groupsPenalty_;
+
+    // not important if there are no figures
+    if ( score_eg )
+      *score_eg += (num-1) * groupsPenalty_;
+  }
+
+  // give additional bonuses for passer pawns
+  // if there 2 or more passers on neighbor columns etc...
+  if ( cols_passer )
+  {
+    int n = 0;
+    uint8 mask = cols_passer;
+    bool group = false;
+    int group_x[8];
+    for (int x = 0; mask; mask >>= 1, ++x)
+    {
+      if ( mask & 1 )
+      {
+        if ( group )
+          group_x[n++] = x;
+        else
+        {
+          group_x[0] = x;
+          n = 1;
+          group = true;
+        }
+      }
+      else
+      {
+        // analyze group
+        if ( n > 1 )
+          score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
+
+        n = 0;
+        group = false;
+      }
+    }
+
+    // the last group
+    if ( n > 1 )
+      score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
+  }
+
+  return score;
+}
+
+ScoreType Evaluator::analyzePasserGroup(ScoreType * score_eg, Figure::Color color, int (&group_x)[8], int n, int (&passers_y)[8])
+{
+  Figure::Color ocolor = Figure::otherColor(color);
+  ScoreType score = 0;
+  BitMask group_mask = 0;
+  int cymax = 0, xmax = -1;
+  int cymin = 7;
+  for (int i = 0; i < n; ++i)
+  {
+    int x = group_x[i];
+    int y = passers_y[x];
+    int p = x | (y << 3);
+    group_mask |= set_mask_bit(p);
+    int cy = color ? y : 7-y;
+    if ( cy > cymax )
+    {
+      cymax = cy;
+      xmax = x;
+    }
+    if ( cy < cymin )
+      cymin = cy;
+  }
+
+  // additional bonus if group is well formed - most advanced pawn is supported by neighbor
+  if ( cymax - cymin < 2 ) // on neighbor rows
+  {
+    score += passersGroup_[cymax];
+    //if ( score_eg )
+    //  *score_eg += (pawnPassedEg_[cymax] >> 1);
+  }
+  else if ( n > 1 ) // is most advanced pawn defended by neighbor passer or has neighbor on the same line?
+  {
+    int y = passers_y[xmax];
+    int pmax = xmax | (y << 3);
+    const BitMask & pwcap = board_->g_movesTable->pawnCaps_o(ocolor, pmax);
+    BitMask nb_mask = 0;
+    if ( xmax > 0 )
+      nb_mask |= set_mask_bit(pmax-1);
+    if ( xmax < 7 )
+      nb_mask |= set_mask_bit(pmax+1);
+    if ( (group_mask & pwcap) || (group_mask & nb_mask) )
+    {
+      score += passersGroup_[cymax];
+      //if ( score_eg )
+      //  *score_eg += (pawnPassedEg_[cymax] >> 1);
+    }
+  }
+
+  // give small additional bonus for group
+  score += (passersGroup_[cymax] >> 1) * (n-1);
+  //if ( score_eg )
+  //  *score_eg += (pawnPassedEg_[cymax] >> 2) * (n-1);
 
   return score;
 }

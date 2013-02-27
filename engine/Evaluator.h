@@ -22,7 +22,8 @@ public:
 
   // evaluation constants
   static const ScoreType bishopKnightMat_[64];
-  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_, guardedBonus_;
+  static const ScoreType pawnDoubled_, pawnIsolated_, pawnBackward_, pawnDisconnected_, pawnBlocked_, defendedBonus_;
+  static const ScoreType groupsPenalty_;
   static const ScoreType assistantBishop_, rookBehindBonus_;
   static const ScoreType semiopenRook_, openRook_, winloseBonus_;
   static const ScoreType fakecastlePenalty_;
@@ -33,7 +34,8 @@ public:
   static const ScoreType pawnEndgameBonus_;
   static const ScoreType unstoppablePawn_;
   static const ScoreType kingFarBonus_;
-  static const ScoreType pawnPassed_[8], pawnPassedEg_[8], pawnGuarded_[8], passerCandidate_[8], pawnOnOpenColumn_[8], pawnCanGo_[8];
+  static const ScoreType pawnPassed_[8], pawnPassedEg_[8], pawnDefended_[8], passerCandidate_[8], pawnOnOpenColumn_[8], pawnCanGo_[8];
+  static const ScoreType passersGroup_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
   static const ScoreType attackedByWeakBonus_;
@@ -100,6 +102,8 @@ private:
   ScoreType evaluateMaterialDiff();
   ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evaluateFianchetto() const;
+
+  ScoreType analyzePasserGroup(ScoreType * score_eg, Figure::Color color, int (&group_x)[8], int n, int (&passers_y)[8]);
 
   // search path from opponent king to pawn's promotion of given color
   bool findRootToPawn(Figure::Color color, int promo_pos) const;
