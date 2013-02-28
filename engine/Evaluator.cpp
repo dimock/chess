@@ -32,8 +32,8 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       // pawn
     {
       0,   0,   0,   0,   0,   0,   0,   0,
-      8,   8,   8,   8,   8,   8,   8,   8,
-      4,   4,   6,   7,   7,   6,   4,   4,
+      10,  10,  10,  10,  10,  10,  10,  10,
+      4,   4,   6,   8,   8,   6,   4,   4,
       2,   2,   4,   6,   6,   4,   2,   2,
       0,   0,   0,   4,   4,   0,   0,   0,
       2,  -2,  -4,   0,   0,  -4,  -2,   2,
@@ -45,8 +45,8 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
     {
       -10, -10, -10, -10, -10, -10, -10, -10,
       -10,  -8,   0,   0,   0,   0,  -8, -10,
-      -10,   0,   4,   6,   6,   4,   0, -10,
-      -10,   2,   6,   8,   8,   6,   2, -10,
+      -10,   0,   5,   7,   7,   5,   0, -10,
+      -10,   5,   8,   8,   8,   8,   5, -10,
       -10,   0,   6,   8,   8,   6,   0, -10,
       -10,   2,   4,   6,   6,   4,   2, -10,
       -10,  -8,   0,   2,   2,   0,  -8, -10,
@@ -113,11 +113,11 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       // pawn
     {
       0,   0,   0,   0,   0,   0,   0,   0,
-     10,  10,  10,  10,  10,  10,  10,  10,
-     10,  10,  10,  10,  10,  10,  10,  10,
-      8,   8,   8,   8,   8,   8,   8,   8,
-      6,   6,   6,   6,   6,   6,   6,   6,
-      4,   4,   4,   4,   4,   4,   4,   4,
+      14,  16,  16,  18, 18,  16,  16,  14,
+      10,  10,  12,  12, 12,  12,  10,  10,
+      7,   7,   8,   8,   8,   8,   7,   7,
+      5,   5,   6,   6,   6,   6,   5,   5,
+      3,   3,   4,   4,   4,   4,   3,   3,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0
     },
@@ -163,7 +163,7 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -15;
+const ScoreType Evaluator::pawnDoubled_  = -12;
 const ScoreType Evaluator::pawnIsolated_ = -20;
 const ScoreType Evaluator::pawnBackward_ = -10;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
@@ -196,13 +196,13 @@ const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
 const ScoreType Evaluator::pinnedRook_ = 0;//-5;
 
 // pawns shield
-const ScoreType Evaluator::cf_columnOpened_ = 10;
-const ScoreType Evaluator::bg_columnOpened_ = 28;
-const ScoreType Evaluator::ah_columnOpened_ = 24;
+const ScoreType Evaluator::cf_columnOpened_ = 8;
+const ScoreType Evaluator::bg_columnOpened_ = 25;
+const ScoreType Evaluator::ah_columnOpened_ = 20;
 
-const ScoreType Evaluator::cf_columnSemiopened_ = 5;
-const ScoreType Evaluator::bg_columnSemiopened_ = 14;
-const ScoreType Evaluator::ah_columnSemiopened_ = 12;
+const ScoreType Evaluator::cf_columnSemiopened_ = 4;
+const ScoreType Evaluator::bg_columnSemiopened_ = 8;
+const ScoreType Evaluator::ah_columnSemiopened_ = 8;
 
 const ScoreType Evaluator::cf_columnCracked_ = 1;
 const ScoreType Evaluator::bg_columnCracked_ = 4;
@@ -219,12 +219,13 @@ const ScoreType Evaluator::kingknightPressure_ = 8;
 const ScoreType Evaluator::queenAttackBonus_ = 10;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 60
+#define MAX_PASSED_SCORE 80
+//#define MAX_PASSED_MG 35
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 7, 9, 12, 15, 20, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 40, 60, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::passersGroup_[8] = { 0, 5, 7, 9, 11, 13, 15, 0 };
-const ScoreType Evaluator::pawnPassedEg_[8] = { 0, 6, 10, 15, 20, 30, (MAX_PASSED_SCORE - 20), 0 };
-const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 3, 5, 7, 9, 11, 0 };
+//const ScoreType Evaluator::pawnPassedEg_[8] = { 0, 10, 15, 20, 30, 35, (MAX_PASSED_SCORE - MAX_PASSED_MG), 0 };
+const ScoreType Evaluator::passerCandidate_[8] =  { 0, 5, 7, 9, 12, 15, 20, 0 };
 const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 1, 2, 3, 4, 5, 6, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
 
@@ -1360,8 +1361,8 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       passed = true;
       score += pawnPassed_[cy];
 
-      if ( score_eg )
-        *score_eg += pawnPassedEg_[cy];
+      //if ( score_eg )
+      //  *score_eg += pawnPassedEg_[cy];
 
       int promo_pos = x | (py<<3);
 
@@ -1481,8 +1482,8 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       else // give bonus for pawn on open column
       {
         score += pawnOnOpenColumn_[cy];
-        if ( score_eg )
-          *score_eg += pawnOnOpenColumn_[cy];
+        //if ( score_eg )
+        //  *score_eg += pawnOnOpenColumn_[cy];
       }
     }
   }

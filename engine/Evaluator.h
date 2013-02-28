@@ -34,7 +34,7 @@ public:
   static const ScoreType pawnEndgameBonus_;
   static const ScoreType unstoppablePawn_;
   static const ScoreType kingFarBonus_;
-  static const ScoreType pawnPassed_[8], pawnPassedEg_[8], pawnDefended_[8], passerCandidate_[8], pawnOnOpenColumn_[8], pawnCanGo_[8];
+  static const ScoreType pawnPassed_[8], /*pawnPassedEg_[8], */pawnDefended_[8], passerCandidate_[8], pawnOnOpenColumn_[8], pawnCanGo_[8];
   static const ScoreType passersGroup_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
