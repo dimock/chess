@@ -32,10 +32,10 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       // pawn
     {
       0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   5,   5,   0,   0,   0,
-      0,   0,   0,   6,   6,   0,   0,   0,
-      0,   0,   0,   8,   8,   0,   0,   0,
+      5,   5,   5,   5,   5,   5,   5,   5,
+      0,   0,   3,   5,   5,   3,   0,   0,
+      0,   0,   2,   6,   6,   2,   0,   0,
+      0,   0,   1,   8,   8,   1,   0,   0,
       2,   0,   0,   0,   0,   0,   0,   2,
       2,   4,   4, -10, -10,   4,   4,   2,
       0,   0,   0,   0,   0,   0,   0,   0
@@ -163,7 +163,7 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -12;
+const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -20;
 const ScoreType Evaluator::pawnBackward_ = -10;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
@@ -176,8 +176,8 @@ const ScoreType Evaluator::semiopenRook_ =  12;
 const ScoreType Evaluator::openRook_ =  15;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
-const ScoreType Evaluator::figureAgainstPawnBonus_ = 20;
-const ScoreType Evaluator::rookAgainstFigureBonus_ = 30;
+const ScoreType Evaluator::figureAgainstPawnBonus_ = 25;
+const ScoreType Evaluator::rookAgainstFigureBonus_ = 35;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::kingFarBonus_ = 20;
@@ -373,6 +373,8 @@ ScoreType Evaluator::evaluate()
   // 1. evaluate common features
   ScoreType score = fmgr.weight();
 
+  score += evaluateMaterialDiff();
+
   // take pawns eval. from hash if possible
   ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax, score_ps = -ScoreMax;
   hashedEvaluation(pwscore, pwscore_eg, score_ps);
@@ -395,8 +397,6 @@ ScoreType Evaluator::evaluate()
     // PSQ - evaluation
     score_o -= fmgr.eval(Figure::ColorBlack, 0);
     score_o += fmgr.eval(Figure::ColorWhite, 0);
-
-    score_o += evaluateMaterialDiff();
 
     ScoreType score_king = evaluateCastlePenalty(Figure::ColorWhite) - evaluateCastlePenalty(Figure::ColorBlack);
     score_king += score_ps;
