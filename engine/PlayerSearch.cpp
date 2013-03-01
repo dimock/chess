@@ -383,7 +383,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_NULL_MOVE
   if ( !pv &&
-       !nm &&
+//       !nm &&
        !scontexts_[ictx].board_.underCheck() &&
         scontexts_[ictx].board_.allowNullMove() &&
         depth >= scontexts_[ictx].board_.nullMoveDepthMin() &&

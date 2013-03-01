@@ -99,7 +99,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -10, -16, -16, -20, -20, -16, -16, -10,
       -4,  -8,   -8, -10, -10,  -8,  -8,  -4,
        0,   0,   -2,  -8,  -8,  -2,   0,   0,
-       5,  12,    5,   0,   0,   5,  15,   5
+       3,  12,    5,   0,   0,   5,  15,   3
     },
 
     {}
@@ -187,8 +187,8 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 0, 15, 20, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
-const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 0, 25, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 };
+const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 0, 20, 30, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 };
+const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 0, 25, 35, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45 };
 const ScoreType Evaluator::queenDifferenceBonus_[16]   =  { 0, 15, 25, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
 
 /// blocked figures
@@ -211,6 +211,8 @@ const ScoreType Evaluator::ah_columnSemiopened_ = 8;
 const ScoreType Evaluator::cf_columnCracked_ = 2;
 const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 2;
+
+const ScoreType Evaluator::nopawnBeforeKing_ = 5;
 
 // pressure to king by opponents pawn
 const ScoreType Evaluator::opponentPawnsToKing_ = 10;
@@ -394,7 +396,6 @@ ScoreType Evaluator::evaluate()
   ScoreType score_o = 0, score_e = 0;
 
   // opening part
-  if ( phase != EndGame )
   {
     // PSQ - evaluation
     score_o -= fmgr.eval(Figure::ColorBlack, 0);
@@ -407,7 +408,7 @@ ScoreType Evaluator::evaluate()
     score_o += evaluateFianchetto();
   }
 
-  if ( phase != Opening )
+  // endgame part
   {
     score_e -= fmgr.eval(Figure::ColorBlack, 1);
     score_e += fmgr.eval(Figure::ColorWhite, 1);
@@ -415,12 +416,8 @@ ScoreType Evaluator::evaluate()
     score_e += pwscore_eg;
   }
 
-  if ( phase == Opening )
-    score += score_o;
-  else if ( phase == EndGame )
-    score += score_e;
-  else // middle game
-    score = score + (score_o*coef_o + score_e*coef_e) / weightMax_;
+  // linear interpolation
+  score = score + (score_o*coef_o + score_e*coef_e) / weightMax_;
 
   // consider current move side
   if ( Figure::ColorBlack  == board_->getColor() )
@@ -430,7 +427,7 @@ ScoreType Evaluator::evaluate()
   if ( score < alpha_ || score > betta_ )
     return score;
 
-  ScoreType score_ex = evaluateExpensive(phase, coef_o, coef_e);
+  ScoreType score_ex = evaluateExpensive(coef_o, coef_e);
   if ( abs(score_ex) > score_ex_max_ )
     score_ex_max_ = abs(score_ex);
 
@@ -607,7 +604,7 @@ ScoreType Evaluator::evaluateBlockedKnights()
 }
 
 // most expensive part: mobility of figures, rooks on open columns, passed pawns additional bonus
-ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
+ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
 {
   ScoreType score = 0;
 
@@ -620,13 +617,12 @@ ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
   score += evaluateForks(Figure::ColorWhite);
 
   // rooks and queens mobility and attacked fields
-  evaluateRooks(phase != EndGame);
+  evaluateRooks();
   evaluateQueens();
 
   ScoreType score_r = finfo_[1].rookOpenScore_ - finfo_[0].rookOpenScore_;
 
-  if ( phase == MiddleGame )
-    score_r = (score_r * coef_o) / weightMax_;
+  score_r = (score_r * coef_o) / weightMax_;
 
   score += score_r;
 
@@ -644,11 +640,10 @@ ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
 
   // unstoppable passed pawns and pawns, that can go to the next line
   ScoreType pw_score_eg = 0;
-  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg, phase);
-  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg, phase);
+  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg);
+  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg);
 
-  if ( phase == MiddleGame )
-    pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
+  pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
 
   score += pw_score_eg;
 
@@ -755,7 +750,7 @@ ScoreType Evaluator::evaluateBishops()
   return score;
 }
 
-void Evaluator::evaluateRooks(bool eval_open)
+void Evaluator::evaluateRooks()
 {
   BitMask rattack_mask[2] = { 0, 0 };
 
@@ -808,7 +803,6 @@ void Evaluator::evaluateRooks(bool eval_open)
       finfo_[c].rookMobility_ += mobilityBonus_[Figure::TypeRook][movesN];
 
       // rook on open column
-      if ( eval_open )
       {
         Index rp(from);
         int x = rp.x();
@@ -923,19 +917,13 @@ Evaluator::GamePhase Evaluator::detectPhase(int & coef_o, int & coef_e)
   }
 
   GamePhase phase = MiddleGame;
-
-  if ( wei[0] > 2*Figure::figureWeight_[Figure::TypeQueen] &&
-    wei[1] > 2*Figure::figureWeight_[Figure::TypeQueen] )
-  {
-    phase = Opening;
-  }
-  else if ( wei[0] < Figure::figureWeight_[Figure::TypeQueen] &&
-    wei[1] < Figure::figureWeight_[Figure::TypeQueen] )
-  {
-    phase = EndGame;
-  }
-
   coef_o = wei[0] + wei[1];
+
+  if ( coef_o > weightMax_*9/10 )
+    phase = Opening;
+  else if ( coef_o < weightMax_/10 )
+    phase = EndGame;
+
   if ( coef_o > weightMax_ )
     coef_o = weightMax_;
   coef_e = weightMax_ - coef_o;
@@ -1175,19 +1163,8 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
       else
         score -= kingPenalties[0][i]; // completely opened column
     }
-
-    // additional penalty is bg-column is opened and king is in the corner
-    bool bg_opened = pmsk_t[ pw_x[ctype][1] ] == 0;
-    if ( bg_opened && (kx == 0 || kx == 7) )
-      score -= bg_columnSemiopened_;
-  }
-
-  // try to put king under pawn's shield
-
-  // give additional penalty if there is no pawn before king
-  if ( (pmsk_t[kx] & semiopen_mask) == 0 )
-    score -= bg_columnSemiopened_;
-  else // or give small bonus for each pawn otherwise
+  }  
+  else // try to put king under pawn's shield if it is not castled
   {
     int xle = kx-1;
     if ( xle < 0 )
@@ -1204,8 +1181,8 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
         pw_count++;
     }
 
-    static const int pawns_count_bonus[4] = { 0, 5, 10, 15 };
-    score += pawns_count_bonus[pw_count & 3];
+    // give penalty if there is no pawns before king
+    score -= (3-pw_count) * nopawnBeforeKing_;
   }
 
   // color, castle type
@@ -1602,7 +1579,7 @@ ScoreType Evaluator::analyzePasserGroup(ScoreType * score_eg, Figure::Color colo
   return score;
 }
 
-ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, GamePhase phase)
+ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg)
 {
   const FiguresManager & fmgr = board_->fmgr();
   Figure::Color ocolor = Figure::otherColor(color);
@@ -1691,7 +1668,7 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       {
         score += pawnCanGo_[cy];
 
-        if ( phase != Opening && !findRootToPawn(color, promo_pos) )
+        if ( !findRootToPawn(color, promo_pos) )
           score_eg += unstoppablePawn_;
       }
     }
@@ -2098,12 +2075,12 @@ ScoreType Evaluator::evaluateWinnerLoser()
     /// calculate attacked fields
     evaluateKnights();
     evaluateBishops();
-    evaluateRooks(false);
+    evaluateRooks();
     evaluateQueens();
 
     ScoreType score_eg = 0;
-    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg, EndGame);
-    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg, EndGame);
+    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg);
+    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg);
 
     score += score_eg;
     score += pwscore;

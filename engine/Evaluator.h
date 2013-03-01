@@ -72,6 +72,8 @@ public:
   static const ScoreType bg_columnCracked_;
   static const ScoreType ah_columnCracked_;
 
+  static const ScoreType nopawnBeforeKing_;
+
   // pressure to opponent's king
   static const ScoreType opponentPawnsToKing_;
   static const ScoreType kingbishopPressure_;
@@ -94,7 +96,7 @@ private:
 
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
   ScoreType evaluatePawnShield(Figure::Color color);
-  ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, GamePhase phase);
+  ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg);
 
   ScoreType evaluateBlockedBishops();
   ScoreType evaluateBlockedKnights();
@@ -138,7 +140,7 @@ private:
   ScoreType evaluateKnights();
 
   // evaluate rooks mobility and open column
-  void evaluateRooks(bool eval_open);
+  void evaluateRooks();
 
   // queens mobility
   void evaluateQueens();
@@ -147,7 +149,7 @@ private:
   ScoreType evaluateForks(Figure::Color color);
 
   /// lazy eval.
-  ScoreType evaluateExpensive(GamePhase phase, int coef_o, int coef_e);
+  ScoreType evaluateExpensive(int coef_o, int coef_e);
 
   struct FieldsInfo
   {
