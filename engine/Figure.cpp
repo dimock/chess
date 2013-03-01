@@ -20,7 +20,7 @@ extern const uint8 Figure::mirrorIndex_[64] =
 extern const uint64 Figure::pawnCutoffMasks_[2] = { 0xfefefefefefefefe /* left */, 0x7f7f7f7f7f7f7f7f /* right */ };
 
 // TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing
-extern const ScoreType Figure::figureWeight_[7] = { 0, 90, 330, 330, 515, 990, 0 };
+extern const ScoreType Figure::figureWeight_[7] = { 0, 90, 325, 325, 510, 995, 0 };
 
 ScoreType Figure::positionEvaluation(int stage, Figure::Color color, Figure::Type type, int pos)
 {

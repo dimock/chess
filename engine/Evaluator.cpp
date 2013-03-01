@@ -32,12 +32,12 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       // pawn
     {
       0,   0,   0,   0,   0,   0,   0,   0,
-      10,  10,  10,  10,  10,  10,  10,  10,
-      4,   4,   6,   8,   8,   6,   4,   4,
-      2,   2,   4,   6,   6,   4,   2,   2,
-      0,   0,   0,   4,   4,   0,   0,   0,
-      2,  -2,  -4,   0,   0,  -4,  -2,   2,
-      2,   4,   4,  -8,  -8,   4,   4,   2,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   5,   5,   0,   0,   0,
+      0,   0,   0,   6,   6,   0,   0,   0,
+      0,   0,   0,   8,   8,   0,   0,   0,
+      2,   0,   0,   0,   0,   0,   0,   2,
+      2,   4,   4, -10, -10,   4,   4,   2,
       0,   0,   0,   0,   0,   0,   0,   0
     },
 
@@ -50,7 +50,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -10,   0,   6,   8,   8,   6,   0, -10,
       -10,   2,   4,   6,   6,   4,   2, -10,
       -10,  -8,   0,   2,   2,   0,  -8, -10,
-      -10, -12, -10, -10, -10, -10, -12, -10
+      -10, -12,  -5,  -5,  -5,  -5, -12, -10
     },
 
     // bishop
@@ -62,14 +62,14 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -2,   0,   8,   8,   8,   8,   0,  -2,
       -2,   8,   8,   8,   8,   8,   8,  -2,
       -2,   2,   0,   0,   0,   0,   2,  -2,
-      -8,  -4,  -8,  -4,  -4,  -8,  -4,  -8
+      -8,  -4, -12,  -4,  -4, -12,  -4,  -8
     },
 
     // rook
     {
-     12,  12,  12,  12,  12,  12,  12,  12,
-     12,  12,  12,  12,  12,  12,  12,  12,
-      0,   0,   0,   0,   0,   0,   0,   0,
+     10,  10,  10,  10,  10,  10,  10,  10,
+     15,  15,  15,  15,  15,  15,  15,  15,
+     -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
@@ -79,27 +79,27 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
 
     // queen
     {
-      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8,
-      -4,   0,   0,   0,   0,   0,   0,  -4,
-      -4,   0,   2,   2,   2,   2,   0,  -4,
+       0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,
       -2,   0,   2,   2,   2,   2,   0,  -2,
-       0,   0,   2,   2,   2,   2,   0,  -2,
+      -2,   0,   2,   3,   3,   2,   0,  -2,
+       0,   0,   2,   3,   3,   2,   0,  -2,
       -4,   0,   2,   2,   2,   2,   0,  -4,
-      -4,   0,   2,   0,   0,   0,   0,  -4,
-      -8,  -4,  -4,  -2,  -2,  -4,  -4,  -8
+      -4,   0,   0,   1,   1,   0,   0,  -4,
+      -5,  -5,  -5,  -5,  -5,  -5,  -5,  -5
     },
 
 
     // king
     {
-      -16, -16, -16, -20, -20, -16, -16, -16,
-      -16, -16, -16, -20, -20, -16, -16, -16,
-      -16, -16, -16, -20, -20, -16, -16, -16,
-      -16, -16, -16, -20, -20, -16, -16, -16,
-      -8,  -12, -12, -16, -16, -12, -12,  -8,
+      -20, -20, -20, -20, -20, -20, -20, -20,
+      -20, -20, -20, -20, -20, -20, -20, -20,
+      -20, -20, -20, -20, -20, -20, -20, -20,
+      -20, -20, -20, -20, -20, -20, -20, -20,
+      -10, -16, -16, -20, -20, -16, -16, -10,
       -4,  -8,   -8, -10, -10,  -8,  -8,  -4,
        0,   0,   -2,  -8,  -8,  -2,   0,   0,
-       8,  12,    5,   0,   0,   5,  12,   8
+       5,  12,    5,   0,   0,   5,  15,   5
     },
 
     {}
@@ -170,7 +170,7 @@ const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
 const ScoreType Evaluator::defendedBonus_ = 5;
 const ScoreType Evaluator::groupsPenalty_ = 2;
-const ScoreType Evaluator::assistantBishop_ = 6;
+const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  12;
 const ScoreType Evaluator::openRook_ =  15;
@@ -204,7 +204,7 @@ const ScoreType Evaluator::cf_columnSemiopened_ = 4;
 const ScoreType Evaluator::bg_columnSemiopened_ = 8;
 const ScoreType Evaluator::ah_columnSemiopened_ = 8;
 
-const ScoreType Evaluator::cf_columnCracked_ = 1;
+const ScoreType Evaluator::cf_columnCracked_ = 2;
 const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 2;
 
@@ -226,7 +226,7 @@ const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 40, 60, MAX_PASSED_S
 const ScoreType Evaluator::passersGroup_[8] = { 0, 5, 7, 9, 11, 13, 15, 0 };
 //const ScoreType Evaluator::pawnPassedEg_[8] = { 0, 10, 15, 20, 30, 35, (MAX_PASSED_SCORE - MAX_PASSED_MG), 0 };
 const ScoreType Evaluator::passerCandidate_[8] =  { 0, 5, 7, 9, 12, 15, 20, 0 };
-const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 1, 2, 3, 4, 5, 6, 0 };
+//const ScoreType Evaluator::pawnOnOpenColumn_[8] = { 0, 1, 2, 3, 4, 5, 6, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
@@ -373,8 +373,6 @@ ScoreType Evaluator::evaluate()
   // 1. evaluate common features
   ScoreType score = fmgr.weight();
 
-  score += evaluateMaterialDiff();
-
   // take pawns eval. from hash if possible
   ScoreType pwscore = -ScoreMax, pwscore_eg = -ScoreMax, score_ps = -ScoreMax;
   hashedEvaluation(pwscore, pwscore_eg, score_ps);
@@ -397,6 +395,8 @@ ScoreType Evaluator::evaluate()
     // PSQ - evaluation
     score_o -= fmgr.eval(Figure::ColorBlack, 0);
     score_o += fmgr.eval(Figure::ColorWhite, 0);
+
+    score_o += evaluateMaterialDiff();
 
     ScoreType score_king = evaluateCastlePenalty(Figure::ColorWhite) - evaluateCastlePenalty(Figure::ColorBlack);
     score_king += score_ps;
@@ -454,7 +454,7 @@ ScoreType Evaluator::evaluateBlockedBishops()
 
     case B8:
       if ( board_->isFigure(C7, Figure::ColorBlack, Figure::TypePawn) &&
-           board_->isFigure(B6, Figure::ColorBlack, Figure::TypePawn) )
+           (board_->isFigure(B6, Figure::ColorBlack, Figure::TypePawn) || board_->isFigure(A7, Figure::ColorBlack, Figure::TypePawn)) )
         score_w -= bishopBlocked_;
       break;
 
@@ -465,17 +465,19 @@ ScoreType Evaluator::evaluateBlockedBishops()
 
     case G8:
       if ( board_->isFigure(F7, Figure::ColorBlack, Figure::TypePawn) &&
-           board_->isFigure(G6, Figure::ColorBlack, Figure::TypePawn))
+           (board_->isFigure(G6, Figure::ColorBlack, Figure::TypePawn) || board_->isFigure(H7, Figure::ColorBlack, Figure::TypePawn)) )
         score_w -= bishopBlocked_;
       break;
 
     case A6:
-      if ( board_->isFigure(B5, Figure::ColorBlack, Figure::TypePawn) )
+      if ( board_->isFigure(B5, Figure::ColorBlack, Figure::TypePawn) &&
+           board_->isFigure(C6, Figure::ColorBlack, Figure::TypePawn) )
         score_w -= bishopBlocked_;
       break;
 
     case H6:
-      if ( board_->isFigure(G5, Figure::ColorBlack, Figure::TypePawn) )
+      if ( board_->isFigure(G5, Figure::ColorBlack, Figure::TypePawn) &&
+           board_->isFigure(F6, Figure::ColorBlack, Figure::TypePawn) )
         score_w -= bishopBlocked_;
       break;
     }
@@ -495,7 +497,7 @@ ScoreType Evaluator::evaluateBlockedBishops()
 
     case B1:
       if ( board_->isFigure(C2, Figure::ColorWhite, Figure::TypePawn) &&
-           board_->isFigure(B3, Figure::ColorWhite, Figure::TypePawn))
+           (board_->isFigure(B3, Figure::ColorWhite, Figure::TypePawn) || board_->isFigure(A2, Figure::ColorWhite, Figure::TypePawn)) )
         score_b -= bishopBlocked_;
       break;
 
@@ -506,17 +508,19 @@ ScoreType Evaluator::evaluateBlockedBishops()
 
     case G1:
       if ( board_->isFigure(F2, Figure::ColorWhite, Figure::TypePawn) &&
-           board_->isFigure(G3, Figure::ColorWhite, Figure::TypePawn) )
+           (board_->isFigure(G3, Figure::ColorWhite, Figure::TypePawn) || board_->isFigure(H2, Figure::ColorWhite, Figure::TypePawn)) )
         score_b -= bishopBlocked_;
       break;
 
     case A3:
-      if ( board_->isFigure(B4, Figure::ColorWhite, Figure::TypePawn) )
+      if ( board_->isFigure(B4, Figure::ColorWhite, Figure::TypePawn) &&
+           board_->isFigure(C3, Figure::ColorWhite, Figure::TypePawn) )
         score_b -= bishopBlocked_;
       break;
 
     case H3:
-      if ( board_->isFigure(G4, Figure::ColorWhite, Figure::TypePawn) )
+      if ( board_->isFigure(G4, Figure::ColorWhite, Figure::TypePawn) &&
+           board_->isFigure(F3, Figure::ColorWhite, Figure::TypePawn) )
         score_b -= bishopBlocked_;
       break;
     }
@@ -538,7 +542,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
     switch ( n )
     {
     case A8:
-      if ( board_->isFigure(C7, Figure::ColorBlack, Figure::TypePawn) )
+      if ( board_->isFigure(A7, Figure::ColorBlack, Figure::TypePawn) ||
+           board_->isFigure(C7, Figure::ColorBlack, Figure::TypePawn) )
         score_w -= knightBlocked_;
       break;
 
@@ -549,7 +554,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
       break;
 
     case H8:
-      if ( board_->isFigure(F7, Figure::ColorBlack, Figure::TypePawn) )
+      if ( board_->isFigure(H7, Figure::ColorBlack, Figure::TypePawn) ||
+           board_->isFigure(F7, Figure::ColorBlack, Figure::TypePawn) )
         score_w -= knightBlocked_;
       break;
 
@@ -569,7 +575,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
     switch ( n )
     {
     case A1:
-      if ( board_->isFigure(C2, Figure::ColorWhite, Figure::TypePawn) )
+      if ( board_->isFigure(A2, Figure::ColorWhite, Figure::TypePawn) ||
+           board_->isFigure(C2, Figure::ColorWhite, Figure::TypePawn) )
         score_b -= knightBlocked_;
       break;
 
@@ -580,7 +587,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
       break;
 
     case H1:
-      if ( board_->isFigure(F2, Figure::ColorWhite, Figure::TypePawn) )
+      if ( board_->isFigure(H2, Figure::ColorWhite, Figure::TypePawn) ||
+           board_->isFigure(F2, Figure::ColorWhite, Figure::TypePawn) )
         score_b -= knightBlocked_;
       break;
 
@@ -1417,13 +1425,11 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       int to = x | ((y+delta_y[color]) << 3);
       BitMask to_mask = set_mask_bit(to);
 
-      if ( to_mask & opmsk_o )
-        score += pawnBlocked_;
-      else if ( to_mask & attacked_mask )
+      if ( to_mask & attacked_mask )
         score += pawnBackward_;
     }
 
-    // check if it is passer candidate - column after pawn is opened and has more defenders than opponent's sentries
+    // passer candidate - column after pawn is opened and has more defenders than opponent's sentries
     if ( !passed && !(pmsk_t & blckmsk) && !(opmsk_t & blckmsk) )
     {
       THROW_IF( color && y > 6 || !color && y < 2, "passed pawn wasn't detected" );
@@ -1479,82 +1485,83 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
         if ( score_eg )
           *score_eg += passerCandidate_[cy];
       }
-      else // give bonus for pawn on open column
-      {
-        score += pawnOnOpenColumn_[cy];
-        //if ( score_eg )
-        //  *score_eg += pawnOnOpenColumn_[cy];
-      }
     }
   }
 
 
-  // calculate number of pawn groups - pawns on neighbor columns
-  // give small penalty if number  > 1
-  if ( cols_visited )
-  {
-    uint8 mask = cols_visited;
-    int num = 0;
-    bool group = false;
-    for ( ; mask; mask >>= 1)
-    {
-      if ( mask & 1 )
-      {
-        if ( group )
-          continue;
-        else
-        {
-          group = true;
-          num++;
-        }
-      }
-      else
-        group = false;
-    }
+  //// calculate number of pawn groups - pawns on neighbor columns
+  //// give small penalty if number  > 1
+  //if ( cols_visited )
+  //{
+  //  uint8 mask = cols_visited;
+  //  int num = 0;
+  //  bool group = false;
+  //  for ( ; mask; mask >>= 1)
+  //  {
+  //    if ( mask & 1 )
+  //    {
+  //      if ( group )
+  //        continue;
+  //      else
+  //      {
+  //        group = true;
+  //        num++;
+  //      }
+  //    }
+  //    else
+  //      group = false;
+  //  }
 
-    THROW_IF( num < 1, "no groups found" );
-    score -= (num-1) * groupsPenalty_;
+  //  THROW_IF( num < 1, "no groups found" );
+  //  score -= (num-1) * groupsPenalty_;
 
-    // not important if there are no figures
-    if ( score_eg )
-      *score_eg += (num-1) * groupsPenalty_;
-  }
+  //  // not important if there are no figures
+  //  if ( score_eg )
+  //    *score_eg += (num-1) * groupsPenalty_;
+  //}
 
   // give additional bonuses for passer pawns
   // if there 2 or more passers on neighbor columns etc...
   if ( cols_passer )
   {
     int n = 0;
-    uint8 mask = cols_passer;
-    bool group = false;
     int group_x[8];
-    for (int x = 0; mask; mask >>= 1, ++x)
+    int ymax = 0;
+    for (int x = 0; cols_passer; cols_passer >>= 1, ++x)
     {
-      if ( mask & 1 )
+      if ( cols_passer & 1 )
       {
-        if ( group )
-          group_x[n++] = x;
-        else
-        {
-          group_x[0] = x;
-          n = 1;
-          group = true;
-        }
+        int y = passers_y[x];
+        THROW_IF( !(y > 0 && y < 7), "invalid y-pos of passed pawn");
+        if ( !color )
+          y = 7-y;
+        if ( y > ymax )
+          ymax = y;
+
+        group_x[n++] = x;
       }
       else
       {
         // analyze group
         if ( n > 1 )
-          score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
+        {
+          THROW_IF(ymax < 1, "max y value not found for passer pawns group");
+          score += passersGroup_[ymax] * (n-1);
+        }
+          //score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
 
         n = 0;
-        group = false;
+        ymax = 0;
       }
     }
 
     // the last group
     if ( n > 1 )
-      score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
+    {
+      THROW_IF(ymax < 1, "max y value not found for passer pawns group");
+      score += passersGroup_[ymax] * (n-1);
+    }
+      //score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
   }
 
   return score;
@@ -1585,11 +1592,7 @@ ScoreType Evaluator::analyzePasserGroup(ScoreType * score_eg, Figure::Color colo
 
   // additional bonus if group is well formed - most advanced pawn is supported by neighbor
   if ( cymax - cymin < 2 ) // on neighbor rows
-  {
     score += passersGroup_[cymax];
-    //if ( score_eg )
-    //  *score_eg += (pawnPassedEg_[cymax] >> 1);
-  }
   else if ( n > 1 ) // is most advanced pawn defended by neighbor passer or has neighbor on the same line?
   {
     int y = passers_y[xmax];
@@ -1601,17 +1604,11 @@ ScoreType Evaluator::analyzePasserGroup(ScoreType * score_eg, Figure::Color colo
     if ( xmax < 7 )
       nb_mask |= set_mask_bit(pmax+1);
     if ( (group_mask & pwcap) || (group_mask & nb_mask) )
-    {
       score += passersGroup_[cymax];
-      //if ( score_eg )
-      //  *score_eg += (pawnPassedEg_[cymax] >> 1);
-    }
   }
 
   // give small additional bonus for group
   score += (passersGroup_[cymax] >> 1) * (n-1);
-  //if ( score_eg )
-  //  *score_eg += (pawnPassedEg_[cymax] >> 2) * (n-1);
 
   return score;
 }
@@ -1658,13 +1655,20 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       if ( pcolor && fmgr.bishops_w(color) || !pcolor && fmgr.bishops_b(color) )
         score += assistantBishop_;
 
-      // have rook behind passed pawn
+      // my rook behind passed pawn - give bonus
       BitMask behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(color) ;
+      BitMask o_behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(ocolor) ;
       if ( behind_msk )
       {
         int rpos = color ? find_msb(behind_msk) : find_lsb(behind_msk);
         if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
           score += rookBehindBonus_;
+      }
+      else if ( o_behind_msk ) // may be opponent's rook - give penalty
+      {
+        int rpos = color ? find_msb(o_behind_msk) : find_lsb(o_behind_msk);
+        if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
+          score -= rookBehindBonus_;
       }
 
       // pawn can go to the next line
@@ -1693,23 +1697,13 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
         }
       }
 
-      // additional bonus if opponent's king is too far from my pawn's promotion field or can't go to it
+      // additional bonus if opponent's king can't go to my pawn's promotion field
       if ( can_go )
       {
         score += pawnCanGo_[cy];
 
-        if ( phase != Opening )
-        {
-          if ( pawn_dist_promo < 0 )
-            pawn_dist_promo = -pawn_dist_promo;
-
-          int o_dist_promo = board_->g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
-          if ( board_->color_ == ocolor )
-            pawn_dist_promo++;
-
-          if ( !findRootToPawn(color, promo_pos) )
-            score_eg += unstoppablePawn_;
-        }
+        if ( phase != Opening && !findRootToPawn(color, promo_pos) )
+          score_eg += unstoppablePawn_;
       }
     }
   }

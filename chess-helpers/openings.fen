@@ -4,3 +4,4 @@ r1bqkb1r/1p3pp1/p1nppn1p/6B1/3NP3/2N5/PPPQ1PPP/2KR1B1R w kq - 0 9  ; "q4-white-w
 rnb2rk1/pppp1ppp/5n2/8/2B5/2P2N2/PPP1qPPP/R1B1K2R w KQ - 0 9 ; "q4-white-winner. wrong exchange of bishop to 3 pawns"
 r2qk2r/pp2bppp/2npbn2/4p3/4P3/1NN1BP2/PPP3PP/R2QKB1R w KQkq - 4 9 ; "shallow.1.0-white-winner"
 r1bq1rk1/pp1n1ppp/2pb1n2/3p4/3P4/P1NBPN2/1P3PPP/R1BQK2R w KQ - 2 9 ; "q4-black-winner"
+r3kb1r/ppp1pp1p/2nn2p1/3q4/3P2b1/3B1N2/PP3PPP/RNBQR1K1 w kq - 2 9  ; "black-winner"
