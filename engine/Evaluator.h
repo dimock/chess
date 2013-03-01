@@ -29,12 +29,10 @@ public:
   static const ScoreType fakecastlePenalty_;
   static const ScoreType castleImpossiblePenalty_;
   static const ScoreType bishopBonus_;
-  static const ScoreType figureAgainstPawnBonus_;
-  static const ScoreType rookAgainstFigureBonus_;
   static const ScoreType pawnEndgameBonus_;
   static const ScoreType unstoppablePawn_;
   static const ScoreType kingFarBonus_;
-  static const ScoreType pawnPassed_[8], /*pawnPassedEg_[8], */pawnDefended_[8], passerCandidate_[8], /*pawnOnOpenColumn_[8], */pawnCanGo_[8];
+  static const ScoreType pawnPassed_[8], defendedPasser_[8], passerCandidate_[8], pawnCanGo_[8];
   static const ScoreType passersGroup_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
@@ -42,6 +40,11 @@ public:
   static const ScoreType forkBonus_;
   static const ScoreType fianchettoBonus_;
   static const ScoreType rookToKingBonus_;
+
+  /// material difference
+  static const ScoreType figureAgainstPawnBonus_[16];
+  static const ScoreType rookAgainstFigureBonus_[16];
+  static const ScoreType queenDifferenceBonus_[16];
 
   // blocked bishop & knight
   static const ScoreType bishopBlocked_;

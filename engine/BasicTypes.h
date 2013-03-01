@@ -84,10 +84,6 @@ static const int LMR_MinDepthLimit = 5;
 static const int NullMove_DepthMin = 2;
 static const int NullMove_PlyReduce = 4;
 static const int NullMove_DepthStart = 4;
-static const int MultiCut_DepthStart = 5;
-static const int MultiCut_DepthReduce = 3;
-static const int MultiCut_MovesMax = 10;
-static const int MultiCut_MovesCut = 3;
 
 
 #ifndef _M_X64

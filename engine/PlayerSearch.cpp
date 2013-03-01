@@ -347,7 +347,8 @@ ScoreType Player::alphaBetta0()
 }
 
 //////////////////////////////////////////////////////////////////////////
-ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv)
+ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv,
+                             bool nm/* = false*/)
 {
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
@@ -382,6 +383,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_NULL_MOVE
   if ( !pv &&
+       !nm &&
        !scontexts_[ictx].board_.underCheck() &&
         scontexts_[ictx].board_.allowNullMove() &&
         depth >= scontexts_[ictx].board_.nullMoveDepthMin() &&
@@ -392,14 +394,16 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
     scontexts_[ictx].board_.makeNullMove();
 
-    ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false);
+    ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, true /* we are in null-move*/);
 
     scontexts_[ictx].board_.unmakeNullMove();
 
     // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
-      depth = null_depth;
+      depth = scontexts_[ictx].board_.nullMoveDepthVerify(depth);//null_depth;
+      nm = true; // don't use null-move in this string
+
       if ( depth <= 0 )
         return captures(ictx, depth, ply, alpha, betta, pv);
     }
@@ -569,7 +573,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   }
 
 #ifdef SINGULAR_EXT
-  if ( aboveAlphaN == 1 && !fg.singleReply() && !wasExtended && allMovesIterated )
+  if ( ((aboveAlphaN == 1 && !wasExtended) || (counter == 1 && alpha >= betta)) && !fg.singleReply() && allMovesIterated )
   {
     THROW_IF( !best, "best move wasn't found but one move was" );
 

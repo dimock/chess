@@ -194,7 +194,7 @@ private:
 
   // search routine
   ScoreType alphaBetta0();
-  ScoreType alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv);
+  ScoreType alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, bool nm = false);
   ScoreType futilityPruning(int ictx, const Move & hmove, int depth, int ply, ScoreType alpha, ScoreType betta, ScoreType score0);
   ScoreType captures(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
   int nextDepth(int ictx, int depth, const Move & move, bool pv) const;
