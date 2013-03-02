@@ -23,9 +23,8 @@ class MovesTable
   BitMask s_pawnPromotions_t_[2];
   BitMask s_pawnPromotions_o_[2];
 
-  // mobility mask
-  BitMask s_bishopMob_[64];
-  BitMask s_rookMob_[64];
+  // king pressure mask: +1 square around king
+  BitMask s_kingPressure_[64];
 
   void resetAllTables(int);
 
@@ -111,15 +110,9 @@ public:
     return s_otherCaps_[type][pos];
   }
 
-  inline const BitMask & bishop_mobility(int pos) const
+  inline const BitMask & king_pressure(int pos) const
   {
-    THROW_IF((unsigned)pos > 63, "invalid bishop pos");
-    return s_bishopMob_[pos];
-  }
-
-  inline const BitMask & rook_mobility(int pos) const
-  {
-    THROW_IF((unsigned)pos > 63, "invalid rook pos");
-    return s_rookMob_[pos];
+    THROW_IF((unsigned)pos > 63, "try to get mask for invalid position");
+    return s_kingPressure_[pos];
   }
 };

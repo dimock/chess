@@ -214,15 +214,14 @@ const ScoreType Evaluator::ah_columnCracked_ = 2;
 
 const ScoreType Evaluator::nopawnBeforeKing_ = 5;
 
-// pressure to king by opponents pawn
-const ScoreType Evaluator::opponentPawnsToKing_ = 10;
+// pressure to king by opponents figures
+const ScoreType Evaluator::kingPawnPressure_   = 10;
+const ScoreType Evaluator::kingKnightPressure_ = 8;
+const ScoreType Evaluator::kingBishopPressure_ = 8;
+const ScoreType Evaluator::kingRookPressure_   = 8;
+const ScoreType Evaluator::kingQueenPressure_  = 10;
 
-//pressure to king by opponents bishop & knight
-const ScoreType Evaluator::kingbishopPressure_ = 8;
-const ScoreType Evaluator::kingknightPressure_ = 8;
-
-// queen attacks opponent's king (give only if supported by other figure)
-const ScoreType Evaluator::queenAttackBonus_ = 10;
+const ScoreType Evaluator::kingFieldAttackBonus_ = 4;
 
 /// pawns evaluation
 #define MAX_PASSED_SCORE 80
@@ -249,14 +248,6 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {15, 12, 10, 7, 5, 3, 1, 0},
   {20, 18, 13, 9, 7, 3, 1, 0},
   {40, 55, 45, 25, 12, 3, 1, 0},
-};
-
-const ScoreType Evaluator::kingAttackBonus_[8] = {
-  0, 5, 25, 60, 80, 120, 150, 200
-};
-
-const ScoreType Evaluator::kingImmobility_[10] = {
-  10, 5, 2
 };
 
 
@@ -299,6 +290,21 @@ void Evaluator::prepare()
 
     finfo_[0].attack_mask_ = finfo_[0].pw_attack_mask_;
     finfo_[1].attack_mask_ = finfo_[1].pw_attack_mask_;
+
+    const BitMask & ki_line0b = board_->g_movesTable->caps(Figure::TypeKing, finfo_[0].king_pos_);
+    const BitMask & ki_line0w = board_->g_movesTable->caps(Figure::TypeKing, finfo_[1].king_pos_);
+
+    if ( finfo_[1].pw_attack_mask_ & ki_line0b )
+    {
+      finfo_[1].knightPressure_ += kingPawnPressure_;
+      finfo_[1].kingAttackersN_++;
+    }
+
+    if ( finfo_[0].pw_attack_mask_ & ki_line0w )
+    {
+      finfo_[0].knightPressure_ += kingPawnPressure_;
+      finfo_[0].kingAttackersN_++;
+    }
   }
 
   alpha_ = -ScoreMax;
@@ -650,8 +656,26 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
   score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg);
 
   pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
-
   score += pw_score_eg;
+
+
+  // king pressure additional
+  {
+    ScoreType score_king = 0;
+
+    const BitMask & b_cap = board_->g_movesTable->caps(Figure::TypeKing, finfo_[0].king_pos_);
+    const BitMask & w_cap = board_->g_movesTable->caps(Figure::TypeKing, finfo_[1].king_pos_);
+    
+    int attackedB = pop_count(b_cap & finfo_[1].attack_mask_);
+    int attackedW = pop_count(w_cap & finfo_[0].attack_mask_);
+
+    score_king += attackedB * kingFieldAttackBonus_;
+    score_king -= attackedW * kingFieldAttackBonus_;
+
+    score_king = (score_king * coef_o) / weightMax_;
+
+    score += score_king;
+  }
 
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
@@ -672,11 +696,26 @@ ScoreType Evaluator::evaluateKnights()
     const int &  ki_pos = finfo_[ color].king_pos_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
+    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
+    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
+
     BitMask kn_mask = board_->fmgr().knight_mask(color);
     for ( ; kn_mask; )
     {
       int from = clear_lsb(kn_mask);
       const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
+
+      if ( oki_line0 & kn_cap )
+      {
+        finfo_[c].knightPressure_ += kingKnightPressure_;
+        finfo_[c].kingAttackersN_++;
+      }
+
+      if ( oki_line1 & kn_cap )
+      {
+        finfo_[c].knightPressure_ += kingKnightPressure_ >> 2;
+      }
+
       finfo_[c].kn_attack_mask_ |= kn_cap;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
@@ -712,6 +751,9 @@ ScoreType Evaluator::evaluateBishops()
     const int &  ki_pos = finfo_[ color].king_pos_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
+    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
+    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
+
     BitMask bimask = board_->fmgr().bishop_mask(color);
     for ( ; bimask; )
     {
@@ -734,6 +776,17 @@ ScoreType Evaluator::evaluateBishops()
 
       mask_from = di_mask_sw & mask_all_;
       bmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_sw);
+
+      if ( bmob_mask & oki_line0 )
+      {
+        finfo_[c].bishopPressure_ += kingBishopPressure_;
+        finfo_[c].kingAttackersN_++;
+      }
+
+      if ( bmob_mask & oki_line1 )
+      {
+        finfo_[c].bishopPressure_ += kingBishopPressure_ >> 2;
+      }
 
       finfo_[c].attack_mask_ |= bmob_mask;
 
@@ -769,6 +822,9 @@ void Evaluator::evaluateRooks()
     const int &  ki_pos = finfo_[ color].king_pos_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
+    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
+    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
+
     Index oki_p(oki_pos);
     int okx = oki_p.x();
     int oky = oki_p.y();
@@ -797,6 +853,17 @@ void Evaluator::evaluateRooks()
 
       mask_from = di_mask_we & mask_all_;
       rmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_we);
+
+      if ( rmob_mask & oki_line0 )
+      {
+        finfo_[c].rookPressure_ += kingRookPressure_;
+        finfo_[c].kingAttackersN_++;
+      }
+
+      if ( rmob_mask & oki_line1 )
+      {
+        finfo_[c].rookPressure_ += kingRookPressure_ >> 2;
+      }
 
       rattack_mask[c] |= rmob_mask;
 
@@ -850,6 +917,9 @@ void Evaluator::evaluateQueens()
     BitMask not_attacked = ~finfo_[ocolor].attack_mask_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
+    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
+    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
+
     BitMask q_mask = board_->fmgr().queen_mask(color);
     for ( ; q_mask; )
     {
@@ -893,6 +963,17 @@ void Evaluator::evaluateQueens()
       mask_from = di_mask_we & mask_all_;
       qmob_mask |= ((mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask_we);
 
+      if ( qmob_mask & oki_line0 )
+      {
+        finfo_[c].queenPressure_ += kingQueenPressure_;
+        finfo_[c].kingAttackersN_++;
+      }
+
+      if ( qmob_mask & oki_line1 )
+      {
+        finfo_[c].queenPressure_ += kingQueenPressure_ >> 2;
+      }
+
       qattack_mask[c] |= qmob_mask;
 
       qmob_mask &= not_attacked;
@@ -908,6 +989,156 @@ void Evaluator::evaluateQueens()
   finfo_[0].attack_mask_ |= qattack_mask[0];
   finfo_[1].attack_mask_ |= qattack_mask[1];
 }
+
+//ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
+//{
+//  Figure::Color ocolor = Figure::otherColor(color);
+//  int oki_pos = finfo_[ocolor].king_pos_;
+//  const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
+//  const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
+//
+//  BitMask mask_diag  = board_->fmgr().queen_mask(color) | board_->fmgr().bishop_mask(color);
+//  BitMask mask_ortho = board_->fmgr().queen_mask(color) | board_->fmgr().rook_mask(color);
+//
+//  BitMask xray_masks[2] = { ~(~mask_diag & mask_all_), ~(~mask_ortho & mask_all_) };
+//
+//  int attacked_fields[64] = {};
+//  uint8 attacked_field_types[64] = {};
+//  BitMask attacked_mask = 0;
+//  int attackersN = 0;
+//  uint8 attackerTypes = 0;
+//  int fieldAttackersN = 0;
+//
+//  BitMask pw_mask = finfo_[color].pw_attack_mask_ & oki_mask;
+//  for ( ; pw_mask; )
+//  {
+//    int to = clear_lsb(pw_mask);
+//    attacked_mask |= set_mask_bit(to);
+//    uint8 a_mask = (uint8)set_bit(Figure::TypePawn);
+//    attackerTypes |= a_mask;
+//    attacked_field_types[to] |= a_mask;
+//    attacked_fields[to] = 1;
+//    attackersN++;
+//  }
+//
+//  BitMask kn_mask = board_->fmgr().knight_mask(color);
+//  for ( ; kn_mask; )
+//  {
+//    int from = clear_lsb(kn_mask);
+//    const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
+//    BitMask oki_attack_mask = kn_cap & oki_mask;
+//    if ( oki_attack_mask )
+//      attackersN++;
+//    for ( ; oki_attack_mask; )
+//    {
+//      int to = clear_lsb(oki_attack_mask);
+//      attacked_mask |= set_mask_bit(to);
+//      uint8 a_mask = (uint8)set_bit(Figure::TypeKnight);
+//      attackerTypes |= a_mask;
+//      attacked_fields[to]++;
+//      attacked_field_types[to] |= a_mask;
+//      if ( attacked_fields[to] > fieldAttackersN )
+//        fieldAttackersN = attacked_fields[to];
+//    }
+//  }
+//
+//  for (int type = Figure::TypeBishop; type <= Figure::TypeQueen; ++type)
+//  {
+//    BitMask mask = board_->fmgr().type_mask((Figure::Type)type, color);
+//    for ( ; mask; )
+//    {
+//      int from = clear_lsb(mask);
+//
+//      const BitMask & cap_mask = board_->g_movesTable->caps((Figure::Type)type, from);
+//      BitMask oki_attack_mask = cap_mask & oki_mask;
+//
+//      bool haveAttack = false;
+//
+//      for ( ; oki_attack_mask; )
+//      {
+//        int to = clear_lsb(oki_attack_mask);
+//        const BitMask & btw_mask = board_->g_betweenMasks->between(from, to);
+//
+//        bool attackFound = false;
+//        bool directAttack = false;
+//
+//        // 1. nothing between
+//        if ( (btw_mask & inv_mask_all_) == btw_mask )
+//        {
+//          attackFound = true;
+//          directAttack = true;
+//        }
+//
+//        // 2. X-ray attack
+//        if ( !attackFound )
+//        {
+//          nst::dirs dir = board_->g_figureDir->dir(from, to);
+//
+//          THROW_IF(nst::no_dir == dir, "no direction between fields");
+//
+//          int xray_type = (dir-1) & 1;
+//          const BitMask & xray_mask = xray_masks[xray_type];
+//
+//          if ( (btw_mask & xray_mask) == btw_mask )
+//            attackFound = true;
+//        }
+//
+//        if ( attackFound )
+//        {
+//          haveAttack = true;
+//          attacked_mask |= set_mask_bit(to);
+//          attacked_fields[to]++;
+//          if ( attacked_fields[to] > fieldAttackersN )
+//            fieldAttackersN = attacked_fields[to];
+//          if ( directAttack )
+//          {
+//            uint8 a_mask = (uint8)set_bit(type);
+//            attackerTypes |= a_mask;
+//            attacked_field_types[to] |= a_mask;
+//          }
+//        }
+//      }
+//
+//      if ( haveAttack )
+//        attackersN++;
+//    }
+//  }
+//
+//  BitMask oki_mob = oki_mask & ~(mask_all_ | attacked_mask);
+//  int movesN = pop_count(oki_mob);
+//
+//  ScoreType score = 0;
+//
+//  score += kingImmobility_[movesN];
+//
+//  if ( 0 == attackersN )
+//    return score;
+//
+//  score += kingAttackBonus_[attackersN & 7];
+//
+//  // queen's attack
+//  if ( (attackerTypes & set_bit(Figure::TypeQueen)) && attackersN > 1 )
+//  {
+//    score += queenAttackBonus_;
+//
+//    // give additional bonus for double attacked field that isn't protected by pawn
+//    BitMask a_mask = attacked_mask;
+//    for ( ; a_mask; )
+//    {
+//      int n = clear_lsb(a_mask);
+//      if ( attacked_fields[n] > 1 &&
+//        (attacked_field_types[n] & set_bit(Figure::TypeQueen)) &&
+//        !(finfo_[ocolor].pw_attack_mask_ & set_mask_bit(n)) )
+//      {
+//        score += (queenAttackBonus_<<1) * attacked_fields[n];
+//        break;
+//      }
+//    }
+//  }
+//
+//  return score;
+//}
+
 
 //////////////////////////////////////////////////////////////////////////
 /// common  part
@@ -1214,7 +1445,7 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
 
     // opponent pawns pressure
     if ( opponent_pressure_masks[color][ctype] & opw_mask )
-      score -= opponentPawnsToKing_;
+      score -= kingPawnPressure_;
   }
 
   return score;
@@ -1269,7 +1500,7 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
     {set_mask_bit(G4), set_mask_bit(B4)}
   };
 
-  // some attack patterns
+  // some obvious attack patterns
   if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
   {
     bool kn_or_bi = false;
@@ -1277,19 +1508,19 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
     if ( opponent_bishop_masks[color][ctype] & obishop_mask )
     {
       kn_or_bi = true;
-      score -= kingbishopPressure_;
+      score -= kingBishopPressure_;
     }
 
     // opponent's knight pressure
     if ( opponent_knight_masks[color][ctype] & oknight_mask )
     {
       kn_or_bi = true;
-      score -= kingknightPressure_;
+      score -= kingKnightPressure_;
     }
 
     // opponent queen pressure
     if ( kn_or_bi && (opponent_bishop_masks[color][ctype] & oqueen_mask) )
-      score -= queenAttackBonus_;
+      score -= kingQueenPressure_;
   }
 
   return score;
@@ -2108,173 +2339,3 @@ ScoreType Evaluator::evaluateWinnerLoser()
 
   return score;
 }
-
-
-
-//////////////////////////////////////////////////////////////////////////
-/// experimental
-ScoreType Evaluator::evaluateKingPressure(GamePhase phase, int coef_o)
-{
-  if ( phase == EndGame )
-    return 0;
-
-  ScoreType score = evaluateKingPressure(Figure::ColorWhite) - evaluateKingPressure(Figure::ColorBlack);
-
-  // consider current move side
-  if ( Figure::ColorBlack  == board_->getColor() )
-    score = -score;
-
-  if ( phase == MiddleGame )
-    score = (score * coef_o) / weightMax_;
-
-  return score;
-}
-
-ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
-{
-  Figure::Color ocolor = Figure::otherColor(color);
-  int oki_pos = finfo_[ocolor].king_pos_;
-  const BitMask & oki_mask = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
-
-  BitMask mask_diag  = board_->fmgr().queen_mask(color) | board_->fmgr().bishop_mask(color);
-  BitMask mask_ortho = board_->fmgr().queen_mask(color) | board_->fmgr().rook_mask(color);
-
-  BitMask xray_masks[2] = { ~(~mask_diag & mask_all_), ~(~mask_ortho & mask_all_) };
-
-  int attacked_fields[64] = {};
-  uint8 attacked_field_types[64] = {};
-  BitMask attacked_mask = 0;
-  int attackersN = 0;
-  uint8 attackerTypes = 0;
-  int fieldAttackersN = 0;
-
-  BitMask pw_mask = finfo_[color].pw_attack_mask_ & oki_mask;
-  for ( ; pw_mask; )
-  {
-    int to = clear_lsb(pw_mask);
-    attacked_mask |= set_mask_bit(to);
-    uint8 a_mask = (uint8)set_bit(Figure::TypePawn);
-    attackerTypes |= a_mask;
-    attacked_field_types[to] |= a_mask;
-    attacked_fields[to] = 1;
-    attackersN++;
-  }
-
-  BitMask kn_mask = board_->fmgr().knight_mask(color);
-  for ( ; kn_mask; )
-  {
-    int from = clear_lsb(kn_mask);
-    const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
-    BitMask oki_attack_mask = kn_cap & oki_mask;
-    if ( oki_attack_mask )
-      attackersN++;
-    for ( ; oki_attack_mask; )
-    {
-      int to = clear_lsb(oki_attack_mask);
-      attacked_mask |= set_mask_bit(to);
-      uint8 a_mask = (uint8)set_bit(Figure::TypeKnight);
-      attackerTypes |= a_mask;
-      attacked_fields[to]++;
-      attacked_field_types[to] |= a_mask;
-      if ( attacked_fields[to] > fieldAttackersN )
-        fieldAttackersN = attacked_fields[to];
-    }
-  }
-
-  for (int type = Figure::TypeBishop; type <= Figure::TypeQueen; ++type)
-  {
-    BitMask mask = board_->fmgr().type_mask((Figure::Type)type, color);
-    for ( ; mask; )
-    {
-      int from = clear_lsb(mask);
-
-      const BitMask & cap_mask = board_->g_movesTable->caps((Figure::Type)type, from);
-      BitMask oki_attack_mask = cap_mask & oki_mask;
-
-      bool haveAttack = false;
-
-      for ( ; oki_attack_mask; )
-      {
-        int to = clear_lsb(oki_attack_mask);
-        const BitMask & btw_mask = board_->g_betweenMasks->between(from, to);
-
-        bool attackFound = false;
-        bool directAttack = false;
-
-        // 1. nothing between
-        if ( (btw_mask & inv_mask_all_) == btw_mask )
-        {
-          attackFound = true;
-          directAttack = true;
-        }
-
-        // 2. X-ray attack
-        if ( !attackFound )
-        {
-          nst::dirs dir = board_->g_figureDir->dir(from, to);
-
-          THROW_IF(nst::no_dir == dir, "no direction between fields");
-
-          int xray_type = (dir-1) & 1;
-          const BitMask & xray_mask = xray_masks[xray_type];
-
-          if ( (btw_mask & xray_mask) == btw_mask )
-            attackFound = true;
-        }
-
-        if ( attackFound )
-        {
-          haveAttack = true;
-          attacked_mask |= set_mask_bit(to);
-          attacked_fields[to]++;
-          if ( attacked_fields[to] > fieldAttackersN )
-            fieldAttackersN = attacked_fields[to];
-          if ( directAttack )
-          {
-            uint8 a_mask = (uint8)set_bit(type);
-            attackerTypes |= a_mask;
-            attacked_field_types[to] |= a_mask;
-          }
-        }
-      }
-
-      if ( haveAttack )
-        attackersN++;
-    }
-  }
-
-  BitMask oki_mob = oki_mask & ~(mask_all_ | attacked_mask);
-  int movesN = pop_count(oki_mob);
-
-  ScoreType score = 0;
-
-  score += kingImmobility_[movesN];
-
-  if ( 0 == attackersN )
-    return score;
-
-  score += kingAttackBonus_[attackersN & 7];
-
-  // queen's attack
-  if ( (attackerTypes & set_bit(Figure::TypeQueen)) && attackersN > 1 )
-  {
-    score += queenAttackBonus_;
-
-    // give additional bonus for double attacked field that isn't protected by pawn
-    BitMask a_mask = attacked_mask;
-    for ( ; a_mask; )
-    {
-      int n = clear_lsb(a_mask);
-      if ( attacked_fields[n] > 1 &&
-        (attacked_field_types[n] & set_bit(Figure::TypeQueen)) &&
-        !(finfo_[ocolor].pw_attack_mask_ & set_mask_bit(n)) )
-      {
-        score += (queenAttackBonus_<<1) * attacked_fields[n];
-        break;
-      }
-    }
-  }
-
-  return score;
-}
-

@@ -50,10 +50,6 @@ public:
   static const ScoreType bishopBlocked_;
   static const ScoreType knightBlocked_;
 
-  // king pressure
-  static const ScoreType kingAttackBonus_[8];
-  static const ScoreType kingImmobility_[10];
-
   // pinned
   static const ScoreType pinnedKnight_;
   static const ScoreType pinnedBishop_;
@@ -75,10 +71,11 @@ public:
   static const ScoreType nopawnBeforeKing_;
 
   // pressure to opponent's king
-  static const ScoreType opponentPawnsToKing_;
-  static const ScoreType kingbishopPressure_;
-  static const ScoreType kingknightPressure_;
-  static const ScoreType queenAttackBonus_;
+  static const ScoreType kingPawnPressure_;
+  static const ScoreType kingKnightPressure_;
+  static const ScoreType kingBishopPressure_;
+  static const ScoreType kingRookPressure_;
+  static const ScoreType kingQueenPressure_;
   static const ScoreType kingFieldAttackBonus_;
   
   Evaluator();
@@ -100,9 +97,6 @@ private:
 
   ScoreType evaluateBlockedBishops();
   ScoreType evaluateBlockedKnights();
-
-  ScoreType evaluateKingPressure(GamePhase phase, int coef_o);
-  ScoreType evaluateKingPressure(Figure::Color color);
 
   ScoreType evaluateMaterialDiff();
   ScoreType evaluateCastlePenalty(Figure::Color color);
@@ -172,6 +166,7 @@ private:
       queenPressure_ = 0;
 
       rookOpenScore_ = 0;
+      kingAttackersN_ = 0;
     }
 
     int king_pos_;
@@ -181,6 +176,9 @@ private:
     BitMask pw_attack_mask_;
     BitMask kn_attack_mask_;
     BitMask attack_mask_;
+
+    // attacking line 0
+    int kingAttackersN_;
   } finfo_[2];
 
 

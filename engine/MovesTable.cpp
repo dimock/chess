@@ -69,8 +69,7 @@ void MovesTable::resetAllTables(int pos)
   for (int type = 0; type < 8; ++type)
     s_otherCaps_[type][pos] = 0;
 
-  s_bishopMob_[pos] = 0;
-  s_rookMob_[pos] = 0;
+  s_kingPressure_[pos] = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -191,6 +190,49 @@ void MovesTable::initKings(int pos)
   // fill captures masks
   for (int i = 0; i < 8 && s_tableKing_[pos][i] >= 0; ++i)
     s_otherCaps_[Figure::TypeKing][pos] |= set_mask_bit(s_tableKing_[pos][i]);
+
+  // fill pressure mask
+  int xp = pos & 7;
+  int yp = pos >>3;
+  for (int x = xp-2; x < xp+2; ++x)
+  {
+    if ( x < 0 || x > 7 )
+      continue;
+
+    int y = yp-2;
+    if ( y >= 0 )
+    {
+      int p = x | (y<<3);
+      s_kingPressure_[pos] |= set_mask_bit(p);
+    }
+
+    y = yp+2;
+    if ( y < 8 )
+    {
+      int p = x | (y<<3);
+      s_kingPressure_[pos] |= set_mask_bit(p);
+    }
+  }
+
+  for (int y = yp-2; y < yp+2; ++y)
+  {
+    if ( y < 0 || y > 7 )
+      continue;
+
+    int x = xp-2;
+    if ( x >= 0 )
+    {
+      int p = x | (y<<3);
+      s_kingPressure_[pos] |= set_mask_bit(p);
+    }
+
+    x = xp+2;
+    if ( x < 8 )
+    {
+      int p = x | (y<<3);
+      s_kingPressure_[pos] |= set_mask_bit(p);
+    }
+  }
 }
 
 void MovesTable::initBishops(int pos)
@@ -215,7 +257,6 @@ void MovesTable::initBishops(int pos)
     s_tableOther_[Figure::TypeBishop-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
 
     int poffset = (p + d).index();
-    s_bishopMob_[pos] |= set_mask_bit(poffset);
   }
 }
 
@@ -241,7 +282,6 @@ void MovesTable::initRooks(int pos)
     s_tableOther_[Figure::TypeRook-Figure::TypeBishop][pos][j++] = (d.delta() << 8) | (n);
 
     int poffset = (p + d).index();
-    s_rookMob_[pos] |= set_mask_bit(poffset);
   }
 }
 
