@@ -20,8 +20,8 @@ enum {
 int Evaluator::score_ex_max_ = 0;
 
 const ScoreType Evaluator::positionGain_ = 100;
-
 const ScoreType Evaluator::lazyThreshold_ = 300;
+const ScoreType Evaluator::lazyThresholdEg_ = 500;
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -33,7 +33,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
     {
       0,   0,   0,   0,   0,   0,   0,   0,
       5,   5,   5,   5,   5,   5,   5,   5,
-      1,   1,   5,  10,  10,   5,   1,   1,
+      1,   1,   3,   6,   6,   3,   1,   1,
       0,   0,   2,   8,   8,   2,   0,   0,
       0,   0,   1,   8,   8,   1,   0,   0,
       2,   0,   0,   0,   0,   0,   0,   2,
@@ -163,14 +163,14 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -12;
+const ScoreType Evaluator::pawnDoubled_  = -15;
 const ScoreType Evaluator::pawnIsolated_ = -20;
 const ScoreType Evaluator::pawnBackward_ = -10;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
 const ScoreType Evaluator::pawnBlocked_ = 0;
-const ScoreType Evaluator::defendedBonus_ = 3;
+const ScoreType Evaluator::defendedBonus_ = 5;
 const ScoreType Evaluator::groupsPenalty_ = 2;
-const ScoreType Evaluator::assistantBishop_ = 5;
+const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  12;
 const ScoreType Evaluator::openRook_ =  15;
@@ -187,9 +187,9 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 0, 15, 20, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
-const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 0, 20, 30, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 };
-const ScoreType Evaluator::queenDifferenceBonus_[16]   =  { 0, 15, 25, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
+const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 0, 20, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25 };
+const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 0, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35 };
+const ScoreType Evaluator::queenDifferenceBonus_[16]   =  { 0, 25, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35 };
 
 /// blocked figures
 const ScoreType Evaluator::bishopBlocked_ = 50;
@@ -225,12 +225,12 @@ const ScoreType Evaluator::kingknightPressure_ = 8;
 const ScoreType Evaluator::queenAttackBonus_ = 10;
 
 /// pawns evaluation
-#define MAX_PASSED_SCORE 75
+#define MAX_PASSED_SCORE 80
 
-const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 35, 50, MAX_PASSED_SCORE, 0 };
+const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 40, 60, MAX_PASSED_SCORE, 0 };
+const ScoreType Evaluator::passersGroup_[8] = { 0, 5, 7, 9, 11, 13, 15, 0 };
 const ScoreType Evaluator::defendedPasser_[8] = { 0, 0, 3, 5, 7, 9, 11, 0 };
-const ScoreType Evaluator::passersGroup_[8] = { 0, 2, 3, 5, 7, 9, 12, 0 };
-const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 4, 6, 8, 10, 0, 0 };
+const ScoreType Evaluator::passerCandidate_[8] =  { 0, 5, 7, 9, 12, 15, 20, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
@@ -345,12 +345,14 @@ ScoreType Evaluator::operator () (ScoreType alpha, ScoreType betta)
 
   prepare();
 
+  int threshold = board_->endgame() ? lazyThreshold_ : lazyThresholdEg_;
+
   // prepare lazy evaluation
   if ( alpha > -Figure::MatScore )
-    alpha_ = alpha - lazyThreshold_;
+    alpha_ = alpha - threshold;
 
   if ( betta < +Figure::MatScore )
-    betta_ = betta + lazyThreshold_;
+    betta_ = betta + threshold;
 
   ScoreType score = -ScoreMax;
 
@@ -545,7 +547,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
     switch ( n )
     {
     case A8:
-      if ( board_->isFigure(C7, Figure::ColorBlack, Figure::TypePawn) )
+      if ( board_->isFigure(A7, Figure::ColorBlack, Figure::TypePawn) ||
+           board_->isFigure(C7, Figure::ColorBlack, Figure::TypePawn) )
         score_w -= knightBlocked_;
       break;
 
@@ -556,7 +559,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
       break;
 
     case H8:
-      if ( board_->isFigure(F7, Figure::ColorBlack, Figure::TypePawn) )
+      if ( board_->isFigure(H7, Figure::ColorBlack, Figure::TypePawn) ||
+           board_->isFigure(F7, Figure::ColorBlack, Figure::TypePawn) )
         score_w -= knightBlocked_;
       break;
 
@@ -576,7 +580,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
     switch ( n )
     {
     case A1:
-      if ( board_->isFigure(C2, Figure::ColorWhite, Figure::TypePawn) )
+      if ( board_->isFigure(A2, Figure::ColorWhite, Figure::TypePawn) ||
+           board_->isFigure(C2, Figure::ColorWhite, Figure::TypePawn) )
         score_b -= knightBlocked_;
       break;
 
@@ -587,7 +592,8 @@ ScoreType Evaluator::evaluateBlockedKnights()
       break;
 
     case H1:
-      if ( board_->isFigure(F2, Figure::ColorWhite, Figure::TypePawn) )
+      if ( board_->isFigure(H2, Figure::ColorWhite, Figure::TypePawn) ||
+           board_->isFigure(F2, Figure::ColorWhite, Figure::TypePawn) )
         score_b -= knightBlocked_;
       break;
 

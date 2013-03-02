@@ -18,7 +18,7 @@ public:
   static const ScoreType positionEvaluations_[2][8][64];
 
   static const ScoreType positionGain_;
-  static const ScoreType lazyThreshold_;
+  static const ScoreType lazyThreshold_, lazyThresholdEg_;
 
   // evaluation constants
   static const ScoreType bishopKnightMat_[64];

@@ -426,7 +426,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 #ifdef USE_FUTILITY_PRUNING
   if ( !pv &&
        !scontexts_[ictx].board_.underCheck() &&
-       !scontexts_[ictx].board_.isWinnerLoser() &&
+       !scontexts_[ictx].board_.endgame() &&
         alpha > -Figure::MatScore+MaxPly &&
         alpha < Figure::MatScore-MaxPly &&
         depth == 1 && ply > 1 )
@@ -573,7 +573,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   }
 
 #ifdef SINGULAR_EXT
-  if ( ((aboveAlphaN == 1 && !wasExtended) || (counter == 1 && alpha >= betta)) && !fg.singleReply() && allMovesIterated )
+  if ( ((aboveAlphaN == 1 && !wasExtended) || (counter == 1 && alpha > alpha0)) && !fg.singleReply() && allMovesIterated )
   {
     THROW_IF( !best, "best move wasn't found but one move was" );
 
@@ -731,11 +731,10 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
   }
 
   Move best(0);
-  Figure::Type thresholdType = scontexts_[ictx].board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
-
+  Figure::Type thresholdType = delta2type(delta);
   TacticalGenerator tg(scontexts_[ictx].board_, thresholdType, depth);
-  if ( tg.singleReply() )
-    depth++;
+  //if ( tg.singleReply() )
+  //  depth++;
 
   for ( ; alpha < betta && !checkForStop(); )
   {

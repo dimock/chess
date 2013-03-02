@@ -9,10 +9,12 @@
 CapsGenerator::CapsGenerator(const Move & hcap, Board & board) :
   MovesGeneratorBase(board),
   hcap_(hcap),
-  thresholdType_(Figure::TypeNone)
+  thresholdType_(Figure::TypeNone),
+  endgame_(false)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
+  endgame_ = board_.endgame();
 
   const Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
@@ -23,9 +25,11 @@ CapsGenerator::CapsGenerator(const Move & hcap, Board & board) :
 
 CapsGenerator::CapsGenerator(Board & board) :
   MovesGeneratorBase(board),
-  thresholdType_(Figure::TypeNone)
+  thresholdType_(Figure::TypeNone),
+  endgame_(false)
 {
   hcap_.clear();
+  endgame_ = board_.endgame();
 
   const Figure::Color & color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);

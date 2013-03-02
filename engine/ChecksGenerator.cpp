@@ -9,6 +9,7 @@
 ChecksGenerator::ChecksGenerator(Board & board) :
   MovesGeneratorBase(board), hmove_(0)
 {
+  endgame_ = board_.endgame();
   moves_[0].clear();
 }
 

@@ -215,6 +215,14 @@ public:
     return fmgr_;
   }
 
+  bool endgame() const
+  {
+    return isWinnerLoser() ||
+      ( fmgr().queens(color_) + fmgr().rooks(color_) < 2 &&
+        fmgr().knights(color_) + fmgr().bishops(color_) < 2 &&
+        fmgr().pawns(Figure::ColorWhite) + fmgr().pawns(Figure::ColorBlack) > 0 );
+  }
+
   inline bool allowNullMove() const
   {
     return can_win_[color_] &&
@@ -243,7 +251,7 @@ public:
 
     Figure::Color ocolor = Figure::otherColor(color_);
     ScoreType score = fmgr().weight(color_) - fmgr().weight(ocolor);
-    if ( score < betta + Figure::figureWeight_[Figure::TypePawn] )
+    if ( score < betta + (Figure::figureWeight_[Figure::TypePawn]<<1) )
     {
       if ( depth < 4 )
         null_depth = 0;
@@ -263,7 +271,7 @@ public:
 
   inline int nullMoveDepthVerify(int depth) const
   {
-    int null_depth = depth - NullMove_PlyReduce;//nullMoveReduce();
+    int null_depth = depth - nullMoveReduce();
     if ( null_depth > (depth>>1) )
       null_depth = depth>>1;
     if ( null_depth < 0 )

@@ -362,7 +362,7 @@ public:
 
       move->alreadyDone_ = 1;
 
-      if ( !filter(*move) )
+      if ( !endgame_ && !filter(*move) )
         continue;
 
       return *move;
@@ -415,6 +415,7 @@ private:
 
   bool expressCheck(Move & move) const;
 
+  bool endgame_;
   Figure::Type thresholdType_;
   Move hcap_;
 
@@ -623,7 +624,7 @@ public:
 
       move->alreadyDone_ = 1;
 
-      if ( !move->discoveredCheck_ && board_.see(*move) < 0 )
+      if ( !endgame_ && !move->discoveredCheck_ && board_.see(*move) < 0 )
         continue;
 
       return *move;
@@ -661,6 +662,7 @@ private:
     m++;
   }
 
+  bool endgame_;
   Move hmove_;
 };
 
