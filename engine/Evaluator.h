@@ -44,7 +44,6 @@ public:
   /// material difference
   static const ScoreType figureAgainstPawnBonus_[16];
   static const ScoreType rookAgainstFigureBonus_[16];
-  static const ScoreType queenDifferenceBonus_[16];
 
   // blocked bishop & knight
   static const ScoreType bishopBlocked_;
@@ -181,6 +180,44 @@ private:
     int kingAttackersN_;
   } finfo_[2];
 
+  template <int DIR>
+  void mobility_masks(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
+  {
+  }
+
+  template <>
+  void mobility_masks<0>(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
+  {
+    BitMask mask_from = di_mask & mask_all_;
+    if ( mask_from )
+    {
+      int to = find_lsb(mask_from);
+      mob_mask |= board_->g_betweenMasks->between(from, to);
+      att_mask |= mob_mask | set_mask_bit(to);
+    }
+    else
+    {
+      mob_mask |= di_mask;
+      att_mask |= di_mask;
+    }
+  }
+
+  template <>
+  void mobility_masks<1>(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
+  {
+    BitMask mask_from = di_mask & mask_all_;
+    if ( mask_from )
+    {
+      int to = find_msb(mask_from);
+      mob_mask |= board_->g_betweenMasks->between(from, to);
+      att_mask |= mob_mask | set_mask_bit(to);
+    }
+    else
+    {
+      mob_mask |= di_mask;
+      att_mask |= di_mask;
+    }
+  }
 
   // used to find pinned figures
   enum PinType { ptAll, ptOrtho, ptDiag };

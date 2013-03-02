@@ -383,7 +383,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_NULL_MOVE
   if ( !pv &&
-//       !nm &&
+       //!nm &&
        !scontexts_[ictx].board_.underCheck() &&
         scontexts_[ictx].board_.allowNullMove() &&
         depth >= scontexts_[ictx].board_.nullMoveDepthMin() &&
@@ -733,8 +733,8 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
   Move best(0);
   Figure::Type thresholdType = delta2type(delta);
   TacticalGenerator tg(scontexts_[ictx].board_, thresholdType, depth);
-  //if ( tg.singleReply() )
-  //  depth++;
+  if ( tg.singleReply() )
+    depth++;
 
   for ( ; alpha < betta && !checkForStop(); )
   {
