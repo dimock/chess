@@ -33,8 +33,8 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
     {
       0,   0,   0,   0,   0,   0,   0,   0,
       5,   5,   5,   5,   5,   5,   5,   5,
-      1,   1,   5,  12,  12,   5,   1,   1,
-      0,   0,   2,  10,  10,   2,   0,   0,
+      1,   1,   5,  10,  10,   5,   1,   1,
+      0,   0,   2,   8,   8,   2,   0,   0,
       0,   0,   1,   8,   8,   1,   0,   0,
       2,   0,   0,   0,   0,   0,   0,   2,
       2,   4,   4, -10, -10,   4,   4,   2,
@@ -74,7 +74,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
      -2,   0,   0,   0,   0,   0,   0,  -2,
-     -5,  -5,  -5,   3,   3,  -5,  -5,  -5
+     -5,  -5,   0,   3,   3,   0,  -5,  -5
     },
 
     // queen
@@ -99,7 +99,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       -10, -16, -16, -20, -20, -16, -16, -10,
       -4,  -8,   -8, -10, -10,  -8,  -8,  -4,
        0,   0,   -2,  -8,  -8,  -2,   0,   0,
-       3,  12,    5,   0,   0,   5,  15,   3
+       5,  12,    5,   0,   0,   5,  15,   5
     },
 
     {}
@@ -163,7 +163,7 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -15;
+const ScoreType Evaluator::pawnDoubled_  = -12;
 const ScoreType Evaluator::pawnIsolated_ = -20;
 const ScoreType Evaluator::pawnBackward_ = -10;
 const ScoreType Evaluator::pawnDisconnected_ = -5;
@@ -175,20 +175,20 @@ const ScoreType Evaluator::rookBehindBonus_ = 7;
 const ScoreType Evaluator::semiopenRook_ =  12;
 const ScoreType Evaluator::openRook_ =  15;
 const ScoreType Evaluator::winloseBonus_ =  25;
-const ScoreType Evaluator::bishopBonus_ = 15;
+const ScoreType Evaluator::bishopBonus_ = 10;
 const ScoreType Evaluator::pawnEndgameBonus_ = 20;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
-const ScoreType Evaluator::kingFarBonus_ = 25;
-const ScoreType Evaluator::fakecastlePenalty_ = 25;
+const ScoreType Evaluator::kingFarBonus_ = 20;
+const ScoreType Evaluator::fakecastlePenalty_ = 20;
 const ScoreType Evaluator::castleImpossiblePenalty_ = 20;
 const ScoreType Evaluator::attackedByWeakBonus_ = 10;
-const ScoreType Evaluator::forkBonus_ = 65;
+const ScoreType Evaluator::forkBonus_ = 60;
 const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 0, 20, 30, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 };
-const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 0, 25, 35, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45 };
+const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 0, 15, 20, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
+const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 0, 20, 30, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 };
 const ScoreType Evaluator::queenDifferenceBonus_[16]   =  { 0, 15, 25, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
 
 /// blocked figures
@@ -218,8 +218,8 @@ const ScoreType Evaluator::nopawnBeforeKing_ = 5;
 const ScoreType Evaluator::opponentPawnsToKing_ = 10;
 
 //pressure to king by opponents bishop & knight
-const ScoreType Evaluator::kingbishopPressure_ = 10;
-const ScoreType Evaluator::kingknightPressure_ = 10;
+const ScoreType Evaluator::kingbishopPressure_ = 8;
+const ScoreType Evaluator::kingknightPressure_ = 8;
 
 // queen attacks opponent's king (give only if supported by other figure)
 const ScoreType Evaluator::queenAttackBonus_ = 10;
@@ -236,18 +236,18 @@ const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-35, -12, 0, 3, 5, 7, 9, 11},
+  {-40, -15, 0, 3, 5, 7, 9, 11},
   {-35, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-35, -15, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-50, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
+  {-25, -12, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
   {},
   {},
-  {15, 12, 10, 5, 3, 1, 0, 0},
-  {15, 12, 10, 7, 3, 1, 0, 0},
-  {20, 15, 10, 7, 5, 2, 0, 0},
+  {15, 12, 10, 7, 6, 1, 0, 0},
+  {15, 12, 10, 7, 5, 3, 1, 0},
+  {20, 18, 13, 9, 7, 3, 1, 0},
   {40, 55, 45, 25, 12, 3, 1, 0},
 };
 
@@ -1163,8 +1163,19 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
       else
         score -= kingPenalties[0][i]; // completely opened column
     }
+
+    // additional penalty is bg-column is opened and king is in the corner
+    bool bg_opened = pmsk_t[ pw_x[ctype][1] ] == 0;
+    if ( bg_opened && (kx == 0 || kx == 7) )
+      score -= nopawnBeforeKing_;
   }  
-  else // try to put king under pawn's shield if it is not castled
+
+  // try to put king under pawn's shield
+
+  // give additional penalty if there is no pawn before king
+  if ( (pmsk_t[kx] & semiopen_mask) == 0 )
+    score -= nopawnBeforeKing_;
+  else // or give small bonus for each pawn otherwise
   {
     int xle = kx-1;
     if ( xle < 0 )
@@ -1181,8 +1192,8 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
         pw_count++;
     }
 
-    // give penalty if there is no pawns before king
-    score -= (3-pw_count) * nopawnBeforeKing_;
+    static const int pawns_count_bonus[4] = { 0, nopawnBeforeKing_, nopawnBeforeKing_*2, nopawnBeforeKing_*3 };
+    score += pawns_count_bonus[pw_count & 3];
   }
 
   // color, castle type
