@@ -218,9 +218,7 @@ public:
   bool endgame() const
   {
     return isWinnerLoser() ||
-      ( fmgr().queens(color_) + fmgr().rooks(color_) < 2 &&
-        fmgr().knights(color_) + fmgr().bishops(color_) < 2 &&
-        fmgr().pawns(Figure::ColorWhite) + fmgr().pawns(Figure::ColorBlack) > 0 );
+      ( fmgr().queens(color_) + fmgr().rooks(color_) + fmgr().knights(color_) + fmgr().bishops(color_) < 2 );
   }
 
   inline bool allowNullMove() const
