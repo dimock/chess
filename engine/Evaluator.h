@@ -68,7 +68,7 @@ public:
   static const ScoreType bg_columnCracked_;
   static const ScoreType ah_columnCracked_;
 
-  static const ScoreType nopawnBeforeKing_;
+  static const ScoreType pawnBeforeKing_;
 
   // pressure to opponent's king
   static const ScoreType kingPawnPressure_;

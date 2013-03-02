@@ -187,9 +187,9 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 0, 20, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25 };
-const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 0, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35 };
-const ScoreType Evaluator::queenDifferenceBonus_[16]   =  { 0, 25, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35 };
+const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 10, 20, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25 };
+const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 10, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35 };
+const ScoreType Evaluator::queenDifferenceBonus_[16]   =  { 15, 25, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35 };
 
 /// blocked figures
 const ScoreType Evaluator::bishopBlocked_ = 50;
@@ -212,16 +212,16 @@ const ScoreType Evaluator::cf_columnCracked_ = 2;
 const ScoreType Evaluator::bg_columnCracked_ = 4;
 const ScoreType Evaluator::ah_columnCracked_ = 2;
 
-const ScoreType Evaluator::nopawnBeforeKing_ = 5;
+const ScoreType Evaluator::pawnBeforeKing_ = 5;
 
 // pressure to king by opponents figures
 const ScoreType Evaluator::kingPawnPressure_   = 10;
-const ScoreType Evaluator::kingKnightPressure_ = 8;
-const ScoreType Evaluator::kingBishopPressure_ = 8;
+const ScoreType Evaluator::kingKnightPressure_ = 5;
+const ScoreType Evaluator::kingBishopPressure_ = 6;
 const ScoreType Evaluator::kingRookPressure_   = 8;
 const ScoreType Evaluator::kingQueenPressure_  = 10;
 
-const ScoreType Evaluator::kingFieldAttackBonus_ = 4;
+const ScoreType Evaluator::kingFieldAttackBonus_ = 3;
 
 /// pawns evaluation
 #define MAX_PASSED_SCORE 80
@@ -1404,14 +1404,14 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
     // additional penalty is bg-column is opened and king is in the corner
     bool bg_opened = pmsk_t[ pw_x[ctype][1] ] == 0;
     if ( bg_opened && (kx == 0 || kx == 7) )
-      score -= nopawnBeforeKing_;
+      score -= bg_columnSemiopened_;
   }  
 
   // try to put king under pawn's shield
 
   // give additional penalty if there is no pawn before king
   if ( (pmsk_t[kx] & semiopen_mask) == 0 )
-    score -= nopawnBeforeKing_;
+    score -= bg_columnSemiopened_;
   else // or give small bonus for each pawn otherwise
   {
     int xle = kx-1;
@@ -1429,7 +1429,7 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
         pw_count++;
     }
 
-    static const int pawns_count_bonus[4] = { 0, nopawnBeforeKing_, nopawnBeforeKing_*2, nopawnBeforeKing_*3 };
+    static const int pawns_count_bonus[4] = { 0, pawnBeforeKing_, pawnBeforeKing_*2, pawnBeforeKing_*3 };
     score += pawns_count_bonus[pw_count & 3];
   }
 
