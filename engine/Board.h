@@ -215,12 +215,6 @@ public:
     return fmgr_;
   }
 
-  bool endgame() const
-  {
-    return isWinnerLoser() ||
-      ( fmgr().queens(color_) + fmgr().rooks(color_) + fmgr().knights(color_) + fmgr().bishops(color_) < 2 );
-  }
-
   inline bool allowNullMove() const
   {
     return can_win_[color_] &&

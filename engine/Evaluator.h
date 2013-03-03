@@ -18,7 +18,7 @@ public:
   static const ScoreType positionEvaluations_[2][8][64];
 
   static const ScoreType positionGain_;
-  static const ScoreType lazyThreshold_, lazyThresholdEg_;
+  static const ScoreType lazyThreshold_;
 
   // evaluation constants
   static const ScoreType bishopKnightMat_[64];
@@ -75,7 +75,9 @@ public:
   static const ScoreType kingBishopPressure_;
   static const ScoreType kingRookPressure_;
   static const ScoreType kingQueenPressure_;
-  static const ScoreType kingFieldAttackBonus_;
+
+  static const ScoreType kingAttackersBonus_[8];
+  static const ScoreType numOfFieldsAttackedBonus_[16];
   
   Evaluator();
 
@@ -92,7 +94,9 @@ private:
 
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
   ScoreType evaluatePawnShield(Figure::Color color);
-  ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg);
+
+  ScoreType evaluatePassersAdditional(int coef_e);
+  ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, int & most_adv_y);
 
   ScoreType evaluateBlockedBishops();
   ScoreType evaluateBlockedKnights();
@@ -104,7 +108,7 @@ private:
   ScoreType analyzePasserGroup(ScoreType * score_eg, Figure::Color color, int (&group_x)[8], int n, int (&passers_y)[8]);
 
   // search path from opponent king to pawn's promotion of given color
-  bool findRootToPawn(Figure::Color color, int promo_pos) const;
+  bool findRootToPawn(Figure::Color color, int promo_pos, int stepsMax) const;
 
   // special cases
 

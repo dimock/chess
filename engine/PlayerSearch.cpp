@@ -426,7 +426,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 #ifdef USE_FUTILITY_PRUNING
   if ( !pv &&
        !scontexts_[ictx].board_.underCheck() &&
-       !scontexts_[ictx].board_.endgame() &&
+       !scontexts_[ictx].board_.isWinnerLoser() &&
         alpha > -Figure::MatScore+MaxPly &&
         alpha < Figure::MatScore-MaxPly &&
         depth == 1 && ply > 1 )
@@ -731,7 +731,7 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
   }
 
   Move best(0);
-  Figure::Type thresholdType = delta2type(delta);
+  Figure::Type thresholdType = scontexts_[ictx].board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
   TacticalGenerator tg(scontexts_[ictx].board_, thresholdType, depth);
   if ( tg.singleReply() )
     depth++;

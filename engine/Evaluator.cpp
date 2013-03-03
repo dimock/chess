@@ -21,7 +21,6 @@ int Evaluator::score_ex_max_ = 0;
 
 const ScoreType Evaluator::positionGain_ = 100;
 const ScoreType Evaluator::lazyThreshold_ = 300;
-const ScoreType Evaluator::lazyThresholdEg_ = 500;
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -215,12 +214,13 @@ const ScoreType Evaluator::pawnBeforeKing_ = 5;
 
 // pressure to king by opponents figures
 const ScoreType Evaluator::kingPawnPressure_   = 10;
-const ScoreType Evaluator::kingKnightPressure_ = 5;
-const ScoreType Evaluator::kingBishopPressure_ = 6;
+const ScoreType Evaluator::kingKnightPressure_ = 6;
+const ScoreType Evaluator::kingBishopPressure_ = 8;
 const ScoreType Evaluator::kingRookPressure_   = 8;
 const ScoreType Evaluator::kingQueenPressure_  = 10;
 
-const ScoreType Evaluator::kingFieldAttackBonus_ = 3;
+const ScoreType Evaluator::kingAttackersBonus_[8] = { 0, 3, 7, 12, 20, 30, 50, 70 };
+const ScoreType Evaluator::numOfFieldsAttackedBonus_[16] = { 0, 1, 3, 7, 12, 20, 30, 40, 60 };
 
 /// pawns evaluation
 #define MAX_PASSED_SCORE 80
@@ -234,10 +234,10 @@ const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-40, -15, 0, 3, 5, 7, 9, 11},
-  {-40, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-35, -12, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-45, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
+  {-50, -15, 0, 3, 5, 7, 9, 11},
+  {-50, -15, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-50, -20, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-60, -40, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -293,17 +293,8 @@ void Evaluator::prepare()
     const BitMask & ki_line0b = board_->g_movesTable->caps(Figure::TypeKing, finfo_[0].king_pos_);
     const BitMask & ki_line0w = board_->g_movesTable->caps(Figure::TypeKing, finfo_[1].king_pos_);
 
-    if ( finfo_[1].pw_attack_mask_ & ki_line0b )
-    {
-      finfo_[1].knightPressure_ += kingPawnPressure_;
-      finfo_[1].kingAttackersN_++;
-    }
-
-    if ( finfo_[0].pw_attack_mask_ & ki_line0w )
-    {
-      finfo_[0].knightPressure_ += kingPawnPressure_;
-      finfo_[0].kingAttackersN_++;
-    }
+    finfo_[1].kingAttackersN_ += (int)((finfo_[1].pw_attack_mask_ & ki_line0b) != 0);
+    finfo_[0].kingAttackersN_ += (int)((finfo_[0].pw_attack_mask_ & ki_line0w) != 0);
   }
 
   alpha_ = -ScoreMax;
@@ -350,14 +341,12 @@ ScoreType Evaluator::operator () (ScoreType alpha, ScoreType betta)
 
   prepare();
 
-  int threshold = board_->endgame() ? lazyThreshold_ : lazyThresholdEg_;
-
   // prepare lazy evaluation
   if ( alpha > -Figure::MatScore )
-    alpha_ = alpha - threshold;
+    alpha_ = alpha - lazyThreshold_;
 
   if ( betta < +Figure::MatScore )
-    betta_ = betta + threshold;
+    betta_ = betta + lazyThreshold_;
 
   ScoreType score = -ScoreMax;
 
@@ -650,13 +639,7 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
   score += finfo_[1].queenPressure_;
 
   // unstoppable passed pawns and pawns, that can go to the next line
-  ScoreType pw_score_eg = 0;
-  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg);
-  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg);
-
-  pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
-  score += pw_score_eg;
-
+  score += evaluatePassersAdditional(coef_e);
 
   // king pressure additional
   {
@@ -668,8 +651,11 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
     int attackedB = pop_count(b_cap & finfo_[1].attack_mask_);
     int attackedW = pop_count(w_cap & finfo_[0].attack_mask_);
 
-    score_king += attackedB * kingFieldAttackBonus_;
-    score_king -= attackedW * kingFieldAttackBonus_;
+    score_king += numOfFieldsAttackedBonus_[attackedB & 15];
+    score_king -= numOfFieldsAttackedBonus_[attackedW & 15];
+
+    score_king += kingAttackersBonus_[finfo_[1].kingAttackersN_ & 7];
+    score_king -= kingAttackersBonus_[finfo_[0].kingAttackersN_ & 7];
 
     score_king = (score_king * coef_o) / weightMax_;
 
@@ -678,6 +664,31 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
 
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
+
+  return score;
+}
+
+ScoreType Evaluator::evaluatePassersAdditional(int coef_e)
+{
+  ScoreType pw_score_eg = 0;
+  int most_adv_yb = -1, most_adv_yw = -1;
+
+  ScoreType score = 0;
+
+  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg, most_adv_yb);
+  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg, most_adv_yw);
+
+  // give bonus for most advanced pawn if it is closer to promotion field
+  if ( most_adv_yb >= 0 && most_adv_yw >= 0 )
+  {
+    if ( most_adv_yw > most_adv_yb )
+      pw_score_eg += unstoppablePawn_;
+    else if ( most_adv_yb > most_adv_yb )
+      pw_score_eg += unstoppablePawn_;
+  }
+
+  pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
+  score += pw_score_eg;
 
   return score;
 }
@@ -704,16 +715,7 @@ ScoreType Evaluator::evaluateKnights()
       int from = clear_lsb(kn_mask);
       const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
 
-      if ( oki_line0 & kn_cap )
-      {
-        finfo_[c].knightPressure_ += kingKnightPressure_;
-        finfo_[c].kingAttackersN_++;
-      }
-      else if ( oki_line1 & kn_cap )
-      {
-        finfo_[c].knightPressure_ += kingKnightPressure_ >> 1;
-      }
-
+      finfo_[c].kingAttackersN_ += (int)((oki_line0 & kn_cap) != 0);
       finfo_[c].kn_attack_mask_ |= kn_cap;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
@@ -765,14 +767,7 @@ ScoreType Evaluator::evaluateBishops()
       mobility_masks<1>(from, bmob_mask, batt_mask, board_->g_betweenMasks->from_dir(from, nst::se));
       mobility_masks<1>(from, bmob_mask, batt_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
 
-      if ( batt_mask & oki_line0 )
-      {
-        finfo_[c].bishopPressure_ += kingBishopPressure_;
-        finfo_[c].kingAttackersN_++;
-      }
-      else if ( batt_mask & oki_line1 )
-        finfo_[c].bishopPressure_ += kingBishopPressure_ >> 1;
-
+      finfo_[c].kingAttackersN_ += (int)((batt_mask & oki_line0) != 0);
       finfo_[c].attack_mask_ |= batt_mask;
       bmob_mask &= not_attacked;
 
@@ -828,16 +823,7 @@ void Evaluator::evaluateRooks()
       mobility_masks<1>(from, rmob_mask, ratt_mask, board_->g_betweenMasks->from_dir(from, nst::so));
       mobility_masks<1>(from, rmob_mask, ratt_mask, board_->g_betweenMasks->from_dir(from, nst::we));
 
-      if ( ratt_mask & oki_line0 )
-      {
-        finfo_[c].rookPressure_ += kingRookPressure_;
-        finfo_[c].kingAttackersN_++;
-      }
-      else if ( ratt_mask & oki_line1 )
-      {
-        finfo_[c].rookPressure_ += kingRookPressure_ >> 1;
-      }
-
+      finfo_[c].kingAttackersN_ += (int)((ratt_mask & oki_line0) != 0);
       rattack_mask[c] |= ratt_mask;
       rmob_mask &= not_attacked;
 
@@ -910,16 +896,7 @@ void Evaluator::evaluateQueens()
       mobility_masks<1>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::so));
       mobility_masks<1>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::we));
 
-      if ( qatt_mask & oki_line0 )
-      {
-        finfo_[c].queenPressure_ += kingQueenPressure_;
-        finfo_[c].kingAttackersN_++;
-      }
-      else if ( qatt_mask & oki_line1 )
-      {
-        finfo_[c].queenPressure_ += kingQueenPressure_ >> 1;
-      }
-
+      finfo_[c].kingAttackersN_ += (int)((qatt_mask & oki_line0) != 0);
       qattack_mask[c] |= qatt_mask;
       qmob_mask &= not_attacked;
 
@@ -1770,10 +1747,12 @@ ScoreType Evaluator::analyzePasserGroup(ScoreType * score_eg, Figure::Color colo
   return score;
 }
 
-ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg)
+ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, int & most_adv_y)
 {
   const FiguresManager & fmgr = board_->fmgr();
   Figure::Color ocolor = Figure::otherColor(color);
+
+  most_adv_y = -1;
 
   const BitMask & opmsk_t = fmgr.pawn_mask_t(ocolor);
   const BitMask & pmsk_t = fmgr.pawn_mask_t(color);
@@ -1804,8 +1783,15 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
     if ( !(opmsk_t & passmsk) && !(pmsk_t & blckmsk) )
     {
       int promo_pos = x | (py<<3);
-      int pawn_dist_promo = py - y;
       int cy = color ? y : 7-y;
+
+      bool king_far = false;
+      int pawn_dist_promo = py - y;
+      if ( pawn_dist_promo < 0 )
+        pawn_dist_promo = -pawn_dist_promo;
+      int o_dist_promo = board_->g_distanceCounter->getDistance(finfo_[ocolor].king_pos_, promo_pos);
+      o_dist_promo -= board_->color_ == ocolor;
+      king_far = pawn_dist_promo < o_dist_promo;
 
       // have bishop with color the same as promotion field's color
       Figure::Color pcolor = ((Figure::Color)FiguresCounter::s_whiteColors_[promo_pos]);
@@ -1859,8 +1845,13 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       {
         score += pawnCanGo_[cy];
 
-        if ( !findRootToPawn(color, promo_pos) )
+        if ( king_far || !findRootToPawn(color, promo_pos, pawn_dist_promo) )
+        {
+          if ( cy > most_adv_y )
+            most_adv_y = cy;
+
           score_eg += unstoppablePawn_;
+        }
       }
     }
   }
@@ -1874,7 +1865,7 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
 }
 
 // idea from CCRL
-bool Evaluator::findRootToPawn(Figure::Color color, int promo_pos) const
+bool Evaluator::findRootToPawn(Figure::Color color, int promo_pos, int stepsMax) const
 {
   Figure::Color ocolor = Figure::otherColor(color);
   int oki_pos = finfo_[ocolor].king_pos_;
@@ -1897,7 +1888,7 @@ bool Evaluator::findRootToPawn(Figure::Color color, int promo_pos) const
   const BitMask cut_le = ~0x0101010101010101;
   const BitMask cut_ri = ~0x8080808080808080;
 
-  for (int i = 0;; ++i)
+  for (int i = 0; i < stepsMax; ++i)
   {
     THROW_IF( i > 64, "infinite loop in path finder" );
 
@@ -2269,9 +2260,10 @@ ScoreType Evaluator::evaluateWinnerLoser()
     evaluateRooks();
     evaluateQueens();
 
+    int most_adv_yb = -1, most_adv_yw = -1;
     ScoreType score_eg = 0;
-    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg);
-    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg);
+    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg, most_adv_yb);
+    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg, most_adv_yw);
 
     score += score_eg;
     score += pwscore;
