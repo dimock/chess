@@ -32,8 +32,8 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
     {
       0,   0,   0,   0,   0,   0,   0,   0,
       5,   5,   5,   5,   5,   5,   5,   5,
-      1,   1,   3,   6,   6,   3,   1,   1,
-      0,   0,   2,   8,   8,   2,   0,   0,
+      0,   0,   3,   5,   5,   3,   0,   0,
+      0,   0,   2,   6,   6,   2,   0,   0,
       0,   0,   1,   8,   8,   1,   0,   0,
       2,   0,   0,   0,   0,   0,   0,   2,
       2,   4,   4, -10, -10,   4,   4,   2,
@@ -186,8 +186,8 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_[16] = { 10, 20, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25 };
-const ScoreType Evaluator::rookAgainstFigureBonus_[16] = { 10, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35 };
+const ScoreType Evaluator::figureAgainstPawnBonus_ = 25;
+const ScoreType Evaluator::rookAgainstFigureBonus_ = 35;
 
 /// blocked figures
 const ScoreType Evaluator::bishopBlocked_ = 50;
@@ -218,9 +218,6 @@ const ScoreType Evaluator::kingKnightPressure_ = 8;
 const ScoreType Evaluator::kingBishopPressure_ = 8;
 const ScoreType Evaluator::kingRookPressure_   = 8;
 const ScoreType Evaluator::kingQueenPressure_  = 10;
-
-const ScoreType Evaluator::kingAttackersBonus_[8] = { 0, 3, 7, 12, 20, 30, 50, 70 };
-const ScoreType Evaluator::numOfFieldsAttackedBonus_[16] = { 0, 1, 3, 7, 12, 20, 30, 40, 60 };
 
 /// pawns evaluation
 #define MAX_PASSED_SCORE 80
@@ -422,8 +419,8 @@ ScoreType Evaluator::evaluate()
     return score;
 
   ScoreType score_ex = evaluateExpensive(phase, coef_o, coef_e);
-  if ( abs(score_ex) > score_ex_max_ )
-    score_ex_max_ = abs(score_ex);
+  //if ( abs(score_ex) > score_ex_max_ )
+  //  score_ex_max_ = abs(score_ex);
 
   score += score_ex;
 
@@ -659,8 +656,8 @@ ScoreType Evaluator::evaluatePassersAdditional(GamePhase phase, int coef_e)
   {
     if ( most_adv_yw > most_adv_yb )
       pw_score_eg += unstoppablePawn_;
-    else if ( most_adv_yb > most_adv_yb )
-      pw_score_eg += unstoppablePawn_;
+    else if ( most_adv_yb > most_adv_yw )
+      pw_score_eg -= unstoppablePawn_;
   }
 
   if ( phase == MiddleGame )
@@ -885,13 +882,19 @@ Evaluator::GamePhase Evaluator::detectPhase(int & coef_o, int & coef_e)
   }
 
   GamePhase phase = MiddleGame;
-  coef_o = wei[0] + wei[1];
 
-  if ( coef_o > Figure::figureWeight_[Figure::TypeQueen]*4 )
+  if ( wei[0] > 2*Figure::figureWeight_[Figure::TypeQueen] &&
+       wei[1] > 2*Figure::figureWeight_[Figure::TypeQueen] )
+  {
     phase = Opening;
-  else if ( coef_o < Figure::figureWeight_[Figure::TypeQueen]*2 )
+  }
+  else if ( wei[0] < Figure::figureWeight_[Figure::TypeQueen] &&
+            wei[1] < Figure::figureWeight_[Figure::TypeQueen] )
+  {
     phase = EndGame;
+  }
 
+  coef_o = wei[0] + wei[1];
   if ( coef_o > weightMax_ )
     coef_o = weightMax_;
   coef_e = weightMax_ - coef_o;
@@ -1012,37 +1015,20 @@ ScoreType Evaluator::evaluateMaterialDiff()
   // 1. Knight - Bishop disbalance
   score += (fmgr.bishops(Figure::ColorWhite) - fmgr.bishops(Figure::ColorBlack))*bishopBonus_;
 
-  // 2. One side has queen
-  if ( fmgr.queens(Figure::ColorWhite) != fmgr.queens(Figure::ColorBlack) )
-    return score;
+  // 3. Knight or Bishop against 3 pawns
+  int figuresDiff = (fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite)) -
+    (fmgr.bishops(Figure::ColorBlack)+fmgr.knights(Figure::ColorBlack));
 
-  // 3. Knight or Bishop against 3 pawns - only if number of rooks is equal
-  if ( fmgr.rooks(Figure::ColorWhite) == fmgr.rooks(Figure::ColorBlack) )
-  {
-    if ( fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite) >
-         fmgr.bishops(Figure::ColorBlack)+fmgr.knights(Figure::ColorBlack) )
-    {
-      score += figureAgainstPawnBonus_[fmgr.pawns(Figure::ColorWhite) & 15];
-    }
-    else if ( fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite) <
-              fmgr.bishops(Figure::ColorBlack)+fmgr.knights(Figure::ColorBlack) )
-    {
-      score -= figureAgainstPawnBonus_[fmgr.pawns(Figure::ColorBlack) & 15];
-    }
-  }
-  // 4. Knight|Bishop with pawns against Rook
-  else if ( fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite) <
-            fmgr.bishops(Figure::ColorBlack)+fmgr.knights(Figure::ColorBlack) &&
-            fmgr.rooks(Figure::ColorWhite) > fmgr.rooks(Figure::ColorBlack) )
-  {
-    score += rookAgainstFigureBonus_[fmgr.pawns(Figure::ColorWhite) & 15];
-  }
-  else if ( fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite) >
-            fmgr.bishops(Figure::ColorBlack)+fmgr.knights(Figure::ColorBlack) &&
-            fmgr.rooks(Figure::ColorWhite) < fmgr.rooks(Figure::ColorBlack) )
-  {
-    score -= rookAgainstFigureBonus_[fmgr.pawns(Figure::ColorBlack) & 15];
-  }
+  int pawnsDiff  = fmgr.pawns(Figure::ColorWhite) - fmgr.pawns(Figure::ColorBlack);
+  int rooksDiff  = fmgr.rooks(Figure::ColorWhite) - fmgr.rooks(Figure::ColorBlack);
+  int queensDiff = fmgr.queens(Figure::ColorWhite) - fmgr.queens(Figure::ColorBlack);
+
+  if ( figuresDiff*pawnsDiff < 0 && !rooksDiff && !queensDiff )
+    score += figuresDiff * figureAgainstPawnBonus_;
+
+  // 4. Knight|Bishop+2Pawns vs. Rook
+  else if ( !queensDiff && rooksDiff*figuresDiff == -1 )
+    score += rooksDiff * rookAgainstFigureBonus_;
 
   return score;
 }

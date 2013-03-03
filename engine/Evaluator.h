@@ -42,8 +42,8 @@ public:
   static const ScoreType rookToKingBonus_;
 
   /// material difference
-  static const ScoreType figureAgainstPawnBonus_[16];
-  static const ScoreType rookAgainstFigureBonus_[16];
+  static const ScoreType figureAgainstPawnBonus_;
+  static const ScoreType rookAgainstFigureBonus_;
 
   // blocked bishop & knight
   static const ScoreType bishopBlocked_;
@@ -75,9 +75,6 @@ public:
   static const ScoreType kingBishopPressure_;
   static const ScoreType kingRookPressure_;
   static const ScoreType kingQueenPressure_;
-
-  static const ScoreType kingAttackersBonus_[8];
-  static const ScoreType numOfFieldsAttackedBonus_[16];
   
   Evaluator();
 
