@@ -887,7 +887,7 @@ Evaluator::GamePhase Evaluator::detectPhase(int & coef_o, int & coef_e)
   GamePhase phase = MiddleGame;
   coef_o = wei[0] + wei[1];
 
-  if ( coef_o > Figure::figureWeight_[Figure::TypeRook]*8 )
+  if ( coef_o > Figure::figureWeight_[Figure::TypeQueen]*4 )
     phase = Opening;
   else if ( coef_o < Figure::figureWeight_[Figure::TypeQueen]*2 )
     phase = EndGame;
