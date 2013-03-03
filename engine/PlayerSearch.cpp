@@ -573,7 +573,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   }
 
 #ifdef SINGULAR_EXT
-  if ( ((aboveAlphaN == 1 && !wasExtended) || (counter == 1 && alpha > alpha0)) && !fg.singleReply() && allMovesIterated )
+  if ( aboveAlphaN == 1 && !fg.singleReply() && !wasExtended && allMovesIterated )
   {
     THROW_IF( !best, "best move wasn't found but one move was" );
 
@@ -732,6 +732,7 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
 
   Move best(0);
   Figure::Type thresholdType = scontexts_[ictx].board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
+
   TacticalGenerator tg(scontexts_[ictx].board_, thresholdType, depth);
   if ( tg.singleReply() )
     depth++;

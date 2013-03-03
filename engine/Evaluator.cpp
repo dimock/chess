@@ -214,7 +214,7 @@ const ScoreType Evaluator::pawnBeforeKing_ = 5;
 
 // pressure to king by opponents figures
 const ScoreType Evaluator::kingPawnPressure_   = 10;
-const ScoreType Evaluator::kingKnightPressure_ = 6;
+const ScoreType Evaluator::kingKnightPressure_ = 8;
 const ScoreType Evaluator::kingBishopPressure_ = 8;
 const ScoreType Evaluator::kingRookPressure_   = 8;
 const ScoreType Evaluator::kingQueenPressure_  = 10;
@@ -227,17 +227,16 @@ const ScoreType Evaluator::numOfFieldsAttackedBonus_[16] = { 0, 1, 3, 7, 12, 20,
 
 const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 40, 60, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::passersGroup_[8] = { 0, 5, 7, 9, 11, 13, 15, 0 };
-const ScoreType Evaluator::defendedPasser_[8] = { 0, 0, 3, 5, 7, 9, 11, 0 };
 const ScoreType Evaluator::passerCandidate_[8] =  { 0, 5, 7, 9, 12, 15, 20, 0 };
 const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-50, -15, 0, 3, 5, 7, 9, 11},
-  {-50, -15, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-50, -20, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-60, -40, -10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
+  {-40, -15, 0, 3, 5, 7, 9, 11},
+  {-35, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-25, -12, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -289,12 +288,6 @@ void Evaluator::prepare()
 
     finfo_[0].attack_mask_ = finfo_[0].pw_attack_mask_;
     finfo_[1].attack_mask_ = finfo_[1].pw_attack_mask_;
-
-    const BitMask & ki_line0b = board_->g_movesTable->caps(Figure::TypeKing, finfo_[0].king_pos_);
-    const BitMask & ki_line0w = board_->g_movesTable->caps(Figure::TypeKing, finfo_[1].king_pos_);
-
-    finfo_[1].kingAttackersN_ += (int)((finfo_[1].pw_attack_mask_ & ki_line0b) != 0);
-    finfo_[0].kingAttackersN_ += (int)((finfo_[0].pw_attack_mask_ & ki_line0w) != 0);
   }
 
   alpha_ = -ScoreMax;
@@ -641,27 +634,6 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
   // unstoppable passed pawns and pawns, that can go to the next line
   score += evaluatePassersAdditional(coef_e);
 
-  // king pressure additional
-  {
-    ScoreType score_king = 0;
-
-    const BitMask & b_cap = board_->g_movesTable->caps(Figure::TypeKing, finfo_[0].king_pos_);
-    const BitMask & w_cap = board_->g_movesTable->caps(Figure::TypeKing, finfo_[1].king_pos_);
-    
-    int attackedB = pop_count(b_cap & finfo_[1].attack_mask_);
-    int attackedW = pop_count(w_cap & finfo_[0].attack_mask_);
-
-    score_king += numOfFieldsAttackedBonus_[attackedB & 15];
-    score_king -= numOfFieldsAttackedBonus_[attackedW & 15];
-
-    score_king += kingAttackersBonus_[finfo_[1].kingAttackersN_ & 7];
-    score_king -= kingAttackersBonus_[finfo_[0].kingAttackersN_ & 7];
-
-    score_king = (score_king * coef_o) / weightMax_;
-
-    score += score_king;
-  }
-
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
 
@@ -706,16 +678,11 @@ ScoreType Evaluator::evaluateKnights()
     const int &  ki_pos = finfo_[ color].king_pos_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
-    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
-    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
-
     BitMask kn_mask = board_->fmgr().knight_mask(color);
     for ( ; kn_mask; )
     {
       int from = clear_lsb(kn_mask);
       const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
-
-      finfo_[c].kingAttackersN_ += (int)((oki_line0 & kn_cap) != 0);
       finfo_[c].kn_attack_mask_ |= kn_cap;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
@@ -751,24 +718,19 @@ ScoreType Evaluator::evaluateBishops()
     const int &  ki_pos = finfo_[ color].king_pos_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
-    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
-    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
-
     BitMask bimask = board_->fmgr().bishop_mask(color);
     for ( ; bimask; )
     {
       int from = clear_lsb(bimask);
 
       BitMask bmob_mask = 0;
-      BitMask batt_mask = 0;
 
-      mobility_masks<0>(from, bmob_mask, batt_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
-      mobility_masks<0>(from, bmob_mask, batt_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
-      mobility_masks<1>(from, bmob_mask, batt_mask, board_->g_betweenMasks->from_dir(from, nst::se));
-      mobility_masks<1>(from, bmob_mask, batt_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
+      mobility_masks<0>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
+      mobility_masks<0>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
+      mobility_masks<1>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::se));
+      mobility_masks<1>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
 
-      finfo_[c].kingAttackersN_ += (int)((batt_mask & oki_line0) != 0);
-      finfo_[c].attack_mask_ |= batt_mask;
+      finfo_[c].attack_mask_ |= bmob_mask;
       bmob_mask &= not_attacked;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
@@ -801,9 +763,6 @@ void Evaluator::evaluateRooks()
     const int &  ki_pos = finfo_[ color].king_pos_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
-    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
-    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
-
     Index oki_p(oki_pos);
     int okx = oki_p.x();
     int oky = oki_p.y();
@@ -816,15 +775,13 @@ void Evaluator::evaluateRooks()
       int from = clear_lsb(ro_mask);
 
       BitMask rmob_mask = 0;
-      BitMask ratt_mask = 0;
 
-      mobility_masks<0>(from, rmob_mask, ratt_mask, board_->g_betweenMasks->from_dir(from, nst::no));
-      mobility_masks<0>(from, rmob_mask, ratt_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
-      mobility_masks<1>(from, rmob_mask, ratt_mask, board_->g_betweenMasks->from_dir(from, nst::so));
-      mobility_masks<1>(from, rmob_mask, ratt_mask, board_->g_betweenMasks->from_dir(from, nst::we));
+      mobility_masks<0>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::no));
+      mobility_masks<0>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
+      mobility_masks<1>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::so));
+      mobility_masks<1>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::we));
 
-      finfo_[c].kingAttackersN_ += (int)((ratt_mask & oki_line0) != 0);
-      rattack_mask[c] |= ratt_mask;
+      rattack_mask[c] |= rmob_mask;
       rmob_mask &= not_attacked;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
@@ -875,29 +832,24 @@ void Evaluator::evaluateQueens()
     BitMask not_attacked = ~finfo_[ocolor].attack_mask_;
     const int & oki_pos = finfo_[ocolor].king_pos_;
 
-    const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
-    const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
-
     BitMask q_mask = board_->fmgr().queen_mask(color);
     for ( ; q_mask; )
     {
       int from = clear_lsb(q_mask);
 
       BitMask qmob_mask = 0;
-      BitMask qatt_mask = 0;
 
-      mobility_masks<0>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
-      mobility_masks<0>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
-      mobility_masks<1>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::se));
-      mobility_masks<1>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
+      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
+      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
+      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::se));
+      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
 
-      mobility_masks<0>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::no));
-      mobility_masks<0>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
-      mobility_masks<1>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::so));
-      mobility_masks<1>(from, qmob_mask, qatt_mask, board_->g_betweenMasks->from_dir(from, nst::we));
+      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::no));
+      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
+      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::so));
+      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::we));
 
-      finfo_[c].kingAttackersN_ += (int)((qatt_mask & oki_line0) != 0);
-      qattack_mask[c] |= qatt_mask;
+      qattack_mask[c] |= qmob_mask;
       qmob_mask &= not_attacked;
 
       int ki_dist = board_->g_distanceCounter->getDistance(from, oki_pos);
@@ -911,156 +863,6 @@ void Evaluator::evaluateQueens()
   finfo_[0].attack_mask_ |= qattack_mask[0];
   finfo_[1].attack_mask_ |= qattack_mask[1];
 }
-
-//ScoreType Evaluator::evaluateKingPressure(Figure::Color color)
-//{
-//  Figure::Color ocolor = Figure::otherColor(color);
-//  int oki_pos = finfo_[ocolor].king_pos_;
-//  const BitMask & oki_line0 = board_->g_movesTable->caps(Figure::TypeKing, oki_pos);
-//  const BitMask & oki_line1 = board_->g_movesTable->king_pressure(oki_pos);
-//
-//  BitMask mask_diag  = board_->fmgr().queen_mask(color) | board_->fmgr().bishop_mask(color);
-//  BitMask mask_ortho = board_->fmgr().queen_mask(color) | board_->fmgr().rook_mask(color);
-//
-//  BitMask xray_masks[2] = { ~(~mask_diag & mask_all_), ~(~mask_ortho & mask_all_) };
-//
-//  int attacked_fields[64] = {};
-//  uint8 attacked_field_types[64] = {};
-//  BitMask attacked_mask = 0;
-//  int attackersN = 0;
-//  uint8 attackerTypes = 0;
-//  int fieldAttackersN = 0;
-//
-//  BitMask pw_mask = finfo_[color].pw_attack_mask_ & oki_mask;
-//  for ( ; pw_mask; )
-//  {
-//    int to = clear_lsb(pw_mask);
-//    attacked_mask |= set_mask_bit(to);
-//    uint8 a_mask = (uint8)set_bit(Figure::TypePawn);
-//    attackerTypes |= a_mask;
-//    attacked_field_types[to] |= a_mask;
-//    attacked_fields[to] = 1;
-//    attackersN++;
-//  }
-//
-//  BitMask kn_mask = board_->fmgr().knight_mask(color);
-//  for ( ; kn_mask; )
-//  {
-//    int from = clear_lsb(kn_mask);
-//    const BitMask & kn_cap = board_->g_movesTable->caps(Figure::TypeKnight, from);
-//    BitMask oki_attack_mask = kn_cap & oki_mask;
-//    if ( oki_attack_mask )
-//      attackersN++;
-//    for ( ; oki_attack_mask; )
-//    {
-//      int to = clear_lsb(oki_attack_mask);
-//      attacked_mask |= set_mask_bit(to);
-//      uint8 a_mask = (uint8)set_bit(Figure::TypeKnight);
-//      attackerTypes |= a_mask;
-//      attacked_fields[to]++;
-//      attacked_field_types[to] |= a_mask;
-//      if ( attacked_fields[to] > fieldAttackersN )
-//        fieldAttackersN = attacked_fields[to];
-//    }
-//  }
-//
-//  for (int type = Figure::TypeBishop; type <= Figure::TypeQueen; ++type)
-//  {
-//    BitMask mask = board_->fmgr().type_mask((Figure::Type)type, color);
-//    for ( ; mask; )
-//    {
-//      int from = clear_lsb(mask);
-//
-//      const BitMask & cap_mask = board_->g_movesTable->caps((Figure::Type)type, from);
-//      BitMask oki_attack_mask = cap_mask & oki_mask;
-//
-//      bool haveAttack = false;
-//
-//      for ( ; oki_attack_mask; )
-//      {
-//        int to = clear_lsb(oki_attack_mask);
-//        const BitMask & btw_mask = board_->g_betweenMasks->between(from, to);
-//
-//        bool attackFound = false;
-//        bool directAttack = false;
-//
-//        // 1. nothing between
-//        if ( (btw_mask & inv_mask_all_) == btw_mask )
-//        {
-//          attackFound = true;
-//          directAttack = true;
-//        }
-//
-//        // 2. X-ray attack
-//        if ( !attackFound )
-//        {
-//          nst::dirs dir = board_->g_figureDir->dir(from, to);
-//
-//          THROW_IF(nst::no_dir == dir, "no direction between fields");
-//
-//          int xray_type = (dir-1) & 1;
-//          const BitMask & xray_mask = xray_masks[xray_type];
-//
-//          if ( (btw_mask & xray_mask) == btw_mask )
-//            attackFound = true;
-//        }
-//
-//        if ( attackFound )
-//        {
-//          haveAttack = true;
-//          attacked_mask |= set_mask_bit(to);
-//          attacked_fields[to]++;
-//          if ( attacked_fields[to] > fieldAttackersN )
-//            fieldAttackersN = attacked_fields[to];
-//          if ( directAttack )
-//          {
-//            uint8 a_mask = (uint8)set_bit(type);
-//            attackerTypes |= a_mask;
-//            attacked_field_types[to] |= a_mask;
-//          }
-//        }
-//      }
-//
-//      if ( haveAttack )
-//        attackersN++;
-//    }
-//  }
-//
-//  BitMask oki_mob = oki_mask & ~(mask_all_ | attacked_mask);
-//  int movesN = pop_count(oki_mob);
-//
-//  ScoreType score = 0;
-//
-//  score += kingImmobility_[movesN];
-//
-//  if ( 0 == attackersN )
-//    return score;
-//
-//  score += kingAttackBonus_[attackersN & 7];
-//
-//  // queen's attack
-//  if ( (attackerTypes & set_bit(Figure::TypeQueen)) && attackersN > 1 )
-//  {
-//    score += queenAttackBonus_;
-//
-//    // give additional bonus for double attacked field that isn't protected by pawn
-//    BitMask a_mask = attacked_mask;
-//    for ( ; a_mask; )
-//    {
-//      int n = clear_lsb(a_mask);
-//      if ( attacked_fields[n] > 1 &&
-//        (attacked_field_types[n] & set_bit(Figure::TypeQueen)) &&
-//        !(finfo_[ocolor].pw_attack_mask_ & set_mask_bit(n)) )
-//      {
-//        score += (queenAttackBonus_<<1) * attacked_fields[n];
-//        break;
-//      }
-//    }
-//  }
-//
-//  return score;
-//}
-
 
 //////////////////////////////////////////////////////////////////////////
 /// common  part
@@ -1514,10 +1316,9 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
     // defended by neighbor pawn
     const BitMask & guardmsk = board_->g_pawnMasks->mask_guarded(color, n);
-    bool defended = (pmsk_t & guardmsk) != 0;
 
-    if ( defended )
-      score += defendedBonus_;
+    // small bonus if pawn is defended by neighbor
+    score += defendedBonus_ * ((pmsk_t & guardmsk) != 0);
 
     const uint64 & passmsk = board_->g_pawnMasks->mask_passed(color, n);
     const uint64 & blckmsk = board_->g_pawnMasks->mask_blocked(color, n);
@@ -1534,9 +1335,6 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
       passed = true;
       score += pawnPassed_[cy];
-
-      if ( defended )
-        score += defendedPasser_[cy];
 
       int promo_pos = x | (py<<3);
 
@@ -1676,13 +1474,12 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       }
       else
       {
-        // analyze group
+        // have group
         if ( n > 1 )
         {
           THROW_IF(ymax < 1, "max y value not found for passer pawns group");
           score += passersGroup_[ymax] * (n-1);
         }
-          //score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
 
         n = 0;
         ymax = 0;
@@ -1695,54 +1492,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       THROW_IF(ymax < 1, "max y value not found for passer pawns group");
       score += passersGroup_[ymax] * (n-1);
     }
-      //score += analyzePasserGroup(score_eg, color, group_x, n, passers_y);
   }
-
-  return score;
-}
-
-ScoreType Evaluator::analyzePasserGroup(ScoreType * score_eg, Figure::Color color, int (&group_x)[8], int n, int (&passers_y)[8])
-{
-  Figure::Color ocolor = Figure::otherColor(color);
-  ScoreType score = 0;
-  BitMask group_mask = 0;
-  int cymax = 0, xmax = -1;
-  int cymin = 7;
-  for (int i = 0; i < n; ++i)
-  {
-    int x = group_x[i];
-    int y = passers_y[x];
-    int p = x | (y << 3);
-    group_mask |= set_mask_bit(p);
-    int cy = color ? y : 7-y;
-    if ( cy > cymax )
-    {
-      cymax = cy;
-      xmax = x;
-    }
-    if ( cy < cymin )
-      cymin = cy;
-  }
-
-  // additional bonus if group is well formed - most advanced pawn is supported by neighbor
-  if ( cymax - cymin < 2 ) // on neighbor rows
-    score += passersGroup_[cymax];
-  else if ( n > 1 ) // is most advanced pawn defended by neighbor passer or has neighbor on the same line?
-  {
-    int y = passers_y[xmax];
-    int pmax = xmax | (y << 3);
-    const BitMask & pwcap = board_->g_movesTable->pawnCaps_o(ocolor, pmax);
-    BitMask nb_mask = 0;
-    if ( xmax > 0 )
-      nb_mask |= set_mask_bit(pmax-1);
-    if ( xmax < 7 )
-      nb_mask |= set_mask_bit(pmax+1);
-    if ( (group_mask & pwcap) || (group_mask & nb_mask) )
-      score += passersGroup_[cymax];
-  }
-
-  // give small additional bonus for group
-  score += (passersGroup_[cymax] >> 1) * (n-1);
 
   return score;
 }

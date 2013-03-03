@@ -105,8 +105,6 @@ private:
   ScoreType evaluateCastlePenalty(Figure::Color color);
   ScoreType evaluateFianchetto() const;
 
-  ScoreType analyzePasserGroup(ScoreType * score_eg, Figure::Color color, int (&group_x)[8], int n, int (&passers_y)[8]);
-
   // search path from opponent king to pawn's promotion of given color
   bool findRootToPawn(Figure::Color color, int promo_pos, int stepsMax) const;
 
@@ -169,7 +167,6 @@ private:
       queenPressure_ = 0;
 
       rookOpenScore_ = 0;
-      kingAttackersN_ = 0;
     }
 
     int king_pos_;
@@ -179,48 +176,23 @@ private:
     BitMask pw_attack_mask_;
     BitMask kn_attack_mask_;
     BitMask attack_mask_;
-
-    // attacking line 0
-    int kingAttackersN_;
   } finfo_[2];
 
   template <int DIR>
-  void mobility_masks(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
+  void mobility_masks(int from, BitMask & mob_mask, const BitMask & di_mask) const {}
+
+  template <>
+  void mobility_masks<0>(int from, BitMask & mob_mask, const BitMask & di_mask) const
   {
+    BitMask mask_from = di_mask & mask_all_;
+    mob_mask |= (mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask;
   }
 
   template <>
-  void mobility_masks<0>(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
+  void mobility_masks<1>(int from, BitMask & mob_mask, const BitMask & di_mask) const
   {
     BitMask mask_from = di_mask & mask_all_;
-    if ( mask_from )
-    {
-      int to = find_lsb(mask_from);
-      mob_mask |= board_->g_betweenMasks->between(from, to);
-      att_mask |= mob_mask | set_mask_bit(to);
-    }
-    else
-    {
-      mob_mask |= di_mask;
-      att_mask |= di_mask;
-    }
-  }
-
-  template <>
-  void mobility_masks<1>(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
-  {
-    BitMask mask_from = di_mask & mask_all_;
-    if ( mask_from )
-    {
-      int to = find_msb(mask_from);
-      mob_mask |= board_->g_betweenMasks->between(from, to);
-      att_mask |= mob_mask | set_mask_bit(to);
-    }
-    else
-    {
-      mob_mask |= di_mask;
-      att_mask |= di_mask;
-    }
+    mob_mask |= (mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask;
   }
 
   // used to find pinned figures
