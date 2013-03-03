@@ -95,8 +95,8 @@ private:
   ScoreType evaluatePawns(Figure::Color color, ScoreType * score_eg);
   ScoreType evaluatePawnShield(Figure::Color color);
 
-  ScoreType evaluatePassersAdditional(int coef_e);
-  ScoreType evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, int & most_adv_y);
+  ScoreType evaluatePassersAdditional(GamePhase phase, int coef_e);
+  ScoreType evaluatePasserAdditional(GamePhase phase, Figure::Color color, ScoreType & pw_score_eg, int & most_adv_y);
 
   ScoreType evaluateBlockedBishops();
   ScoreType evaluateBlockedKnights();
@@ -135,7 +135,7 @@ private:
   ScoreType evaluateKnights();
 
   // evaluate rooks mobility and open column
-  void evaluateRooks();
+  void evaluateRooks(bool eval_open);
 
   // queens mobility
   void evaluateQueens();
@@ -144,7 +144,7 @@ private:
   ScoreType evaluateForks(Figure::Color color);
 
   /// lazy eval.
-  ScoreType evaluateExpensive(int coef_o, int coef_e);
+  ScoreType evaluateExpensive(GamePhase phase, int coef_o, int coef_e);
 
   struct FieldsInfo
   {

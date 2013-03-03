@@ -385,6 +385,7 @@ ScoreType Evaluator::evaluate()
   ScoreType score_o = 0, score_e = 0;
 
   // opening part
+  if ( phase != EndGame )
   {
     // PSQ - evaluation
     score_o -= fmgr.eval(Figure::ColorBlack, 0);
@@ -397,7 +398,7 @@ ScoreType Evaluator::evaluate()
     score_o += evaluateFianchetto();
   }
 
-  // endgame part
+  if ( phase != Opening )
   {
     score_e -= fmgr.eval(Figure::ColorBlack, 1);
     score_e += fmgr.eval(Figure::ColorWhite, 1);
@@ -405,8 +406,12 @@ ScoreType Evaluator::evaluate()
     score_e += pwscore_eg;
   }
 
-  // linear interpolation
-  score = score + (score_o*coef_o + score_e*coef_e) / weightMax_;
+  if ( phase == Opening )
+    score += score_o;
+  else if ( phase == EndGame )
+    score += score_e;
+  else // middle game
+    score = score + (score_o*coef_o + score_e*coef_e) / weightMax_;
 
   // consider current move side
   if ( Figure::ColorBlack  == board_->getColor() )
@@ -416,7 +421,7 @@ ScoreType Evaluator::evaluate()
   if ( score < alpha_ || score > betta_ )
     return score;
 
-  ScoreType score_ex = evaluateExpensive(coef_o, coef_e);
+  ScoreType score_ex = evaluateExpensive(phase, coef_o, coef_e);
   if ( abs(score_ex) > score_ex_max_ )
     score_ex_max_ = abs(score_ex);
 
@@ -597,7 +602,7 @@ ScoreType Evaluator::evaluateBlockedKnights()
 }
 
 // most expensive part: mobility of figures, rooks on open columns, passed pawns additional bonus
-ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
+ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
 {
   ScoreType score = 0;
 
@@ -610,12 +615,13 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
   score += evaluateForks(Figure::ColorWhite);
 
   // rooks and queens mobility and attacked fields
-  evaluateRooks();
+  evaluateRooks(phase != EndGame);
   evaluateQueens();
 
   ScoreType score_r = finfo_[1].rookOpenScore_ - finfo_[0].rookOpenScore_;
 
-  score_r = (score_r * coef_o) / weightMax_;
+  if ( phase == MiddleGame )
+    score_r = (score_r * coef_o) / weightMax_;
 
   score += score_r;
 
@@ -632,7 +638,7 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
   score += finfo_[1].queenPressure_;
 
   // unstoppable passed pawns and pawns, that can go to the next line
-  score += evaluatePassersAdditional(coef_e);
+  score += evaluatePassersAdditional(phase, coef_e);
 
   if ( Figure::ColorBlack  == board_->getColor() )
     score = -score;
@@ -640,18 +646,16 @@ ScoreType Evaluator::evaluateExpensive(int coef_o, int coef_e)
   return score;
 }
 
-ScoreType Evaluator::evaluatePassersAdditional(int coef_e)
+ScoreType Evaluator::evaluatePassersAdditional(GamePhase phase, int coef_e)
 {
-  ScoreType pw_score_eg = 0;
+  ScoreType score = 0, pw_score_eg = 0;
   int most_adv_yb = -1, most_adv_yw = -1;
 
-  ScoreType score = 0;
-
-  score -= evaluatePasserAdditional(Figure::ColorBlack, pw_score_eg, most_adv_yb);
-  score += evaluatePasserAdditional(Figure::ColorWhite, pw_score_eg, most_adv_yw);
+  score -= evaluatePasserAdditional(phase, Figure::ColorBlack, pw_score_eg, most_adv_yb);
+  score += evaluatePasserAdditional(phase, Figure::ColorWhite, pw_score_eg, most_adv_yw);
 
   // give bonus for most advanced pawn if it is closer to promotion field
-  if ( most_adv_yb >= 0 && most_adv_yw >= 0 )
+  if ( phase != Opening && most_adv_yb >= 0 && most_adv_yw >= 0 )
   {
     if ( most_adv_yw > most_adv_yb )
       pw_score_eg += unstoppablePawn_;
@@ -659,7 +663,9 @@ ScoreType Evaluator::evaluatePassersAdditional(int coef_e)
       pw_score_eg += unstoppablePawn_;
   }
 
-  pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
+  if ( phase == MiddleGame )
+    pw_score_eg = (pw_score_eg * coef_e) / weightMax_;
+
   score += pw_score_eg;
 
   return score;
@@ -750,7 +756,7 @@ ScoreType Evaluator::evaluateBishops()
   return score;
 }
 
-void Evaluator::evaluateRooks()
+void Evaluator::evaluateRooks(bool eval_open)
 {
   BitMask rattack_mask[2] = { 0, 0 };
 
@@ -791,6 +797,7 @@ void Evaluator::evaluateRooks()
       finfo_[c].rookMobility_ += mobilityBonus_[Figure::TypeRook][movesN];
 
       // rook on open column
+      if ( eval_open )
       {
         Index rp(from);
         int x = rp.x();
@@ -880,9 +887,9 @@ Evaluator::GamePhase Evaluator::detectPhase(int & coef_o, int & coef_e)
   GamePhase phase = MiddleGame;
   coef_o = wei[0] + wei[1];
 
-  if ( coef_o > weightMax_*9/10 )
+  if ( coef_o > Figure::figureWeight_[Figure::TypeRook]*8 )
     phase = Opening;
-  else if ( coef_o < weightMax_/10 )
+  else if ( coef_o < Figure::figureWeight_[Figure::TypeQueen]*2 )
     phase = EndGame;
 
   if ( coef_o > weightMax_ )
@@ -1497,7 +1504,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
   return score;
 }
 
-ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & pw_score_eg, int & most_adv_y)
+ScoreType Evaluator::evaluatePasserAdditional(GamePhase phase, Figure::Color color, ScoreType & pw_score_eg, int & most_adv_y)
 {
   const FiguresManager & fmgr = board_->fmgr();
   Figure::Color ocolor = Figure::otherColor(color);
@@ -1595,7 +1602,7 @@ ScoreType Evaluator::evaluatePasserAdditional(Figure::Color color, ScoreType & p
       {
         score += pawnCanGo_[cy];
 
-        if ( king_far || !findRootToPawn(color, promo_pos, pawn_dist_promo) )
+        if ( phase != Opening && (king_far || !findRootToPawn(color, promo_pos, pawn_dist_promo)) )
         {
           if ( cy > most_adv_y )
             most_adv_y = cy;
@@ -2007,13 +2014,13 @@ ScoreType Evaluator::evaluateWinnerLoser()
     /// calculate attacked fields
     evaluateKnights();
     evaluateBishops();
-    evaluateRooks();
+    evaluateRooks(false);
     evaluateQueens();
 
     int most_adv_yb = -1, most_adv_yw = -1;
     ScoreType score_eg = 0;
-    score -= evaluatePasserAdditional(Figure::ColorBlack, score_eg, most_adv_yb);
-    score += evaluatePasserAdditional(Figure::ColorWhite, score_eg, most_adv_yw);
+    score -= evaluatePasserAdditional(EndGame, Figure::ColorBlack, score_eg, most_adv_yb);
+    score += evaluatePasserAdditional(EndGame, Figure::ColorWhite, score_eg, most_adv_yw);
 
     score += score_eg;
     score += pwscore;
