@@ -103,7 +103,7 @@ public:
     if ( !ok )
       killer.clear();
 
-    //killer.threat_ = 1; // to prevent LMR
+    killer.threat_ = 1; // to prevent LMR
 
     return ok;
   }
