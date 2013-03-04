@@ -354,7 +354,10 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     return alpha;
 
   if ( ply < MaxPly-1 )
+  {
     scontexts_[ictx].plystack_[ply].clear(ply);
+    scontexts_[ictx].plystack_[ply+1].clearKiller();
+  }
 
   if ( scontexts_[ictx].board_.drawState() || scontexts_[ictx].board_.countReps() > 1 )
     return Figure::DrawScore;
@@ -524,8 +527,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
     scontexts_[ictx].board_.unmakeMove();
 
-    scontexts_[ictx].plystack_[ply].setKiller(move);
-
     if ( !stopped() )
     {
 #ifdef SINGULAR_EXT
@@ -546,6 +547,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         scoreBest = score;
         if ( score > alpha )
         {
+          scontexts_[ictx].plystack_[ply].setKiller(move);
           alpha = score;
           if ( pv )
             assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
