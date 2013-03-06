@@ -219,8 +219,8 @@ const ScoreType Evaluator::kingBishopPressure_ = 8;
 const ScoreType Evaluator::kingRookPressure_   = 8;
 const ScoreType Evaluator::kingQueenPressure_  = 10;
 
-const ScoreType Evaluator::kingAttackersBonus_[8] = { 0, 3, 7, 12, 20, 30, 50, 70 };
-const ScoreType Evaluator::numOfFieldsAttackedBonus_[16] = { 0, 1, 3, 7, 12, 20, 30, 40, 60 };
+const ScoreType Evaluator::kingAttackersBonus_[8] = { 0, 2, 5, 10, 15, 25, 50, 100 };
+const ScoreType Evaluator::numOfFieldsAttackedBonus_[16] = { 0, 2, 4, 6, 8, 12, 16, 25, 50 };
 
 
 /// pawns evaluation
@@ -649,8 +649,8 @@ ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
   {
     ScoreType score_king = 0;
 
-    score_king -= kingAttackersBonus_[finfo_[0].kingAttackersN_ & 7];
-    score_king += kingAttackersBonus_[finfo_[1].kingAttackersN_ & 7];
+    //score_king -= kingAttackersBonus_[finfo_[0].kingAttackersN_ & 7];
+    //score_king += kingAttackersBonus_[finfo_[1].kingAttackersN_ & 7];
 
     // number of fields, attacked by White near Black king
     BitMask bking_attacked_mask = board_->g_movesTable->caps(Figure::TypeKing, finfo_[0].king_pos_) & finfo_[1].attack_mask_;
