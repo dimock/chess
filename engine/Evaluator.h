@@ -75,7 +75,10 @@ public:
   static const ScoreType kingBishopPressure_;
   static const ScoreType kingRookPressure_;
   static const ScoreType kingQueenPressure_;
-  
+
+  static const ScoreType kingAttackersBonus_[8];
+  static const ScoreType numOfFieldsAttackedBonus_[16];
+
   Evaluator();
 
   void initialize(const Board * board, EHashTable * ehash);
@@ -163,6 +166,7 @@ private:
       rookPressure_ = 0;
       queenPressure_ = 0;
 
+      kingAttackersN_ = 0;
       rookOpenScore_ = 0;
     }
 
@@ -173,23 +177,46 @@ private:
     BitMask pw_attack_mask_;
     BitMask kn_attack_mask_;
     BitMask attack_mask_;
+    int kingAttackersN_;
   } finfo_[2];
 
   template <int DIR>
-  void mobility_masks(int from, BitMask & mob_mask, const BitMask & di_mask) const {}
-
-  template <>
-  void mobility_masks<0>(int from, BitMask & mob_mask, const BitMask & di_mask) const
+  void mobility_masks(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
   {
-    BitMask mask_from = di_mask & mask_all_;
-    mob_mask |= (mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask;
   }
 
   template <>
-  void mobility_masks<1>(int from, BitMask & mob_mask, const BitMask & di_mask) const
+  void mobility_masks<0>(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
   {
     BitMask mask_from = di_mask & mask_all_;
-    mob_mask |= (mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask;
+    if ( mask_from )
+    {
+      int to = find_lsb(mask_from);
+      mob_mask |= board_->g_betweenMasks->between(from, to);
+      att_mask |= mob_mask | set_mask_bit(to);
+    }
+    else
+    {
+      mob_mask |= di_mask;
+      att_mask |= di_mask;
+    }
+  }
+
+  template <>
+  void mobility_masks<1>(int from, BitMask & mob_mask, BitMask & att_mask, const BitMask & di_mask) const
+  {
+    BitMask mask_from = di_mask & mask_all_;
+    if ( mask_from )
+    {
+      int to = find_msb(mask_from);
+      mob_mask |= board_->g_betweenMasks->between(from, to);
+      att_mask |= mob_mask | set_mask_bit(to);
+    }
+    else
+    {
+      mob_mask |= di_mask;
+      att_mask |= di_mask;
+    }
   }
 
   // used to find pinned figures
