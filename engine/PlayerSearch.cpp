@@ -716,8 +716,8 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
 
 #ifdef USE_HASH_CAPS
   ScoreType hscore = -ScoreMax;
-  GHashTable::Flag flag = getHashCap(ictx, ply, alpha, betta, hcap, hscore, pv);
-  if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
+  CHashTable::Flag flag = getHashCap(ictx, ply, alpha, betta, hcap, hscore, pv);
+  if ( flag == CHashTable::Alpha || flag == CHashTable::Betta )
     return hscore;
 #endif
 
@@ -806,18 +806,26 @@ GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, 
 {
   const HItem * hitem = hash_.find(scontexts_[ictx].board_.hashCode());
   if ( !hitem )
+  {
+    // try to get from caps hash
+#ifdef USE_HASH_CAPS
+    const HCItem * hcitem = chash_.get(scontexts_[ictx].board_.hashCode());
+    if ( hcitem )
+    {
+      scontexts_[ictx].board_.unpackMove(hcitem->cap_, hmove);
+      if ( hmove )
+        return GHashTable::AlphaBetta;
+    }
+#endif
+
     return GHashTable::NoFlag;
+  }
 
   THROW_IF( hitem->hkey_ != scontexts_[ictx].board_.hashCode(), "invalid hash item found" );
 
   scontexts_[ictx].board_.unpackMove(hitem->move_, hmove);
 
-  if ( hitem->cap_ && depth > 0 && hmove )
-  {
-    int ttt = 0;
-  }
-
-  if ( pv || hitem->cap_ )
+  if ( pv )
     return GHashTable::AlphaBetta;
 
   hscore = hitem->score_;
@@ -870,9 +878,15 @@ void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType bet
   if ( scontexts_[ictx].board_.repsCount() < 2 )
   {
     if ( score <= alpha || !move )
+    {
       flag = GHashTable::Alpha;
+      score = alpha;
+    }
     else if ( score >= betta )
+    {
       flag = GHashTable::Betta;
+      score = betta;
+    }
     else
       flag = GHashTable::AlphaBetta;
   }
@@ -885,47 +899,52 @@ void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType bet
 #endif
 
 #ifdef USE_HASH_CAPS
-GHashTable::Flag Player::getHashCap(int ictx, int ply, ScoreType alpha, ScoreType betta, Move & hcap, ScoreType & hscore, bool pv)
+CHashTable::Flag Player::getHashCap(int ictx, int ply, ScoreType alpha, ScoreType betta, Move & hcap, ScoreType & hscore, bool pv)
 {
-  const HItem * hitem = hash_.find(scontexts_[ictx].board_.hashCode());
-  if ( !hitem )
-    return GHashTable::NoFlag;
+  const HCItem * hcitem = chash_.get(scontexts_[ictx].board_.hashCode());
+  if ( !hcitem )
+  {
+    const HItem * hitem = hash_.find(scontexts_[ictx].board_.hashCode());
+    if ( hitem )
+    {
+      scontexts_[ictx].board_.unpackMove(hitem->move_, hcap);
+      if ( hcap && (hcap.capture_ || hcap.new_type_) )
+        return CHashTable::AlphaBetta;
+    }
+    return CHashTable::NoFlag;
+  }
 
-  THROW_IF( hitem->hkey_ != scontexts_[ictx].board_.hashCode(), "invalid hash item found" );
+  THROW_IF( hcitem->hkey_ != scontexts_[ictx].board_.hashCode(), "invalid hash item found" );
 
-  scontexts_[ictx].board_.unpackMove(hitem->move_, hcap);
-
-  // leave only captures and promotions
-  if ( !hcap.capture_ && !hcap.new_type_ )
-    hcap.clear();
+  scontexts_[ictx].board_.unpackMove(hcitem->cap_, hcap);
 
   if ( pv )
-    return GHashTable::AlphaBetta;
+    return CHashTable::AlphaBetta;
 
-  hscore = hitem->score_;
+  hscore = hcitem->score_;
   if ( hscore >= Figure::MatScore-MaxPly )
     hscore = hscore - ply;
   else if ( hscore <= MaxPly-Figure::MatScore )
     hscore = hscore + ply;
 
-  THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
+  THROW_IF(hscore > 32760 || hscore < -32760,  "invalid value in hash");
 
-  if ( GHashTable::Alpha == hitem->flag_ && hscore <= alpha )
+  if ( CHashTable::Alpha == hcitem->flag_ && hscore <= alpha )
   {
     THROW_IF( !stop_ && alpha < -32760, "invalid hscore" );
-    return GHashTable::Alpha;
+    return CHashTable::Alpha;
   }
 
-  if ( hitem->flag_ > GHashTable::Alpha && hscore >= betta && hcap )
+  if ( hcitem->flag_ > CHashTable::Alpha && hscore >= betta && hcap )
   {
     if ( scontexts_[ictx].board_.calculateReps(hcap) < 2 )
     {
       const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
-      return GHashTable::Betta;
+      return CHashTable::Betta;
     }
   }
 
-  return GHashTable::AlphaBetta;
+  return CHashTable::AlphaBetta;
 }
 
 void Player::putHashCap(int ictx, const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
@@ -934,21 +953,27 @@ void Player::putHashCap(int ictx, const Move & move, ScoreType alpha, ScoreType 
     return;
 
   PackedMove pm = scontexts_[ictx].board_.packMove(move);
-  GHashTable::Flag flag = GHashTable::NoFlag;
+  CHashTable::Flag flag = CHashTable::NoFlag;
   if ( scontexts_[ictx].board_.repsCount() < 2 )
   {
     if ( score <= alpha || !move )
-      flag = GHashTable::Alpha;
+    {
+      flag = CHashTable::Alpha;
+      score = alpha;
+    }
     else if ( score >= betta )
-      flag = GHashTable::Betta;
+    {
+      flag = CHashTable::Betta;
+      score = betta;
+    }
     else
-      flag = GHashTable::AlphaBetta;
+      flag = CHashTable::AlphaBetta;
   }
   if ( score >= +Figure::MatScore-MaxPly )
     score += ply;
   else if ( score <= -Figure::MatScore+MaxPly )
     score -= ply;
-  hash_.push(scontexts_[ictx].board_.hashCode(), score, 0, flag, pm, false, true);
+  chash_.put(scontexts_[ictx].board_.hashCode(), score, flag, pm);
 }
 
 #endif

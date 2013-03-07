@@ -30,7 +30,6 @@ __declspec (align(16)) struct HItem
   {
   uint16     depth_  : 6,
              flag_   : 2,
-             cap_    : 1,
              threat_ : 1;
   };
 
@@ -173,7 +172,7 @@ public:
   GHashTable(int size) : HashTable<HBucket>(size)
   {}
 
-  void push(const uint64 & hkey, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat, bool cap = false)
+  void push(const uint64 & hkey, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
   {
     HBucket & hb = (*this)[hkey];
     HItem * hitem = hb.get(hkey);
@@ -194,7 +193,6 @@ public:
     hitem->score_  = score;
     hitem->depth_  = depth;
     hitem->flag_   = flag;
-    hitem->cap_    = cap;
     hitem->threat_ = threat;
     hitem->movesCount_ = movesCount_;
     hitem->move_ = move;
@@ -239,5 +237,43 @@ public:
   {
     HEval & heval = operator [] (code);
     return &heval;
+  }
+};
+
+__declspec (align(8)) struct HCItem
+{
+  HCItem() : hkey_(0), flag_(0) {}
+
+  uint64     hkey_;
+  PackedMove cap_;
+  ScoreType  score_;
+  uint8      flag_;
+};
+
+class CHashTable : public HashTable<HCItem>
+{
+public:
+
+  enum Flag { NoFlag, Alpha, AlphaBetta, Betta };
+
+  CHashTable(int size) : HashTable<HCItem>(size)
+  {}
+
+  HCItem * get(const uint64 & code)
+  {
+    HCItem & hitem = operator [] (code);
+    if ( hitem.hkey_ == code )
+      return &hitem;
+    return 0;
+  }
+
+  void put(const uint64 & code, ScoreType score, Flag flag, const PackedMove & cap)
+  {
+    HCItem & hitem = operator [] (code);
+
+    hitem.hkey_ = code;
+    hitem.cap_ = cap;
+    hitem.flag_ = flag;
+    hitem.score_ = score;
   }
 };

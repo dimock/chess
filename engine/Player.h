@@ -212,7 +212,7 @@ private:
 #endif // USE_HASH
 
 #ifdef USE_HASH_CAPS
-  GHashTable::Flag getHashCap(int ictx, int ply, ScoreType alpha, ScoreType betta, Move & hcap, ScoreType & hscore, bool pv);
+  CHashTable::Flag getHashCap(int ictx, int ply, ScoreType alpha, ScoreType betta, Move & hcap, ScoreType & hscore, bool pv);
   void putHashCap(int ictx, const Move & cap, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply);
 #endif
 
@@ -253,6 +253,10 @@ private:
 #ifdef USE_HASH
   GHashTable hash_;
   EHashTable ehash_;
+#endif
+
+#ifdef USE_HASH_CAPS
+  CHashTable chash_;
 #endif
 
 

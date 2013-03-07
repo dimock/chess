@@ -90,6 +90,9 @@ Player::Player() :
   ,hash_(19)
   ,ehash_(19)
 #endif
+#ifdef USE_HASH_CAPS
+  ,chash_(16)
+#endif
 {
   g_deltaPosCounter = new DeltaPosCounter;
   g_betweenMasks = new BetweenMask(g_deltaPosCounter);
@@ -147,15 +150,20 @@ void Player::setMemory(int mb)
     return;
 
   int bytesN = mb*1024*1024;
-
-#ifdef USE_HASH
   int hitemSize = sizeof(HItem);
   int hsize2 = log2(bytesN/hitemSize) - 3;
+
+#ifdef USE_HASH
   if ( hsize2 >= 10 )
   {
     hash_.resize(hsize2);
     ehash_.resize(hsize2+1);
   }
+#endif
+
+#ifdef USE_HASH_CAPS
+  if ( hsize2 >= 10 )
+    chash_.resize(hsize2-1);
 #endif
 }
 
