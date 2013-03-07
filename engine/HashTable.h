@@ -30,6 +30,7 @@ __declspec (align(16)) struct HItem
   {
   uint16     depth_  : 6,
              flag_   : 2,
+             cap_    : 1,
              threat_ : 1;
   };
 
@@ -172,7 +173,7 @@ public:
   GHashTable(int size) : HashTable<HBucket>(size)
   {}
 
-  void push(const uint64 & hkey, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat)
+  void push(const uint64 & hkey, ScoreType score, int depth, Flag flag, const PackedMove & move, bool threat, bool cap = false)
   {
     HBucket & hb = (*this)[hkey];
     HItem * hitem = hb.get(hkey);
@@ -193,6 +194,7 @@ public:
     hitem->score_  = score;
     hitem->depth_  = depth;
     hitem->flag_   = flag;
+    hitem->cap_    = cap;
     hitem->threat_ = threat;
     hitem->movesCount_ = movesCount_;
     hitem->move_ = move;

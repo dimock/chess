@@ -712,8 +712,18 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
   if ( stopped() || ply >= MaxPly )
     return Figure::DrawScore;
 
+  Move hcap(0);
+
+#ifdef USE_HASH_CAPS
+  ScoreType hscore = -ScoreMax;
+  GHashTable::Flag flag = getHashCap(ictx, ply, alpha, betta, hcap, hscore, pv);
+  if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
+    return hscore;
+#endif
+
   int counter = 0;
   ScoreType scoreBest = -ScoreMax;
+  ScoreType alpha0 = alpha;
   int delta = 0;
 
   if ( !scontexts_[ictx].board_.underCheck() )
@@ -735,7 +745,7 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
   Move best(0);
   Figure::Type thresholdType = scontexts_[ictx].board_.isWinnerLoser() ? Figure::TypePawn : delta2type(delta);
 
-  TacticalGenerator tg(scontexts_[ictx].board_, thresholdType, depth);
+  TacticalGenerator tg(hcap, scontexts_[ictx].board_, thresholdType, depth);
   if ( tg.singleReply() )
     depth++;
 
@@ -753,10 +763,8 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
     scontexts_[ictx].board_.makeMove(move);
     sdata_.inc_nc();
 
-    {
-      int depth1 = nextDepth(ictx, depth, move, false);
-      score = -captures(ictx, depth1, ply+1, -betta, -alpha, pv, -ScoreMax);
-    }
+    int depth1 = nextDepth(ictx, depth, move, false);
+    score = -captures(ictx, depth1, ply+1, -betta, -alpha, pv, -ScoreMax);
 
     scontexts_[ictx].board_.unmakeMove();
 
@@ -782,6 +790,10 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
       scoreBest = score0;
   }
 
+#ifdef USE_HASH_CAPS
+  putHashCap(ictx, best, alpha0, betta, scoreBest, depth, ply);
+#endif
+
   THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );
 
   return scoreBest;
@@ -800,7 +812,12 @@ GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, 
 
   scontexts_[ictx].board_.unpackMove(hitem->move_, hmove);
 
-  if ( pv )
+  if ( hitem->cap_ && depth > 0 && hmove )
+  {
+    int ttt = 0;
+  }
+
+  if ( pv || hitem->cap_ )
     return GHashTable::AlphaBetta;
 
   hscore = hitem->score_;
@@ -867,6 +884,74 @@ void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType bet
 }
 #endif
 
+#ifdef USE_HASH_CAPS
+GHashTable::Flag Player::getHashCap(int ictx, int ply, ScoreType alpha, ScoreType betta, Move & hcap, ScoreType & hscore, bool pv)
+{
+  const HItem * hitem = hash_.find(scontexts_[ictx].board_.hashCode());
+  if ( !hitem )
+    return GHashTable::NoFlag;
+
+  THROW_IF( hitem->hkey_ != scontexts_[ictx].board_.hashCode(), "invalid hash item found" );
+
+  scontexts_[ictx].board_.unpackMove(hitem->move_, hcap);
+
+  // leave only captures and promotions
+  if ( !hcap.capture_ && !hcap.new_type_ )
+    hcap.clear();
+
+  if ( pv )
+    return GHashTable::AlphaBetta;
+
+  hscore = hitem->score_;
+  if ( hscore >= Figure::MatScore-MaxPly )
+    hscore = hscore - ply;
+  else if ( hscore <= MaxPly-Figure::MatScore )
+    hscore = hscore + ply;
+
+  THROW_IF(hscore > 32760 || hscore < -32760, "invalid value in hash");
+
+  if ( GHashTable::Alpha == hitem->flag_ && hscore <= alpha )
+  {
+    THROW_IF( !stop_ && alpha < -32760, "invalid hscore" );
+    return GHashTable::Alpha;
+  }
+
+  if ( hitem->flag_ > GHashTable::Alpha && hscore >= betta && hcap )
+  {
+    if ( scontexts_[ictx].board_.calculateReps(hcap) < 2 )
+    {
+      const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(0);
+      return GHashTable::Betta;
+    }
+  }
+
+  return GHashTable::AlphaBetta;
+}
+
+void Player::putHashCap(int ictx, const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply)
+{
+  if ( scontexts_[ictx].board_.repsCount() >= 3 )
+    return;
+
+  PackedMove pm = scontexts_[ictx].board_.packMove(move);
+  GHashTable::Flag flag = GHashTable::NoFlag;
+  if ( scontexts_[ictx].board_.repsCount() < 2 )
+  {
+    if ( score <= alpha || !move )
+      flag = GHashTable::Alpha;
+    else if ( score >= betta )
+      flag = GHashTable::Betta;
+    else
+      flag = GHashTable::AlphaBetta;
+  }
+  if ( score >= +Figure::MatScore-MaxPly )
+    score += ply;
+  else if ( score <= -Figure::MatScore+MaxPly )
+    score -= ply;
+  hash_.push(scontexts_[ictx].board_.hashCode(), score, 0, flag, pm, false, true);
+}
+
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // is given movement caused by previous? this mean that if we don't do this move we loose

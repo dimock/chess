@@ -211,6 +211,11 @@ private:
   void putHash(int ictx, const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat);
 #endif // USE_HASH
 
+#ifdef USE_HASH_CAPS
+  GHashTable::Flag getHashCap(int ictx, int ply, ScoreType alpha, ScoreType betta, Move & hcap, ScoreType & hscore, bool pv);
+  void putHashCap(int ictx, const Move & cap, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply);
+#endif
+
   // analyze mode support
   std::queue<PostedCommand> posted_;
   CallbackStruct callbacks_;

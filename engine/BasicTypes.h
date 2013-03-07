@@ -60,6 +60,7 @@ namespace nst
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING
 #define USE_HASH
+#define USE_HASH_CAPS
 #define USE_NULL_MOVE
 #define USE_LMR
 #define VERIFY_LMR

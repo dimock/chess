@@ -671,7 +671,7 @@ class TacticalGenerator
 {
 public:
 
-  TacticalGenerator(Board & board, Figure::Type thresholdType, int depth);
+  TacticalGenerator(const Move & hcap, Board & board, Figure::Type thresholdType, int depth);
 
   Move & next();
 
@@ -687,12 +687,13 @@ private:
   EscapeGenerator eg_;
   ChecksGenerator chg_;
 
-  enum Order { oNone, oEscape, oGenCaps, oCaps, oGenChecks, oChecks };
+  enum Order { oNone, oEscape, oHash, oGenCaps, oCaps, oGenChecks, oChecks };
 
   Board & board_;
   Figure::Type thresholdType_;
   Move fake_;
   Order order_;
+  Move hcap_;
   int depth_;
 };
 
