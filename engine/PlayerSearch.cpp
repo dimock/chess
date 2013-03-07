@@ -853,9 +853,15 @@ void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType bet
   if ( scontexts_[ictx].board_.repsCount() < 2 )
   {
     if ( score <= alpha || !move )
+    {
       flag = GHashTable::Alpha;
+      score = alpha;
+    }
     else if ( score >= betta )
+    {
       flag = GHashTable::Betta;
+      score = betta;
+    }
     else
       flag = GHashTable::AlphaBetta;
   }
