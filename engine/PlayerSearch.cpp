@@ -401,10 +401,19 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
     scontexts_[ictx].board_.unmakeNullMove();
 
-    // verify null-move with shortened depth
-    if ( nullScore >= betta )
+    Figure::Color  color = scontexts_[ictx].board_.getColor();
+    Figure::Color ocolor = Figure::otherColor(color);
+    ScoreType score_matr = scontexts_[ictx].board_.fmgr().weight(color) - scontexts_[ictx].board_.fmgr().weight(ocolor);
+
+    // we have a lot more material than opponent. just skip this node
+    if ( score_matr-Figure::figureWeight_[Figure::TypeQueen] > betta )
     {
-      depth = null_depth;  //scontexts_[ictx].board_.nullMoveDepthVerify(depth);//null_depth;
+      return captures(ictx, 0, ply, alpha, betta, pv);
+    }
+    // verify null-move with shortened depth
+    else if ( nullScore >= betta )
+    {
+      depth = scontexts_[ictx].board_.nullMoveDepthVerify(depth);//null_depth;
       nm = true; // don't use null-move in this string
 
       if ( depth <= 0 )
@@ -439,9 +448,20 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     if ( delta > 0 )
       return captures(ictx, depth, ply, alpha, betta, pv, score0);
 
-    //static const int margin[] = {0, Evaluator::positionGain_, 450, 800 };
+    //static const int margin[] = {0, Evaluator::positionGain_, 300, 600, 900 };
+
+    //ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
+    //int delta = calculateDelta(alpha, score0);
+
+    //ScoreType score_fp = -ScoreMax;
     //if ( delta > margin[depth] )
-    //  return futilityPruning(ictx, hmove, depth, ply, alpha, betta, score0);
+    //{
+    //  score_fp = captures(ictx, depth, ply, alpha, betta, pv, score0);
+    //  if ( depth > 1 /*&& score_fp < alpha*/ )
+    //    depth--;
+    //  else
+    //    return score_fp;
+    //}
   }
 #endif
 
