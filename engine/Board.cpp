@@ -122,7 +122,7 @@ bool Board::isDangerQueen(const Move & move) const
   BitMask attacked_mask = (oki_caps & q_caps) & ~mask_all;
   BitMask ki_moves = oki_caps & ~(mask_all | attacked_mask);
   int movesN = pop_count(ki_moves);
-  if ( !attacked_mask || movesN > 2 )
+  if ( !attacked_mask || movesN > 3 )
     return false;
 
   if ( see(move) < 0 )

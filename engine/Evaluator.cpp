@@ -186,12 +186,12 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_ = 25;
-const ScoreType Evaluator::rookAgainstFigureBonus_ = 35;
+const ScoreType Evaluator::figureAgainstPawnBonus_[2] = { 25, 80 };
+const ScoreType Evaluator::rookAgainstFigureBonus_[2] = { 35, 80 };
 
 /// blocked figures
-const ScoreType Evaluator::bishopBlocked_ = 50;
-const ScoreType Evaluator::knightBlocked_ = 50;
+const ScoreType Evaluator::bishopBlocked_ = 70;
+const ScoreType Evaluator::knightBlocked_ = 70;
 
 const ScoreType Evaluator::pinnedKnight_ = 0;//-5;
 const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
@@ -1024,11 +1024,19 @@ ScoreType Evaluator::evaluateMaterialDiff()
   int queensDiff = fmgr.queens(Figure::ColorWhite) - fmgr.queens(Figure::ColorBlack);
 
   if ( figuresDiff*pawnsDiff < 0 && !rooksDiff && !queensDiff )
-    score += figuresDiff * figureAgainstPawnBonus_;
+  {
+    Figure::Color strongColor = (Figure::Color)(figuresDiff > 0);
+    int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
+    score += figuresDiff * figureAgainstPawnBonus_[zeroPawns];
+  }
 
   // 4. Knight|Bishop+2Pawns vs. Rook
   else if ( !queensDiff && rooksDiff*figuresDiff == -1 )
-    score += rooksDiff * rookAgainstFigureBonus_;
+  {
+    Figure::Color strongColor = (Figure::Color)(rooksDiff > 0);
+    int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
+    score += rooksDiff * rookAgainstFigureBonus_[zeroPawns];
+  }
 
   return score;
 }
