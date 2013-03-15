@@ -404,7 +404,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
-      depth = null_depth;  //scontexts_[ictx].board_.nullMoveDepthVerify(depth);//null_depth;
+      depth = scontexts_[ictx].board_.nullMoveDepthVerify(depth, betta);
       nm = true; // don't use null-move in this string
 
       if ( depth <= 0 )

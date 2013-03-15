@@ -259,8 +259,15 @@ public:
     return null_depth;
   }
 
-  inline int nullMoveDepthVerify(int depth) const
+  inline int nullMoveDepthVerify(int depth, ScoreType betta) const
   {
+    Figure::Color ocolor = Figure::otherColor(color_);
+    ScoreType score = fmgr().weight(color_) - fmgr().weight(ocolor);
+
+    // we have a lot more material than opponent. just skip this node
+    if ( score-Figure::figureWeight_[Figure::TypeQueen] > betta )
+      return 0;
+
     int null_depth = depth - nullMoveReduce();
     if ( null_depth > (depth>>1) )
       null_depth = depth>>1;
