@@ -6,13 +6,13 @@
 
 #include <vector>
 #include <string>
-#include "Figure.h"
 
 class xCmd
 {
 public:
 
 	enum {
+    // x-board protocol commands
 		xNone,
 		xOption,
 		xPing,
@@ -42,7 +42,17 @@ public:
 		xSetFigure,
 		xSaveBoard,
 		xSetboardFEN,
-		xQuit
+
+    // uci protocol commands
+    UCI,
+    SetOption,
+    IsReady,
+    UCInewgame,
+    Position,
+    UCIgo,
+
+    // common
+    xQuit,
 	};
 
 	xCmd(int type = xNone) :
@@ -78,7 +88,7 @@ public:
 		return 0;
 	}
 
-  int getOption(const char * oname)
+  int getOption(const char * oname) const
   {
     if ( !oname )
       return -1;
@@ -105,10 +115,10 @@ public:
 		return str_;
 	}
 
-  std::string packParams() const
+  std::string packParams(size_t from = 0) const
   {
     std::string res;
-    for (size_t i = 0; i < params_.size(); ++i)
+    for (size_t i = from; i < params_.size(); ++i)
     {
       res += params_.at(i);
       res += " ";

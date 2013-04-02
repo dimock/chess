@@ -154,7 +154,7 @@ bool Player::search(SearchResult * sres)
       }
 
       clock_t t  = clock();
-      clock_t dt = (t - sdata_.tstart_) / 10;
+      clock_t dt = (t - sdata_.tstart_);
       sdata_.tprev_ = t;
 
       sres->score_ = score;
@@ -205,7 +205,10 @@ bool Player::search(SearchResult * sres)
   sres->totalNodes_ = sdata_.totalNodes_;
 
   clock_t t  = clock();
-  sres->dt_ = (t - sdata_.tstart_) / 10;
+  sres->dt_ = (t - sdata_.tstart_);
+
+  if ( sparams_.analyze_mode_ && callbacks_.sendFinished_ )
+    (callbacks_.sendFinished_)(sres);
 
   return sres->best_;
 }
@@ -626,6 +629,9 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
 {
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
+
+  //if ( pv && sdata_.plyMax_ < ply )
+  //  sdata_.plyMax_ = ply;
 
   if ( scontexts_[ictx].board_.drawState() || scontexts_[ictx].board_.countReps() > 1 )
     return Figure::DrawScore;

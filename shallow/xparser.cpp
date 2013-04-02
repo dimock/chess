@@ -5,6 +5,8 @@
 
 #include "xparser.h"
 
+#include <iostream>
+
 using namespace std;
 
 xParser::xParser()
@@ -34,7 +36,7 @@ struct CommandLine
   int commandType_;
 };
 
-xCmd xParser::parse(char * str)
+xCmd xParser::parse(char * str, bool uci)
 {
 	if ( !str || strlen(str) == 0 )
 		return xCmd();
@@ -66,7 +68,15 @@ xCmd xParser::parse(char * str)
     { "?", xCmd::xGoNow },
     { "protover", xCmd::xProtover },
     { "setboard", xCmd::xSetboardFEN },
-    { "quit",xCmd::xQuit }
+    { "quit", xCmd::xQuit },
+
+    // uci commands
+    { "uci", xCmd::UCI },
+    { "setoption", xCmd::SetOption },
+    { "isready", xCmd::IsReady },
+    { "ucinewgame", xCmd::UCInewgame },
+    { "position", xCmd::Position },
+    { "stop", xCmd::xExit },
   };
 
   //_strlwr(str);
@@ -92,6 +102,15 @@ xCmd xParser::parse(char * str)
     {
       if ( params.size() )
         params.erase(params.begin());
+
+      if ( uci )
+      {
+        switch ( cmdLine.commandType_ )
+        {
+        case xCmd::xGo:
+          return xCmd(xCmd::UCIgo, params);
+        }
+      }
 
       return xCmd(cmdLine.commandType_, params);
     }

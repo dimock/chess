@@ -14,12 +14,17 @@ public:
   xBoardMgr();
   ~xBoardMgr();
 
+  void setProtocol(bool uci);
   bool do_cmd();
   void write_error(const std::exception * e = 0);
 
   bool peekInput();
   void printPV(SearchResult * sres);
   void printStat(SearchData * sres);
+  void printBM(SearchResult * sres);
+
+  // uci
+  void printInfo(SearchResult * sres);
 
 #ifdef WRITE_LOG_FILE_
   std::ostream & get_log()
@@ -37,6 +42,10 @@ private:
   void read_cmd(xCmd & cmd);
   void process_cmd(xCmd & cmd);
 
+  void uciSetOption(const xCmd & cmd);
+  void uciPosition(const xCmd & cmd);
+  void uciGo(const xCmd & cmd);
+
   Thinking thk_;
   xParser parser_;
 
@@ -44,6 +53,8 @@ private:
   bool stop_;
   bool force_;
   bool fenOk_;
+
+  bool uci_protocol_;
 
   std::ostream & os_;
 

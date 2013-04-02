@@ -622,7 +622,7 @@ bool strToMove(const char * i_str, const Board & board, Move & move)
 	if ( !i_str || (sz = strlen(i_str)) < 4 )
 		return false;
 
-  char str[16];
+  char str[256];
   strncpy_s(str, sizeof(str), i_str, sz);
 	_strlwr(str);
 

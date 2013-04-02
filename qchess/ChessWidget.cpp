@@ -414,7 +414,7 @@ void ChessWidget::drawInfo()
   QPainter painter(this);
   QString infoText;
 
-  int nps = sres_.dt_ > 0 ? sres_.totalNodes_*100.0/sres_.dt_ : 0;
+  int nps = sres_.dt_ > 0 ? sres_.totalNodes_*1000.0/sres_.dt_ : 0;
   //int ticksN = Board::ticks_;
   //int hscore = Board::tcounter_;
   //infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, LMR-errors = %d, hist. score(avg) = %d\n{ %s }",

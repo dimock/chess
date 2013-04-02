@@ -171,6 +171,11 @@ void Thinking::setMemory(int mb)
   player_.setMemory(mb);
 }
 
+Figure::Color Thinking::color() const
+{
+  return player_.getBoard().getColor();
+}
+
 bool Thinking::init()
 {
   if ( is_thinking() )
@@ -208,7 +213,7 @@ void Thinking::stop()
   player_.pleaseStop();
 }
 
-bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
+bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white, bool wb_move)
 {
   if ( is_thinking() )
     return false;
@@ -241,7 +246,7 @@ bool Thinking::reply(char (& smove)[256], uint8 & state, bool & white)
 
   state = board.getState();
 
-	if ( !moveToStr(sres.best_, smove, true) )
+	if ( !moveToStr(sres.best_, smove, wb_move) )
 		return false;
 
 	return true;
@@ -277,6 +282,27 @@ bool Thinking::move(xCmd & moveCmd, uint8 & state, bool & white)
 	state = board.getState();
   updateTiming();
 	return true;
+}
+
+bool Thinking::makeMove(const char * moveStr)
+{
+  if ( !moveStr )
+    return false;
+
+  Board & board = player_.getBoard();
+
+  Move move;
+  if ( !strToMove(moveStr, board, move) )
+    return false;
+
+  if ( !board.validateMove(move) )
+    return false;
+
+  board.makeMove(move);
+  board.verifyState();
+  updateTiming();
+
+  return true;
 }
 
 void Thinking::save()
@@ -352,6 +378,11 @@ bool Thinking::fromFEN(xCmd & cmd)
     return true;
   }
 
+  return player_.fromFEN(fen);
+}
+
+bool Thinking::fromFEN(const char * fen)
+{
   return player_.fromFEN(fen);
 }
 

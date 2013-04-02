@@ -28,17 +28,21 @@ public:
   void setPost(bool);
 	bool undo();
 
+  Figure::Color color() const;
+
 	void save();
   void fen2file(const char * fname);
   void pgn2file(const char * fname);
   void hash2file(const char * fname);
   void toFEN(char * );
 
+  bool fromFEN(const char * fen);
   bool fromFEN(xCmd & cmd);
 	void editCmd(xCmd & cmd);
 
 	bool move(xCmd & moveCmd, uint8 & state, bool & white);
-	bool reply(char (&)[256], uint8 & state, bool & white);
+  bool makeMove(const char * moveStr);
+	bool reply(char (&)[256], uint8 & state, bool & white, bool wb_move);
   void analyze();
   void stop();
 

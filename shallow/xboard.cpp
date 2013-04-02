@@ -40,8 +40,16 @@ void sendStatus(SearchData * sdata)
   g_xboard_mgr_->printStat(sdata);
 }
 
+void sendFinished(SearchResult * sres)
+{
+  if ( !g_xboard_mgr_ )
+    return;
+
+  g_xboard_mgr_->printBM(sres);
+}
+
 xBoardMgr::xBoardMgr() :
-  os_(cout)
+  os_(cout), uci_protocol_(false)
 {
 #ifdef WRITE_LOG_FILE_
   ofs_log_.open("log.txt", ios_base::app);
@@ -71,6 +79,7 @@ xBoardMgr::xBoardMgr() :
   cs.sendOutput_ = &sendOutput;
   cs.sendStatus_ = &sendStatus;
   cs.queryInput_ = &queryInput;
+  cs.sendFinished_ = &sendFinished;
   thk_.setPlayerCallbacks(cs);
 }
 
@@ -168,14 +177,20 @@ void xBoardMgr::printPV(SearchResult * sres)
   if ( !sres || !sres->best_ )
     return;
 
+  if ( uci_protocol_ )
+  {
+    printInfo(sres);
+    return;
+  }
+
   Board board = sres->board_;
   UndoInfo undoStack[Board::GameLength];
   board.set_undoStack(undoStack);
 
-  cout << sres->depth_ << " " << sres->score_ << " " << (int)sres->dt_ << " " << sres->totalNodes_;
+  os_ << sres->depth_ << " " << sres->score_ << " " << (int)(sres->dt_/10) << " " << sres->totalNodes_;
   for (int i = 0; i < sres->depth_ && sres->pv_[i]; ++i)
   {
-    cout << " ";
+    os_ << " ";
 
     Move pv = sres->pv_[i];
     uint8 captured = pv.capture_;
@@ -193,14 +208,14 @@ void xBoardMgr::printPV(SearchResult * sres)
 
     board.makeMove(pv);
 
-    cout << str;
+    os_ << str;
   }
-  cout << std::endl;
+  os_ << std::endl;
 }
 
 void xBoardMgr::printStat(SearchData * sdata)
 {
-  if ( sdata && sdata->depth_ <= 0 )
+  if ( !sdata || sdata->depth_ <= 0 )
     return;
 
   Board board = sdata->board_;
@@ -224,7 +239,12 @@ void xBoardMgr::printStat(SearchData * sdata)
     strcat(outstr, str);
   }
 
-  cout << outstr << std::endl;
+  os_ << outstr << std::endl;
+}
+
+void xBoardMgr::setProtocol(bool uci)
+{
+  uci_protocol_ = uci;
 }
 
 bool xBoardMgr::do_cmd()
@@ -254,14 +274,43 @@ void xBoardMgr::read_cmd(xCmd & cmd)
   ofs_log_ << string(sline) << endl;
 #endif
 
-  cmd = parser_.parse(sline);
+  cmd = parser_.parse(sline, uci_protocol_);
 }
 
 void xBoardMgr::process_cmd(xCmd & cmd)
 {
   switch ( cmd.type() )
   {
+  case xCmd::UCI:
+    uci_protocol_ = true;
+    os_ << "id name Shallow" << std::endl;
+    os_ << "id author Dmitry Sultanov" << std::endl;
+    os_ << "option name Hash type spin default 64 min 1 max 256" << std::endl;
+    os_ << "uciok" << std::endl;
+    break;
+
   case xCmd::xBoard:
+    uci_protocol_ = false;
+    break;
+
+  case xCmd::SetOption:
+    uciSetOption(cmd);
+    break;
+
+  case xCmd::IsReady:
+    os_ << "readyok" << std::endl;
+    break;
+
+  case xCmd::UCInewgame:
+    thk_.init();
+    break;
+
+  case xCmd::Position:
+    uciPosition(cmd);
+    break;
+
+  case xCmd::UCIgo:
+    uciGo(cmd);
     break;
 
   case xCmd::xPing:
@@ -410,7 +459,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
       char str[256];
       uint8 state = Board::Invalid;
       bool white;
-      bool b = thk_.reply(str, state, white);
+      bool b = thk_.reply(str, state, white, true);
       if ( b )
       {
 #ifdef WRITE_LOG_FILE_
@@ -463,7 +512,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
         else if ( !force_ )
         {
           char str[256];
-          bool b = thk_.reply(str, state, white);
+          bool b = thk_.reply(str, state, white, true);
           if ( b )
           {
 #ifdef WRITE_LOG_FILE_
@@ -496,4 +545,155 @@ void xBoardMgr::process_cmd(xCmd & cmd)
     break;
   }
 
+}
+
+void xBoardMgr::uciSetOption(const xCmd & cmd)
+{
+  if ( cmd.paramsNum() < 4 )
+    return;
+
+  if ( cmd.param(0) == "name" && cmd.param(1) == "Hash" && cmd.param(2) == "value" )
+    thk_.setMemory(cmd.asInt(3));
+}
+
+void xBoardMgr::uciPosition(const xCmd & cmd)
+{
+  if ( cmd.paramsNum() < 1 )
+    return;
+
+  if ( cmd.param(0) == "fen" )
+  {
+    std::string fen = cmd.packParams(1);
+    thk_.fromFEN(fen.c_str());
+  }
+  else if ( cmd.param(0) == "startpos" )
+  {
+    thk_.init();
+  }
+
+  for (size_t i = 0; i < cmd.paramsNum(); ++i)
+  {
+    char smove[256];
+    strncpy(smove, cmd.param(i).c_str(), 256);
+
+    if ( xParser::parseMove(smove) )
+      thk_.makeMove(smove);
+  }
+}
+
+void xBoardMgr::uciGo(const xCmd & cmd)
+{
+  bool white = thk_.color() == Figure::ColorWhite;
+  bool analize_mode = false;
+
+  for (size_t i = 0; i < cmd.paramsNum(); ++i)
+  {
+    if ( ((cmd.param(i) == "wtime" && white) || (cmd.param(i) == "btime" && !white)) &&
+           i+1 < cmd.paramsNum() )
+    {
+      int timeMs = cmd.asInt(i+1);
+      thk_.setXtime(timeMs);
+      break;
+    }
+
+    if ( cmd.param(i) == "movetime" &&
+         i+1 < cmd.paramsNum() )
+    {
+      int timeMs = cmd.asInt(i+1);
+      thk_.setTimePerMove(timeMs);
+      break;
+    }
+
+    if ( cmd.param(i) == "infinite" )
+    {
+      analize_mode = true;
+      break;
+    }
+  }
+
+  if ( analize_mode )
+  {
+    thk_.analyze();
+    return;
+  }
+
+  char smove[256];
+  uint8 state;
+
+  if ( !thk_.reply(smove, state, white, false) )
+    return;
+
+  os_ << "bestmove " << smove << std::endl;
+}
+
+
+void xBoardMgr::printInfo(SearchResult * sres)
+{
+  if ( !sres )
+    return;
+
+  Board board = sres->board_;
+  UndoInfo undoStack[Board::GameLength];
+  board.set_undoStack(undoStack);
+
+  std::string pv_str;
+  for (int i = 0; i < sres->depth_ && sres->pv_[i]; ++i)
+  {
+    if ( i )
+      pv_str += " ";
+
+    Move pv = sres->pv_[i];
+    uint8 captured = pv.capture_;
+    pv.clearFlags();
+    pv.capture_ = captured;
+
+    if ( !board.possibleMove(pv) )
+      break;
+
+    char str[64];
+    if ( !printSAN(board, pv, str) )
+      break;
+
+    THROW_IF( !board.validateMove(pv), "move is invalid but it is not detected by printSAN()");
+
+    board.makeMove(pv);
+
+    pv_str += str;
+  }
+
+  double dt = sres->dt_;
+  if ( dt < 1 )
+    dt = 1;
+
+  int nps = (int)((double)(sres->totalNodes_)*1000.0 / dt);
+
+  os_ << "info ";
+
+  os_ << "depth " << sres->depth_ << " ";
+  os_ << "seldepth " << sres->plyMax_+1 << " ";
+  os_ << "score cp " << sres->score_ << " ";
+  os_ << "time " << (int)sres->dt_ << " ";
+  os_ << "nodes " << sres->totalNodes_ << " ";
+  os_ << "nps " << nps << " ";
+
+  if ( sres->best_ )
+  {
+    char smove[256];
+    moveToStr(sres->best_, smove, false);
+    os_ << "currmove " << smove << " ";
+  }
+
+  os_ << "pv " << pv_str;
+
+  os_ << std::endl;
+}
+
+void xBoardMgr::printBM(SearchResult * sres)
+{
+  if ( !sres || !sres->best_ )
+    return;
+
+  char smove[256];
+  if ( moveToStr(sres->best_, smove, false) )
+    os_ << "bestmove " << smove << std::endl;
 }

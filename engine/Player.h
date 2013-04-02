@@ -69,7 +69,7 @@ typedef void (*SendStatus)(SearchData *);
 struct CallbackStruct
 {
   CallbackStruct() :
-    queryInput_(0), giveTime_(0), sendOutput_(0), sendStatus_(0)
+    queryInput_(0), giveTime_(0), sendOutput_(0), sendStatus_(0), sendFinished_(0)
   {
   }
 
@@ -77,6 +77,7 @@ struct CallbackStruct
   GiveMoreTime      giveTime_;
   SendOutput        sendOutput_;
   SendStatus        sendStatus_;
+  SendOutput        sendFinished_;
 };
 
 

@@ -16,12 +16,11 @@ public:
 
 	xParser();
 
-	xCmd parse(char * str);
+	xCmd parse(char * str, bool uci);
+
+  static xCmd parseMove(char * str);
 
 private:
 
-	xCmd parseMove(char * str);
-
-	bool split_str(char * str, std::vector<std::string> & result);
-
+  bool split_str(char * str, std::vector<std::string> & result);
 };
