@@ -438,10 +438,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     int delta = calculateDelta(alpha, score0);
     if ( delta > 0 )
       return captures(ictx, depth, ply, alpha, betta, pv, score0);
-
-    //static const int margin[] = {0, Evaluator::positionGain_, 450, 800 };
-    //if ( delta > margin[depth] )
-    //  return futilityPruning(ictx, hmove, depth, ply, alpha, betta, score0);
   }
 #endif
 
@@ -618,81 +614,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_HASH
   putHash(ictx, best, alpha0, betta, scoreBest, depth, ply, real_threat);
-#endif
-
-  THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );
-
-  return scoreBest;
-}
-//////////////////////////////////////////////////////////////////////////
-ScoreType Player::futilityPruning(int ictx, const Move & hmove, int depth, int ply, ScoreType alpha, ScoreType betta, ScoreType score0)
-{
-  if ( depth == 1 )
-    return captures(ictx, depth, ply, alpha, betta, false /* !pv */, score0);
-
-  if ( stopped() || ply >= MaxPly )
-    return alpha;
-
-  ScoreType scoreBest = -ScoreMax;
-  ScoreType alpha0 = alpha;
-  Move best(0);
-
-  FutilityGenerator fg(scontexts_[ictx].board_, hmove, Figure::TypeNone);
-  if ( fg.singleReply() )
-    depth++;
-
-  for ( ; alpha < betta && !checkForStop(); )
-  {
-    Move & move = fg.next();
-    if ( !move )
-      break;
-
-    if ( !scontexts_[ictx].board_.validateMove(move) )
-      continue;
-
-    ScoreType score = -ScoreMax;
-
-    scontexts_[ictx].board_.makeMove(move);
-    sdata_.inc_nc();
-
-    //findSequence(ictx, move, ply, depth, counter, alpha, betta);
-
-    {
-      int depth1 = nextDepth(ictx, depth, move, false);
-      score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, false);
-    }
-
-    scontexts_[ictx].board_.unmakeMove();
-
-    if ( !stopped() && score > scoreBest )
-    {
-      best = move;
-      scoreBest = score;
-      if ( score > alpha )
-      {
-        alpha = score;
-      }
-    }
-
-    // should be increased here to consider invalid moves!!!
-    fg.inc_counter();
-  }
-
-  if ( stopped() )
-    return scoreBest;
-
-  if ( !fg.counter() )
-  {
-    scontexts_[ictx].board_.setNoMoves();
-
-    scoreBest = scontexts_[ictx].eval_(alpha, betta);
-
-    if ( scontexts_[ictx].board_.matState() )
-      scoreBest += ply;
-  }
-
-#ifdef USE_HASH
-  putHash(ictx, best, alpha0, betta, scoreBest, depth, ply, false);
 #endif
 
   THROW_IF( scoreBest < -Figure::MatScore || scoreBest > +Figure::MatScore, "invalid score" );

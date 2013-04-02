@@ -282,6 +282,9 @@ void Player::testInput()
 
 void Player::assemblePV(int ictx, const Move & move, bool checking, int ply)
 {
+  if ( ply > sdata_.plyMax_ )
+    sdata_.plyMax_ = ply;
+
   if ( ply > sdata_.depth_ || ply >= MaxPly )
     return;
 
