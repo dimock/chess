@@ -653,7 +653,7 @@ void xBoardMgr::printInfo(SearchResult * sres)
   board.set_undoStack(undoStack);
 
   std::string pv_str;
-  for (int i = 0; i < sres->depth_ && sres->pv_[i]; ++i)
+  for (int i = 0; i < MaxPly && sres->pv_[i]; ++i)
   {
     if ( i )
       pv_str += " ";

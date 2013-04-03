@@ -165,17 +165,11 @@ bool Player::search(SearchResult * sres)
       sres->depthMax_ = 0;
       sres->dt_ = dt;
 
-      for (int i = 0; i < sdata_.depth_; ++i)
-      {
-        sres->pv_[i] = scontexts_[0].plystack_[0].pv_[i];
-        if ( !sres->pv_[i] )
-          break;
-      }
-
       for (int i = 0; i < MaxPly; ++i)
       {
         sres->depthMax_ = i;
-        if ( !scontexts_[0].plystack_[0].pv_[i] )
+        sres->pv_[i] = scontexts_[0].plystack_[0].pv_[i];
+        if ( !sres->pv_[i] )
           break;
       }
 
