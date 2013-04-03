@@ -565,6 +565,9 @@ void xBoardMgr::uciPosition(const xCmd & cmd)
   {
     std::string fen = cmd.packParams(1);
     thk_.fromFEN(fen.c_str());
+#ifdef WRITE_LOG_FILE_
+    ofs_log_ << "fen: " << fen << endl;
+#endif
   }
   else if ( cmd.param(0) == "startpos" )
   {
@@ -577,8 +580,21 @@ void xBoardMgr::uciPosition(const xCmd & cmd)
     strncpy(smove, cmd.param(i).c_str(), 256);
 
     if ( xParser::parseMove(smove) )
+    {
       thk_.makeMove(smove);
+
+#ifdef WRITE_LOG_FILE_
+      ofs_log_ << smove << " ";
+#endif
+    }
   }
+
+#ifdef WRITE_LOG_FILE_
+  char fen[256];
+  thk_.toFEN(fen);
+  ofs_log_ << std::endl;
+  ofs_log_ << "used fen: " << fen << std::endl;
+#endif
 }
 
 void xBoardMgr::uciGo(const xCmd & cmd)
@@ -670,8 +686,21 @@ void xBoardMgr::printInfo(SearchResult * sres)
   os_ << "info ";
 
   os_ << "depth " << sres->depth_ << " ";
-  os_ << "seldepth " << sres->plyMax_+1 << " ";
-  os_ << "score cp " << sres->score_ << " ";
+  os_ << "seldepth " << sres->depthMax_ << " ";
+
+  if ( sres->score_ >= Figure::MatScore-MaxPly )
+  {
+    int n = (Figure::MatScore - sres->score_) / 2;
+    os_ << "score mate " << n << " ";
+  }
+  else if ( sres->score_ <= MaxPly-Figure::MatScore )
+  {
+    int n = (-Figure::MatScore - sres->score_) / 2;
+    os_ << "score mate " << n << " ";
+  }
+  else
+    os_ << "score cp " << sres->score_ << " ";
+
   os_ << "time " << (int)sres->dt_ << " ";
   os_ << "nodes " << sres->totalNodes_ << " ";
   os_ << "nps " << nps << " ";

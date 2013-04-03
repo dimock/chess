@@ -22,7 +22,7 @@ public:
   clock_t dt_;
   int nodesCount_;
   int totalNodes_;
-  int plyMax_;
+  int depthMax_;
   int numOfMoves_;
   int counter_;
   Board board_;

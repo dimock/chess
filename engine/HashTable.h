@@ -104,6 +104,19 @@ public:
     szMask_ = size() - 1;
   }
 
+  void clear()
+  {
+    size_t n = size();
+    if ( n == 0 )
+      return;
+
+    ITEM * buf = buffer_;
+    for (size_t i = 0; i < n; ++i, ++buf)
+    {
+      *buf = ITEM();
+    }
+  }
+
   size_t size() const
   {
     return (((size_t)1) << size_);

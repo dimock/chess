@@ -14,7 +14,8 @@ SearchResult::SearchResult() :
   counter_(0),
   depth_(0),
   score_(0),
-  dt_(0)
+  dt_(0),
+  depthMax_(0)
 {
   best_.clear();
   for (int i = 0; i < MaxPly; ++i)
@@ -174,6 +175,11 @@ bool Player::fromFEN(const char * fen)
 
   MovesGenerator::clear_history();
 
+#ifdef USE_HASH
+  hash_.clear();
+  ehash_.clear();
+#endif
+
   return scontexts_[0].board_.fromFEN(fen);
 }
 
@@ -282,20 +288,19 @@ void Player::testInput()
 
 void Player::assemblePV(int ictx, const Move & move, bool checking, int ply)
 {
-  if ( ply > sdata_.plyMax_ )
-    sdata_.plyMax_ = ply;
-
-  if ( ply > sdata_.depth_ || ply >= MaxPly )
+  if ( /*ply > sdata_.depth_ || */ply >= MaxPly-1 )
     return;
 
   scontexts_[ictx].plystack_[ply].pv_[ply] = move;
   scontexts_[ictx].plystack_[ply].pv_[ply].checkFlag_ = checking;
   scontexts_[ictx].plystack_[ply].pv_[ply+1].clear();
 
-  for (int i = ply+1; i < sdata_.depth_; ++i)
+  for (int i = ply+1; i < MaxPly-1; ++i)
   {
     scontexts_[ictx].plystack_[ply].pv_[i] = scontexts_[ictx].plystack_[ply+1].pv_[i];
     if ( !scontexts_[ictx].plystack_[ply].pv_[i] )
+    {
       break;
+    }
   }
 }
