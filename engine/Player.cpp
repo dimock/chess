@@ -177,11 +177,6 @@ bool Player::fromFEN(const char * fen)
 
   MovesGenerator::clear_history();
 
-#ifdef USE_HASH
-  hash_.clear();
-  ehash_.clear();
-#endif
-
   return scontexts_[0].board_.fromFEN(fen);
 }
 
@@ -190,6 +185,13 @@ bool Player::toFEN(char * fen) const
   return scontexts_[0].board_.toFEN(fen);
 }
 
+void Player::clearHash()
+{
+#ifdef USE_HASH
+  hash_.clear();
+  ehash_.clear();
+#endif
+}
 
 void Player::reset()
 {

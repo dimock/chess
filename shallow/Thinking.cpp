@@ -24,7 +24,7 @@ static const int DepthMaximum = 32;
 
 Thinking::Thinking() :
 	boardColor_(Figure::ColorWhite), figureColor_(Figure::ColorWhite),
-  xtimeMS_(0), movesLeft_(0), timePerMoveMS_(0), maxDepth_(-1),
+  xtimeMS_(0), movesLeft_(0), movesToGo_(0), timePerMoveMS_(0), maxDepth_(-1),
   post_(false), thinking_(false), givetimeCounter_(0)
 {
   g_thinking_ = this;
@@ -65,6 +65,7 @@ void Thinking::setDepth(int depth)
 
   xtimeMS_ = 0;
   movesLeft_ = 0;
+  movesToGo_ = 0;
   timePerMoveMS_ = -1;
   if ( depth < 2 )
     depth = 2;
@@ -81,6 +82,7 @@ void Thinking::setTimePerMove(int ms)
   maxDepth_ = -1;
   xtimeMS_ = 0;
   movesLeft_ = 0;
+  movesToGo_ = 0;
   timePerMoveMS_ = ms;
   if ( timePerMoveMS_ < 100 )
     timePerMoveMS_ = 100;
@@ -108,6 +110,19 @@ void Thinking::setMovesLeft(int mleft)
 
   maxDepth_ = -1;
   movesLeft_ = mleft;
+  movesToGo_ = 0;
+  timePerMoveMS_ = -1;
+  player_.setMaxDepth(DepthMaximum);
+}
+
+void Thinking::setMovesToGo(int mtogo)
+{
+  if ( is_thinking() )
+    return;
+
+  maxDepth_ = -1;
+  movesLeft_ = 0;
+  movesToGo_ = mtogo;
   timePerMoveMS_ = -1;
   player_.setMaxDepth(DepthMaximum);
 }
@@ -115,25 +130,34 @@ void Thinking::setMovesLeft(int mleft)
 
 int Thinking::giveMoreTime()
 {
-  if ( timePerMoveMS_ > 0 || xtimeMS_ <= 0 || givetimeCounter_ > 0 )
+  if ( timePerMoveMS_ > 0 || xtimeMS_ <= 500 || givetimeCounter_ > 0 )
     return 0;
 
   int add_t = 0;
-  if ( movesLeft_ <= 0 && xtimeMS_ > 400 )
-    add_t = xtimeMS_/40;
-  else if ( movesLeft_ > 0 )
+  int mcount = 40;
+
+  if ( movesLeft_ > 0 )
   {
     int mcount = player_.getBoard().movesCount();
     mcount = movesLeft_ - (mcount-1) % movesLeft_;
-    if ( mcount > movesLeft_/2 )
-      add_t = xtimeMS_/mcount;
-    else if ( mcount > movesLeft_/3 )
-      add_t = (xtimeMS_/mcount)/2;
-    else if ( mcount > movesLeft_/6 )
-      add_t = (xtimeMS_/mcount)/4;
-    else if ( mcount > 0 )
-      add_t = (xtimeMS_/mcount)/8;
   }
+  else if ( movesToGo_ > 0 )
+  {
+    mcount = movesToGo_;
+  }
+
+  if ( mcount < 2 )
+    return 0;
+
+  add_t = xtimeMS_/mcount;
+  if ( mcount > 20 )
+    return add_t;
+  else if ( mcount > 13 )
+    add_t /= 2;
+  else if ( mcount > 7 )
+    add_t /= 4;
+  else
+    add_t /= 8;
 
   givetimeCounter_++;
 
@@ -184,6 +208,8 @@ bool Thinking::init()
     player_.postCommand(cmd);
     return true;
   }
+
+  player_.clearHash();
 
   return player_.fromFEN(0);
 }
@@ -522,28 +548,32 @@ void Thinking::updateTiming()
     return;
   }
 
-  if ( movesLeft_ <= 0 && xtimeMS_ > 0 )
+  if ( movesLeft_ <= 0 && movesToGo_ <= 0 && xtimeMS_ > 0 )
   {
     player_.setTimeLimit(xtimeMS_/40);
     return;
   }
 
-  int mcount = player_.getBoard().movesCount();
-  if ( movesLeft_ > 0 && xtimeMS_ > 0 )
-  {
-    mcount = movesLeft_ - (mcount-1) % movesLeft_;
-    mcount += 3;
-    player_.setTimeLimit(xtimeMS_/mcount);
+  int mcount = 2;
+
+  if ( movesLeft_ > 0 )
+    mcount = movesLeft_ - (player_.getBoard().movesCount()-1) % movesLeft_;
+  else if ( movesToGo_ > 0 )
+    mcount = movesToGo_;
+
+  if ( mcount < 2 )
+    mcount = 2;
+
+  player_.setTimeLimit(xtimeMS_/mcount);
 
 #ifdef WRITE_LOG_FILE_
-    if ( ofs_log_ )
-    {
-      *ofs_log_ << "  time per move = " << xtimeMS_/mcount << " ms" << std::endl;
-      *ofs_log_ << "  xtime  = " << xtimeMS_ << " ms" << std::endl;
-      *ofs_log_ << "  mcount = " << mcount << std::endl;
-    }
-#endif
+  if ( ofs_log_ )
+  {
+    *ofs_log_ << "  time per move = " << xtimeMS_/mcount << " ms" << std::endl;
+    *ofs_log_ << "  xtime  = " << xtimeMS_ << " ms" << std::endl;
+    *ofs_log_ << "  mcount = " << mcount << std::endl;
   }
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////

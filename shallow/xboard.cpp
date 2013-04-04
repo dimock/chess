@@ -262,7 +262,7 @@ bool xBoardMgr::do_cmd()
 
 void xBoardMgr::read_cmd(xCmd & cmd)
 {
-  const int slineSize = 4096;
+  const int slineSize = 65536;
   char sline[slineSize];
   cin.getline(sline, slineSize);
 
@@ -571,7 +571,7 @@ void xBoardMgr::uciPosition(const xCmd & cmd)
   }
   else if ( cmd.param(0) == "startpos" )
   {
-    thk_.init();
+    thk_.fromFEN(0);
   }
 
   bool moves_found = false;
@@ -614,19 +614,28 @@ void xBoardMgr::uciGo(const xCmd & cmd)
   bool analize_mode = false;
 
   /// read timing params
-  for (size_t i = 0; i < cmd.paramsNum()-1; ++i)
+  for (size_t i = 0; i < cmd.paramsNum(); ++i)
   {
-    if ( ((cmd.param(i) == "wtime" && white) || (cmd.param(i) == "btime" && !white)) )
-      thk_.setXtime(cmd.asInt(i+1));
-    else if ( cmd.param(i) == "movestogo" )
-      thk_.setMovesLeft(cmd.asInt(i+1));
-    else if ( cmd.param(i) == "movetime"  )
-      thk_.setTimePerMove(cmd.asInt(i+1));
-    else if ( cmd.param(i) == "infinite" )
+    if ( cmd.param(i) == "infinite" )
     {
       analize_mode = true;
       break;
     }
+
+    if ( i+1 >= cmd.paramsNum() )
+      break;
+
+    if ( ((cmd.param(i) == "wtime" && white) || (cmd.param(i) == "btime" && !white)) )
+    {
+      thk_.setXtime(cmd.asInt(i+1));
+#ifdef WRITE_LOG_FILE_
+      ofs_log_ << "set time: " << cmd.asInt(i+1) << std::endl;
+#endif
+    }
+    else if ( cmd.param(i) == "movestogo" )
+      thk_.setMovesToGo(cmd.asInt(i+1));
+    else if ( cmd.param(i) == "movetime"  )
+      thk_.setTimePerMove(cmd.asInt(i+1));
   }
 
   if ( analize_mode )

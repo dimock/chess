@@ -156,6 +156,8 @@ public:
   Player();
   ~Player();
 
+  void clearHash();
+
   void setMemory(int mb);
   void setCallbacks(CallbackStruct cs);
 

@@ -8,7 +8,7 @@
 #include "xcommands.h"
 #include <Windows.h>
 
-#undef WRITE_LOG_FILE_
+#undef  WRITE_LOG_FILE_
 #define WRITE_ERROR_PGN
 
 class Thinking
@@ -25,6 +25,7 @@ public:
   void setTimePerMove(int ms);
   void setXtime(int ms);
   void setMovesLeft(int mleft);
+  void setMovesToGo(int mtogo);
   void setPost(bool);
 	bool undo();
 
@@ -67,6 +68,7 @@ private:
   Board board_;
 	Player player_;
   int movesLeft_;
+  int movesToGo_;
   int xtimeMS_;
   int maxDepth_;
   int timePerMoveMS_;
