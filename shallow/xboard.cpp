@@ -285,7 +285,7 @@ void xBoardMgr::process_cmd(xCmd & cmd)
     uci_protocol_ = true;
     os_ << "id name Shallow" << std::endl;
     os_ << "id author Dmitry Sultanov" << std::endl;
-    os_ << "option name Hash type spin default 64 min 1 max 256" << std::endl;
+    os_ << "option name Hash type spin default 256 min 1 max 512" << std::endl;
     os_ << "uciok" << std::endl;
     break;
 
@@ -574,8 +574,19 @@ void xBoardMgr::uciPosition(const xCmd & cmd)
     thk_.init();
   }
 
+  bool moves_found = false;
   for (size_t i = 0; i < cmd.paramsNum(); ++i)
   {
+    /// start moves
+    if ( cmd.param(i) == "moves" )
+    {
+      moves_found = true;
+      continue;
+    }
+
+    if ( !moves_found )
+      continue;
+
     char smove[256];
     strncpy(smove, cmd.param(i).c_str(), 256);
 
@@ -602,25 +613,16 @@ void xBoardMgr::uciGo(const xCmd & cmd)
   bool white = thk_.color() == Figure::ColorWhite;
   bool analize_mode = false;
 
-  for (size_t i = 0; i < cmd.paramsNum(); ++i)
+  /// read timing params
+  for (size_t i = 0; i < cmd.paramsNum()-1; ++i)
   {
-    if ( ((cmd.param(i) == "wtime" && white) || (cmd.param(i) == "btime" && !white)) &&
-           i+1 < cmd.paramsNum() )
-    {
-      int timeMs = cmd.asInt(i+1);
-      thk_.setXtime(timeMs);
-      break;
-    }
-
-    if ( cmd.param(i) == "movetime" &&
-         i+1 < cmd.paramsNum() )
-    {
-      int timeMs = cmd.asInt(i+1);
-      thk_.setTimePerMove(timeMs);
-      break;
-    }
-
-    if ( cmd.param(i) == "infinite" )
+    if ( ((cmd.param(i) == "wtime" && white) || (cmd.param(i) == "btime" && !white)) )
+      thk_.setXtime(cmd.asInt(i+1));
+    else if ( cmd.param(i) == "movestogo" )
+      thk_.setMovesLeft(cmd.asInt(i+1));
+    else if ( cmd.param(i) == "movetime"  )
+      thk_.setTimePerMove(cmd.asInt(i+1));
+    else if ( cmd.param(i) == "infinite" )
     {
       analize_mode = true;
       break;

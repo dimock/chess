@@ -88,10 +88,12 @@ Player::SearchContext::~SearchContext()
 Player::Player() :
   stop_(false)
 #ifdef USE_HASH
-  ,hash_(19)
-  ,ehash_(19)
+  ,hash_(20)
+  ,ehash_(20)
 #endif
 {
+  setMemory(256);
+
   g_deltaPosCounter = new DeltaPosCounter;
   g_betweenMasks = new BetweenMask(g_deltaPosCounter);
   g_distanceCounter = new DistanceCounter;
