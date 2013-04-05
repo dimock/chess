@@ -265,8 +265,8 @@ void Player::testInput()
     {
     case PostedCommand::ctUPDATE:
       {
-        if ( callbacks_.sendStatus_ )
-            (callbacks_.sendStatus_)(&sdata_);
+        if ( callbacks_.sendStats_ )
+            (callbacks_.sendStats_)(&sdata_);
 
         posted_.pop();
         break;

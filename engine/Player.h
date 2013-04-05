@@ -64,19 +64,19 @@ struct SearchData
 typedef void (*QueryInputCommand)();
 typedef int  (*GiveMoreTime)();
 typedef void (*SendOutput)(SearchResult *);
-typedef void (*SendStatus)(SearchData *);
+typedef void (*SendStats)(SearchData *);
 
 struct CallbackStruct
 {
   CallbackStruct() :
-    queryInput_(0), giveTime_(0), sendOutput_(0), sendStatus_(0), sendFinished_(0)
+    queryInput_(0), giveTime_(0), sendOutput_(0), sendStats_(0), sendFinished_(0)
   {
   }
 
   QueryInputCommand queryInput_;
   GiveMoreTime      giveTime_;
   SendOutput        sendOutput_;
-  SendStatus        sendStatus_;
+  SendStats         sendStats_;
   SendOutput        sendFinished_;
 };
 

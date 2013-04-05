@@ -20,11 +20,12 @@ public:
 
   bool peekInput();
   void printPV(SearchResult * sres);
-  void printStat(SearchData * sres);
+  void printStat(SearchData * sdata);
   void printBM(SearchResult * sres);
 
   // uci
   void printInfo(SearchResult * sres);
+  void printUciStat(SearchData * sdata);
 
 #ifdef WRITE_LOG_FILE_
   std::ostream & get_log()

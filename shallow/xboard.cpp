@@ -32,7 +32,7 @@ void sendOutput(SearchResult * sres)
   g_xboard_mgr_->printPV(sres);
 }
 
-void sendStatus(SearchData * sdata)
+void sendStats(SearchData * sdata)
 {
   if ( !g_xboard_mgr_ )
     return;
@@ -77,7 +77,7 @@ xBoardMgr::xBoardMgr() :
 
   CallbackStruct cs;
   cs.sendOutput_ = &sendOutput;
-  cs.sendStatus_ = &sendStatus;
+  cs.sendStats_ = &sendStats;
   cs.queryInput_ = &queryInput;
   cs.sendFinished_ = &sendFinished;
   thk_.setPlayerCallbacks(cs);
@@ -217,6 +217,12 @@ void xBoardMgr::printStat(SearchData * sdata)
 {
   if ( !sdata || sdata->depth_ <= 0 )
     return;
+
+  if ( uci_protocol_ )
+  {
+    printUciStat(sdata);
+    return;
+  }
 
   Board board = sdata->board_;
   UndoInfo undoStack[Board::GameLength];
@@ -653,6 +659,21 @@ void xBoardMgr::uciGo(const xCmd & cmd)
   os_ << "bestmove " << smove << std::endl;
 }
 
+void xBoardMgr::printUciStat(SearchData * sdata)
+{
+  if ( !sdata || !sdata->best_ )
+    return;
+
+  char smove[256];
+  if ( !moveToStr(sdata->best_, smove, false) )
+    return;
+
+  os_ << "info ";
+  os_ << "currmove " << smove << " ";
+  os_ << "currmovenumber " << sdata->counter_+1 << " ";
+  os_ << "nodes " << sdata->totalNodes_ << " ";
+  os_ << "depth " << sdata->depth_ << std::endl;
+}
 
 void xBoardMgr::printInfo(SearchResult * sres)
 {

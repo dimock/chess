@@ -56,8 +56,8 @@ bool Player::findMove(SearchResult * sres)
       {
       case PostedCommand::ctUPDATE:
         {
-          if ( callbacks_.sendStatus_ )
-            (callbacks_.sendStatus_)(&sdata_);
+          if ( callbacks_.sendStats_ )
+            (callbacks_.sendStats_)(&sdata_);
           break;
         }
 
@@ -110,10 +110,10 @@ bool Player::search(SearchResult * sres)
   sdata_.board_ = scontexts_[0].board_;
 
   {
-    FastGenerator mg(scontexts_[0].board_);
-    for ( ;; )
+    MovesGenerator mg(scontexts_[0].board_);
+    for (int i = 0; i < mg.count(); ++i)
     {
-      const Move & move = mg.move();
+      const Move & move = mg[i];
       if ( !move )
         break;
       if ( scontexts_[0].board_.validateMove(move) )
@@ -331,6 +331,9 @@ ScoreType Player::alphaBetta0()
         }
       }
     }
+
+    if ( callbacks_.sendStats_ )
+      (callbacks_.sendStats_)(&sdata_);
   }
 
   // don't need to continue
