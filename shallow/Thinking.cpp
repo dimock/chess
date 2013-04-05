@@ -146,6 +146,8 @@ int Thinking::giveMoreTime()
     mcount = movesToGo_;
   }
 
+  givetimeCounter_++;
+
   if ( mcount < 2 )
     return 0;
 
@@ -158,8 +160,6 @@ int Thinking::giveMoreTime()
     add_t /= 4;
   else
     add_t /= 8;
-
-  givetimeCounter_++;
 
   return add_t;
 }
