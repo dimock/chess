@@ -122,6 +122,8 @@ bool Player::search(SearchResult * sres)
     scontexts_[0].moves_[sdata_.numOfMoves_].clear();
   }
 
+  sres->numOfMoves_ = sdata_.numOfMoves_;
+
 
   const ScoreType alpha = -ScoreMax;
   const ScoreType betta = +ScoreMax;
@@ -164,6 +166,7 @@ bool Player::search(SearchResult * sres)
       sres->totalNodes_ = sdata_.totalNodes_;
       sres->depthMax_ = 0;
       sres->dt_ = dt;
+      sres->counter_ = sdata_.counter_;
 
       for (int i = 0; i < MaxPly; ++i)
       {
@@ -332,7 +335,7 @@ ScoreType Player::alphaBetta0()
       }
     }
 
-    if ( callbacks_.sendStats_ )
+    if ( callbacks_.sendStats_ && sparams_.analyze_mode_ )
       (callbacks_.sendStats_)(&sdata_);
   }
 

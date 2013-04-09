@@ -744,6 +744,7 @@ void xBoardMgr::printInfo(SearchResult * sres)
     os_ << "currmove " << smove << " ";
   }
 
+  os_ << "currmovenumber " << sres->counter_+1 << " ";
   os_ << "pv " << pv_str;
 
   os_ << std::endl;
