@@ -10,7 +10,10 @@
 #include "xboard.h"
 
 #include <windows.h>
+
+#if (defined _DEBUG)
 #include "minidump.h"
+#endif
 
 using namespace std;
 
