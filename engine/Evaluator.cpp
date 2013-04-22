@@ -728,10 +728,10 @@ ScoreType Evaluator::evaluateBishops()
 
       BitMask bmob_mask = 0;
 
-      mobility_masks<0>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
-      mobility_masks<0>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
-      mobility_masks<1>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::se));
-      mobility_masks<1>(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
+      mobility_masks_LSB(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
+      mobility_masks_LSB(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
+      mobility_masks_MSB(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::se));
+      mobility_masks_MSB(from, bmob_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
 
       finfo_[c].attack_mask_ |= bmob_mask;
       bmob_mask &= not_attacked;
@@ -779,10 +779,10 @@ void Evaluator::evaluateRooks(bool eval_open)
 
       BitMask rmob_mask = 0;
 
-      mobility_masks<0>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::no));
-      mobility_masks<0>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
-      mobility_masks<1>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::so));
-      mobility_masks<1>(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::we));
+      mobility_masks_LSB(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::no));
+      mobility_masks_LSB(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
+      mobility_masks_MSB(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::so));
+      mobility_masks_MSB(from, rmob_mask, board_->g_betweenMasks->from_dir(from, nst::we));
 
       rattack_mask[c] |= rmob_mask;
       rmob_mask &= not_attacked;
@@ -843,15 +843,15 @@ void Evaluator::evaluateQueens()
 
       BitMask qmob_mask = 0;
 
-      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
-      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
-      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::se));
-      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
+      mobility_masks_LSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::nw));
+      mobility_masks_LSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::ne));
+      mobility_masks_MSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::se));
+      mobility_masks_MSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::sw));
 
-      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::no));
-      mobility_masks<0>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
-      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::so));
-      mobility_masks<1>(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::we));
+      mobility_masks_LSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::no));
+      mobility_masks_LSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::ea));
+      mobility_masks_MSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::so));
+      mobility_masks_MSB(from, qmob_mask, board_->g_betweenMasks->from_dir(from, nst::we));
 
       qattack_mask[c] |= qmob_mask;
       qmob_mask &= not_attacked;

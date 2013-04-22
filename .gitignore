@@ -35,3 +35,7 @@ chess-helpers/zobrist.cpp
 *.pgn
 shallow/log.txt
 qchess/vc80.idb
+engine/objs/*
+shallow/objs/*
+engine/lib/*
+shallow/exe/*

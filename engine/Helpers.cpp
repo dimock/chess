@@ -6,6 +6,7 @@
 #include "Board.h"
 #include "MovesGenerator.h"
 #include <time.h>
+#include <string.h>
 
 using namespace std;
 
@@ -623,7 +624,7 @@ bool strToMove(const char * i_str, const Board & board, Move & move)
 		return false;
 
   char str[256];
-  strncpy_s(str, sizeof(str), i_str, sz);
+  strncpy(str, i_str, sizeof(str));
 	_strlwr(str);
 
   move.clear();

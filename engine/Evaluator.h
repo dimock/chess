@@ -175,18 +175,14 @@ private:
     BitMask attack_mask_;
   } finfo_[2];
 
-  template <int DIR>
-  void mobility_masks(int from, BitMask & mob_mask, const BitMask & di_mask) const {}
 
-  template <>
-  void mobility_masks<0>(int from, BitMask & mob_mask, const BitMask & di_mask) const
+  inline void mobility_masks_LSB(int from, BitMask & mob_mask, const BitMask & di_mask) const
   {
     BitMask mask_from = di_mask & mask_all_;
     mob_mask |= (mask_from) ? board_->g_betweenMasks->between(from, find_lsb(mask_from)) : di_mask;
   }
 
-  template <>
-  void mobility_masks<1>(int from, BitMask & mob_mask, const BitMask & di_mask) const
+  inline void mobility_masks_MSB(int from, BitMask & mob_mask, const BitMask & di_mask) const
   {
     BitMask mask_from = di_mask & mask_all_;
     mob_mask |= (mask_from) ? board_->g_betweenMasks->between(from, find_msb(mask_from)) : di_mask;

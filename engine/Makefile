@@ -1,83 +1,73 @@
-#
-# ICD AS (C) 2007 - MAKEFILE CREATED USING CDP MAKEFILE WIZARD
-#
-# Make sure that the environment variable CDPBase exists. This can
-# be carried out by typing echo $CDPBase at the command promt, where
-# the Makefile should be run by make. Note that the Makefile Wizard
-# is created for the purpose of CDP Projects. It is, however, fully
-# possible to use it for other project types as well.
-#
-# - To add a profiler in your executable, compile and link with, -pg.
-# - To open/use shared libs at runtime, compile -rdynamic and link -ldl.
-# - Make sure that a valid CDPLicense.key resides in $CDPBase/License.
-# - Run CDP executables as root.
+OBJDIR = ./objs/
+LIBDIR = ./lib/
+OBJS = $(OBJDIR)Board.o $(OBJDIR)CapsGenerator.o $(OBJDIR)CheckDetector.o $(OBJDIR)ChecksGenerator.o $(OBJDIR)EscapeGenerator.o $(OBJDIR)Evaluator.o $(OBJDIR)FastGenerator.o $(OBJDIR)Figure.o $(OBJDIR)FigureDirs.o $(OBJDIR)fpos.o $(OBJDIR)Helpers.o $(OBJDIR)MoveMaker.o $(OBJDIR)MovesGenerator.o $(OBJDIR)MovesTable.o $(OBJDIR)Player.o $(OBJDIR)PlayerSearch.o $(OBJDIR)PlayerVerify.o $(OBJDIR)see.o $(OBJDIR)UsualGenerator.o
+HDRS = BasicTypes.h Board.h Evaluator.h Field.h Figure.h FigureDirs.h fpos.h HashTable.h Helpers.h Move.h MovesGenerator.h MovesTable.h Player.h
+TARGET = $(LIBDIR)libengine.a
 
+CCC = x86_64-w64-mingw32-g++.exe
 
-ifndef CFG
-CFG=Release
-endif
+CCFLAGS = -O2
+CCLFLAGS = -static -s -O2
 
-ifndef COMPILER
-COMPILER=g++.exe
-endif
+engine: $(OBJS)
+	ar.exe rcs $(TARGET) $(OBJS)
 
-ifndef AR
-AR=ar.exe
-endif
+$(OBJDIR)Board.o: Board.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) Board.cpp -c -o $(OBJDIR)Board.o
 
-ifndef ARFLAGS
-ARFLAGS=rcs
-endif
+$(OBJDIR)CapsGenerator.o: CapsGenerator.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) CapsGenerator.cpp -c -o $(OBJDIR)CapsGenerator.o
 
-ifeq "$(CFG)" "Release"
-CFLAGS=  -O2 -W -fno-inline  -mcpu=pentiumpro -D_M_IX86=500 -fexceptions -D_THREAD_SAFE -D_LINUX  -DNDEBUG -D_LIB -D_CRT_SECURE_NO_WARNINGS
-ILFLAGS= 
-TARGET=engine.lib
-endif
+$(OBJDIR)CheckDetector.o: CheckDetector.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) CheckDetector.cpp -c -o $(OBJDIR)CheckDetector.o
 
-ifeq "$(CFG)" "Debug"
-CFLAGS= -g -O0 -W -fno-inline  -mcpu=pentiumpro -D_M_IX86=500 -fexceptions -D_THREAD_SAFE -D_LINUX  -D_DEBUG -D_LIB -D_CRT_SECURE_NO_WARNINGS
-ILFLAGS= 
-TARGET=engine.lib
-endif
+$(OBJDIR)ChecksGenerator.o: ChecksGenerator.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) ChecksGenerator.cpp -c -o $(OBJDIR)ChecksGenerator.o
 
-SOURCE_FILES= 	\
-	BasicTypes.cpp	\
-	ChessAlg.cpp	\
-	ChessBoard.cpp	\
-	ChessMove.cpp	\
-	ChessVerify.cpp	\
-	debut.cpp	\
-	Evaluation.cpp	\
-	Figure.cpp	\
-	FigureDirs.cpp	\
-	Helpers.cpp	\
-	MovesPrecounter.cpp
+$(OBJDIR)EscapeGenerator.o: EscapeGenerator.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) EscapeGenerator.cpp -c -o $(OBJDIR)EscapeGenerator.o
 
-HEADER_FILES= 	\
-	BasicTypes.h	\
-	ChessAlg.h	\
-	ChessBoard.h	\
-	debut.h	\
-	Field.h	\
-	Figure.h	\
-	FigureDirs.h	\
-	HashTable.h	\
-	Helpers.h	\
-	MovesPrecounter.h
+$(OBJDIR)Evaluator.o: Evaluator.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) Evaluator.cpp -c -o $(OBJDIR)Evaluator.o
 
-OBJS=$(patsubst %.cpp, %.obj,$(SOURCE_FILES))
+$(OBJDIR)FastGenerator.o: FastGenerator.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) FastGenerator.cpp -c -o $(OBJDIR)FastGenerator.o
 
-.PHONY:all
-all: $(TARGET)
+$(OBJDIR)Figure.o: Figure.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) Figure.cpp -c -o $(OBJDIR)Figure.o
 
-$(TARGET): $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+$(OBJDIR)FigureDirs.o: FigureDirs.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) FigureDirs.cpp -c -o $(OBJDIR)FigureDirs.o
 
-%.obj: %.cpp
-	$(COMPILER) $(CFLAGS) $(ILFLAGS) $(GLOBALS) -o $@ -c $<
+$(OBJDIR)fpos.o: fpos.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) fpos.cpp -c -o $(OBJDIR)fpos.o
 
-.PHONY:clean
+$(OBJDIR)Helpers.o: Helpers.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) Helpers.cpp -c -o $(OBJDIR)Helpers.o
+
+$(OBJDIR)MoveMaker.o: MoveMaker.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) MoveMaker.cpp -c -o $(OBJDIR)MoveMaker.o
+
+$(OBJDIR)MovesGenerator.o: MovesGenerator.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) MovesGenerator.cpp -c -o $(OBJDIR)MovesGenerator.o
+
+$(OBJDIR)MovesTable.o: MovesTable.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) MovesTable.cpp -c -o $(OBJDIR)MovesTable.o
+
+$(OBJDIR)Player.o: Player.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) Player.cpp -c -o $(OBJDIR)Player.o
+
+$(OBJDIR)PlayerSearch.o: PlayerSearch.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) PlayerSearch.cpp -c -o $(OBJDIR)PlayerSearch.o
+
+$(OBJDIR)PlayerVerify.o: PlayerVerify.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) PlayerVerify.cpp -c -o $(OBJDIR)PlayerVerify.o
+
+$(OBJDIR)see.o: see.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) see.cpp -c -o $(OBJDIR)see.o
+
+$(OBJDIR)UsualGenerator.o: UsualGenerator.cpp $(HDRS)
+	$(CCC) $(CCFLAGS) UsualGenerator.cpp -c -o $(OBJDIR)UsualGenerator.o
+
 clean:
-	 -rm -f $(OBJS) $(TARGET)
-
+	rm $(OBJS) $(TARGET)
