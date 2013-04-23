@@ -1,13 +1,14 @@
 PREFIX = gcc-x64
 LIBDIR = $(PREFIX)/lib/
 OBJDIR = ./$(PREFIX)/objs/
+OLIBDIR = ./$(LIBDIR)
 ENGINE_LIB = engine
 CPP_FILES = $(wildcard *.cpp, *.cpp)
 HDRS = $(wildcard *.h, *.h)
 OBJ_FILES = $(patsubst %.cpp, %.o, $(CPP_FILES))
 OBJS = $(addprefix $(OBJDIR), $(OBJ_FILES))
 PROJECT = engine
-TARGET = ./$(LIBDIR)lib$(ENGINE_LIB).a
+TARGET = $(OLIBDIR)lib$(ENGINE_LIB).a
 
 
 CCC = x86_64-w64-mingw32-g++.exe
@@ -25,10 +26,10 @@ $(OBJS): |$(OBJDIR)
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
-$(TARGET): |$(OUTDIR)
+$(TARGET): |$(OLIBDIR)
 
-$(OUTDIR):
-	mkdir -p $(OUTDIR)
+$(OLIBDIR):
+	mkdir -p $(OLIBDIR)
 
 $(OBJDIR)%.o: %.cpp $(HDR)
 	$(COMPILE) $< -o $@
