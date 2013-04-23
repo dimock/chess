@@ -1,29 +1,41 @@
-OBJDIR = ./gcc-x64/objs/
-OUTDIR = ./gcc-x64/
-OBJS = $(OBJDIR)shallow.o $(OBJDIR)Thinking.o $(OBJDIR)xboard.o $(OBJDIR)xparser.o
-HDRS = Thinking.h xparser.h xboard.h xcommands.h
-TARGET = $(OUTDIR)shallow-gcc-x64.exe
+PREFIX = gcc-x64
+LIBDIR = $(PREFIX)/lib/
+OBJDIR = ./$(PREFIX)/objs/
+OUTDIR = ./$(PREFIX)/release/
+ENGINE_DIR = ../engine/
+ENGINE_LIBDIR = $(ENGINE_DIR)$(LIBDIR)
+ENGINE_LIB = engine
+CPP_FILES = $(wildcard *.cpp, *.cpp)
+HDRS = $(wildcard *.h, *.h)
+OBJ_FILES = $(patsubst %.cpp, %.o, $(CPP_FILES))
+OBJS = $(addprefix $(OBJDIR), $(OBJ_FILES))
+PROJECT = shallow
+TARGET = $(OUTDIR)$(PROJECT)-$(PREFIX).exe
+
 
 CCC = x86_64-w64-mingw32-g++.exe
+CCFLAGS = -static -s -c -O3 -D NDEBUG -I$(ENGINE_DIR)
+COMPILE = $(CCC) $(CCFLAGS) 
 
-CCFLAGS = -static -s -O3 -D NDEBUG -I../engine/
+.PHONY : $(PROJECT)
+$(PROJECT): $(TARGET)
 
-shallow: $(OBJS)
-	mkdir -p $(OUTDIR)
-	$(CCC) -s -O2 -static $(OBJS) -L../engine/gcc-x64/lib/ -lengine -o $(TARGET)
+$(TARGET): $(OBJS) $(ENGINE_LIBDIR)lib$(ENGINE_LIB).a
+	$(CCC) -s -O3 -static $(OBJS) -L$(ENGINE_LIBDIR) -l$(ENGINE_LIB) -o $(TARGET)
 
-$(OBJDIR)shallow.o: shallow.cpp $(HDRS)
+$(OBJS): |$(OBJDIR)
+
+$(OBJDIR):
 	mkdir -p $(OBJDIR)
-	$(CCC) $(CCFLAGS) shallow.cpp -c -o $(OBJDIR)shallow.o
 
-$(OBJDIR)Thinking.o: Thinking.cpp $(HDRS)
-	$(CCC) $(CCFLAGS) Thinking.cpp -c -o $(OBJDIR)Thinking.o
+$(TARGET): |$(OUTDIR)
 
-$(OBJDIR)xboard.o: xboard.cpp $(HDRS)
-	$(CCC) $(CCFLAGS) xboard.cpp -c -o $(OBJDIR)xboard.o
+$(OUTDIR):
+	mkdir -p $(OUTDIR)
 
-$(OBJDIR)xparser.o: xparser.cpp $(HDRS)
-	$(CCC) $(CCFLAGS) xparser.cpp -c -o $(OBJDIR)xparser.o
-	
+$(OBJDIR)%.o: %.cpp $(HDR)
+	$(COMPILE) $< -o $@
+
+.PHONY : clean	
 clean:
-	rm $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET)

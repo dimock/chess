@@ -11,7 +11,7 @@
 
 #include <windows.h>
 
-#if (defined _DEBUG)
+#if ((defined _DEBUG) && (defined _MSC_VER))
 #include "minidump.h"
 #endif
 
@@ -19,7 +19,7 @@ using namespace std;
 
 void main_loop(xBoardMgr & xbrd)
 {
-#if ( (defined WRITE_ERROR_PGN) && (defined _DEBUG) )
+#if ( (defined WRITE_ERROR_PGN) && (defined _DEBUG) && (defined _MSC_VER) )
   __try
   {
 #endif
@@ -29,7 +29,7 @@ void main_loop(xBoardMgr & xbrd)
     for ( ; xbrd.do_cmd(); );
 
 
-#if ( (defined WRITE_ERROR_PGN) && (defined _DEBUG) )
+#if ( (defined WRITE_ERROR_PGN) && (defined _DEBUG) && (defined _MSC_VER) )
   }
   __except ( TopLevelFilter(GetExceptionInformation()) )
   {

@@ -3,6 +3,8 @@
   minidump.cpp - Copyright (C) 2011 - 2012 by Dmitry Sultanov
  *************************************************************/
 
+#ifdef _MSC_VER
+
 #include <windows.h>
 #include <Dbghelp.h>
 #include <time.h>
@@ -99,3 +101,5 @@ LONG TopLevelFilter( _EXCEPTION_POINTERS *pExceptionInfo )
 
   return retval;
 }
+
+#endif // microsoft compiler only
