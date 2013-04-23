@@ -1,18 +1,19 @@
-OBJDIR = ./objs/
-LIBDIR = ./lib/
+OBJDIR = ./gcc-x64/objs/
+LIBDIR = ./gcc-x64/lib/
 OBJS = $(OBJDIR)Board.o $(OBJDIR)CapsGenerator.o $(OBJDIR)CheckDetector.o $(OBJDIR)ChecksGenerator.o $(OBJDIR)EscapeGenerator.o $(OBJDIR)Evaluator.o $(OBJDIR)FastGenerator.o $(OBJDIR)Figure.o $(OBJDIR)FigureDirs.o $(OBJDIR)fpos.o $(OBJDIR)Helpers.o $(OBJDIR)MoveMaker.o $(OBJDIR)MovesGenerator.o $(OBJDIR)MovesTable.o $(OBJDIR)Player.o $(OBJDIR)PlayerSearch.o $(OBJDIR)PlayerVerify.o $(OBJDIR)see.o $(OBJDIR)UsualGenerator.o
 HDRS = BasicTypes.h Board.h Evaluator.h Field.h Figure.h FigureDirs.h fpos.h HashTable.h Helpers.h Move.h MovesGenerator.h MovesTable.h Player.h
 TARGET = $(LIBDIR)libengine.a
 
 CCC = x86_64-w64-mingw32-g++.exe
 
-CCFLAGS = -O2
-CCLFLAGS = -static -s -O2
+CCFLAGS = -O3 -D NDEBUG
 
 engine: $(OBJS)
+	mkdir -p $(LIBDIR)
 	ar.exe rcs $(TARGET) $(OBJS)
 
 $(OBJDIR)Board.o: Board.cpp $(HDRS)
+	mkdir -p $(OBJDIR)
 	$(CCC) $(CCFLAGS) Board.cpp -c -o $(OBJDIR)Board.o
 
 $(OBJDIR)CapsGenerator.o: CapsGenerator.cpp $(HDRS)

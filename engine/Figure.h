@@ -34,7 +34,7 @@ namespace Figure
 }
 
 
-__declspec (align(1)) class FiguresCounter
+ALIGN_MSC(1) class ALIGN_GCC(1) FiguresCounter
 {
 public:
 

@@ -7,7 +7,7 @@
 #include "BasicTypes.h"
 #include "Board.h"
 
-__declspec (align(16)) struct HItem
+ALIGN_MSC(16) struct ALIGN_GCC(16) HItem
 {
   HItem() : hkey_(0), score_(0), mask_(0), movesCount_(0)
   {}
@@ -41,8 +41,7 @@ __declspec (align(16)) struct HItem
   PackedMove move_;
 };
 
-__declspec (align(16)) 
-struct HBucket
+ALIGN_MSC(16) struct ALIGN_GCC(16) HBucket
 {
   static const int BucketSize = 4;
 
@@ -219,7 +218,7 @@ public:
   }
 };
 
-__declspec (align(8)) struct HEval
+ALIGN_MSC(8) struct ALIGN_GCC(8) HEval
 {
   HEval() : hkey_(0), mask_(0) {}
 

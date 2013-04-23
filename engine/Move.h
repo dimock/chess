@@ -9,8 +9,7 @@
 
 #pragma pack (push, 1)
 
-__declspec (align(1))
-struct PackedMove
+ALIGN_MSC(1) struct ALIGN_GCC(1) PackedMove
 {
   PackedMove() : mask_(0)
   {}
@@ -50,8 +49,7 @@ struct PackedMove
 /*! basic move structure.
     contains minimal necessary information it could be stored in hash etc.
  */
-__declspec (align(1))
-struct Move
+ALIGN_MSC(1) struct ALIGN_GCC(1) Move
 {
 #ifndef NDEBUG
   // make all values invalid
@@ -144,8 +142,7 @@ struct Move
 };
 
 /// complete move structure with all information, required for undo
-__declspec (align(1))
-struct UndoInfo : public Move
+ALIGN_MSC(1) struct ALIGN_GCC(1) UndoInfo : public Move
 {
   UndoInfo() {}
 

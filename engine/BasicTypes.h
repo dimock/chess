@@ -38,6 +38,14 @@ typedef uint64 BitMask;
 
 const ScoreType ScoreMax = std::numeric_limits<ScoreType>::max();
 
+#ifdef _MSC_VER
+  #define ALIGN_MSC(bytes) __declspec (align(bytes))
+  #define ALIGN_GCC(bytes) 
+#elif (defined __GNUC__)
+  #define ALIGN_GCC(bytes)__attribute__((aligned(bytes)))
+  #define ALIGN_MSC(bytes) 
+#endif
+
 namespace nst
 {
   enum dirs
@@ -147,7 +155,7 @@ public:
 #pragma pack (push, 1)
 
 
-__declspec (align(1)) class Index
+ALIGN_MSC(1) class ALIGN_GCC(1) Index
 {
 public:
 
