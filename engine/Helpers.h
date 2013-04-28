@@ -34,6 +34,7 @@ inline int set_bit(int bit)
   return 1 << bit;
 }
 
+#ifdef _MSC_VER
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
 
@@ -52,6 +53,21 @@ inline int _msb32(unsigned long n)
   THROW_IF( !b, "no bit found in nonzero number" );
   return i;
 }
+#elif (defined __GNUC__)
+inline int _lsb32(unsigned long n)
+{
+  unsigned long i = __bsfd(n);
+  THROW_IF( !n, "number should be non-zero in _lsb32" );
+  return i;
+}
+
+inline int _msb32(unsigned long n)
+{
+  unsigned long i = __bsrd(n);
+  THROW_IF( !n, "number should be non-zero in _msb32" );
+  return i;
+}
+#endif
 
 #ifdef _M_X64
 
@@ -81,12 +97,14 @@ inline int _msb64(const uint64 & mask)
 inline int log2(uint64 n)
 {
   unsigned long i = 0;
-  _BitScanReverse64(&i, n);
-  return i;
+  if ( _BitScanReverse64(&i, n) )
+    return i;
+  return 0;
 }
 
 #else
 
+#ifdef _MSC_VER
 inline int _lsb64(const uint64 & mask)
 {
   unsigned long n;
@@ -121,9 +139,44 @@ inline int log2(uint64 n)
   if ( _BitScanReverse(&i, pn[1]) )
     return i+32;
 
-  _BitScanReverse(&i, pn[0]);
-  return i;
+  if ( _BitScanReverse(&i, pn[0]) )
+    return i;
+
+  return 0;
 }
+#elif (defined __GNUC__)
+inline int _lsb64(const uint64 & mask)
+{
+  const unsigned * pmask = reinterpret_cast<const unsigned int *>(&mask);
+  if ( pmask[0] )
+    return __bsfd(pmask[0]);
+
+  THROW_IF( !pmask[1], "number should be non-zero in _lsb64" );
+  return __bsfd(pmask[1])+32;
+}
+
+inline int _msb64(const uint64 & mask)
+{
+  const unsigned * pmask = reinterpret_cast<const unsigned int * >(&mask);
+  if ( pmask[1] )
+    return __bsrd(pmask[1])+32;
+
+  THROW_IF( !pmask[0], "number should be non-zero in _msb64" );
+  return __bsrd(pmask[0]);
+}
+
+inline int log2(uint64 n)
+{
+  const unsigned * pn = reinterpret_cast<const unsigned int *>(&n);
+  if ( pn[1] )
+    return __bsrd(pn[1]) +32;
+
+  if ( pn[0] )
+    return __bsrd(pn[0]);
+
+  return 0;
+}
+#endif
 
 #endif
 

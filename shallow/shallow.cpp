@@ -45,13 +45,13 @@ int main(int argc, char * argv[])
   Board::ticks_ = 0;
   xBoardMgr xbrd;
 
-  BitMask mask = (1ULL<<27) + (1ULL<<25);
-  int x = _lsb64(mask);
-  int y = _msb64(mask);
-  int n = log2(0);
-  int m = log2(mask);
+  //BitMask mask = (1ULL<<37) + (1ULL<<55);
+  //int x = _lsb64(mask);
+  //int y = _msb64(mask);
+  //int n = log2(0);
+  //int m = log2(mask);
 
-  std::cout << "x = " << x << ", y = " << y << ", n = " << n << ", m = " << m << std::endl;
+  //std::cout << "x = " << x << ", y = " << y << ", n = " << n << ", m = " << m << std::endl;
 
   main_loop(xbrd);
 

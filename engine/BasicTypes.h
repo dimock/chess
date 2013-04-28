@@ -12,12 +12,13 @@
 #include <limits>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef _M_X64
   #ifdef _MSC_VER
     #include <intrin.h>
   #elif (defined __GNUC__)
-    #include <smmintrin.h>
+    #include <x86intrin.h>
   #endif
 #else
   #include <intrin.h>
