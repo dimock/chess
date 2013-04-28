@@ -524,7 +524,7 @@ public:
   /// find king's position
   inline int kingPos(Figure::Color c) const
   {
-    return find_lsb(fmgr_.king_mask(c));
+    return _lsb64(fmgr_.king_mask(c));
   }
 
   /// methods
@@ -642,7 +642,7 @@ private:
     if ( !mask_from )
       return -1;
 
-    int index = from < to ?  find_lsb(mask_from) : find_msb(mask_from);
+    int index = from < to ?  _lsb64(mask_from) : _msb64(mask_from);
     return index;
   }
 
@@ -671,7 +671,7 @@ private:
     if ( (mask_all_ex & brq_mask) == 0 )
       return false;
 
-    int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    int apos = ki_pos < pt ? _lsb64(mask_all_ex) : _msb64(mask_all_ex);
     if ( (set_mask_bit(apos) & brq_mask) == 0 ) // no BRQ on this field
       return false;
 
@@ -691,7 +691,7 @@ private:
     if ( (mask_all_ex & brq_mask) == 0 )
       return -1;
 
-    int apos = ki_pos < from ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+    int apos = ki_pos < from ? _lsb64(mask_all_ex) : _msb64(mask_all_ex);
     if ( (set_mask_bit(apos) & brq_mask) == 0 ) // no BRQ on this field
       return -1;
 

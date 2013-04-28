@@ -12,11 +12,17 @@
 #include <limits>
 #include <stdio.h>
 #include <string.h>
-#include <intrin.h>
 
-#ifdef _M_X64
-  #pragma intrinsic(__rdtsc)
+#ifndef _M_X64
+  #ifdef _MSC_VER
+    #include <intrin.h>
+  #elif (defined __GNUC__)
+    #include <smmintrin.h>
+  #endif
+#else
+  #include <intrin.h>
 #endif
+
 
 #ifndef NDEBUG
   #define THROW_IF(v, msg) if ( v ) throw std::runtime_error(msg); else;
@@ -93,46 +99,8 @@ static const int NullMove_DepthMin = 2;
 static const int NullMove_PlyReduce = 4;
 static const int NullMove_DepthStart = 4;
 
+#pragma intrinsic(__rdtsc)
 
-#ifndef _M_X64
-class QpfTimer
-{
-  int64 t0_;
-
-public:
-
-  QpfTimer()
-  {
-    __asm
-    {
-      mov ecx, this
-      lea ecx, [ecx]this.t0_
-      rdtsc
-      mov dword ptr [ecx], eax
-      mov dword ptr [ecx+4], edx
-    }
-  }
-
-  inline int64 ticks()
-  {
-    int64 t;
-    __asm
-    {
-      lea esi, [t]
-      mov edi, this
-      lea edi, [edi]this.t0_
-      rdtsc
-      sub eax, dword ptr [edi]
-      sbb edx, dword ptr [edi+4]
-      sub eax, 105                ; rdtsc takes 105 ticks
-      sbb edx, 0
-      mov dword ptr [esi], eax
-      mov dword ptr [esi+4], edx
-    }
-    return t;
-  }
-};
-#else
 class QpfTimer
 {
 	int64 t0_;
@@ -151,9 +119,9 @@ public:
 		return t;
 	}
 };
-#endif
-#pragma pack (push, 1)
 
+
+#pragma pack (push, 1)
 
 ALIGN_MSC(1) class ALIGN_GCC(1) Index
 {

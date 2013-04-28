@@ -200,7 +200,7 @@ int CapsGenerator::generate()
       BitMask f_caps = board_.g_movesTable->caps((Figure::Type)type, from) & oppenent_mask;
       for ( ; f_caps; )
       {
-        int8 to = find_lsb(f_caps);
+        int8 to = _lsb64(f_caps);
         int pos = board_.find_first_index(from, to, mask_all);
         if ( set_mask_bit(pos) & oppenent_mask )
           add(m, from, pos, Figure::TypeNone, true);

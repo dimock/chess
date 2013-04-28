@@ -299,7 +299,7 @@ bool Evaluator::discoveredCheck(int pt, Figure::Color acolor, const BitMask & br
   if ( (mask_all_ex & brq_mask) == 0 )
     return false;
 
-  int apos = ki_pos < pt ? find_lsb(mask_all_ex) : find_msb(mask_all_ex);
+  int apos = ki_pos < pt ? _lsb64(mask_all_ex) : _msb64(mask_all_ex);
   if ( (set_mask_bit(apos) & brq_mask) == 0 ) // no BRQ on this field
     return false;
 
@@ -1199,7 +1199,7 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
     BitMask r_mask = fmgr.rook_mask(color) & fake_castle_rook[color][ctype];
     if ( r_mask )
     {
-      Index r_pos( find_lsb(r_mask) );
+      Index r_pos( _lsb64(r_mask) );
       if ( ctype == 0 && r_pos.x() > ki_pos.x() || ctype == 1 && r_pos.x() < ki_pos.x() )
         score = -fakecastlePenalty_;
     }
@@ -1299,7 +1299,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
         // iterate from upper pawn to lower
         for ( ; column && dblNum > 1; --dblNum )
         {
-          int py = color ? find_msb_32(column) : find_lsb_32(column);
+          int py = color ? _msb32(column) : _lsb32(column);
           int p = x | (py << 3);
 
           THROW_IF( board_->getField(p).color() != color || board_->getField(p).type() != Figure::TypePawn, "no pawn found on double line" );
@@ -1554,13 +1554,13 @@ ScoreType Evaluator::evaluatePasserAdditional(GamePhase phase, Figure::Color col
       BitMask o_behind_msk = board_->g_betweenMasks->from_dir(n, dir_behind[color]) & fmgr.rook_mask(ocolor) ;
       if ( behind_msk )
       {
-        int rpos = color ? find_msb(behind_msk) : find_lsb(behind_msk);
+        int rpos = color ? _msb64(behind_msk) : _lsb64(behind_msk);
         if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
           score += rookBehindBonus_;
       }
       else if ( o_behind_msk ) // may be opponent's rook - give penalty
       {
-        int rpos = color ? find_msb(o_behind_msk) : find_lsb(o_behind_msk);
+        int rpos = color ? _msb64(o_behind_msk) : _lsb64(o_behind_msk);
         if ( board_->is_nothing_between(n, rpos, inv_mask_all_) )
           score -= rookBehindBonus_;
       }
@@ -1753,7 +1753,7 @@ ScoreType Evaluator::evaluateSpecial(SpecialCases sc) const
     break;
   }
 
-  int pos = find_lsb(fmsk);
+  int pos = _lsb64(fmsk);
 
   // loser king's position should be near to center
   // winner king should be near to loser king

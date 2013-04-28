@@ -15,8 +15,8 @@ inline int pop_count(uint64 n)
 {
   if ( n == 0ULL )
     return 0;
-  //else if ( (n & (n-1)) == 0ULL )
-  //  return 1;
+  else if ( (n & (n-1)) == 0ULL )
+    return 1;
   n =  n - ((n >> 1)  & 0x5555555555555555ULL);
   n = (n & 0x3333333333333333ULL) + ((n >> 2) & 0x3333333333333333ULL);
   n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
@@ -37,269 +37,108 @@ inline int set_bit(int bit)
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
 
-inline int find_lsb_32(unsigned long n)
+inline int _lsb32(unsigned long n)
 {
   unsigned long i;
-#ifndef NDEBUG
-  uint8 b =
-#endif
-    _BitScanForward(&i, n);
+  uint8 b = _BitScanForward(&i, n);
   THROW_IF( !b, "no bit found in nonzero number" );
   return i;
 }
 
-inline int find_msb_32(unsigned long n)
+inline int _msb32(unsigned long n)
 {
   unsigned long i;
-#ifndef NDEBUG
-  uint8 b =
-#endif
-    _BitScanReverse(&i, n);
+  uint8 b = _BitScanReverse(&i, n);
   THROW_IF( !b, "no bit found in nonzero number" );
   return i;
 }
 
-/*
-GCC asm version
-inline int find_lsb(const BitMask & mask)
-{
-  int n;
-  const BitMask * pmask = &mask;
-  asm
-    (
-    "movl %1, %%edi;"
-    "movl (%%edi), %%eax;"
-    "bsf %%eax, %%ecx;"
-    "jnz end;"
-    "movl 4(%%edi), %%eax;"
-    "bsf %%eax, %%ecx;"
-    "add $32, %%ecx;"
-"end:"\
-    "mov %%ecx, %0"
-    :"=r"(n)
-    :"r"(pmask)
-    :"%eax", "%edi", "%ecx"
-    );
-  return n;
-}
-*/
+#ifdef _M_X64
 
-#ifndef _M_X64
-
-// ALL OF THESE FUNCTIONS BELIEVE THAT mask ISN'T ZERO
-// return least significant bit index, clear it
-inline int clear_lsb(BitMask & mask)
-{
-  int n;
-  __asm
-  {
-    ; scan lower dword
-
-    mov edi, mask
-    mov eax, dword ptr [edi]
-    bsf ecx, eax
-    jz  nxt
-    mov ebx, eax
-    dec ebx
-    and eax, ebx
-    mov dword ptr [edi], eax
-    jmp end
-
-
-    ; scan upper dword
-
-nxt:mov eax, dword ptr [edi+4]
-    bsf ecx, eax
-    mov ebx, eax
-    dec ebx
-    and eax, ebx
-    mov dword ptr [edi+4], eax
-    add ecx, 32
-
-end:mov dword ptr [n], ecx
-  }
-  return n;
-}
-
-// return most significant bit index, clear it
-inline int clear_msb(BitMask & mask)
-{
-  int n;
-  __asm
-  {
-    ; scan upper dword
-
-    mov edi, mask
-    mov eax, dword ptr [edi+4]
-    bsr ecx, eax
-    jz  nxt
-    mov ebx, 1
-    shl ebx, cl
-    xor eax, ebx
-    mov dword ptr [edi+4], eax
-    add ecx, 32
-    jmp end
-
-    ; scan lower dword
-
-nxt:mov eax, DWORD ptr [edi]
-    bsr ecx, eax
-    mov ebx, 1
-    shl ebx, cl
-    xor eax, ebx
-    mov dword ptr [edi], eax
-
-end:mov dword ptr [n], ecx
-  }
-  return n;
-}
-
-// return least significant bit, don't change mask
-inline int find_lsb(const BitMask & mask)
-{
-  int n;
-  __asm
-  {
-    ; scan lower dword
-
-    mov edi, mask
-    mov eax, dword ptr [edi]
-    bsf ecx, eax
-    jnz end
-
-
-    ; scan upper dword
-
-    mov eax, dword ptr [edi+4]
-    bsf ecx, eax
-    add ecx, 32
-
-end:mov dword ptr [n], ecx
-  }
-  return n;
-}
-
-// return most significant bit, don't change mask
-inline int find_msb(const BitMask & mask)
-{
-  int n;
-  __asm
-  {
-    ; scan upper dword
-
-    mov edi, mask
-    mov eax, dword ptr [edi+4]
-    bsr ecx, eax
-    jz  nxt
-    add ecx, 32
-    jmp end
-
-    ; scan lower dword
-
-nxt:mov eax, DWORD ptr [edi]
-    bsr ecx, eax
-
-end:mov dword ptr [n], ecx
-  }
-  return n;
-}
-
-// return logarithm with base 2 of given int
-inline int log2(int n)
-{
-  int m;
-  __asm
-  {
-    mov eax, dword ptr [n]
-    bsr ecx, eax
-    jnz end
-    xor ecx, ecx
-
-end:
-    mov dword ptr [m], ecx
-  }
-  return m;
-}
-
-// multiplies v*n and divides by d v*n/(d+n)
-inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
-{
-  unsigned int r = 0;
-  __asm
-  {
-    mov eax, dword ptr [d]
-    add eax, dword ptr [n]
-    bsr ecx, eax
-    jnz md_begin
-    xor ecx, ecx
-
-md_begin:
-
-    mov eax, dword ptr [v]
-    mul dword ptr [n]
-    shrd eax, edx, cl
-    mov dword ptr [r], eax
-  }
-  return r;
-}
-
-#else
+#ifdef __GNUC__
+#pragma (message "compiling with x64")
+#endif
 
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
 
+inline int _lsb64(const uint64 & mask)
+{
+  unsigned long n;
+  uint8 b = _BitScanForward64(&n, mask);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  return n;
+}
+
+inline int _msb64(const uint64 & mask)
+{
+  unsigned long n;
+  uint8 b = _BitScanReverse64(&n, mask);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  return n;
+}
+
+inline int log2(uint64 n)
+{
+  unsigned long i = 0;
+  _BitScanReverse64(&i, n);
+  return i;
+}
+
+#else
+
+inline int _lsb64(const uint64 & mask)
+{
+  unsigned long n;
+  const unsigned * pmask = reinterpret_cast<const unsigned int *>(&mask);
+
+  if ( _BitScanForward(&n, pmask[0]) )
+    return n;
+
+  uint8 b = _BitScanForward(&n, pmask[1]);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  return n+32;
+}
+
+inline int _msb64(const uint64 & mask)
+{
+  unsigned long n;
+  const unsigned * pmask = reinterpret_cast<const unsigned int * >(&mask);
+
+  if ( _BitScanReverse(&n, pmask[1]) )
+    return n+32;
+
+  uint8 b = _BitScanReverse(&n, pmask[0]);
+  THROW_IF( !b, "no bit found in nonzero number" );
+  return n;
+}
+
+inline int log2(uint64 n)
+{
+  unsigned long i = 0;
+  const unsigned * pn = reinterpret_cast<const unsigned int *>(&n);
+
+  if ( _BitScanReverse(&i, pn[1]) )
+    return i+32;
+
+  _BitScanReverse(&i, pn[0]);
+  return i;
+}
+
+#endif
+
 inline int clear_lsb(uint64 & mask)
 {
-	unsigned long n;
-#ifndef NDEBUG
-	uint8 b = 
-#endif
-  _BitScanForward64(&n, mask);
-	THROW_IF( !b, "no bit found in nonzero number" );
+	unsigned long n = _lsb64(mask);
 	mask &= mask-1;
 	return n;
 }
 
 inline int clear_msb(uint64 & mask)
 {
-  unsigned long n;
-#ifndef NDEBUG
-  uint8 b = 
-#endif
-    _BitScanReverse64(&n, mask);
-  THROW_IF( !b, "no bit found in nonzero number" );
+  unsigned long n = _msb64(mask);
   mask ^= set_mask_bit(n);
   return n;
-}
-
-inline int find_lsb(const BitMask & mask)
-{
-  unsigned long n;
-#ifndef NDEBUG
-  uint8 b = 
-#endif
-    _BitScanForward64(&n, mask);
-  THROW_IF( !b, "no bit found in nonzero number" );
-  return n;
-}
-
-inline int find_msb(const BitMask & mask)
-{
-  unsigned long n;
-#ifndef NDEBUG
-  uint8 b = 
-#endif
-    _BitScanReverse64(&n, mask);
-  THROW_IF( !b, "no bit found in nonzero number" );
-  return n;
-}
-
-inline int log2(const uint64 & n)
-{
-	unsigned long m;
-	if ( !_BitScanReverse64(&m, n) )
-		return 0;
-	return m;
 }
 
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
@@ -309,7 +148,6 @@ inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
   unsigned x = *((unsigned*)&r);
   return x;
 }
-#endif
 
 class PawnMasks
 {
