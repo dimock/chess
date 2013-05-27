@@ -18,7 +18,7 @@ public:
 
 	xCmd parse(char * str, bool uci);
 
-  static xCmd parseMove(char * str);
+  static xCmd parseMove(const char * str);
 
 private:
 

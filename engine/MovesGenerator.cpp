@@ -61,14 +61,14 @@ bool MovesGeneratorBase::has_duplicates() const
 }
 
 //////////////////////////////////////////////////////////////////////////
-MovesGenerator::MovesGenerator(Board & board, const Move & killer) :
+MovesGenerator::MovesGenerator(const Board & board, const Move & killer) :
   MovesGeneratorBase(board), killer_(killer)
 {
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
 }
 
-MovesGenerator::MovesGenerator(Board & board) :
+MovesGenerator::MovesGenerator(const Board & board) :
   MovesGeneratorBase(board)
 {
   killer_.clear();

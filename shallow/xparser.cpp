@@ -120,12 +120,16 @@ xCmd xParser::parse(char * str, bool uci)
   return xCmd();
 }
 
-xCmd xParser::parseMove(char * str)
+xCmd xParser::parseMove(const char * str)
 {
-	if ( !str || strlen(str) < 4 )
+	if ( !str )
 		return xCmd();
 
 	if ( strlen(str) >= 4 && isalpha(str[0]) && isdigit(str[1]) && isalpha(str[2]) && isdigit(str[3]) )
+		return xCmd(xCmd::xMove, str);
+
+	// special case for castling! is it really correct?
+	else if ( strstr(str, "O-O") )
 		return xCmd(xCmd::xMove, str);
 
 	return xCmd();

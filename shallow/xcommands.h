@@ -57,15 +57,15 @@ public:
 	};
 
 	xCmd(int type = xNone) :
-		type_(type), str_(0)
+		type_(type)
 	{}
 
-	xCmd(int type, char * str) :
+	xCmd(int type, const char * str) :
 		type_(type), str_(str)
 	{}
 	
 	xCmd(int type, const std::vector<std::string> & params) :
-		type_(type), params_(params), str_(0)
+		type_(type), params_(params)
 	{}
 
 	int type() const { return type_; }
@@ -111,9 +111,9 @@ public:
     return -1;
   }
 
-	char * str()
+	const char * str() const
 	{
-		return str_;
+		return str_.c_str();
 	}
 
   std::string packParams(size_t from = 0) const
@@ -130,6 +130,6 @@ public:
 private:
 
 	int type_;
-	char * str_;
+	std::string str_;
 	std::vector<std::string> params_;
 };

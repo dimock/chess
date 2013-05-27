@@ -290,7 +290,7 @@ bool iscolumn(char c)
   return c >= 'a' && c <= 'h';
 }
 
-bool parseSAN(Board & board, const char * str, Move & move)
+bool parseSAN(const Board & board, const char * str, Move & move)
 {
   if ( !str )
     return false;
@@ -619,8 +619,14 @@ bool moveToStr(const Move & move, char * str, bool full)
 
 bool strToMove(const char * i_str, const Board & board, Move & move)
 {
-  size_t sz = 0;
-	if ( !i_str || (sz = strlen(i_str)) < 4 )
+	if ( !i_str )
+		return false;
+
+	/// castling
+	if ( strstr(i_str, "O-O") )
+		return parseSAN(board, i_str, move);
+
+	if ( strlen(i_str) < 4 )
 		return false;
 
   char str[256];

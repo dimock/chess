@@ -97,7 +97,7 @@ public:
     return history_[from][to];
   }
 
-  MovesGeneratorBase(Board & board) : board_(board),
+  MovesGeneratorBase(const Board & board) : board_(board),
     numOfMoves_(0)
   {}
 
@@ -172,7 +172,7 @@ protected:
     // at first we try to eat recently moved opponent's figure
     if ( move.capture_ && board_.halfmovesCount() > 1 )
     {
-      UndoInfo & prev = board_.undoInfoRev(-1);
+      const UndoInfo & prev = board_.undoInfoRev(-1);
       if ( prev.to_ == move.to_ )
         vsort += (int)(Figure::figureWeight_[vtype] >> 1);
     }
@@ -183,7 +183,7 @@ protected:
   }
 
   int numOfMoves_;
-  Board & board_;
+  const Board & board_;
   Move moves_[Board::MovesMax];
 };
 
@@ -192,8 +192,8 @@ class MovesGenerator : public MovesGeneratorBase
 {
 public:
 
-  MovesGenerator(Board & board, const Move & killer);
-  MovesGenerator(Board & );
+  MovesGenerator(const Board & board, const Move & killer);
+  MovesGenerator(const Board & );
 
   Move & move()
   {

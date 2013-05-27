@@ -14,8 +14,8 @@ CapsGenerator::CapsGenerator(const Move & hcap, Board & board) :
   numOfMoves_ = generate();
   moves_[numOfMoves_].clear();
 
-  const Figure::Color & color = board_.color_;
-  Figure::Color ocolor = Figure::otherColor(color);
+  const Figure::Color color = board_.color_;
+  const Figure::Color ocolor = Figure::otherColor(color);
   mask_all_ = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
   mask_brq_ = board_.fmgr().bishop_mask(color) | board_.fmgr().rook_mask(color) | board_.fmgr().queen_mask(color);
   oking_pos_ = board_.kingPos(ocolor);
@@ -28,7 +28,7 @@ CapsGenerator::CapsGenerator(Board & board) :
   hcap_.clear();
 
   const Figure::Color & color = board_.color_;
-  Figure::Color ocolor = Figure::otherColor(color);
+  const Figure::Color ocolor = Figure::otherColor(color);
   mask_all_ = board_.fmgr().mask(Figure::ColorWhite) | board_.fmgr().mask(Figure::ColorBlack);
   mask_brq_ = board_.fmgr().bishop_mask(color) | board_.fmgr().rook_mask(color) | board_.fmgr().queen_mask(color);
   oking_pos_ = board_.kingPos(ocolor);
@@ -61,8 +61,8 @@ int CapsGenerator::generate()
 {
   int m = 0;
 
-  Figure::Color& color = board_.color_;
-  Figure::Color ocolor = Figure::otherColor(color);
+  const Figure::Color color = board_.color_;
+  const Figure::Color ocolor = Figure::otherColor(color);
 
   BitMask oppenent_mask = board_.fmgr_.mask(ocolor) ^ board_.fmgr_.king_mask(ocolor);
   const BitMask & black = board_.fmgr_.mask(Figure::ColorBlack);
@@ -237,8 +237,8 @@ bool CapsGenerator::expressCheck(Move & move) const
   const Field & ffield = board_.getField(move.from_);
   const Field & tfield = board_.getField(move.to_);
 
-  const Figure::Color & color = board_.color_;
-  Figure::Color ocolor = Figure::otherColor(color);
+  const Figure::Color color = board_.color_;
+  const Figure::Color ocolor = Figure::otherColor(color);
 
   const BitMask mask_all = mask_all_ | set_mask_bit(move.to_);
   if ( board_.discoveredCheck(move.from_, color, mask_all, mask_brq_, oking_pos_) )

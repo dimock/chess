@@ -56,7 +56,7 @@ int EscapeGenerator::generate()
 int EscapeGenerator::generateUsual()
 {
   int m = numOfMoves_;
-  Figure::Color & color = board_.color_;
+  const Figure::Color color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
 
   THROW_IF( (unsigned)board_.checking_[0] > 63, "there is no checking figure" );
@@ -308,7 +308,7 @@ int EscapeGenerator::generateUsual()
 
 int EscapeGenerator::generateKingonly(int m)
 {
-  Figure::Color & color = board_.color_;
+  const Figure::Color color = board_.color_;
   Figure::Color ocolor = Figure::otherColor(color);
 
   int from = board_.kingPos(color);
