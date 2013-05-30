@@ -403,18 +403,35 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         betta < Figure::MatScore+MaxPly &&
         betta > -Figure::MatScore-MaxPly )
   {
-    int null_depth = scontexts_[ictx].board_.nullMoveDepth(depth, betta);
+		// if we have much more material than opponent we could skip null-move
+		ScoreType nullScore = scontexts_[ictx].eval_.express();
+		
+		int null_depth = scontexts_[ictx].board_.nullMoveDepth(depth, betta);
 
-    scontexts_[ictx].board_.makeNullMove();
+		// do null-move
+		if ( scontexts_[ictx].board_.fmgr().queens(scontexts_[ictx].board_.getColor()) == 0 ||
+			   scontexts_[ictx].board_.fmgr().rooks(scontexts_[ictx].board_.getColor()) == 0 ||
+				 nullScore < betta+Evaluator::nullMoveMargin_ )
+		{
+			scontexts_[ictx].board_.makeNullMove();
 
-    ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, true /* we are in null-move*/);
+			nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, true /* we are in null-move*/);
 
-    scontexts_[ictx].board_.unmakeNullMove();
+			scontexts_[ictx].board_.unmakeNullMove();
+		}
 
     // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
-      depth = null_depth;
+			if ( scontexts_[ictx].board_.fmgr().queens(scontexts_[ictx].board_.getColor()) > 0 &&
+					 scontexts_[ictx].board_.fmgr().rooks(scontexts_[ictx].board_.getColor()) > 0 &&
+					 nullScore > betta+Evaluator::nullMoveVerifyMargin_ )
+			{
+				depth = scontexts_[ictx].board_.nullMoveDepthVerify(depth);
+			}
+			else
+				depth = null_depth;
+
       nm = true; // don't use null-move in this string
 
       if ( depth <= 0 )

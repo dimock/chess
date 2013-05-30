@@ -98,6 +98,7 @@ static const int LMR_DepthLimit = 3;
 static const int LMR_MinDepthLimit = 5;
 static const int NullMove_DepthMin = 2;
 static const int NullMove_PlyReduce = 4;
+static const int NullMove_PlyVerify = 5;
 static const int NullMove_DepthStart = 4;
 
 #pragma intrinsic(__rdtsc)

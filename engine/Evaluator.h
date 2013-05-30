@@ -12,6 +12,10 @@ class Evaluator
 
 public:
 
+	// used to decide calculate null-move or not
+	static const ScoreType nullMoveMargin_;
+	static const ScoreType nullMoveVerifyMargin_;
+
   static int score_ex_max_;
 
   // position evaluation. 0 - opening, 1 - endgame; color,type,pos
@@ -81,6 +85,9 @@ public:
   void initialize(const Board * board, EHashTable * ehash);
 
   ScoreType operator () (ScoreType alpha, ScoreType betta);
+
+	/// evaluate material balance only
+	ScoreType express() const;
 
 private:
 

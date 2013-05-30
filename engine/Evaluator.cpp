@@ -17,6 +17,9 @@ enum {
   A8, B8, C8, D8, E8, F8, G8, H8,
 };
 
+const ScoreType Evaluator::nullMoveMargin_ = 1000;
+const ScoreType Evaluator::nullMoveVerifyMargin_ = 800;
+
 int Evaluator::score_ex_max_ = 0;
 
 const ScoreType Evaluator::positionGain_ = 100;
@@ -356,6 +359,17 @@ ScoreType Evaluator::operator () (ScoreType alpha, ScoreType betta)
   return score;
 }
 //////////////////////////////////////////////////////////////////////////
+ScoreType Evaluator::express() const
+{
+	ScoreType score = board_->fmgr().weight();
+
+	// consider current move side
+	if ( Figure::ColorBlack  == board_->getColor() )
+		score = -score;
+
+	return score;
+}
+
 ScoreType Evaluator::evaluate()
 {
   const FiguresManager & fmgr = board_->fmgr();
