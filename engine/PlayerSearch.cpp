@@ -218,18 +218,28 @@ bool Player::search(SearchResult * sres)
 }
 
 //////////////////////////////////////////////////////////////////////////
-int Player::nextDepth(int ictx, int depth, const Move & move, bool pv) const
+int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
 {
   if ( scontexts_[ictx].board_.underCheck() )
     return depth;
 
   depth--;
 
-  if ( !move.see_good_ || !pv )
+  if ( !pv || (move.seen_ && !move.see_good_) )
     return depth;
+
+	if ( !move.seen_ )
+	{
+		move.see_good_ = scontexts_[ictx].board_.see(move) >= 0;
+		move.seen_ = 1;
+	}
+
+	if ( !move.see_good_ )
+		return depth;
 
   if ( move.new_type_ == Figure::TypeQueen )
     return depth+1;
+
 
   if ( scontexts_[ictx].board_.halfmovesCount() > 1 )
   {
@@ -239,6 +249,25 @@ int Player::nextDepth(int ictx, int depth, const Move & move, bool pv) const
     if ( move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
       return depth+1;
   }
+	//if ( move.capture_ )
+	//	return depth+1;
+
+	if ( depth > 0 )
+		return depth;
+
+	if ( scontexts_[ictx].board_.isKnightForkAfter(move) )
+	{
+		//char fen[256];
+		//scontexts_[ictx].board_.toFEN(fen);
+		return depth+1;
+	}
+
+	if ( scontexts_[ictx].board_.isDoublePawnAttack(move) )
+	{
+		//char fen[256];
+		//scontexts_[ictx].board_.toFEN(fen);
+		return depth+1;
+	}
 
   return depth;
 }
@@ -404,32 +433,32 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         betta > -Figure::MatScore-MaxPly )
   {
 		// if we have much more material than opponent we could skip null-move
-		ScoreType nullScore = scontexts_[ictx].eval_.express();
+		//ScoreType nullScore = scontexts_[ictx].eval_.express();
 		
 		int null_depth = scontexts_[ictx].board_.nullMoveDepth(depth, betta);
 
 		// do null-move
-		if ( scontexts_[ictx].board_.fmgr().queens(scontexts_[ictx].board_.getColor()) == 0 ||
-			   scontexts_[ictx].board_.fmgr().rooks(scontexts_[ictx].board_.getColor()) == 0 ||
-				 nullScore < betta+Evaluator::nullMoveMargin_ )
-		{
+		//if ( scontexts_[ictx].board_.fmgr().queens(scontexts_[ictx].board_.getColor()) == 0 ||
+		//	   scontexts_[ictx].board_.fmgr().rooks(scontexts_[ictx].board_.getColor()) == 0 ||
+		//		 nullScore < betta+Evaluator::nullMoveMargin_ )
+		//{
 			scontexts_[ictx].board_.makeNullMove();
 
-			nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, true /* we are in null-move*/);
+			ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, true /* we are in null-move*/);
 
 			scontexts_[ictx].board_.unmakeNullMove();
-		}
+		//}
 
     // verify null-move with shortened depth
     if ( nullScore >= betta )
     {
-			if ( scontexts_[ictx].board_.fmgr().queens(scontexts_[ictx].board_.getColor()) > 0 &&
-					 scontexts_[ictx].board_.fmgr().rooks(scontexts_[ictx].board_.getColor()) > 0 &&
-					 nullScore > betta+Evaluator::nullMoveVerifyMargin_ )
-			{
-				depth = scontexts_[ictx].board_.nullMoveDepthVerify(depth);
-			}
-			else
+			//if ( scontexts_[ictx].board_.fmgr().queens(scontexts_[ictx].board_.getColor()) > 0 &&
+			//		 scontexts_[ictx].board_.fmgr().rooks(scontexts_[ictx].board_.getColor()) > 0 &&
+			//		 nullScore > betta+Evaluator::nullMoveVerifyMargin_ )
+			//{
+			//	depth = scontexts_[ictx].board_.nullMoveDepthVerify(depth);
+			//}
+			//else
 				depth = null_depth;
 
       nm = true; // don't use null-move in this string

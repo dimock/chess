@@ -145,15 +145,33 @@ public:
   bool canBeReduced() const;
 
   /// don't allow LMR of strong pawn's moves
-  bool isDangerPawn(const Move & move) const;
+  bool isDangerPawn(Move & move) const;
 
   /// don't allow LMR of strong queen's moves - ie queen near opponent's king and king is immobile
   bool isDangerQueen(const Move & move) const;
 
+	/// don't allow LMR of knight's fork
+	bool isKnightFork(const Move & move) const;
+
+	/// verify if it 's fork or double pawn attack after making move
+	bool isKnightForkAfter(const Move & move) const;
+	bool isDoublePawnAttack(const Move & move) const;
+
   /// don't allow LMR of strong moves
-  bool isMoveThreat(const Move & move) const
+  bool isMoveThreat(Move & move) const
   {
-    return isDangerPawn(move) || isDangerQueen(move);
+    if ( isDangerPawn(move) )
+			return true;
+
+		if ( (!move.seen_ || move.see_good_) && (isDangerQueen(move) || isKnightFork(move)) )
+		{
+			bool ok = move.see_good_ || (!move.seen_ && see(move) >= 0);
+			move.seen_ = 1;
+			move.see_good_ = ok;
+			return ok;
+		}
+
+		return false;
   }
 
   // becomes passed

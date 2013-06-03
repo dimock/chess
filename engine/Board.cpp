@@ -66,7 +66,7 @@ bool Board::canBeReduced() const
     !(undo.capture_ || undo.new_type_ > 0 || undo.threat_ || undo.castle_ || underCheck());
 }
 
-bool Board::isDangerPawn(const Move & move) const
+bool Board::isDangerPawn(Move & move) const
 {
   const Field & ffrom = getField(move.from_);
   if ( ffrom.type() != Figure::TypePawn )
@@ -91,12 +91,14 @@ bool Board::isDangerPawn(const Move & move) const
   const uint64 & blckmsk = g_pawnMasks->mask_blocked(color, move.to_);
 
   if ( !(opmsk & passmsk) && !(pmsk & blckmsk) )
-    return true;
+		return true;
 
-  if ( see(move) >= 0 )
-    return true;
+  if ( !move.seen_ && see(move) >= 0 )
+		move.see_good_ = 1;
 
-  return false;
+	move.seen_ = 1;
+
+  return move.see_good_;
 }
 
 bool Board::isDangerQueen(const Move & move) const
@@ -122,13 +124,64 @@ bool Board::isDangerQueen(const Move & move) const
   BitMask attacked_mask = (oki_caps & q_caps) & ~mask_all;
   BitMask ki_moves = oki_caps & ~(mask_all | attacked_mask);
   int movesN = pop_count(ki_moves);
-  if ( !attacked_mask || movesN > 3 )
-    return false;
 
-  if ( see(move) < 0 )
-    return false;
+  return attacked_mask && movesN <= 3;
+}
 
-  return true;
+bool Board::isKnightFork(const Move & move) const
+{
+	const Field & ffrom = getField(move.from_);
+	if ( ffrom.type() != Figure::TypeKnight )
+		return false;
+
+	if ( move.capture_ )
+		return false;
+
+	Figure::Color  color = color_;
+	Figure::Color ocolor = Figure::otherColor(color);
+
+	const BitMask & kn_caps = g_movesTable->caps(Figure::TypeKnight, move.to_);
+	BitMask op_mask = fmgr().rook_mask(ocolor) | fmgr().queen_mask(ocolor);
+	op_mask &= kn_caps;
+
+	return op_mask != 0 && !one_bit_set(op_mask);
+}
+
+bool Board::isKnightForkAfter(const Move & move) const
+{
+	const Field & fto = getField(move.to_);
+	if ( fto.type() != Figure::TypeKnight )
+		return false;
+
+	if ( move.capture_ )
+		return false;
+
+	Figure::Color  color = color_;
+
+	const BitMask & kn_caps = g_movesTable->caps(Figure::TypeKnight, move.to_);
+	BitMask op_mask = fmgr().rook_mask(color) | fmgr().queen_mask(color);
+	op_mask &= kn_caps;
+
+	return op_mask != 0 && !one_bit_set(op_mask);
+}
+
+bool Board::isDoublePawnAttack(const Move & move) const
+{
+	const Field & fto = getField(move.to_);
+	if ( fto.type() != Figure::TypePawn )
+		return false;
+
+	if ( move.capture_ )
+		return false;
+
+	Figure::Color  color = color_;
+	Figure::Color ocolor = Figure::otherColor(color);
+
+	const BitMask & pw_caps = g_movesTable->pawnCaps_o(ocolor, move.to_);
+	BitMask op_mask = fmgr().knight_mask(color) | fmgr().bishop_mask(color) | fmgr().rook_mask(color) | fmgr().queen_mask(color);
+	op_mask &= pw_caps;
+
+	return op_mask != 0 && !one_bit_set(op_mask);
 }
 
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
