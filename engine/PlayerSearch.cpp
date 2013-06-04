@@ -269,7 +269,14 @@ int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
 		return depth+1;
 	}
 
-  return depth;
+	if ( scontexts_[ictx].board_.isBishopAttack(move) )
+	{
+		//char fen[256];
+		//scontexts_[ictx].board_.toFEN(fen);
+		return depth+1;
+	}
+
+	return depth;
 }
 
 //////////////////////////////////////////////////////////////////////////

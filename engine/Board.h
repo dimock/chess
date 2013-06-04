@@ -156,6 +156,7 @@ public:
 	/// verify if it 's fork or double pawn attack after making move
 	bool isKnightForkAfter(const Move & move) const;
 	bool isDoublePawnAttack(const Move & move) const;
+	bool isBishopAttack(const Move & move) const;
 
   /// don't allow LMR of strong moves
   bool isMoveThreat(Move & move) const

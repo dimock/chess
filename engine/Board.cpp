@@ -153,13 +153,8 @@ bool Board::isKnightForkAfter(const Move & move) const
 	if ( fto.type() != Figure::TypeKnight )
 		return false;
 
-	if ( move.capture_ )
-		return false;
-
-	Figure::Color  color = color_;
-
 	const BitMask & kn_caps = g_movesTable->caps(Figure::TypeKnight, move.to_);
-	BitMask op_mask = fmgr().rook_mask(color) | fmgr().queen_mask(color);
+	BitMask op_mask = fmgr().rook_mask(color_) | fmgr().queen_mask(color_);
 	op_mask &= kn_caps;
 
 	return op_mask != 0 && !one_bit_set(op_mask);
@@ -171,17 +166,60 @@ bool Board::isDoublePawnAttack(const Move & move) const
 	if ( fto.type() != Figure::TypePawn )
 		return false;
 
-	if ( move.capture_ )
+	Figure::Color ocolor = Figure::otherColor(color_);
+
+	const BitMask & pw_caps = g_movesTable->pawnCaps_o(ocolor, move.to_);
+	BitMask op_mask = fmgr().knight_mask(color_) | fmgr().bishop_mask(color_) | fmgr().rook_mask(color_) | fmgr().queen_mask(color_);
+	op_mask &= pw_caps;
+
+	return op_mask != 0 && !one_bit_set(op_mask);
+}
+
+bool Board::isBishopAttack(const Move & move) const
+{
+	const Field & fto = getField(move.to_);
+	if ( fto.type() != Figure::TypeBishop )
 		return false;
 
 	Figure::Color  color = color_;
 	Figure::Color ocolor = Figure::otherColor(color);
 
-	const BitMask & pw_caps = g_movesTable->pawnCaps_o(ocolor, move.to_);
-	BitMask op_mask = fmgr().knight_mask(color) | fmgr().bishop_mask(color) | fmgr().rook_mask(color) | fmgr().queen_mask(color);
-	op_mask &= pw_caps;
+	const BitMask & bi_caps = g_movesTable->caps(Figure::TypeBishop, move.to_);
+	BitMask op_mask = fmgr().rook_mask(color) | fmgr().queen_mask(color);
+	if ( !(op_mask & bi_caps) )
+		return false;
 
-	return op_mask != 0 && !one_bit_set(op_mask);
+
+	BitMask all_mask = fmgr().mask(Figure::ColorWhite) | fmgr().mask(Figure::ColorBlack);
+	all_mask ^= op_mask;
+	BitMask inv_mask_all = ~all_mask;
+	op_mask &= bi_caps;
+	const BitMask & oki_mask = fmgr().king_mask(color_);
+	int oki_pos = _lsb64(oki_mask);
+
+	int attackedN = 0;
+
+	for ( ; op_mask;)
+	{
+		int p = clear_lsb(op_mask);
+		if ( is_something_between(move.to_, p, inv_mask_all) )
+			continue;
+
+		// 2 attacked figures found
+		if ( ++attackedN > 1 )
+			return true;
+
+		// may be it's pinned
+		BitMask mask_from = g_betweenMasks->from(move.to_, p);
+		mask_from &= oki_mask;
+		if ( !mask_from )
+			continue;
+
+		if ( is_nothing_between(move.to_, oki_pos, inv_mask_all) )
+			return true;
+	}
+
+	return false;
 }
 
 /* rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
