@@ -225,22 +225,14 @@ int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
 
   depth--;
 
-  if ( !pv || (move.seen_ && !move.see_good_) )
+  if ( !pv || !move.see_good_)
     return depth;
-
-	if ( !move.seen_ )
-	{
-		move.see_good_ = scontexts_[ictx].board_.see(move) >= 0;
-		move.seen_ = 1;
-	}
-
-	if ( !move.see_good_ )
-		return depth;
 
   if ( move.new_type_ == Figure::TypeQueen )
     return depth+1;
 
 
+	// recapture
   if ( scontexts_[ictx].board_.halfmovesCount() > 1 )
   {
     const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(-1);
@@ -249,8 +241,6 @@ int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
     if ( move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
       return depth+1;
   }
-	//if ( move.capture_ )
-	//	return depth+1;
 
 	if ( depth > 0 )
 		return depth;
@@ -305,6 +295,12 @@ ScoreType Player::alphaBetta0()
 
     Move & move = scontexts_[0].moves_[sdata_.counter_];
     ScoreType score = -ScoreMax;
+
+		if ( !move.seen_ )
+		{
+			move.see_good_ = scontexts_[0].board_.see(move) >= 0;
+			move.seen_ = 1;
+		}
 
     if ( scontexts_[0].board_.isMoveThreat(move) )
       move.threat_ = 1;
@@ -537,6 +533,12 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       continue;
 
     ScoreType score = -ScoreMax;
+
+		if ( pv && !move.seen_ )
+		{
+			move.see_good_ = scontexts_[ictx].board_.see(move) >= 0;
+			move.seen_ = 1;
+		}
 
     // detect some threat, like pawn's attack etc...
     // don't LMR such moves
