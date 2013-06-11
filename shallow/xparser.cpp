@@ -4,6 +4,7 @@
  *************************************************************/
 
 #include "xparser.h"
+#include "Helpers.h"
 
 #include <iostream>
 #include <string.h>
@@ -125,11 +126,7 @@ xCmd xParser::parseMove(const char * str)
 	if ( !str )
 		return xCmd();
 
-	if ( strlen(str) >= 4 && isalpha(str[0]) && isdigit(str[1]) && isalpha(str[2]) && isdigit(str[3]) )
-		return xCmd(xCmd::xMove, str);
-
-	// special case for castling! is it really correct?
-	else if ( strstr(str, "O-O") )
+	if ( detectNotation(str) != mnUnknown )
 		return xCmd(xCmd::xMove, str);
 
 	return xCmd();

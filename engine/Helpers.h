@@ -394,8 +394,17 @@ public:
 
 struct Move;
 
+enum eMoveNotation
+{
+	mnUnknown, mnSmith, mnSAN
+};
+
+eMoveNotation detectNotation(const char * str);
+
+/// e2e4 - Smith notation
 bool moveToStr(const Move & move, char * str, bool full);
 bool strToMove(const char * i_str, const Board & board, Move & move);
 
+/// Rxf5+ - Standard algebraic notation
 bool parseSAN(const Board & board, const char * str, Move & move);
 bool printSAN(Board & board, const Move & move, char * str);

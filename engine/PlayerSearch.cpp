@@ -242,29 +242,29 @@ int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
       return depth+1;
   }
 
-	if ( depth > 0 )
-		return depth;
+	//if ( depth > 0 )
+	//	return depth;
 
-	if ( scontexts_[ictx].board_.isKnightForkAfter(move) )
-	{
-		//char fen[256];
-		//scontexts_[ictx].board_.toFEN(fen);
-		return depth+1;
-	}
+	//if ( scontexts_[ictx].board_.isKnightForkAfter(move) )
+	//{
+	//	//char fen[256];
+	//	//scontexts_[ictx].board_.toFEN(fen);
+	//	return depth+1;
+	//}
 
-	if ( scontexts_[ictx].board_.isDoublePawnAttack(move) )
-	{
-		//char fen[256];
-		//scontexts_[ictx].board_.toFEN(fen);
-		return depth+1;
-	}
+	//if ( scontexts_[ictx].board_.isDoublePawnAttack(move) )
+	//{
+	//	//char fen[256];
+	//	//scontexts_[ictx].board_.toFEN(fen);
+	//	return depth+1;
+	//}
 
-	if ( scontexts_[ictx].board_.isBishopAttack(move) )
-	{
-		//char fen[256];
-		//scontexts_[ictx].board_.toFEN(fen);
-		return depth+1;
-	}
+	//if ( scontexts_[ictx].board_.isBishopAttack(move) )
+	//{
+	//	//char fen[256];
+	//	//scontexts_[ictx].board_.toFEN(fen);
+	//	return depth+1;
+	//}
 
 	return depth;
 }

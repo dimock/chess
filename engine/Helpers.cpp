@@ -285,9 +285,60 @@ DistanceCounter::DistanceCounter()
 
 //////////////////////////////////////////////////////////////////////////
 
+/// Moves parsing/printing
+//////////////////////////////////////////////////////////////////////////
+
 bool iscolumn(char c)
 {
-  return c >= 'a' && c <= 'h';
+	return c >= 'a' && c <= 'h';
+}
+
+eMoveNotation detectNotation(const char * str)
+{
+	if ( !str )
+		return mnUnknown;
+
+	size_t n = strlen(str);
+
+	if ( n < 2 )
+		return mnUnknown;
+
+	/// Smith notation
+	if ( n >= 4 && isalpha(str[0]) && isdigit(str[1]) && isalpha(str[2]) && isdigit(str[3]) )
+		return mnSmith;
+
+	/// pawns capture
+	if ( n == 2 && iscolumn(str[0]) && (iscolumn(str[1]) || isdigit(str[1])) )
+		return mnSAN;
+
+	if ( n >= 3 && isalpha(str[0]) && (isalnum(str[1]) || str[1] == '-') ) // may be SAN
+	{
+		if ( strchr("PNBRQK", str[0]) )
+		{
+			if ( iscolumn(str[1]) && (isdigit(str[2]) || str[2] == 'x') )
+				return mnSAN;
+
+			if ( isdigit(str[1]) && (iscolumn(str[2]) || str[2] == 'x') )
+				return mnSAN;
+
+			if ( str[1] == 'x' && iscolumn(str[2]) )
+				return mnSAN;
+		}
+
+		/// castle
+		if ( strstr(str, "O-O") )
+			return mnSAN;
+		
+		/// pawns movement
+		if ( iscolumn(str[0]) && (isdigit(str[1]) || str[1] == 'x') )
+			return mnSAN;
+
+		/// very special case - null move. used for debugging only!!!
+		if ( strcmp(str, "null") == 0 )
+			return mnSAN;
+	}
+
+	return mnUnknown;
 }
 
 bool parseSAN(const Board & board, const char * str, Move & move)
@@ -622,8 +673,10 @@ bool strToMove(const char * i_str, const Board & board, Move & move)
 	if ( !i_str )
 		return false;
 
-	/// castling
-	if ( strstr(i_str, "O-O") )
+	eMoveNotation mnot = detectNotation(i_str);
+	if ( mnot == mnUnknown )
+		return false;
+	else if ( mnot == mnSAN )
 		return parseSAN(board, i_str, move);
 
 	if ( strlen(i_str) < 4 )
