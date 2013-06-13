@@ -166,11 +166,11 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
 };
 
 const ScoreType Evaluator::pawnDoubled_  = -15;
-const ScoreType Evaluator::pawnIsolated_ = -20;
-const ScoreType Evaluator::pawnBackward_ = -10;
-const ScoreType Evaluator::pawnDisconnected_ = -5;
+const ScoreType Evaluator::pawnIsolated_ = -15;
+const ScoreType Evaluator::pawnBackward_ = -4;
+const ScoreType Evaluator::pawnDisconnected_ = -2;
 const ScoreType Evaluator::pawnBlocked_ = 0;
-const ScoreType Evaluator::defendedBonus_ = 5;
+const ScoreType Evaluator::defendedBonus_ = 3;
 const ScoreType Evaluator::groupsPenalty_ = 2;
 const ScoreType Evaluator::assistantBishop_ = 8;
 const ScoreType Evaluator::rookBehindBonus_ = 7;
@@ -189,12 +189,13 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_[2] = { 25, 80 };
-const ScoreType Evaluator::rookAgainstFigureBonus_[2] = { 35, 80 };
+const ScoreType Evaluator::figureAgainstPawnBonus_[2] = { 25, 75 };
+const ScoreType Evaluator::rookAgainstFigureBonus_[2] = { 35, 75 };
+const ScoreType Evaluator::rookAgainstPawnsBonus_[2] = { 45, 90 };
 
 /// blocked figures
-const ScoreType Evaluator::bishopBlocked_ = 70;
-const ScoreType Evaluator::knightBlocked_ = 70;
+const ScoreType Evaluator::bishopBlocked_ = 90;
+const ScoreType Evaluator::knightBlocked_ = 90;
 
 const ScoreType Evaluator::pinnedKnight_ = 0;//-5;
 const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
@@ -226,9 +227,9 @@ const ScoreType Evaluator::kingQueenPressure_  = 10;
 #define MAX_PASSED_SCORE 80
 
 const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 40, 60, MAX_PASSED_SCORE, 0 };
-const ScoreType Evaluator::passersGroup_[8] = { 0, 5, 7, 9, 11, 13, 15, 0 };
-const ScoreType Evaluator::passerCandidate_[8] =  { 0, 5, 7, 9, 12, 15, 20, 0 };
-const ScoreType Evaluator::pawnCanGo_[8] = { 0, 2, 5, 7, 9, 11, 15, 0 };
+const ScoreType Evaluator::passersGroup_[8] = { 0, 3, 5, 7, 9, 11, 13, 0 };
+const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 3, 5, 7, 10, 12, 0 };
+const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 7, 10, 15, 20, 30, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
@@ -1051,6 +1052,13 @@ ScoreType Evaluator::evaluateMaterialDiff()
     int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
     score += rooksDiff * rookAgainstFigureBonus_[zeroPawns];
   }
+	// 5. pawns against rook
+	else if ( !queensDiff && rooksDiff*pawnsDiff < 0 )
+	{
+		Figure::Color strongColor = (Figure::Color)(rooksDiff > 0);
+		int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
+		score += rooksDiff * rookAgainstPawnsBonus_[zeroPawns];
+	}
 
   return score;
 }
@@ -1460,7 +1468,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
       // passer candidate
       if ( defendersN >= sentriesN )
       {
-        score += passerCandidate_[cy];
+        //score += passerCandidate_[cy];
         if ( score_eg )
           *score_eg += passerCandidate_[cy];
       }

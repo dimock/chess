@@ -48,6 +48,7 @@ public:
   /// material difference
   static const ScoreType figureAgainstPawnBonus_[2];
   static const ScoreType rookAgainstFigureBonus_[2];
+	static const ScoreType rookAgainstPawnsBonus_[2];
 
   // blocked bishop & knight
   static const ScoreType bishopBlocked_;
