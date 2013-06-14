@@ -36,7 +36,7 @@ public:
   static const ScoreType pawnEndgameBonus_;
   static const ScoreType unstoppablePawn_;
   static const ScoreType kingFarBonus_;
-  static const ScoreType pawnPassed_[8], passerCandidate_[8], pawnCanGo_[8];
+  static const ScoreType pawnPassed_[8], passerCandidate_[8];//, pawnCanGo_[8];
   static const ScoreType passersGroup_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
@@ -76,10 +76,10 @@ public:
 
   // pressure to opponent's king
   static const ScoreType kingPawnPressure_;
-  static const ScoreType kingKnightPressure_;
-  static const ScoreType kingBishopPressure_;
-  static const ScoreType kingRookPressure_;
-  static const ScoreType kingQueenPressure_;
+  //static const ScoreType kingKnightPressure_;
+  //static const ScoreType kingBishopPressure_;
+  //static const ScoreType kingRookPressure_;
+  //static const ScoreType kingQueenPressure_;
   
   Evaluator();
 

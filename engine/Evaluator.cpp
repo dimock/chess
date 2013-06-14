@@ -165,7 +165,7 @@ const ScoreType Evaluator::bishopKnightMat_[64] =
   -16, -12, -5, -2,  1,  6,   10,   16
 };
 
-const ScoreType Evaluator::pawnDoubled_  = -15;
+const ScoreType Evaluator::pawnDoubled_  = -12;
 const ScoreType Evaluator::pawnIsolated_ = -15;
 const ScoreType Evaluator::pawnBackward_ = -4;
 const ScoreType Evaluator::pawnDisconnected_ = -2;
@@ -178,7 +178,7 @@ const ScoreType Evaluator::semiopenRook_ =  12;
 const ScoreType Evaluator::openRook_ =  15;
 const ScoreType Evaluator::winloseBonus_ =  25;
 const ScoreType Evaluator::bishopBonus_ = 10;
-const ScoreType Evaluator::pawnEndgameBonus_ = 20;
+const ScoreType Evaluator::pawnEndgameBonus_ = 15;
 const ScoreType Evaluator::unstoppablePawn_ = 60;
 const ScoreType Evaluator::kingFarBonus_ = 20;
 const ScoreType Evaluator::fakecastlePenalty_ = 20;
@@ -189,13 +189,13 @@ const ScoreType Evaluator::fianchettoBonus_ = 6;
 const ScoreType Evaluator::rookToKingBonus_ = 6;
 
 /// some material difference patterns
-const ScoreType Evaluator::figureAgainstPawnBonus_[2] = { 25, 75 };
-const ScoreType Evaluator::rookAgainstFigureBonus_[2] = { 35, 75 };
+const ScoreType Evaluator::figureAgainstPawnBonus_[2] = { 25, 90 };
+const ScoreType Evaluator::rookAgainstFigureBonus_[2] = { 35, 80 };
 const ScoreType Evaluator::rookAgainstPawnsBonus_[2] = { 45, 90 };
 
 /// blocked figures
-const ScoreType Evaluator::bishopBlocked_ = 90;
-const ScoreType Evaluator::knightBlocked_ = 90;
+const ScoreType Evaluator::bishopBlocked_ = 80;
+const ScoreType Evaluator::knightBlocked_ = 80;
 
 const ScoreType Evaluator::pinnedKnight_ = 0;//-5;
 const ScoreType Evaluator::pinnedBishop_ = 0;//-5;
@@ -218,10 +218,10 @@ const ScoreType Evaluator::pawnBeforeKing_ = 5;
 
 // pressure to king by opponents figures
 const ScoreType Evaluator::kingPawnPressure_   = 10;
-const ScoreType Evaluator::kingKnightPressure_ = 8;
-const ScoreType Evaluator::kingBishopPressure_ = 8;
-const ScoreType Evaluator::kingRookPressure_   = 8;
-const ScoreType Evaluator::kingQueenPressure_  = 10;
+//const ScoreType Evaluator::kingKnightPressure_ = 8;
+//const ScoreType Evaluator::kingBishopPressure_ = 8;
+//const ScoreType Evaluator::kingRookPressure_   = 8;
+//const ScoreType Evaluator::kingQueenPressure_  = 10;
 
 /// pawns evaluation
 #define MAX_PASSED_SCORE 80
@@ -229,15 +229,15 @@ const ScoreType Evaluator::kingQueenPressure_  = 10;
 const ScoreType Evaluator::pawnPassed_[8] = { 0, 5, 10, 20, 40, 60, MAX_PASSED_SCORE, 0 };
 const ScoreType Evaluator::passersGroup_[8] = { 0, 3, 5, 7, 9, 11, 13, 0 };
 const ScoreType Evaluator::passerCandidate_[8] =  { 0, 2, 3, 5, 7, 10, 12, 0 };
-const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 7, 10, 15, 20, 30, 0 };
+//const ScoreType Evaluator::pawnCanGo_[8] = { 0, 5, 7, 10, 15, 20, 30, 0 };
 
 const ScoreType Evaluator::mobilityBonus_[8][32] = {
   {},
   {},
-  {-40, -15, 0, 3, 5, 7, 9, 11},
-  {-35, -12, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-25, -12, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
-  {-40, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
+  {-30, -15, 0, 3, 5, 7, 9, 11},
+  {-20, -10, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-25, -15, -5, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4},
+  {-45, -35, -15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12},
 };
 
 const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
@@ -1245,28 +1245,28 @@ ScoreType Evaluator::evaluateCastlePenalty(Figure::Color color)
     {set_mask_bit(G4), set_mask_bit(B4)}
   };
 
-  // some obvious attack patterns
-  if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
-  {
-    bool kn_or_bi = false;
-    // opponent bishop pressure
-    if ( opponent_bishop_masks[color][ctype] & obishop_mask )
-    {
-      kn_or_bi = true;
-      score -= kingBishopPressure_;
-    }
+  //// some obvious attack patterns
+  //if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
+  //{
+  //  bool kn_or_bi = false;
+  //  // opponent bishop pressure
+  //  if ( opponent_bishop_masks[color][ctype] & obishop_mask )
+  //  {
+  //    kn_or_bi = true;
+  //    score -= kingBishopPressure_;
+  //  }
 
-    // opponent's knight pressure
-    if ( opponent_knight_masks[color][ctype] & oknight_mask )
-    {
-      kn_or_bi = true;
-      score -= kingKnightPressure_;
-    }
+  //  // opponent's knight pressure
+  //  if ( opponent_knight_masks[color][ctype] & oknight_mask )
+  //  {
+  //    kn_or_bi = true;
+  //    score -= kingKnightPressure_;
+  //  }
 
-    // opponent queen pressure
-    if ( kn_or_bi && (opponent_bishop_masks[color][ctype] & oqueen_mask) )
-      score -= kingQueenPressure_;
-  }
+  //  // opponent queen pressure
+  //  if ( kn_or_bi && (opponent_bishop_masks[color][ctype] & oqueen_mask) )
+  //    score -= kingQueenPressure_;
+  //}
 
   return score;
 }
@@ -1341,7 +1341,8 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
     const BitMask & guardmsk = board_->g_pawnMasks->mask_guarded(color, n);
 
     // small bonus if pawn is defended by neighbor
-    score += defendedBonus_ * ((pmsk_t & guardmsk) != 0);
+		int isDefended = ((pmsk_t & guardmsk) != 0);
+    score += defendedBonus_ * isDefended;
 
     const uint64 & passmsk = board_->g_pawnMasks->mask_passed(color, n);
     const uint64 & blckmsk = board_->g_pawnMasks->mask_blocked(color, n);
@@ -1358,6 +1359,7 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
 
       passed = true;
       score += pawnPassed_[cy];
+			score += (pawnPassed_[cy] >> 3) * isDefended;
 
       int promo_pos = x | (py<<3);
 
@@ -1405,9 +1407,8 @@ ScoreType Evaluator::evaluatePawns(Figure::Color color, ScoreType * score_eg)
     // or disconnected
     else if ( !(pmsk_t & dismask) )
       score += pawnDisconnected_;
-
-    // backward - ie pawn isn't on last line and not guarded by other pawn and can't safely go to the next line
-    if ( (color && y < 6 || !color && y > 1) && !(finfo_[color].pw_attack_mask_ & set_mask_bit(n)) )
+    // or backward - pawn isn't on last line and not guarded by other pawn and can't safely go to the next line
+    else if ( (color && y < 6 || !color && y > 1) && !(finfo_[color].pw_attack_mask_ & set_mask_bit(n)) )
     {
       int to = x | ((y+delta_y[color]) << 3);
       BitMask to_mask = set_mask_bit(to);
@@ -1616,7 +1617,7 @@ ScoreType Evaluator::evaluatePasserAdditional(GamePhase phase, Figure::Color col
       // additional bonus if opponent's king can't go to my pawn's promotion field
       if ( can_go )
       {
-        score += pawnCanGo_[cy];
+        score += pawnPassed_[cy] >> 2;
 
         if ( phase != Opening && (king_far || !findRootToPawn(color, promo_pos, pawn_dist_promo)) )
         {
