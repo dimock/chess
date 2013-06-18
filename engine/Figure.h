@@ -12,7 +12,7 @@
 namespace Figure
 {
   enum Weights { DrawScore = 0, MatScore = 32000 };
-  enum Type    { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing };
+  enum Type    { TypeNone, TypePawn, TypeKnight, TypeBishop, TypeRook, TypeQueen, TypeKing, TypesNum };
   enum Color   { ColorBlack, ColorWhite };
   
   extern const BitMask pawnCutoffMasks_[2];

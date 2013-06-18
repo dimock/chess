@@ -40,6 +40,7 @@ public:
   static const ScoreType passersGroup_[8];
   static const ScoreType mobilityBonus_[8][32];
   static const ScoreType kingDistanceBonus_[8][8];
+	static const ScoreType attackerNumberBonus_[8];
   static const ScoreType attackedByWeakBonus_;
   static const ScoreType forkBonus_;
   static const ScoreType fianchettoBonus_;
@@ -151,6 +152,9 @@ private:
   /// lazy eval.
   ScoreType evaluateExpensive(GamePhase phase, int coef_o, int coef_e);
 
+	/// returns 1 if at least 1 field in mask is attacked from given pos (include X-Ray attacks)
+	int isAttackingFields(int from, const BitMask & mask) const;
+
   struct FieldsInfo
   {
     void reset()
@@ -172,6 +176,9 @@ private:
       queenPressure_ = 0;
 
       rookOpenScore_ = 0;
+
+			for (int i = 0; i < Figure::TypesNum; ++i)
+				attackersN_[i] = 0;
     }
 
     int king_pos_;
@@ -181,6 +188,7 @@ private:
     BitMask pw_attack_mask_;
     BitMask kn_attack_mask_;
     BitMask attack_mask_;
+		int attackersN_[Figure::TypesNum];
   } finfo_[2];
 
 
