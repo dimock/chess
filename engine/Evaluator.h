@@ -155,6 +155,8 @@ private:
 	/// returns 1 if at least 1 field in mask is attacked from given pos (include X-Ray attacks)
 	int isAttackingFields(int from, const BitMask & mask) const;
 
+	ScoreType evaluateKingPressure() const;
+
   struct FieldsInfo
   {
     void reset()
