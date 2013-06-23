@@ -23,7 +23,7 @@ const ScoreType Evaluator::nullMoveVerifyMargin_ = 800;
 int Evaluator::score_ex_max_ = 0;
 
 const ScoreType Evaluator::positionGain_ = 100;
-const ScoreType Evaluator::lazyThreshold_ = 350;
+const ScoreType Evaluator::lazyThreshold_ = 320;
 
 const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
   // begin
@@ -37,7 +37,7 @@ const ScoreType Evaluator::positionEvaluations_[2][8][64] = {
       5,   5,   5,   5,   5,   5,   5,   5,
       0,   0,   3,   8,   8,   3,   0,   0,
       0,   0,   2,   7,   7,   2,   0,   0,
-      0,   0,   1,   6,   6,   1,   0,   0,
+      0,   0,   1,   8,   8,   1,   0,   0,
       2,   0,   0,   0,   0,   0,   0,   2,
       2,   4,   4, -10, -10,   4,   4,   2,
       0,   0,   0,   0,   0,   0,   0,   0
@@ -253,7 +253,7 @@ const ScoreType Evaluator::kingDistanceBonus_[8][8] = {
 	{40, 55, 45, 25, 12, 3, 1, 0},
 };
 
-const ScoreType Evaluator::attackerNumberBonus_[8] = { 0, 3, 8, 13, 20, 30, 50, 100 };
+const ScoreType Evaluator::attackerNumberBonus_[8] = { 0, 2, 5, 10, 20, 30, 50, 100 };
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -666,8 +666,8 @@ ScoreType Evaluator::evaluateExpensive(GamePhase phase, int coef_o, int coef_e)
   score -= finfo_[0].queenPressure_;
   score += finfo_[1].queenPressure_;
 
-	//// fields near king are attacked by opponent
-	//score += evaluateKingPressure();
+	// fields near king are attacked by opponent
+	score += evaluateKingPressure();
 
   // unstoppable passed pawns and pawns, that can go to the next line
   score += evaluatePassersAdditional(phase, coef_e);
@@ -948,8 +948,6 @@ ScoreType Evaluator::evaluateKingPressure() const
 
 int Evaluator::isAttackingFields(int from, const BitMask & mask) const
 {
-	return 0;
-
 	THROW_IF( !board_ || !board_->getField(from), "no figure on field in isAttackingFields()" );
 
 	Figure::Type t = board_->getField(from).type();
@@ -1139,9 +1137,18 @@ ScoreType Evaluator::evaluateMaterialDiff()
 
   Figure::Color color = board_->getColor();
   Figure::Color ocolor = Figure::otherColor(color);
-  
-  // 1. Knight - Bishop disbalance
-  score += (fmgr.bishops(Figure::ColorWhite) - fmgr.bishops(Figure::ColorBlack))*bishopBonus_;
+
+  // 1. bonus for bishop. only if we have other figures
+  if ( fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) + fmgr.rooks(Figure::ColorWhite) + fmgr.queens(Figure::ColorWhite) > 1 )
+    score += fmgr.bishops(Figure::ColorWhite)*bishopBonus_;
+  if ( fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) + fmgr.rooks(Figure::ColorBlack) + fmgr.queens(Figure::ColorBlack) > 1 )
+    score -= fmgr.bishops(Figure::ColorBlack)*bishopBonus_;
+
+  // 2. additional bonus for double bishop
+  if ( fmgr.bishops_b(Figure::ColorWhite) && fmgr.bishops_w(Figure::ColorWhite) )
+    score += bishopBonus_;
+  if ( fmgr.bishops_b(Figure::ColorBlack) && fmgr.bishops_w(Figure::ColorBlack) )
+    score -= bishopBonus_;
 
   // 3. Knight or Bishop against 3 pawns
   int figuresDiff = (fmgr.bishops(Figure::ColorWhite)+fmgr.knights(Figure::ColorWhite)) -
@@ -1165,13 +1172,13 @@ ScoreType Evaluator::evaluateMaterialDiff()
     int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
     score += rooksDiff * rookAgainstFigureBonus_[zeroPawns];
   }
-	// 5. pawns against rook
-	else if ( !queensDiff && rooksDiff*pawnsDiff < 0 )
-	{
-		Figure::Color strongColor = (Figure::Color)(rooksDiff > 0);
-		int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
-		score += rooksDiff * rookAgainstPawnsBonus_[zeroPawns];
-	}
+  // 5. pawns against rook
+  else if ( !queensDiff && rooksDiff*pawnsDiff < 0 )
+  {
+    Figure::Color strongColor = (Figure::Color)(rooksDiff > 0);
+    int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
+    score += rooksDiff * rookAgainstPawnsBonus_[zeroPawns];
+  }
 
   return score;
 }
