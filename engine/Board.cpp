@@ -695,7 +695,7 @@ bool Board::load(Board & board, std::istream & is)
   const int N = 1024;
   char str[N];
   const char * sepr  = " \t\n\r";
-  const char * strmv = "123456789abcdefgh+-OxPNBRQKnul=#";
+  const char * strmv = "123456789abcdefghkrq+-OxPNBRQKnul=#";
   bool fen_expected = false, fen_init = false;
 
   const int ML = 16;
@@ -802,7 +802,7 @@ bool Board::load(Board & board, std::istream & is)
   {
     const char * smove = smoves[i];
     Move move;
-    if ( !parseSAN(board, smove, move) )
+    if ( !strToMove(smove, board, move) )//parseSAN(board, smove, move) )
       return false;
 
     //char str[64];

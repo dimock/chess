@@ -653,9 +653,12 @@ void xBoardMgr::uciGo(const xCmd & cmd)
   char smove[256];
   uint8 state;
 
+  smove[0] = 0;
   if ( !thk_.reply(smove, state, white, false) )
     return;
 
+  if ( smove[0] == 0 )
+    return;
   os_ << "bestmove " << smove << std::endl;
 }
 
