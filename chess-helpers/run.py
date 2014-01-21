@@ -3,7 +3,8 @@ import subprocess, msvcrt, time
 from win32pipe import PeekNamedPipe
 
 
-engines = ["D:\\Projects\\git_proj\\chess\\x64\\release\\shallow.x64.exe", "D:\\arena_3.0\\Engines\\ALChess1.5b\\ALChess1.5b.exe"]
+engines = ["D:\\Projects\\git_proj\\chess\\x64\\release\\shallow.x64.exe", "D:\\arena_3.0\\Engines\\queen\\queen.exe"]
+##           "D:\\arena_3.0\\Engines\\ALChess1.5b\\ALChess1.5b.exe"]
 ##"D:\\Projects\\git_proj\\chess\\x64\\release\\shallow.x64.exe"];
 moves = []
 
