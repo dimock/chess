@@ -304,7 +304,7 @@ eMoveNotation detectNotation(const char * str)
 		return mnUnknown;
 
 	/// Smith notation
-	if ( n >= 4 && isalpha(str[0]) && isdigit(str[1]) && isalpha(str[2]) && isdigit(str[3]) )
+	if ( n >= 4 && iscolumn(str[0]) && isdigit(str[1]) && iscolumn(str[2]) && isdigit(str[3]) )
 		return mnSmith;
 
 	/// pawns capture
