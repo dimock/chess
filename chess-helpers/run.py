@@ -3,7 +3,7 @@ import subprocess, msvcrt, time
 from win32pipe import PeekNamedPipe
 
 
-engines = ["D:\\Projects\\git_proj\\chess\\x64\\release\\shallow.x64.exe", "D:\\arena_3.0\\Engines\\queen\\queen.exe"]
+engines = ["C:\\Program Files (x86)\\Arena\\Engines\\Shallow\\shallow-rev688-64-ja.exe", "C:\\Program Files (x86)\\Arena\\Engines\\Queen403\\queen4.exe"]
 ##           "D:\\arena_3.0\\Engines\\ALChess1.5b\\ALChess1.5b.exe"]
 ##"D:\\Projects\\git_proj\\chess\\x64\\release\\shallow.x64.exe"];
 moves = []
@@ -11,12 +11,16 @@ moves = []
 class ChessEngine:
     def __init__(self, enum):
         self.enum = enum
-        ename = engines[enum]
-        self.p = Popen(ename, stdin = PIPE, stdout = PIPE, shell = True)
+        self.ename = engines[enum]
+        self.p = Popen(self.ename, stdin = PIPE, stdout = PIPE, shell = True)
         if not self.p:
             exit()
         self.fd = self.p.stdout.fileno()        
         self.fh = msvcrt.get_osfhandle(self.fd)
+        eparts = self.ename.split('\\')     
+        self.engtitle = eparts[len(eparts)-1]
+        n = self.engtitle.rfind('.')
+        self.engtitle = self.engtitle[:n]
 
     def quit(self):
         if self.p:
@@ -33,7 +37,7 @@ class ChessEngine:
                 return self.p._translate_newlines(self.p.stdout.readline())
             time.sleep(0.01)
             t = t + 0.01
-            return None
+        return None
 
     def start(self):
         if self.p:
@@ -58,6 +62,7 @@ class ChessEngine:
             line = self.readln(0.1)
             if line:
                 tokens = line.split()
+                print tokens
                 if len(tokens) > 1 and tokens[0] == 'bestmove':
                     return tokens[1], score, depth, mate
                 elif len(tokens) > 7:
@@ -80,13 +85,16 @@ class ChessEngine:
         strpos = strpos + '\n'
         self.p.stdin.write(strpos)
 
+whiteNo = 1
 engs = [None, None]
 engs[0] = ChessEngine(0)
 engs[1] = ChessEngine(1)
+print 'White: ', engs[whiteNo].engtitle
+print 'Black:', engs[(whiteNo+1)%2].engtitle
 engs[0].start()
 engs[1].start()
 
-cur = 1
+cur = whiteNo
 timebw = [60, 60]
 while True:
     engs[cur].pos()
@@ -105,7 +113,7 @@ while True:
     scorestr = score/100.0
     if mate:
         scorestr = 'mate in %d' % (abs(score))
-    print len(moves), ':', best, scorestr, depth, timebw[cur]
+    print len(moves), ':', best, scorestr, depth, timebw[cur], '->', engs[cur].engtitle
     cur = (cur + 1) % 2
     if len(moves) > 300:
         break
@@ -114,8 +122,16 @@ engs[0].quit()
 engs[1].quit()
 
 f = open('result.pgn', 'wt')
-f.write('[Event ...]:\n[Site ...]:\n[Date ...]:\n[Round ...]:\n[White ...]:\n[Black ...]:\n[Result ...]:\n[TimeControl ...]:\n')
-for i, move in enumerate(moves):
-    f.write('%d. %s\n' % (i+1, move))
+f.write('[Event ...]:\n[Site ...]:\n[Date ...]:\n[Round ...]:\n[White \"%s\"]:\n[Black \"%s\"]:\n[Result ...]:\n[TimeControl ...]:\n' % (engs[whiteNo].engtitle, engs[(whiteNo+1)%2].engtitle))
+i = 1
+for move in moves:
+    if i % 2 == 1:
+        f.write( '%d. ' % (int((i+1)/2)) )
+    f.write(move)
+    if i % 2 == 1:
+        f.write(' ')
+    else:
+        f.write('\n')
+    i = i + 1
 f.close()
 
