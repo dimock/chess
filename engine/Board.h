@@ -640,7 +640,7 @@ private:
   {
     int king_pos = kingPos(color);
     int dir = g_figureDir->dir(type, acolor, from, king_pos);
-    if ( dir < 0 || Figure::TypeKing == type && dir > 7 )
+    if ( (dir < 0) || (Figure::TypeKing == type && dir > 7) )
       return false;
 
     BitMask inv_mask_all = ~(fmgr_.mask(Figure::ColorBlack) | fmgr_.mask(Figure::ColorWhite));

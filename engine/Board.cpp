@@ -749,7 +749,7 @@ bool Board::load(Board & board, std::istream & is)
         if ( !*s )
           skip = true;
       }
-      else if ( '*' == *s || isdigit(*s) && (*(s+1) && '-' == *(s+1)) ) // end game
+      else if ( ('*' == *s) || (isdigit(*s) && (*(s+1) && '-' == *(s+1))) ) // end game
       {
         skip = true;
         stop = true;

@@ -139,8 +139,7 @@ bool Player::search(SearchResult * sres)
     if ( sdata_.best_ )
     {
       if (  stop_ && sdata_.depth_ > 2 &&
-            (abs(score-sres->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 ||
-            sdata_.best_ != sres->best_ && abs(score-sres->score_) >= 5) &&
+            (abs(score-sres->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 || (sdata_.best_ != sres->best_ && abs(score-sres->score_) >= 5)) &&
             callbacks_.giveTime_ &&
             !sparams_.analyze_mode_ )
       {

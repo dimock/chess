@@ -154,7 +154,7 @@ private:
   // 8 - types, 2 - field color (for bishops only!!!)
   uint8 tcount_[8][2];
   uint8 count_;
-  BitMask tmask_[7];
+  BitMask tmask_[8];
   BitMask pmask_t_; // transposed pawn's mask
   ScoreType weight_, eval_[2];
 };
@@ -306,7 +306,7 @@ public:
 
   inline const BitMask & castleCode(uint8 color, uint8 index) const
   {
-    s_zobristCastle_[color][index];
+    return s_zobristCastle_[color][index];
   }
 
   inline const BitMask & colorCode() const

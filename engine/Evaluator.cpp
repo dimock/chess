@@ -1166,7 +1166,7 @@ ScoreType Evaluator::evaluateMaterialDiff()
   }
 
   // 4. Knight|Bishop+2Pawns vs. Rook
-  else if ( !queensDiff && rooksDiff*figuresDiff == -1 )
+  else if (!queensDiff && ((rooksDiff == -1 && figuresDiff == 1) || (rooksDiff == 1 && figuresDiff == -1)))
   {
     Figure::Color strongColor = (Figure::Color)(rooksDiff > 0);
     int zeroPawns = (fmgr.pawns(strongColor) != 0) & 1;
@@ -1304,7 +1304,7 @@ ScoreType Evaluator::evaluatePawnShield(Figure::Color color)
     {set_mask_bit(F3)|set_mask_bit(G3)|set_mask_bit(H3), set_mask_bit(A3)|set_mask_bit(B3)|set_mask_bit(C3)}
   };
 
-  if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color )
+  if ( ki_pos.y() < 2 && color || ki_pos.y() > 5 && !color && ctype >= 0 )
   {
     const BitMask & opw_mask = fmgr.pawn_mask_o(ocolor);
 
