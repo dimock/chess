@@ -202,7 +202,7 @@ inline int clear_msb(uint64 & mask)
 inline unsigned mul_div(unsigned v, unsigned n, unsigned d)
 {
   uint64 r = (uint64)v * n;
-  r >>= log2((uint64)(d + n));
+  r >>= log2((uint64)(d) + (uint64)(n));
   unsigned x = *((unsigned*)&r);
   return x;
 }

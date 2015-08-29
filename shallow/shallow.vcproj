@@ -236,7 +236,6 @@
 				UseUnicodeResponseFiles="false"
 				AdditionalDependencies="..\engine\release\engine.lib"
 				OutputFile="$(OutDir)\$(ProjectName).$(PlatformName).exe"
-				Version="1.0.0"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
