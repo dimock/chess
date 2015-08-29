@@ -153,7 +153,7 @@ void Player::setMemory(int mb)
 
 #ifdef USE_HASH
   int hitemSize = sizeof(HItem);
-  int hsize2 = log2((uint64)(bytesN/hitemSize)) - 3;
+  int hsize2 = log2((uint64)(bytesN)/hitemSize) - 3;
   if ( hsize2 >= 10 )
   {
     hash_.resize(hsize2);
