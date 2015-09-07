@@ -50,7 +50,7 @@ public:
 
   /// constants
   enum State { Invalid, Ok = 1, UnderCheck = 2, Stalemat = 4, DrawReps = 8, DrawInsuf = 16, Draw50Moves = 64, ChessMat = 128 };
-  enum { NumOfFields = 64, MovesMax = 256, FENsize = 512, GameLength = 4096 };
+  enum { NumOfFields = 64, MovesMax = 256, FENsize = 8192, GameLength = 4096 };
 
   bool operator != (const Board & ) const;
 

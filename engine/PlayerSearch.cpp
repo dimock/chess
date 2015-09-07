@@ -227,7 +227,7 @@ int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
   if ( !pv || !move.see_good_)
     return depth;
 
-  if ( move.new_type_ == Figure::TypeQueen )
+  if ( move.new_type_ == Figure::TypeQueen || move.new_type_ == Figure::TypeKnight )
     return depth+1;
 
 
@@ -237,7 +237,7 @@ int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
     const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(-1);
     const UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
-    if ( move.capture_ && prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
+    if ( move.capture_ && (prev.to_ == curr.to_ || curr.en_passant_ == curr.to_) )
       return depth+1;
   }
 
@@ -570,6 +570,9 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
              scontexts_[ictx].board_.canBeReduced() )
         {
           R = 1;
+          if(move.seen_ && !move.see_good_)
+            R = 2;
+          //R += (counter > 10 && scoreBest <= alpha0);
           curr.reduced_ = true;
         }
 #endif
