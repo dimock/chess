@@ -570,8 +570,8 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
              scontexts_[ictx].board_.canBeReduced() )
         {
           R = 1;
-          if(move.seen_ && !move.see_good_)
-            R = 2;
+          //if(move.seen_ && !move.see_good_)
+          //  R = 2;
           //R += (counter > 10 && scoreBest <= alpha0);
           curr.reduced_ = true;
         }

@@ -16,18 +16,18 @@ inline bool one_bit_set(uint64 n)
 	return (n & (n-1)) == 0ULL;
 }
 
-inline int pop_count(uint64 n)
-{
-  if ( n == 0ULL )
-    return 0;
-  else if ( one_bit_set(n) )
-    return 1;
-  n =  n - ((n >> 1)  & 0x5555555555555555ULL);
-  n = (n & 0x3333333333333333ULL) + ((n >> 2) & 0x3333333333333333ULL);
-  n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-  n = (n * 0x0101010101010101ULL) >> 56;
-  return (int)n;
-}
+//inline int pop_count(uint64 n)
+//{
+//  if ( n == 0ULL )
+//    return 0;
+//  else if ( one_bit_set(n) )
+//    return 1;
+//  n =  n - ((n >> 1)  & 0x5555555555555555ULL);
+//  n = (n & 0x3333333333333333ULL) + ((n >> 2) & 0x3333333333333333ULL);
+//  n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
+//  n = (n * 0x0101010101010101ULL) >> 56;
+//  return (int)n;
+//}
 
 inline BitMask set_mask_bit(int bit)
 {
@@ -82,6 +82,7 @@ inline int _msb32(unsigned long n)
 
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
+#pragma intrinsic(__popcnt64)
 
 inline int _lsb64(const uint64 & mask)
 {
@@ -105,6 +106,11 @@ inline int log2(uint64 n)
   if ( _BitScanReverse64(&i, n) )
     return i;
   return 0;
+}
+
+inline int pop_count(uint64 n)
+{
+  return __popcnt64(n);
 }
 
 #else
