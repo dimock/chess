@@ -139,7 +139,7 @@ bool Player::search(SearchResult * sres)
     if ( sdata_.best_ )
     {
       if (  stop_ && sdata_.depth_ > 2 &&
-            (abs(score-sres->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 || (sdata_.best_ != sres->best_ && abs(score-sres->score_) >= 5)) &&
+            (abs(score-sres->score_) >= Figure::figureWeight_[Figure::TypePawn]/2 || (sdata_.best_ != sres->best_ /*&& abs(score-sres->score_) >= 5*/)) &&
             callbacks_.giveTime_ &&
             !sparams_.analyze_mode_ )
       {
@@ -483,7 +483,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   }
 #endif
 
-
 #ifdef USE_FUTILITY_PRUNING
   if ( !pv &&
        !scontexts_[ictx].board_.underCheck() &&
@@ -570,9 +569,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
              scontexts_[ictx].board_.canBeReduced() )
         {
           R = 1;
-          //if(move.seen_ && !move.see_good_)
-          //  R = 2;
-          //R += (counter > 10 && scoreBest <= alpha0);
           curr.reduced_ = true;
         }
 #endif
@@ -601,11 +597,13 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 #endif
 
       History & hist = MovesGenerator::history(move.from_, move.to_);
+      if ( score > alpha0 )
+        hist.inc_good();
+      else
+        hist.inc_bad();
 
       if ( score > scoreBest )
       {
-        hist.inc_good();
-
         best = move;
         scoreBest = score;
         if ( score > alpha )
@@ -616,8 +614,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
             assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
         }
       }
-      else
-        hist.inc_bad();
     }
 
     // should be increased here to consider invalid moves!!!

@@ -480,7 +480,7 @@ public:
         break;
       }
 
-      if ( move->capture_ && !move->seen_ && numOfMoves_ > 1 )
+      if ( /*move->capture_ &&*/ !move->seen_ && numOfMoves_ > 1 )
       {
         move->seen_ = 1;
         move->see_good_ = board_.see(*move) >= 0;
