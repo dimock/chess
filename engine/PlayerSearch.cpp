@@ -597,13 +597,10 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 #endif
 
       History & hist = MovesGenerator::history(move.from_, move.to_);
-      if ( score > alpha0 )
-        hist.inc_good();
-      else
-        hist.inc_bad();
 
       if ( score > scoreBest )
       {
+        hist.inc_good();
         best = move;
         scoreBest = score;
         if ( score > alpha )
@@ -614,6 +611,8 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
             assemblePV(ictx, move, scontexts_[ictx].board_.underCheck(), ply);
         }
       }
+      else
+        hist.inc_bad();
     }
 
     // should be increased here to consider invalid moves!!!

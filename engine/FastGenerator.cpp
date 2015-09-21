@@ -130,39 +130,7 @@ Move & FastGenerator::move()
     Move & move = ug_.move();
     if ( move )
       return move;
-  //  for ( ;; )
-  //  {
-  //    Move * move = ug_.moves() + ug_.count();
-  //    Move * mv = ug_.moves();
-  //    for ( ; *mv; ++mv)
-  //    {
-  //      if ( mv->alreadyDone_ || mv->vsort_ <= move->vsort_ )
-  //        continue;
 
-  //      move = mv;
-  //    }
-  //    if ( !*move )
-  //      break;
-
-
-  //    if ( !move->seen_ )
-  //    {
-  //      move->see_good_ = board_.see(*move) >= 0;
-  //      move->seen_ = 1;
-  //    }
-
-  //    if ( !move->see_good_ )
-  //    {
-  //      weak_[weakN_++] = *move;
-  //      move->alreadyDone_ = 1;
-  //      continue;
-  //    }
-
-  //    move->alreadyDone_ = 1;
-  //    return *move;
-  //  }
-
-    weak_[weakN_].clear();
     order_ = oWeak;
   }
 
