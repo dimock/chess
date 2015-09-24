@@ -718,7 +718,7 @@ void Player::findSequence(int ictx, const Move & move, int ply, int depth, int c
 
     if ( identical )
     {
-      if ( sdata_.depth_ == 5 && ply == 1 )
+      if ( sdata_.depth_ == 5*ONE_PLY && ply == 1 )
       {
         int ttt = 0;
       }

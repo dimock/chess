@@ -73,6 +73,7 @@ namespace nst
   extern bool get_bit_dir_[10];
 };
 
+//#define USE_IID
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING
 #define USE_HASH
@@ -94,13 +95,13 @@ namespace nst
   #define TIMING_FLAG 0x1FFF
 #endif
 
+static const int ONE_PLY = 20;
 static const int MaxPly = 64;
-static const int LMR_DepthLimit = 3;
-static const int LMR_MinDepthLimit = 5;
-static const int NullMove_DepthMin = 2;
-static const int NullMove_PlyReduce = 4;
-static const int NullMove_PlyVerify = 5;
-static const int NullMove_DepthStart = 4;
+static const int LMR_DepthLimit = 3 * ONE_PLY;
+static const int LMR_MinDepthLimit = 5 * ONE_PLY;
+static const int NullMove_DepthMin = 2 * ONE_PLY;
+static const int NullMove_PlyReduce = 4 * ONE_PLY;
+static const int NullMove_PlyVerify = 5 * ONE_PLY;
 
 #pragma intrinsic(__rdtsc)
 

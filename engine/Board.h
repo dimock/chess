@@ -245,7 +245,7 @@ public:
     if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
       return NullMove_DepthMin;
     else
-      return NullMove_DepthMin+2;
+      return NullMove_DepthMin + 2 * ONE_PLY;
   }
 
   inline int nullMoveReduce() const
@@ -253,7 +253,7 @@ public:
     if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
       return NullMove_PlyReduce;
     else
-      return NullMove_PlyReduce-1;
+      return NullMove_PlyReduce - ONE_PLY;
   }
 
 	inline int nullMoveVerify() const
@@ -261,7 +261,7 @@ public:
 		if ( fmgr_.queens(color_) + fmgr_.rooks(color_) + fmgr_.knights(color_)+fmgr_.bishops(color_) > 1 )
 			return NullMove_PlyVerify;
 		else
-			return NullMove_PlyVerify-1;
+			return NullMove_PlyVerify - ONE_PLY;
 	}
 
   inline int nullMoveDepth(int depth, ScoreType betta) const
@@ -270,12 +270,12 @@ public:
     ScoreType score = fmgr().weight(color_) - fmgr().weight(ocolor);
     if ( score < betta + (Figure::figureWeight_[Figure::TypePawn]<<1) )
     {
-      if ( depth < 4 )
+      if ( depth < 4*ONE_PLY )
         return 0;
-      else if ( depth < 5 )
-        return 1;
-      else if ( depth < 6 )
-        return 2;
+      else if ( depth < 5*ONE_PLY )
+        return ONE_PLY;
+      else if ( depth < 6*ONE_PLY )
+        return 2 * ONE_PLY;
     }
 
     int null_depth = depth - nullMoveReduce();

@@ -345,6 +345,9 @@ ScoreType Evaluator::operator () (ScoreType alpha, ScoreType betta)
 {
   THROW_IF( !board_, "Evaluator wasn't properly initialized" );
 
+  if ( ehash_ )
+    ehash_->prefetch(board_->pawnCode());
+
   if ( board_->matState() )
     return -Figure::MatScore;
   else if ( board_->drawState() )

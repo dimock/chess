@@ -110,7 +110,7 @@ inline int log2(uint64 n)
 
 inline int pop_count(uint64 n)
 {
-  return __popcnt64(n);
+  return (int)__popcnt64(n);
 }
 
 #else

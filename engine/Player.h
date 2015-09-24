@@ -149,7 +149,6 @@ class Player
   friend class EscapeGenerator;
   friend class ChecksGenerator;
 
-
 public:
 
   // initialize global arrays, tables, masks, etc. write them to it's board_
@@ -199,7 +198,7 @@ private:
   ScoreType alphaBetta0();
   ScoreType alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, bool nm = false);
   ScoreType captures(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv, ScoreType score0 = -ScoreMax);
-  int nextDepth(int ictx, int depth, Move & move, bool pv) const;
+  int depthIncrement(int ictx, Move & move, bool pv) const;
   void assemblePV(int ictx, const Move & move, bool checking, int ply);
 
 
@@ -208,6 +207,7 @@ private:
   bool isRealThreat(int ictx, const Move & move);
 
 #ifdef USE_HASH
+  void prefetchHash(int ictx);
   // we should return alpha if flag is Alpha, or Betta if flag is Betta
   GHashTable::Flag getHash(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv);
   void putHash(int ictx, const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat);

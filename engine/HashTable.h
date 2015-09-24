@@ -157,6 +157,11 @@ public:
     return n == size();
   }
 
+  void prefetch(const uint64 & code)
+  {
+    _mm_prefetch((char*)&buffer_[code & szMask_], _MM_HINT_NTA);
+  }
+
 protected:
 
   ITEM & operator [] (const uint64 & code)

@@ -217,55 +217,37 @@ bool Player::search(SearchResult * sres)
 }
 
 //////////////////////////////////////////////////////////////////////////
-int Player::nextDepth(int ictx, int depth, Move & move, bool pv) const
+int Player::depthIncrement(int ictx, Move & move, bool pv) const
 {
+  int depthInc = 0;
+
   if ( scontexts_[ictx].board_.underCheck() )
-    return depth;
+    depthInc += ONE_PLY;
 
-  depth--;
-
-  if ( !pv || !move.see_good_)
-    return depth;
-
-  if ( move.new_type_ == Figure::TypeQueen || move.new_type_ == Figure::TypeKnight )
-    return depth+1;
-
-
-	// recapture
-  if ( scontexts_[ictx].board_.halfmovesCount() > 1 )
+  if (pv && move.see_good_)
   {
-    const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(-1);
-    const UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
+    // promotion
+    if (move.new_type_ == Figure::TypeQueen || move.new_type_ == Figure::TypeKnight)
+      depthInc += ONE_PLY;
 
-    if ( move.capture_ && (prev.to_ == curr.to_ || curr.en_passant_ == curr.to_) )
-      return depth+1;
+    // recapture
+    if (scontexts_[ictx].board_.halfmovesCount() > 1)
+    {
+      const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(-1);
+      const UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
+
+      if (move.capture_)
+      {
+        if (prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
+          depthInc += ONE_PLY;
+      }
+    }
   }
 
-	//if ( depth > 0 )
-	//	return depth;
+  if (depthInc > ONE_PLY)
+    depthInc = ONE_PLY;
 
-	//if ( scontexts_[ictx].board_.isKnightForkAfter(move) )
-	//{
-	//	//char fen[256];
-	//	//scontexts_[ictx].board_.toFEN(fen);
-	//	return depth+1;
-	//}
-
-	//if ( scontexts_[ictx].board_.isDoublePawnAttack(move) )
-	//{
-	//	//char fen[256];
-	//	//scontexts_[ictx].board_.toFEN(fen);
-	//	return depth+1;
-	//}
-
-	//if ( scontexts_[ictx].board_.isBishopAttack(move) )
-	//{
-	//	//char fen[256];
-	//	//scontexts_[ictx].board_.toFEN(fen);
-	//	return depth+1;
-	//}
-
-	return depth;
+	return depthInc;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -283,6 +265,7 @@ ScoreType Player::alphaBetta0()
 
   ScoreType alpha = -ScoreMax;
   ScoreType betta = +ScoreMax;
+  const int depth = sdata_.depth_ * ONE_PLY;
   
   bool check_escape = scontexts_[0].board_.underCheck();
   bool null_move = false;
@@ -308,38 +291,35 @@ ScoreType Player::alphaBetta0()
     sdata_.inc_nc();
 
     {
-      int depth1 = nextDepth(0, sdata_.depth_, move, true);
+      int depthInc = depthIncrement(0, move, true);
 
-      if ( sdata_.depth_ == depth0_ || !sdata_.counter_ ) // 1st iteration
-        score = -alphaBetta(0, depth1, 1, -betta, -alpha, true);
+      if (depth == depth0_*ONE_PLY || !sdata_.counter_) // 1st iteration
+        score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, -alpha, true);
       else
       {
-        int depth2 = nextDepth(0, sdata_.depth_, move, false);
-
+        int depthInc2 = depthIncrement(0, move, false);
         int R = 0;
-
-        //int s_limit = alpha > 0 ? (((int)alpha) >> 1) : (((int)alpha) << 1);
-        //int s = (int)move.vsort_ - ScoreMax;
 
 
 #ifdef USE_LMR
         if ( !check_escape &&
-             //(sdata_.counter_ > 2 || s < s_limit) &&
-             sdata_.depth_ > LMR_MinDepthLimit &&
+             depth > LMR_MinDepthLimit &&
              alpha > -Figure::MatScore-MaxPly && 
              scontexts_[0].board_.canBeReduced() )
         {
-          R = 1;
+          R = ONE_PLY;
+          //if (sdata_.counter_ > 10 && !move.see_good_ && (int)move.vsort_-ScoreMax < alpha-Figure::figureWeight_[Figure::TypeKnight] )
+          //  R += ONE_PLY / 4;
         }
 #endif
 
-        score = -alphaBetta(0, depth2-R, 1, -alpha-1, -alpha, false);
+        score = -alphaBetta(0, depth + depthInc2 - ONE_PLY - R, 1, -alpha-1, -alpha, false);
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta(0, depth2, 1, -alpha-1, -alpha, false);
+          score = -alphaBetta(0, depth + depthInc2 - ONE_PLY, 1, -alpha - 1, -alpha, false);
 
         if ( !stopped() && score > alpha )
-          score = -alphaBetta(0, depth1, 1, -betta, -alpha, true);
+          score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, -alpha, true);
       }
     }
 
@@ -391,6 +371,8 @@ ScoreType Player::alphaBetta0()
 ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, bool pv,
                              bool nm/* = false*/)
 {
+  prefetchHash(ictx);
+
   if ( alpha >= Figure::MatScore-ply )
     return alpha;
 
@@ -413,7 +395,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 #ifdef USE_HASH
   ScoreType hscore = -ScoreMax;
   GHashTable::Flag flag = getHash(ictx, depth, ply, alpha, betta, hmove, hscore, pv);
-  if ( flag == GHashTable::Alpha || flag == GHashTable::Betta )
+  if (flag == GHashTable::Alpha || flag == GHashTable::Betta)
     return hscore;
 #endif
 
@@ -489,7 +471,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
        !scontexts_[ictx].board_.isWinnerLoser() &&
         alpha > -Figure::MatScore+MaxPly &&
         alpha < Figure::MatScore-MaxPly &&
-        depth == 1 && ply > 1 )
+        depth <= ONE_PLY && ply > 1 )
   {
     ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
     int delta = calculateDelta(alpha, score0);
@@ -498,7 +480,17 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   }
 #endif
 
+#ifdef USE_IID
+  if (!hmove && depth > 4 * ONE_PLY)
+  {
+    ScoreType iid_score = alphaBetta(ictx, depth - 2 * ONE_PLY, ply, alpha, betta, pv, false);
+    ScoreType hscr;
+    GHashTable::Flag flg = getHash(ictx, depth, ply, alpha, betta, hmove, hscr, pv);
+  }
+#endif
+
   int counter = 0;
+  int depthInc = 0;
   ScoreType scoreBest = -ScoreMax;
   Move best(0);
 
@@ -506,9 +498,8 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   scontexts_[ictx].board_.extractKiller(scontexts_[ictx].plystack_[ply].killer_, hmove, killer);
 
   FastGenerator fg(scontexts_[ictx].board_, hmove, killer);
-
   if ( fg.singleReply() )
-    depth++;
+    depthInc += ONE_PLY;
 
 #ifdef SINGULAR_EXT
   int  aboveAlphaN = 0;
@@ -550,37 +541,42 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
     UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
-    int depth1 = nextDepth(ictx, depth, move, pv);
+    int depthInc1 = depthIncrement(ictx, move, pv) + depthInc;
+    //if (depthInc1 > 2*ONE_PLY)
+    //  depthInc1 = 2*ONE_PLY;
 
     {
 
       if ( !counter )
-        score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv);
+        score = -alphaBetta(ictx, depth + depthInc1 - ONE_PLY, ply+1, -betta, -alpha, pv);
       else
       {
-        int depth2 = nextDepth(ictx, depth, move, false);
+        int depthInc2 = depthIncrement(ictx, move, false) + depthInc;
+        //if (depthInc2 > ONE_PLY)
+        //  depthInc2 = ONE_PLY;
+
         int R = 0;
 
 #ifdef USE_LMR
         if ( !check_escape &&
-             sdata_.depth_ > LMR_MinDepthLimit &&
+             sdata_.depth_ * ONE_PLY > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
              alpha > -Figure::MatScore-MaxPly &&             
              scontexts_[ictx].board_.canBeReduced() )
         {
-          R = 1;
+          R = ONE_PLY;
           curr.reduced_ = true;
         }
 #endif
 
-        score = -alphaBetta(ictx, depth2-R, ply+1, -alpha-1, -alpha, false);
+        score = -alphaBetta(ictx, depth + depthInc2 - R - ONE_PLY, ply + 1, -alpha - 1, -alpha, false);
         curr.reduced_ = false;
 
-        if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta(ictx, depth2, ply+1, -alpha-1, -alpha, false);
+        if (!stopped() && score > alpha && R > 0)
+          score = -alphaBetta(ictx, depth + depthInc2 - ONE_PLY, ply + 1, -alpha - 1, -alpha, false);
 
-        if ( !stopped() && score > alpha && score < betta )
-          score = -alphaBetta(ictx, depth1, ply+1, -betta, -alpha, pv);
+        if (!stopped() && score > alpha && score < betta)
+          score = -alphaBetta(ictx, depth + depthInc1 - ONE_PLY, ply + 1, -betta, -alpha, pv);
       }
     }
 
@@ -592,7 +588,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       if ( pv && score > alpha0 )
       {
         aboveAlphaN++;
-        wasExtended = depth1 >= depth;
+        wasExtended = depthInc1 > 0;
       }
 #endif
 
@@ -660,7 +656,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   if ( best )
   {
     History & hist = MovesGenerator::history(best.from_, best.to_);
-    hist.inc_score(depth);
+    hist.inc_score(depth / ONE_PLY);
 
 #if ((defined USE_LMR) && (defined VERIFY_LMR))
     // have to recalculate with full depth, or indicate threat in hash
@@ -701,6 +697,7 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
   int counter = 0;
   ScoreType scoreBest = -ScoreMax;
   int delta = 0;
+  int depthInc = 0;
 
   if ( !scontexts_[ictx].board_.underCheck() )
   {
@@ -723,7 +720,7 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
 
   TacticalGenerator tg(scontexts_[ictx].board_, thresholdType, depth);
   if ( tg.singleReply() )
-    depth++;
+    depthInc += ONE_PLY;
 
   for ( ; alpha < betta && !checkForStop(); )
   {
@@ -740,8 +737,8 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
     sdata_.inc_nc();
 
     {
-      int depth1 = nextDepth(ictx, depth, move, false);
-      score = -captures(ictx, depth1, ply+1, -betta, -alpha, pv, -ScoreMax);
+      int depthInc1 = depthInc + depthIncrement(ictx, move, false);
+      score = -captures(ictx, depth + depthInc1 - ONE_PLY, ply+1, -betta, -alpha, pv, -ScoreMax);
     }
 
     scontexts_[ictx].board_.unmakeMove();
@@ -776,6 +773,11 @@ ScoreType Player::captures(int ictx, int depth, int ply, ScoreType alpha, ScoreT
 
 /// extract data from hash table
 #ifdef USE_HASH
+void Player::prefetchHash(int ictx)
+{
+  hash_.prefetch(scontexts_[ictx].board_.hashCode());
+}
+
 GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, ScoreType betta, Move & hmove, ScoreType & hscore, bool pv)
 {
   const HItem * hitem = hash_.find(scontexts_[ictx].board_.hashCode());
@@ -788,6 +790,8 @@ GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, 
 
   if ( pv )
     return GHashTable::AlphaBetta;
+
+  depth = (depth + ONE_PLY - 1) / ONE_PLY;
 
   hscore = hitem->score_;
   if ( hscore >= Figure::MatScore-MaxPly )
@@ -828,7 +832,7 @@ GHashTable::Flag Player::getHash(int ictx, int depth, int ply, ScoreType alpha, 
 /// insert data to hash table
 void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType betta, ScoreType score, int depth, int ply, bool threat)
 {
-  if ( scontexts_[ictx].board_.repsCount() >= 3 )
+  if (scontexts_[ictx].board_.repsCount() >= 3)
     return;
 
   PackedMove pm = scontexts_[ictx].board_.packMove(move);
@@ -846,7 +850,7 @@ void Player::putHash(int ictx, const Move & move, ScoreType alpha, ScoreType bet
     score += ply;
   else if ( score <= -Figure::MatScore+MaxPly )
     score -= ply;
-  hash_.push(scontexts_[ictx].board_.hashCode(), score, depth, flag, pm, threat);
+  hash_.push(scontexts_[ictx].board_.hashCode(), score, depth / ONE_PLY, flag, pm, threat);
 }
 #endif
 
