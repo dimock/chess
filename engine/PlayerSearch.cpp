@@ -224,28 +224,21 @@ int Player::depthIncrement(int ictx, Move & move, bool pv) const
   if ( scontexts_[ictx].board_.underCheck() )
     depthInc += ONE_PLY;
 
-  if (pv && move.see_good_)
+  if ( !pv || !move.see_good_)
+    return depthInc;
+
+  if (move.new_type_ == Figure::TypeQueen || move.new_type_ == Figure::TypeKnight)
+    return depthInc + ONE_PLY;
+
+  // recapture
+  if (scontexts_[ictx].board_.halfmovesCount() > 1)
   {
-    // promotion
-    if (move.new_type_ == Figure::TypeQueen || move.new_type_ == Figure::TypeKnight)
-      depthInc += ONE_PLY;
+    const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(-1);
+    const UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
-    // recapture
-    if (scontexts_[ictx].board_.halfmovesCount() > 1)
-    {
-      const UndoInfo & prev = scontexts_[ictx].board_.undoInfoRev(-1);
-      const UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
-
-      if (move.capture_)
-      {
-        if (prev.to_ == curr.to_ || curr.en_passant_ == curr.to_ )
-          depthInc += ONE_PLY;
-      }
-    }
+    if ( move.capture_ && (prev.to_ == curr.to_ || curr.en_passant_ == curr.to_) )
+      return depthInc + ONE_PLY;
   }
-
-  if (depthInc > ONE_PLY)
-    depthInc = ONE_PLY;
 
 	return depthInc;
 }
