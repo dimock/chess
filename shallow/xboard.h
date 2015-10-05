@@ -62,6 +62,7 @@ private:
 #ifdef WRITE_LOG_FILE_
   std::ofstream ofs_log_;
 #endif
+  std::ofstream ofslog1_;
 
   HANDLE hinput_;
   bool   in_pipe_;

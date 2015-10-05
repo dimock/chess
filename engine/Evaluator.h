@@ -118,12 +118,14 @@ private:
 
   enum SpecialCases
   {
-    SC_None, SC_RBR_W, SC_RNR_W, SC_RBR_B, SC_RNR_B
+    SC_None, SC_RBR_W, SC_RNR_W, SC_RBR_B, SC_RNR_B, SC_R2F_B, SC_R2F_W, SC_RFP_B, SC_RFP_W, SC_2NP_B, SC_2NP_W
   };
 
   SpecialCases findSpecialCase() const;
   ScoreType evaluateSpecial(SpecialCases sc) const;
   ScoreType evaluateWinnerLoser();
+  bool evaluateWinnerLoserSpecial(ScoreType & score);
+  ScoreType evaluateTrueWinnerLoser();
 
   // multiple coefficients for opening/endgame
   GamePhase detectPhase(int & coef_o, int & coef_e);

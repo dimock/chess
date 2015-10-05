@@ -73,7 +73,7 @@ namespace nst
   extern bool get_bit_dir_[10];
 };
 
-//#define USE_IID
+#define USE_IID
 #define USE_FUTILITY_PRUNING
 #define USE_DELTA_PRUNING
 #define USE_HASH

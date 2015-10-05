@@ -7,6 +7,8 @@
 #include "MovesGenerator.h"
 #include "Evaluator.h"
 #include <algorithm>
+#include <fstream>
+#include <windows.h>
 
 //////////////////////////////////////////////////////////////////////////
 inline Figure::Type delta2type(int delta)
@@ -94,6 +96,83 @@ bool Player::findMove(SearchResult * sres)
   return ok;
 }
 
+void Player::logPV()
+{
+  if (!callbacks_.slog_)
+    return;
+
+  time_t curtime;
+  time(&curtime);
+  tm * t = localtime(&curtime);
+  char strcurtime[MAX_PATH];
+  strftime(strcurtime, MAX_PATH, "%d:%m:%Y %H:%M:%S ", t);
+  (*callbacks_.slog_) << strcurtime;
+  (*callbacks_.slog_) << "iter " << sdata_.depth_ << " ";
+
+  Board board = scontexts_[0].board_;
+  UndoInfo undoStack[Board::GameLength];
+  board.set_undoStack(undoStack);
+
+  if (sdata_.best_)
+  {
+    char strbest[64];
+    if (printSAN(board, sdata_.best_, strbest))
+    {
+      (*callbacks_.slog_) << " bm " << strbest << " (" << sdata_.best_.vsort_ << ") ";
+    }
+  }
+
+  (*callbacks_.slog_) << "pv ";
+  for (int i = 0; i < MaxPly; ++i)
+  {
+    Move move = scontexts_[0].plystack_[0].pv_[i];
+    if (!move)
+      break;
+    char str[64];
+    if (!printSAN(board, move, str))
+      break;
+    board.makeMove(move);
+    (*callbacks_.slog_) << str << " (" << move.vsort_ << ") ";
+  }
+  (*callbacks_.slog_) << std::endl;
+}
+
+void Player::logMovies()
+{
+  if (!callbacks_.slog_)
+    return;
+  
+  Board board = scontexts_[0].board_;
+  UndoInfo undoStack[Board::GameLength];
+  board.set_undoStack(undoStack);
+
+  char fen[1024];
+  board.toFEN(fen);
+
+  time_t curtime;
+  time(&curtime);
+  tm * t = localtime(&curtime);
+  char strcurtime[MAX_PATH];
+  strftime(strcurtime, MAX_PATH, "%d:%m:%Y %H:%M:%S ", t);
+  (*callbacks_.slog_) << strcurtime;
+  (*callbacks_.slog_) << " position " << fen << " ";
+  (*callbacks_.slog_) << " halfmovies count " << scontexts_[0].board_.halfmovesCount() << " ";
+  (*callbacks_.slog_) << "iter " << sdata_.depth_ << " ";
+  (*callbacks_.slog_) << "movies ";
+
+  for (int i = 0; i < sdata_.numOfMoves_; ++i)
+  {
+    if (checkForStop())
+      break;
+
+    Move move = scontexts_[0].moves_[i];
+    char str[64];
+    if (!printSAN(board, move, str))
+      break;
+    (*callbacks_.slog_) << str << " {" << move.vsort_ << "} ";
+  }
+  (*callbacks_.slog_) << std::endl;
+}
 bool Player::search(SearchResult * sres)
 {
   if ( !sres )
@@ -240,6 +319,23 @@ int Player::depthIncrement(int ictx, Move & move, bool pv) const
       return depthInc + ONE_PLY;
   }
 
+  //// entering pawns endgame
+  //if (move.capture_)
+  //{
+  //  int numFigures = scontexts_[ictx].board_.fmgr().queens(Figure::ColorBlack) + scontexts_[ictx].board_.fmgr().queens(Figure::ColorWhite) +
+  //    scontexts_[ictx].board_.fmgr().rooks(Figure::ColorBlack) + scontexts_[ictx].board_.fmgr().rooks(Figure::ColorWhite) +
+  //    scontexts_[ictx].board_.fmgr().bishops(Figure::ColorBlack) + scontexts_[ictx].board_.fmgr().bishops(Figure::ColorWhite) +
+  //    scontexts_[ictx].board_.fmgr().knights(Figure::ColorBlack) + scontexts_[ictx].board_.fmgr().knights(Figure::ColorWhite);
+
+  //  int numPawns = scontexts_[ictx].board_.fmgr().pawns(Figure::ColorBlack) + scontexts_[ictx].board_.fmgr().pawns(Figure::ColorWhite);
+  //  if (numFigures == 0 && numPawns > 0)
+  //    return depthInc + ONE_PLY;
+  //}
+
+  // pawn go to 7th line
+  if ( move.threat_ )
+    depthInc += ONE_PLY / 4;
+
 	return depthInc;
 }
 
@@ -262,7 +358,9 @@ ScoreType Player::alphaBetta0()
   
   bool check_escape = scontexts_[0].board_.underCheck();
   bool null_move = false;
+  int sortDepth = 4;
 
+  //logMovies();
   for (sdata_.counter_ = 0; sdata_.counter_ < sdata_.numOfMoves_; ++sdata_.counter_)
   {
     if ( checkForStop() )
@@ -277,8 +375,8 @@ ScoreType Player::alphaBetta0()
 			move.seen_ = 1;
 		}
 
-    if ( scontexts_[0].board_.isMoveThreat(move) )
-      move.threat_ = 1;
+    //if ( scontexts_[0].board_.isMoveThreat(move) )
+    //  move.threat_ = 1;
     
     scontexts_[0].board_.makeMove(move);
     sdata_.inc_nc();
@@ -286,7 +384,7 @@ ScoreType Player::alphaBetta0()
     {
       int depthInc = depthIncrement(0, move, true);
 
-      if (depth == depth0_*ONE_PLY || !sdata_.counter_) // 1st iteration
+      if (depth <= sortDepth*ONE_PLY || sdata_.counter_ < 5)
         score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, -alpha, true);
       else
       {
@@ -301,8 +399,6 @@ ScoreType Player::alphaBetta0()
              scontexts_[0].board_.canBeReduced() )
         {
           R = ONE_PLY;
-          //if (sdata_.counter_ > 10 && !move.see_good_ && (int)move.vsort_-ScoreMax < alpha-Figure::figureWeight_[Figure::TypeKnight] )
-          //  R += ONE_PLY / 4;
         }
 #endif
 
@@ -330,14 +426,17 @@ ScoreType Player::alphaBetta0()
         assemblePV(0, move, scontexts_[0].board_.underCheck(), 0);
 
         // bring best move to front, shift other moves 1 position right
-        if ( sdata_.depth_ > depth0_ )
+        if ( sdata_.depth_ > sortDepth )
         {
           for (int j = sdata_.counter_; j > 0; --j)
             scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
           scontexts_[0].moves_[0] = sdata_.best_;
         }
       }
+
+      //logPV();
     }
+
 
     if ( callbacks_.sendStats_ && sparams_.analyze_mode_ )
       (callbacks_.sendStats_)(&sdata_);
@@ -349,12 +448,12 @@ ScoreType Player::alphaBetta0()
 
   if ( !stopped() )
   {
-    // full sort only on 1st iteration
-    if ( sdata_.depth_ == depth0_ )
+    // full sort only on 2 first iterations
+    if ( sdata_.depth_ <= sortDepth )
       std::sort(scontexts_[0].moves_, scontexts_[0].moves_ + sdata_.numOfMoves_);
-    // then sort all moves but 1st
-    else if ( sdata_.numOfMoves_ > 2 )
-      std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
+    //// then sort all moves but 1st
+    //else if ( sdata_.numOfMoves_ > 2 )
+    //  std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
   }
 
   return alpha;
@@ -468,13 +567,13 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   {
     ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
     int delta = calculateDelta(alpha, score0);
-    if ( delta > 0 )
+    if (delta > 0)
       return captures(ictx, depth, ply, alpha, betta, pv, score0);
   }
 #endif
 
 #ifdef USE_IID
-  if (!hmove && depth > 4 * ONE_PLY)
+  if (!hmove && (flag == GHashTable::NoFlag) && (depth >= 4 * ONE_PLY && pv || depth >= 6 * ONE_PLY))
   {
     ScoreType iid_score = alphaBetta(ictx, depth - 2 * ONE_PLY, ply, alpha, betta, pv, false);
     ScoreType hscr;
@@ -522,9 +621,8 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 			move.seen_ = 1;
 		}
 
-    // detect some threat, like pawn's attack etc...
-    // don't LMR such moves
-    if ( scontexts_[ictx].board_.isMoveThreat(move) )
+    //// detect some threat, like pawn's attack etc...
+    if ( pv && scontexts_[ictx].board_.isMoveThreat(move) )
       move.threat_ = 1;
 
     scontexts_[ictx].board_.makeMove(move);
@@ -535,8 +633,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
     int depthInc1 = depthIncrement(ictx, move, pv) + depthInc;
-    //if (depthInc1 > 2*ONE_PLY)
-    //  depthInc1 = 2*ONE_PLY;
 
     {
 
@@ -545,9 +641,6 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       else
       {
         int depthInc2 = depthIncrement(ictx, move, false) + depthInc;
-        //if (depthInc2 > ONE_PLY)
-        //  depthInc2 = ONE_PLY;
-
         int R = 0;
 
 #ifdef USE_LMR
@@ -555,7 +648,8 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
              sdata_.depth_ * ONE_PLY > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
              alpha > -Figure::MatScore-MaxPly &&             
-             scontexts_[ictx].board_.canBeReduced() )
+             scontexts_[ictx].board_.canBeReduced() &&
+             move != killer )
         {
           R = ONE_PLY;
           curr.reduced_ = true;
@@ -870,7 +964,7 @@ bool Player::isRealThreat(int ictx, const Move & move)
   THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 || prev.threat_ )
+  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 )
     return false;
 
   /// we have to move king even if there a lot of figures

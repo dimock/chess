@@ -63,7 +63,7 @@ bool Board::canBeReduced() const
   History & hist = MovesGenerator::history(undo.from_, undo.to_);
 
   return  ((hist.good()<<2) <= hist.bad()) &&
-    !(undo.capture_ || undo.new_type_ > 0 || undo.threat_ || undo.castle_ || underCheck());
+    !(undo.capture_ || undo.new_type_ > 0 || undo.castle_ || underCheck());
 }
 
 bool Board::isDangerPawn(Move & move) const

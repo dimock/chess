@@ -69,7 +69,7 @@ typedef void (*SendStats)(SearchData *);
 struct CallbackStruct
 {
   CallbackStruct() :
-    queryInput_(0), giveTime_(0), sendOutput_(0), sendStats_(0), sendFinished_(0)
+    queryInput_(0), giveTime_(0), sendOutput_(0), sendStats_(0), sendFinished_(0), slog_(0)
   {
   }
 
@@ -78,6 +78,7 @@ struct CallbackStruct
   SendOutput        sendOutput_;
   SendStats         sendStats_;
   SendOutput        sendFinished_;
+  std::ofstream   * slog_;
 };
 
 
@@ -182,6 +183,9 @@ private:
   bool checkForStop();
   void reset();
 
+  // logging
+  void logPV();
+  void logMovies();
   // time control
   void testTimer();
   bool stopped() const { return stop_; }

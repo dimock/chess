@@ -76,6 +76,19 @@ xBoardMgr::xBoardMgr() :
   }
 
   CallbackStruct cs;
+  
+  if (0)
+  {
+    time_t curtime;
+    time(&curtime);
+    tm * t = localtime(&curtime);
+    char strcurtime[MAX_PATH];
+    strftime(strcurtime, MAX_PATH, "%d_%m_%Y-%H_%M_%S ", t);
+    std::string logfname = std::string("log_") + strcurtime + std::string("_.txt");
+    ofslog1_.open(logfname, ios_base::app);
+    cs.slog_ = &ofslog1_;
+  }
+
   cs.sendOutput_ = &sendOutput;
   cs.sendStats_ = &sendStats;
   cs.queryInput_ = &queryInput;
@@ -174,7 +187,7 @@ void xBoardMgr::write_error(const std::exception * e /*= 0*/)
 
 void xBoardMgr::printPV(SearchResult * sres)
 {
-  if ( !sres || !sres->best_ )
+  if ( !sres || !sres->best_ || sres->best_ != sres->pv_[0] )
     return;
 
   if ( uci_protocol_ )
@@ -575,7 +588,7 @@ void xBoardMgr::uciPosition(const xCmd & cmd)
     ofs_log_ << "fen: " << fen << endl;
 #endif
   }
-  else if ( cmd.param(0) == "startpos" )
+  else if ( cmd.param(0) == "startpos" || cmd.param(0) == "moves" )
   {
     thk_.fromFEN(0);
   }
@@ -642,6 +655,8 @@ void xBoardMgr::uciGo(const xCmd & cmd)
       thk_.setMovesToGo(cmd.asInt(i+1));
     else if ( cmd.param(i) == "movetime"  )
       thk_.setTimePerMove(cmd.asInt(i+1));
+    else if ( cmd.param(i) == "depth"  )
+      thk_.setDepth(cmd.asInt(i+1));
   }
 
   if ( analize_mode )
