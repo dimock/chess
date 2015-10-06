@@ -332,9 +332,9 @@ int Player::depthIncrement(int ictx, Move & move, bool pv) const
   //    return depthInc + ONE_PLY;
   //}
 
-  // pawn go to 7th line
-  if ( move.threat_ )
-    depthInc += ONE_PLY / 4;
+  //// pawn go to 7th line
+  //if ( move.threat_ )
+  //  depthInc += ONE_PLY / 4;
 
 	return depthInc;
 }
@@ -375,17 +375,22 @@ ScoreType Player::alphaBetta0()
 			move.seen_ = 1;
 		}
 
-    //if ( scontexts_[0].board_.isMoveThreat(move) )
-    //  move.threat_ = 1;
+    if ( scontexts_[0].board_.isMoveThreat(move) )
+      move.threat_ = 1;
     
     scontexts_[0].board_.makeMove(move);
     sdata_.inc_nc();
+
+    bool fullRange = false;
 
     {
       int depthInc = depthIncrement(0, move, true);
 
       if (depth <= sortDepth*ONE_PLY || sdata_.counter_ < 5)
+      {
         score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, -alpha, true);
+        fullRange = true;
+      }
       else
       {
         int depthInc2 = depthIncrement(0, move, false);
@@ -408,7 +413,10 @@ ScoreType Player::alphaBetta0()
           score = -alphaBetta(0, depth + depthInc2 - ONE_PLY, 1, -alpha - 1, -alpha, false);
 
         if ( !stopped() && score > alpha )
+        {
           score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, -alpha, true);
+          fullRange = true;
+        }
       }
     }
 
@@ -416,7 +424,8 @@ ScoreType Player::alphaBetta0()
 
     if ( !stopped() )
     {
-      move.vsort_ = score + ScoreMax;
+      if ( fullRange )
+        move.vsort_ = score + ScoreMax;
 
       if ( score > alpha )
       {
@@ -431,6 +440,25 @@ ScoreType Player::alphaBetta0()
           for (int j = sdata_.counter_; j > 0; --j)
             scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
           scontexts_[0].moves_[0] = sdata_.best_;
+        }
+      }
+      else if ( score < alpha && sdata_.depth_ > sortDepth && fullRange )
+      {
+        int index = -1;
+        for (int j = 1; j < sdata_.counter_; ++j)
+        {
+          if ( scontexts_[0].moves_[j].vsort_ < move.vsort_ )
+          {
+            index = j;
+            break;
+          }
+        }
+        if ( index > 0 )
+        {
+          Move curr = move;
+          for (int j = sdata_.counter_; j > index; --j)
+            scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
+          scontexts_[0].moves_[index] = curr;
         }
       }
 
@@ -621,8 +649,9 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 			move.seen_ = 1;
 		}
 
-    //// detect some threat, like pawn's attack etc...
-    if ( pv && scontexts_[ictx].board_.isMoveThreat(move) )
+    // detect some threat, like pawn's attack etc...
+    // don't LMR such moves
+    if ( scontexts_[ictx].board_.isMoveThreat(move) )
       move.threat_ = 1;
 
     scontexts_[ictx].board_.makeMove(move);
@@ -648,8 +677,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
              sdata_.depth_ * ONE_PLY > LMR_MinDepthLimit &&
              depth > LMR_DepthLimit &&
              alpha > -Figure::MatScore-MaxPly &&             
-             scontexts_[ictx].board_.canBeReduced() &&
-             move != killer )
+             scontexts_[ictx].board_.canBeReduced() )
         {
           R = ONE_PLY;
           curr.reduced_ = true;
@@ -964,7 +992,7 @@ bool Player::isRealThreat(int ictx, const Move & move)
   THROW_IF( !pfield || pfield.color() != ocolor, "no figure of required color on the field it was move to while detecting threat" );
 
   // don't need forbid reduction of captures, checks, promotions and pawn's attack because we've already done it
-  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 )
+  if ( prev.capture_ || prev.new_type_ > 0 || prev.checkingNum_ > 0 || prev.threat_ )
     return false;
 
   /// we have to move king even if there a lot of figures

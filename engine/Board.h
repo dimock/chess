@@ -103,6 +103,7 @@ public:
     if ( !ok )
       killer.clear();
 
+    killer.threat_ = 1; // to prevent LMR
     return ok;
   }
 
@@ -156,23 +157,19 @@ public:
 	bool isDoublePawnAttack(const Move & move) const;
 	bool isBishopAttack(const Move & move) const;
 
-  /// extend move with some threat
-  /// for now pawn go to 7th
+  /// don't allow LMR of strong moves
   bool isMoveThreat(Move & move) const
   {
-    const Field & ffrom = getField(move.from_);
-    if ( ffrom.type() != Figure::TypePawn )
-      return false;
+    if ( isDangerPawn(move) )
+			return true;
 
-    Figure::Color  color = color_;
-    if ( color == Figure::ColorWhite && move.to_ >= 48 ||
-         color == Figure::ColorWhite && move.to_ < 16 )
-    {
-      if ( !move.seen_ && see(move) >= 0 )
-		    move.see_good_ = 1;
-	    move.seen_ = 1;
-      return move.see_good_;
-    }
+		//if ( (!move.seen_ || move.see_good_) && (isDangerQueen(move) || isKnightFork(move)) )
+  //  {
+		//	bool ok = move.see_good_ || (!move.seen_ && see(move) >= 0);
+	 //   move.seen_ = 1;
+		//	move.see_good_ = ok;
+		//	return ok;
+  //  }
 
     return false;
   }
