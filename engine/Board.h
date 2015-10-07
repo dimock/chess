@@ -98,12 +98,12 @@ public:
 
     killer = ki;
     killer.clearFlags();
+    killer.threat_ = 1; // to prevent LMR
 
     bool ok = possibleMove(killer);
     if ( !ok )
       killer.clear();
 
-    killer.threat_ = 1; // to prevent LMR
     return ok;
   }
 

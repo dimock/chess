@@ -118,7 +118,7 @@ void Player::logPV()
     char strbest[64];
     if (printSAN(board, sdata_.best_, strbest))
     {
-      (*callbacks_.slog_) << " bm " << strbest << " (" << sdata_.best_.vsort_ << ") ";
+      (*callbacks_.slog_) << " bm " << strbest << " (" << (int)sdata_.best_.vsort_ - (int)ScoreMax << ") ";
     }
   }
 
@@ -132,7 +132,7 @@ void Player::logPV()
     if (!printSAN(board, move, str))
       break;
     board.makeMove(move);
-    (*callbacks_.slog_) << str << " (" << move.vsort_ << ") ";
+    (*callbacks_.slog_) << str << " (" << (int)move.vsort_ - (int)ScoreMax << ") ";
   }
   (*callbacks_.slog_) << std::endl;
 }
@@ -169,7 +169,7 @@ void Player::logMovies()
     char str[64];
     if (!printSAN(board, move, str))
       break;
-    (*callbacks_.slog_) << str << " {" << move.vsort_ << "} ";
+    (*callbacks_.slog_) << str << " {" << (int)move.vsort_ - (int)ScoreMax << "} ";
   }
   (*callbacks_.slog_) << std::endl;
 }
@@ -358,9 +358,12 @@ ScoreType Player::alphaBetta0()
   
   bool check_escape = scontexts_[0].board_.underCheck();
   bool null_move = false;
-  int sortDepth = 4;
+  int sortDepth = 5;
+  int numMovesNoReduce = 5;
 
-  //logMovies();
+#ifdef LOG_PV
+  logMovies();
+#endif
   for (sdata_.counter_ = 0; sdata_.counter_ < sdata_.numOfMoves_; ++sdata_.counter_)
   {
     if ( checkForStop() )
@@ -386,9 +389,9 @@ ScoreType Player::alphaBetta0()
     {
       int depthInc = depthIncrement(0, move, true);
 
-      if (depth <= sortDepth*ONE_PLY || sdata_.counter_ < 5)
+      if (depth <= sortDepth*ONE_PLY || sdata_.counter_ < numMovesNoReduce)
       {
-        score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, -alpha, true);
+        score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, depth <= sortDepth*ONE_PLY ? ScoreMax : -alpha, true);
         fullRange = true;
       }
       else
@@ -424,7 +427,7 @@ ScoreType Player::alphaBetta0()
 
     if ( !stopped() )
     {
-      if ( fullRange )
+      //if (score != alpha)
         move.vsort_ = score + ScoreMax;
 
       if ( score > alpha )
@@ -442,27 +445,29 @@ ScoreType Player::alphaBetta0()
           scontexts_[0].moves_[0] = sdata_.best_;
         }
       }
-      else if ( score < alpha && sdata_.depth_ > sortDepth && fullRange )
-      {
-        int index = -1;
-        for (int j = 1; j < sdata_.counter_; ++j)
-        {
-          if ( scontexts_[0].moves_[j].vsort_ < move.vsort_ )
-          {
-            index = j;
-            break;
-          }
-        }
-        if ( index > 0 )
-        {
-          Move curr = move;
-          for (int j = sdata_.counter_; j > index; --j)
-            scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
-          scontexts_[0].moves_[index] = curr;
-        }
-      }
+      //else if ( score < alpha && sdata_.depth_ > sortDepth )//&& fullRange )
+      //{
+      //  int index = -1;
+      //  for (int j = 1; j < sdata_.counter_; ++j)
+      //  {
+      //    if ( scontexts_[0].moves_[j].vsort_ < move.vsort_ )
+      //    {
+      //      index = j;
+      //      break;
+      //    }
+      //  }
+      //  if ( index > 0 )
+      //  {
+      //    Move curr = move;
+      //    for (int j = sdata_.counter_; j > index; --j)
+      //      scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
+      //    scontexts_[0].moves_[index] = curr;
+      //  }
+      //}
 
-      //logPV();
+#ifdef LOG_PV
+      logPV();
+#endif
     }
 
 
@@ -476,12 +481,12 @@ ScoreType Player::alphaBetta0()
 
   if ( !stopped() )
   {
-    // full sort only on 2 first iterations
+    // full sort only on first iterations
     if ( sdata_.depth_ <= sortDepth )
       std::sort(scontexts_[0].moves_, scontexts_[0].moves_ + sdata_.numOfMoves_);
-    //// then sort all moves but 1st
-    //else if ( sdata_.numOfMoves_ > 2 )
-    //  std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
+    ////// then sort all moves but 1st
+    ////else if ( sdata_.numOfMoves_ > 2 )
+    ////  std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
   }
 
   return alpha;

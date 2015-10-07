@@ -77,7 +77,7 @@ xBoardMgr::xBoardMgr() :
 
   CallbackStruct cs;
   
-  if (0)
+#ifdef LOG_PV
   {
     time_t curtime;
     time(&curtime);
@@ -88,6 +88,7 @@ xBoardMgr::xBoardMgr() :
     ofslog1_.open(logfname, ios_base::app);
     cs.slog_ = &ofslog1_;
   }
+#endif
 
   cs.sendOutput_ = &sendOutput;
   cs.sendStats_ = &sendStats;
