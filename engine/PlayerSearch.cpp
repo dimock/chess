@@ -358,7 +358,7 @@ ScoreType Player::alphaBetta0()
   
   bool check_escape = scontexts_[0].board_.underCheck();
   bool null_move = false;
-  int sortDepth = 5;
+  int sortDepth = 4;
   int numMovesNoReduce = 5;
 
 #ifdef LOG_PV

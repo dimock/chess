@@ -1822,6 +1822,7 @@ Evaluator::SpecialCases Evaluator::findSpecialCase() const
 
   // white rook against figure + pawn
   if ( fmgr.rooks(Figure::ColorWhite) == 1 &&
+       fmgr.rooks(Figure::ColorBlack) == 0 && 
        fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) + fmgr.pawns(Figure::ColorWhite) == 0 &&
        fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 1 && 
        fmgr.pawns(Figure::ColorBlack) == 1 )
@@ -1831,6 +1832,7 @@ Evaluator::SpecialCases Evaluator::findSpecialCase() const
 
   // black rook against figure + pawn
   if ( fmgr.rooks(Figure::ColorBlack) == 1 &&
+       fmgr.rooks(Figure::ColorWhite) == 0 &&
        fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) + fmgr.pawns(Figure::ColorBlack) == 0 &&
        fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 1 && 
        fmgr.pawns(Figure::ColorWhite) == 1 )
@@ -1865,14 +1867,14 @@ Evaluator::SpecialCases Evaluator::findSpecialCase() const
   if ( fmgr.pawns(Figure::ColorWhite) + fmgr.pawns(Figure::ColorBlack) > 0 )
     return SC_None;
 
-  // black side has 1 rook, white hase 2 figures
+  // black side has 1 rook, white has 2 figures
   if ( fmgr.rooks(Figure::ColorBlack) == 1 && fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 0 &&
        fmgr.rooks(Figure::ColorWhite) == 0 && fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 2 )
   {
     return SC_R2F_B;
   }
 
-  // white side has 1 rook, black hase 2 figures
+  // white side has 1 rook, black has 2 figures
   if ( fmgr.rooks(Figure::ColorWhite) == 1 && fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 0 &&
        fmgr.rooks(Figure::ColorBlack) == 0 && fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 2 )
   {
@@ -1993,7 +1995,7 @@ ScoreType Evaluator::evaluateSpecial(SpecialCases sc) const
     // loser king's position should be near to center
     score += positionEvaluation(1, Figure::ColorWhite, Figure::TypeKing, kpw);
     // winner king should be near to loser king
-    int ki_dist = board_->g_distanceCounter->getDistance(kpw, kpw);
+    int ki_dist = board_->g_distanceCounter->getDistance(kpw, kpb);
     score += ki_dist;
   }
 
@@ -2071,6 +2073,7 @@ bool Evaluator::evaluateWinnerLoserSpecial(ScoreType & score)
   {
     // force exchange
     score = -10;
+    score += positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, kpw) >> 2;
     return true;
   }
   // 2 bishop agains 1 bishop
@@ -2084,6 +2087,7 @@ bool Evaluator::evaluateWinnerLoserSpecial(ScoreType & score)
   }
   // 2 bishop agains 1 knight
   if ( (fmgr.bishops(Figure::ColorBlack) == 2 && fmgr.knights(Figure::ColorBlack) == 0) && 
+       (fmgr.bishops_b(Figure::ColorBlack) == 1 && fmgr.bishops_w(Figure::ColorBlack) == 1) &&
        (fmgr.bishops(Figure::ColorWhite) == 0 && fmgr.knights(Figure::ColorWhite) == 1) )
   {
     // can lose
@@ -2096,12 +2100,13 @@ bool Evaluator::evaluateWinnerLoserSpecial(ScoreType & score)
   }
 
   // usualy non-winning figures against 0
-  if ( ((fmgr.knights(Figure::ColorBlack) == 2) ||
-        (fmgr.bishops_b(Figure::ColorBlack) > 1 && fmgr.bishops_w(Figure::ColorBlack) == 0) ||
-        (fmgr.bishops_w(Figure::ColorBlack) > 1 && fmgr.bishops_b(Figure::ColorBlack) == 0)) &&
+  if ( ((fmgr.knights(Figure::ColorBlack) == 2 && fmgr.bishops(Figure::ColorBlack) == 0) ||
+        (fmgr.bishops_b(Figure::ColorBlack) > 1 && fmgr.bishops_w(Figure::ColorBlack) == 0 && fmgr.knights(Figure::ColorBlack) == 0) ||
+        (fmgr.bishops_w(Figure::ColorBlack) > 1 && fmgr.bishops_b(Figure::ColorBlack) == 0 && fmgr.knights(Figure::ColorBlack) == 0)) &&
         (fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 0) )
   {
     score = -10;
+    score += positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, kpw) >> 2;
     return true;
   }
 
@@ -2121,6 +2126,7 @@ bool Evaluator::evaluateWinnerLoserSpecial(ScoreType & score)
   {
     // force exchange
     score = +10;
+    score -= positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, kpb) >> 2;
     return true;
   }
   // 2 bishop agains 1 bishop
@@ -2134,6 +2140,7 @@ bool Evaluator::evaluateWinnerLoserSpecial(ScoreType & score)
   }
   // 2 bishop agains 1 knight
   if ( (fmgr.bishops(Figure::ColorWhite) == 2 && fmgr.knights(Figure::ColorWhite) == 0) && 
+       (fmgr.bishops_b(Figure::ColorWhite) == 1 && fmgr.bishops_w(Figure::ColorWhite) == 1) &&
        (fmgr.bishops(Figure::ColorBlack) == 0 && fmgr.knights(Figure::ColorBlack) == 1) )
   {
     // can lose
@@ -2146,12 +2153,13 @@ bool Evaluator::evaluateWinnerLoserSpecial(ScoreType & score)
   }
 
   // usualy non-winning figures against 0
-  if ( ((fmgr.knights(Figure::ColorWhite) == 2) ||
-        (fmgr.bishops_b(Figure::ColorWhite) > 1 && fmgr.bishops_w(Figure::ColorWhite) == 0) ||
-        (fmgr.bishops_w(Figure::ColorWhite) > 1 && fmgr.bishops_b(Figure::ColorWhite) == 0)) &&
+  if ( ((fmgr.knights(Figure::ColorWhite) == 2 && fmgr.bishops(Figure::ColorWhite) == 0) ||
+        (fmgr.bishops_b(Figure::ColorWhite) > 1 && fmgr.bishops_w(Figure::ColorWhite) == 0 && fmgr.knights(Figure::ColorWhite) == 0) ||
+        (fmgr.bishops_w(Figure::ColorWhite) > 1 && fmgr.bishops_b(Figure::ColorWhite) == 0 && fmgr.knights(Figure::ColorWhite) == 0)) &&
         (fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 0) )
   {
     score = 10;
+    score -= positionEvaluation(1, Figure::ColorBlack, Figure::TypeKing, kpb);
     return true;
   }
 
