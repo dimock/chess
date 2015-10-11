@@ -192,9 +192,10 @@ bool Player::search(SearchResult * sres)
     MovesGenerator mg(scontexts_[0].board_);
     for (int i = 0; i < mg.count(); ++i)
     {
-      const Move & move = mg[i];
+      Move move = mg[i];
       if ( !move )
         break;
+      move.vsort_ = 0;
       if ( scontexts_[0].board_.validateMove(move) )
         scontexts_[0].moves_[sdata_.numOfMoves_++] = move;
     }
@@ -361,6 +362,8 @@ ScoreType Player::alphaBetta0()
   int sortDepth = 4;
   int numMovesNoReduce = 5;
 
+  const bool bDoSort = sdata_.depth_ <= sortDepth;
+
 #ifdef LOG_PV
   logMovies();
 #endif
@@ -388,32 +391,34 @@ ScoreType Player::alphaBetta0()
 
     {
       int depthInc = depthIncrement(0, move, true);
+      bool strongMove = (((int)move.vsort_ - (int)ScoreMax) > (alpha-500)) || (sdata_.counter_ < numMovesNoReduce);
 
-      if (depth <= sortDepth*ONE_PLY || sdata_.counter_ < numMovesNoReduce)
+      if (bDoSort || sdata_.counter_ < 1)
       {
-        score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, depth <= sortDepth*ONE_PLY ? ScoreMax : -alpha, true);
+        score = -alphaBetta(0, depth + depthInc - ONE_PLY, 1, -betta, bDoSort ? ScoreMax : -alpha, true);
         fullRange = true;
       }
       else
       {
-        int depthInc2 = depthIncrement(0, move, false);
+        int depthInc2 = depthIncrement(0, move, strongMove);
         int R = 0;
 
 
 #ifdef USE_LMR
         if ( !check_escape &&
+             sdata_.counter_ >= numMovesNoReduce &&
              depth > LMR_MinDepthLimit &&
-             alpha > -Figure::MatScore-MaxPly && 
+             //alpha > -Figure::MatScore-MaxPly && 
              scontexts_[0].board_.canBeReduced() )
         {
           R = ONE_PLY;
         }
 #endif
 
-        score = -alphaBetta(0, depth + depthInc2 - ONE_PLY - R, 1, -alpha-1, -alpha, false);
+        score = -alphaBetta(0, depth + depthInc2 - ONE_PLY - R, 1, -alpha-1, -alpha, strongMove);
 
         if ( !stopped() && score > alpha && R > 0 )
-          score = -alphaBetta(0, depth + depthInc2 - ONE_PLY, 1, -alpha - 1, -alpha, false);
+          score = -alphaBetta(0, depth + depthInc2 - ONE_PLY, 1, -alpha - 1, -alpha, strongMove);
 
         if ( !stopped() && score > alpha )
         {
@@ -427,43 +432,25 @@ ScoreType Player::alphaBetta0()
 
     if ( !stopped() )
     {
-      //if (score != alpha)
+      if ( bDoSort )
         move.vsort_ = score + ScoreMax;
 
       if ( score > alpha )
       {
+        move.vsort_ = score + ScoreMax;
         sdata_.best_ = move;
         alpha = score;
 
         assemblePV(0, move, scontexts_[0].board_.underCheck(), 0);
 
         // bring best move to front, shift other moves 1 position right
-        if ( sdata_.depth_ > sortDepth )
+        if ( !bDoSort )
         {
           for (int j = sdata_.counter_; j > 0; --j)
             scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
           scontexts_[0].moves_[0] = sdata_.best_;
         }
       }
-      //else if ( score < alpha && sdata_.depth_ > sortDepth )//&& fullRange )
-      //{
-      //  int index = -1;
-      //  for (int j = 1; j < sdata_.counter_; ++j)
-      //  {
-      //    if ( scontexts_[0].moves_[j].vsort_ < move.vsort_ )
-      //    {
-      //      index = j;
-      //      break;
-      //    }
-      //  }
-      //  if ( index > 0 )
-      //  {
-      //    Move curr = move;
-      //    for (int j = sdata_.counter_; j > index; --j)
-      //      scontexts_[0].moves_[j] = scontexts_[0].moves_[j-1];
-      //    scontexts_[0].moves_[index] = curr;
-      //  }
-      //}
 
 #ifdef LOG_PV
       logPV();
@@ -482,11 +469,11 @@ ScoreType Player::alphaBetta0()
   if ( !stopped() )
   {
     // full sort only on first iterations
-    if ( sdata_.depth_ <= sortDepth )
+    if ( bDoSort )
       std::sort(scontexts_[0].moves_, scontexts_[0].moves_ + sdata_.numOfMoves_);
-    ////// then sort all moves but 1st
-    ////else if ( sdata_.numOfMoves_ > 2 )
-    ////  std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
+    //// then sort all moves but 1st
+    //else if ( sdata_.numOfMoves_ > 2 )
+    //  std::sort(scontexts_[0].moves_+1, scontexts_[0].moves_ + sdata_.numOfMoves_);
   }
 
   return alpha;
@@ -606,7 +593,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 #endif
 
 #ifdef USE_IID
-  if (!hmove && (flag == GHashTable::NoFlag) && (depth >= 4 * ONE_PLY && pv || depth >= 6 * ONE_PLY))
+  if (!hmove && depth >= 6 * ONE_PLY)
   {
     ScoreType iid_score = alphaBetta(ictx, depth - 2 * ONE_PLY, ply, alpha, betta, pv, false);
     ScoreType hscr;
@@ -625,6 +612,8 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   FastGenerator fg(scontexts_[ictx].board_, hmove, killer);
   if ( fg.singleReply() )
     depthInc += ONE_PLY;
+
+  const bool haveSpecialCase = scontexts_[ictx].eval_.isSpecialCase();
 
 #ifdef SINGULAR_EXT
   int  aboveAlphaN = 0;
@@ -662,11 +651,21 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     scontexts_[ictx].board_.makeMove(move);
     sdata_.inc_nc();
 
+    bool specialCaseAfter = scontexts_[ictx].eval_.isSpecialCase();
+
     //findSequence(ictx, move, ply, depth, counter, alpha, betta);
 
     UndoInfo & curr = scontexts_[ictx].board_.undoInfoRev(0);
 
     int depthInc1 = depthIncrement(ictx, move, pv) + depthInc;
+
+    if ( !haveSpecialCase && specialCaseAfter )
+    {
+      //if (depth + depthInc1 <= ONE_PLY)
+        depthInc1 += 2*ONE_PLY;
+      //else if (depth + depthInc1 <= 2*ONE_PLY)
+      //  depthInc1 += ONE_PLY;
+    }
 
     {
 
@@ -675,6 +674,14 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       else
       {
         int depthInc2 = depthIncrement(ictx, move, false) + depthInc;
+        if ( !haveSpecialCase && specialCaseAfter )
+        {
+          //if (depth + depthInc2 <= ONE_PLY)
+            depthInc2 += 2*ONE_PLY;
+          //else if (depth + depthInc2 <= 2*ONE_PLY)
+          //  depthInc2 += ONE_PLY;
+        }
+
         int R = 0;
 
 #ifdef USE_LMR

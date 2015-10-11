@@ -91,6 +91,8 @@ public:
 	/// evaluate material balance only
 	ScoreType express() const;
 
+  bool isSpecialCase() const;
+
 private:
 
   void prepare();

@@ -1805,6 +1805,10 @@ bool Evaluator::findRootToPawn(Figure::Color color, int promo_pos, int stepsMax)
   return false;
 }
 
+bool Evaluator::isSpecialCase() const
+{
+  return board_->isWinnerLoser() || findSpecialCase() != SC_None;
+}
 
 //////////////////////////////////////////////////////////////////////////
 /// special cases
