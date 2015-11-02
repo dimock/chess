@@ -613,7 +613,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
   if ( fg.singleReply() )
     depthInc += ONE_PLY;
 
-  const bool haveSpecialCase = scontexts_[ictx].eval_.isSpecialCase();
+  //const bool haveSpecialCase = scontexts_[ictx].eval_.isSpecialCase();
 
 #ifdef SINGULAR_EXT
   int  aboveAlphaN = 0;
@@ -651,7 +651,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     scontexts_[ictx].board_.makeMove(move);
     sdata_.inc_nc();
 
-    bool specialCaseAfter = scontexts_[ictx].eval_.isSpecialCase();
+    //bool specialCaseAfter = scontexts_[ictx].eval_.isSpecialCase();
 
     //findSequence(ictx, move, ply, depth, counter, alpha, betta);
 
@@ -659,13 +659,13 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
     int depthInc1 = depthIncrement(ictx, move, pv) + depthInc;
 
-    if ( !haveSpecialCase && specialCaseAfter )
-    {
-      //if (depth + depthInc1 <= ONE_PLY)
-        depthInc1 += 2*ONE_PLY;
-      //else if (depth + depthInc1 <= 2*ONE_PLY)
-      //  depthInc1 += ONE_PLY;
-    }
+    //if ( !haveSpecialCase && specialCaseAfter )
+    //{
+    //  //if (depth + depthInc1 <= ONE_PLY)
+    //    depthInc1 += 2*ONE_PLY;
+    //  //else if (depth + depthInc1 <= 2*ONE_PLY)
+    //  //  depthInc1 += ONE_PLY;
+    //}
 
     {
 
@@ -674,13 +674,13 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
       else
       {
         int depthInc2 = depthIncrement(ictx, move, false) + depthInc;
-        if ( !haveSpecialCase && specialCaseAfter )
-        {
-          //if (depth + depthInc2 <= ONE_PLY)
-            depthInc2 += 2*ONE_PLY;
-          //else if (depth + depthInc2 <= 2*ONE_PLY)
-          //  depthInc2 += ONE_PLY;
-        }
+        //if ( !haveSpecialCase && specialCaseAfter )
+        //{
+        //  //if (depth + depthInc2 <= ONE_PLY)
+        //    depthInc2 += 2*ONE_PLY;
+        //  //else if (depth + depthInc2 <= 2*ONE_PLY)
+        //  //  depthInc2 += ONE_PLY;
+        //}
 
         int R = 0;
 

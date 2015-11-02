@@ -1,1 +1,1 @@
-qmake -tp vc qchess.pro
+qmake -spec win32-msvc2012 -tp vc qchess.pro
