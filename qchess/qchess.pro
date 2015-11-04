@@ -4,8 +4,10 @@
 
 TEMPLATE = app
 TARGET = 
-DEPENDPATH += . Debug-Qt dialogs Release-Qt
+DEPENDPATH += . Debug_Qt dialogs Release_Qt
 INCLUDEPATH += . ../engine/include
+LIBS += "../engine/build/$(Configuration)_Qt/engine.lib"
+
 
 # Input
 HEADERS += ChessPos.h ChessWidget.h selfiguredlg.h setparamsdlg.h

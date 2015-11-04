@@ -39,3 +39,8 @@ qchess/vc80.idb
 *.a
 chess.opensdf
 chess.sdf
+build
+*.sln
+*.vcxproj
+*.vcxproj.*
+*.sdf
