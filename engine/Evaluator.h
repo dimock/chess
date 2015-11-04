@@ -120,7 +120,7 @@ private:
 
   enum SpecialCases
   {
-    SC_None, SC_RBR_W, SC_RNR_W, SC_RBR_B, SC_RNR_B, SC_R2F_B, SC_R2F_W, SC_RFP_B, SC_RFP_W, SC_2NP_B, SC_2NP_W
+    SC_None, SC_RBR_W, SC_RNR_W, SC_RBR_B, SC_RNR_B, SC_RF_B, SC_RF_W, SC_R2F_B, SC_R2F_W, SC_RFP_B, SC_RFP_W, SC_2NP_B, SC_2NP_W, SC_RPRF_W, SC_RPRF_B
   };
 
   SpecialCases findSpecialCase() const;

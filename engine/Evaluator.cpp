@@ -1824,6 +1824,28 @@ Evaluator::SpecialCases Evaluator::findSpecialCase() const
     return SC_None;
   }
 
+  // white rooks == black rooks > 0, white has 1 pawn black 1 figure
+  if (fmgr.rooks(Figure::ColorWhite) == fmgr.rooks(Figure::ColorBlack) &&
+      fmgr.rooks(Figure::ColorWhite) > 0 &&
+      fmgr.pawns(Figure::ColorWhite) == 1 &&
+      fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 0 &&
+      fmgr.pawns(Figure::ColorBlack) == 0 &&
+      fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 1)
+  {
+    return SC_RPRF_W;
+  }
+
+  // white rooks == black rooks > 0, black has 1 pawn white 1 figure
+  if (fmgr.rooks(Figure::ColorBlack) == fmgr.rooks(Figure::ColorWhite) &&
+      fmgr.rooks(Figure::ColorBlack) > 0 &&
+      fmgr.pawns(Figure::ColorBlack) == 1 &&
+      fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 0 &&
+      fmgr.pawns(Figure::ColorWhite) == 0 &&
+      fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 1)
+  {
+    return SC_RPRF_B;
+  }
+
   // white rook against figure + pawn
   if ( fmgr.rooks(Figure::ColorWhite) == 1 &&
        fmgr.rooks(Figure::ColorBlack) == 0 && 
@@ -1871,22 +1893,42 @@ Evaluator::SpecialCases Evaluator::findSpecialCase() const
   if ( fmgr.pawns(Figure::ColorWhite) + fmgr.pawns(Figure::ColorBlack) > 0 )
     return SC_None;
 
+  // black side has 1 rook more, white has 1 figure
+  if (fmgr.rooks(Figure::ColorBlack) - fmgr.rooks(Figure::ColorWhite) == 1 &&
+      fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 0 &&
+      fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 1)
+  {
+    return SC_RF_B;
+  }
+
+  // white side has 1 rook more, black has 1 figure
+  if (fmgr.rooks(Figure::ColorWhite) - fmgr.rooks(Figure::ColorBlack) == 1 &&
+      fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 0 &&
+      fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 1)
+  {
+    return SC_RF_W;
+  }
+
   // black side has 1 rook, white has 2 figures
-  if ( fmgr.rooks(Figure::ColorBlack) == 1 && fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 0 &&
-       fmgr.rooks(Figure::ColorWhite) == 0 && fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 2 )
+  if (fmgr.rooks(Figure::ColorBlack) == 1 &&
+      fmgr.rooks(Figure::ColorWhite) == 0 &&
+      fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 0 &&
+      fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 2 )
   {
     return SC_R2F_B;
   }
 
   // white side has 1 rook, black has 2 figures
-  if ( fmgr.rooks(Figure::ColorWhite) == 1 && fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 0 &&
-       fmgr.rooks(Figure::ColorBlack) == 0 && fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 2 )
+  if (fmgr.rooks(Figure::ColorWhite) == 1 &&
+      fmgr.rooks(Figure::ColorBlack) == 0 &&
+      fmgr.bishops(Figure::ColorWhite) + fmgr.knights(Figure::ColorWhite) == 0 &&
+      fmgr.bishops(Figure::ColorBlack) + fmgr.knights(Figure::ColorBlack) == 2 )
   {
     return SC_R2F_W;
   }
 
-  // it is supposed for all remaining cases that each side has exactly 1 rook
-  if ( fmgr.rooks(Figure::ColorBlack) != 1 || fmgr.rooks(Figure::ColorWhite) != 1 )
+  // it is supposed for all remaining cases that each side has the same number of rooks and one side has only 1 light figure
+  if (fmgr.rooks(Figure::ColorBlack) == 0 || fmgr.rooks(Figure::ColorBlack) != fmgr.rooks(Figure::ColorWhite))
   {
     return SC_None;
   }
@@ -1956,6 +1998,24 @@ ScoreType Evaluator::evaluateSpecial(SpecialCases sc) const
 
   case SC_R2F_B:
   case SC_2NP_B:
+    score = 35;
+    break;
+
+  case SC_RPRF_W: // white have pawn
+    score = -25;
+    white_winner = false;
+    break;
+
+  case SC_RPRF_B: // black have pawn
+    score = 25;
+    break;
+
+  case SC_RF_B:
+    score = -35;
+    white_winner = false;
+    break;
+
+  case SC_RF_W:
     score = 35;
     break;
 
