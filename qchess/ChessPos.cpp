@@ -24,12 +24,14 @@ using namespace std;
 
 ChessPosition::ChessPosition() : working_(false), turned_(false)
 {
-  squareSize_ = 44;
-  squareDiffSize_ = squareSize_ / 2;
+  squareMinSize_ = 44;
+  squareDiffSize_ = squareMinSize_ / 2;
   borderWidth_ = 16;
   diff_margin_ = 4;
   diff_hei_ = squareDiffSize_ + diff_margin_*2;
-  boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
+  boardMinSize_ = QSize(squareMinSize_*8+borderWidth_*2, squareMinSize_*8+borderWidth_*2);
+  boardSize_ = boardMinSize_;
+  squareSize_ = squareMinSize_;
   halfmovesNumber_ = 0;
   selectedPos_ = -1;
   vmove_.clear();
@@ -38,6 +40,14 @@ ChessPosition::ChessPosition() : working_(false), turned_(false)
 
 ChessPosition::~ChessPosition()
 {
+}
+
+void ChessPosition::resize(const QSize & sz)
+{
+  int width = sz.width() - borderWidth_*2;
+  int height = sz.height() - borderWidth_*2 - diff_hei_;
+  squareSize_ = std::min(width, height) / 8;
+  boardSize_ = QSize(squareSize_*8+borderWidth_*2, squareSize_*8+borderWidth_*2);
 }
 
 void ChessPosition::setUpdateCallback(SendOutput callback)
@@ -106,7 +116,6 @@ bool ChessPosition::toFEN(char * fen) const
 
   return player_.toFEN(fen);
 }
-
 
 void ChessPosition::draw(QWidget * view, const QPoint & cursorPt) const
 {

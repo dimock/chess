@@ -34,8 +34,12 @@ public:
   void setTurned(bool t) { turned_ = t; }
   void clearSelected();
   int  getDiffHeight() const { return diff_hei_; }
+  int  getBoardMinHeight() const { return boardMinSize_.height(); }
+  int  getBoardMinWidth() const { return boardMinSize_.width(); }
   int  getBoardHeight() const { return boardSize_.height(); }
   int  getBoardWidth() const { return boardSize_.width(); }
+
+  void resize(const QSize & sz);
 
   // making move
   bool findMove(SearchResult * sres);
@@ -85,10 +89,12 @@ private:
 
   static std::auto_ptr<QImage> fimages_[12];
 
-  int squareSize_;
+  int squareMinSize_;
   int squareDiffSize_;
   int borderWidth_;
+  QSize boardMinSize_;
   QSize boardSize_;
+  int squareSize_;
   bool turned_;
 
 

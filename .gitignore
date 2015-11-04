@@ -37,10 +37,9 @@ shallow/log.txt
 qchess/vc80.idb
 *.o
 *.a
-chess.opensdf
-chess.sdf
+*.opensdf
+*.sdf
 build
 *.sln
 *.vcxproj
 *.vcxproj.*
-*.sdf

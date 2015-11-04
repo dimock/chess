@@ -5,6 +5,7 @@
 
 #include "ChessWidget.h"
 #include <QMouseEvent>
+#include <QResizeEvent>
 #include <QPainter>
 #include <QPen>
 #include <QTime>
@@ -64,7 +65,6 @@ ChessWidget::ChessWidget(QWidget * parent) :
   timelimit_ = settings.value(tr("step_time"), 1).toInt()*1000;
   depthMax_ = settings.value(tr("max_depth"), 16).toInt();
 
-  //setFixedSize(450, 600);
   pv_str_[0] = 0;
   setAttribute(Qt::WA_DeleteOnClose);
 
@@ -73,7 +73,8 @@ ChessWidget::ChessWidget(QWidget * parent) :
   upleft_.setY(cpos_.getDiffHeight() + 50);
   cpos_.setUpLeft(upleft_);
 
-  setFixedSize(cpos_.getBoardWidth() + upleft_.x()*2, cpos_.getBoardHeight() + infoHeight_ + upleft_.y());
+  defaultSize_ = QSize(cpos_.getBoardMinWidth() + upleft_.x()*2, cpos_.getBoardMinHeight() + infoHeight_ + upleft_.y());
+  setMinimumSize(defaultSize_);
 
   createMenu();
 
@@ -85,10 +86,13 @@ ChessWidget::ChessWidget(QWidget * parent) :
 
   connect(&thread_, SIGNAL(finished()), this, SLOT(onMoveFound()));
   connect(this, SIGNAL(pvUpdated()), this, SLOT(onPvUpdated()));
+
+  readSettings();
 }
 
 ChessWidget::~ChessWidget()
 {
+  writeSettings();
   g_chesswidget = 0;
 }
 
@@ -415,10 +419,6 @@ void ChessWidget::drawInfo()
   QString infoText;
 
   int nps = sres_.dt_ > 0 ? sres_.totalNodes_*1000.0/sres_.dt_ : 0;
-  //int ticksN = Board::ticks_;
-  //int hscore = Board::tcounter_;
-  //infoText.sprintf("[%d] depth = %d, nodes count = %d, time = %d (ms), %d nps\nscore = %d, LMR-errors = %d, hist. score(avg) = %d\n{ %s }",
-  //  cpos_.movesCount(), sres_.depth_, sres_.totalNodes_, dt_, nps, sres_.score_, ticksN, hscore, pv_str_);
 
   if ( computerAnswers() )
     infoText.sprintf("[%d] (%d ply) { %s }\nscore = %4.2f, %d nodes, %d nps\n%d", cpos_.movesCount(), sres_.depth_, pv_str_, sres_.score_/100.f, sres_.totalNodes_, nps, Evaluator::score_ex_max_);
@@ -584,6 +584,36 @@ void ChessWidget::keyReleaseEvent(QKeyEvent * e)
   }
 }
 
+void ChessWidget::resizeEvent(QResizeEvent * e)
+{
+  if ( !e )
+    return;
+
+  QSize szBoard(e->size().width() - upleft_.x()*2, e->size().height() - infoHeight_ - upleft_.y());
+  cpos_.resize(szBoard);
+  e->accept();
+}
+
+void ChessWidget::readSettings()
+{
+  QSettings settings(tr(ORG_NAME), tr(APP_NAME));
+  QPoint pos = settings.value(tr("pos"), QPoint(200, 200)).toPoint();
+  QSize size = settings.value(tr("size"), defaultSize_).toSize();
+
+  resize(size);
+  move(pos);
+  if (settings.value(tr("maximized"), false).toBool())
+    setWindowState(windowState() | Qt::WindowMaximized);
+}
+
+void ChessWidget::writeSettings()
+{
+  QSettings settings(tr(ORG_NAME), tr(APP_NAME));
+  settings.setValue(tr("pos"), pos());
+  settings.setValue(tr("size"), size());
+  bool isMaximized = windowState() & Qt::WindowMaximized;
+  settings.setValue(tr("maximized"), isMaximized);
+}
 //////////////////////////////////////////////////////////////////////////
 bool OpenBook::load(const char * fname, const Board & i_board)
 {

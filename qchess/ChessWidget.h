@@ -8,6 +8,9 @@
 #include <QThread>
 #include "ChessPos.h"
 
+#define ORG_NAME "Dimock"
+#define APP_NAME "qchess"
+
 class ChessWidget;
 class ChessAlgThread : public QThread
 {
@@ -57,6 +60,7 @@ public:
   void mouseReleaseEvent(QMouseEvent * e);
   void mouseMoveEvent(QMouseEvent * e);
   void keyReleaseEvent(QKeyEvent * e);
+  void resizeEvent(QResizeEvent * e);
 
 signals:
 
@@ -100,6 +104,9 @@ private:
   bool findInBook();
   bool readOpenBook();
 
+  void readSettings();
+  void writeSettings();
+
   QPoint curPt_;
   QPoint upleft_;
   int infoHeight_;
@@ -119,6 +126,7 @@ private:
   int  timelimit_;
   bool useTimer_;
   int  depthMax_;
+  QSize defaultSize_;
 
   QAction * onNewAction_;
   QAction * onLoadAction_;

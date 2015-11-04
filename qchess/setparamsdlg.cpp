@@ -6,6 +6,7 @@
 #include "setparamsdlg.h"
 #include <QBoxLayout>
 #include <QSettings>
+#include "ChessWidget.h"
 
 SetParamsDlg::SetParamsDlg(QWidget * parent) :
   QDialog(parent)
@@ -66,7 +67,7 @@ SetParamsDlg::SetParamsDlg(QWidget * parent) :
     timeCB_->insertItem(i, tstr, t);
   }
 
-  QSettings settings(tr("Dimock"), tr("qchess"));
+  QSettings settings(tr(ORG_NAME), tr(APP_NAME));
   int tm = settings.value(tr("step_time"), 2).toInt();
   int de = settings.value(tr("max_depth"), 16).toInt();
 
