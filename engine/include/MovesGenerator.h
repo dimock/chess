@@ -689,10 +689,7 @@ private:
   EscapeGenerator eg_;
   ChecksGenerator chg_;
 
-  enum Order { oNone, oEscape, oGenCaps, oCaps, oGenChecks, oChecks, oWeak };
-
-  Move weak_[Board::MovesMax];
-  int  weakN_;
+  enum Order { oNone, oEscape, oGenCaps, oCaps, oGenChecks, oChecks };
 
   Board & board_;
   Figure::Type thresholdType_;
@@ -700,42 +697,3 @@ private:
   Order order_;
   int depth_;
 };
-
-////////////////////////////////////////////////////////////////////////////
-///// Used only for FP
-///// Generates all caps & checks + 1 move if required
-///// Very similar to TacticalGenerator
-//class FutilityGenerator
-//{
-//public:
-//
-//  FutilityGenerator(Board & board, const Move & hmove, Figure::Type thresholdType);
-//
-//  Move & next();
-//
-//  // calculates valid moves. used to give at least 1 move to avoid stalemat
-//  int counter() const { return counter_; }
-//  void inc_counter() { counter_++; }
-//
-//  // valid only under check
-//  bool singleReply() const
-//  {
-//    return board_.underCheck() && eg_.count() == 1;
-//  }
-//
-//private:
-//
-//  CapsGenerator cg_;
-//  EscapeGenerator eg_;
-//  ChecksGenerator chg_;
-//  UsualGenerator ug_;
-//
-//  enum Order { oNone, oEscape, oHash, oGenCaps, oCaps, oGenChecks, oChecks, oGenUsual, oUsual };
-//
-//  Board & board_;
-//  Figure::Type thresholdType_;
-//  Move hmove_;
-//  Move fake_;
-//  Order order_;
-//  int counter_;
-//};

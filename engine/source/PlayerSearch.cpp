@@ -540,7 +540,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 		//{
 			scontexts_[ictx].board_.makeNullMove();
 
-			ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, true /* we are in null-move*/);
+			ScoreType nullScore = -alphaBetta(ictx, null_depth, ply+1, -betta, -(betta-1), false, false /* we are in null-move*/);
 
 			scontexts_[ictx].board_.unmakeNullMove();
 		//}
@@ -579,16 +579,24 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
 
 #ifdef USE_FUTILITY_PRUNING
   if ( !pv &&
-       !scontexts_[ictx].board_.underCheck() &&
-       !scontexts_[ictx].board_.isWinnerLoser() &&
+       !scontexts_[ictx].board_.underCheck() &&       
         alpha > -Figure::MatScore+MaxPly &&
         alpha < Figure::MatScore-MaxPly &&
-        depth <= ONE_PLY && ply > 1 )
+        depth <= 3*ONE_PLY && ply > 1 )
   {
     ScoreType score0 = scontexts_[ictx].eval_(alpha, betta);
     int delta = calculateDelta(alpha, score0);
-    if (delta > 0)
-      return captures(ictx, depth, ply, alpha, betta, pv, score0);
+    if (!scontexts_[ictx].board_.isWinnerLoser())
+    {
+      if (depth <= ONE_PLY && delta > 0)
+        return captures(ictx, depth, ply, alpha, betta, pv, score0);
+      else if (delta > Figure::figureWeight_[Figure::TypeQueen] + Figure::figureWeight_[Figure::TypePawn])
+        return captures(ictx, depth, ply, alpha, betta, pv, score0);
+      else if (delta > 2 * Figure::figureWeight_[Figure::TypeQueen])
+        return score0;
+    }
+    else if (!scontexts_[ictx].board_.isWinnerColor(scontexts_[ictx].board_.getColor()) && delta > Figure::figureWeight_[Figure::TypeKnight])
+      return score0;
   }
 #endif
 
@@ -670,7 +678,7 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
     {
 
       if ( !counter )
-        score = -alphaBetta(ictx, depth + depthInc1 - ONE_PLY, ply+1, -betta, -alpha, pv);
+        score = -alphaBetta(ictx, depth + depthInc1 - ONE_PLY, ply+1, -betta, -alpha, pv, nm);
       else
       {
         int depthInc2 = depthIncrement(ictx, move, false) + depthInc;
@@ -696,14 +704,14 @@ ScoreType Player::alphaBetta(int ictx, int depth, int ply, ScoreType alpha, Scor
         }
 #endif
 
-        score = -alphaBetta(ictx, depth + depthInc2 - R - ONE_PLY, ply + 1, -alpha - 1, -alpha, false);
+        score = -alphaBetta(ictx, depth + depthInc2 - R - ONE_PLY, ply + 1, -alpha - 1, -alpha, false, nm);
         curr.reduced_ = false;
 
         if (!stopped() && score > alpha && R > 0)
-          score = -alphaBetta(ictx, depth + depthInc2 - ONE_PLY, ply + 1, -alpha - 1, -alpha, false);
+          score = -alphaBetta(ictx, depth + depthInc2 - ONE_PLY, ply + 1, -alpha - 1, -alpha, false, nm);
 
         if (!stopped() && score > alpha && score < betta)
-          score = -alphaBetta(ictx, depth + depthInc1 - ONE_PLY, ply + 1, -betta, -alpha, pv);
+          score = -alphaBetta(ictx, depth + depthInc1 - ONE_PLY, ply + 1, -betta, -alpha, pv, nm);
       }
     }
 

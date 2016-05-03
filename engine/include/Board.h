@@ -278,7 +278,6 @@ public:
     }
 
     int null_depth = depth - nullMoveReduce();
-
     if ( null_depth < 0 )
       null_depth = 0;
     
@@ -313,6 +312,11 @@ public:
   Figure::Color getWinnerColor() const
   {
     return can_win_[0] ? Figure::ColorBlack : Figure::ColorWhite;
+  }
+
+  bool isWinnerColor(Figure::Color color) const
+  {
+    return can_win_[color];
   }
 
   /// to detect draw by moves repetitons
