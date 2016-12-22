@@ -2,16 +2,18 @@
 
 from subprocess import Popen, PIPE
 import subprocess, time, errno, os, os.path
-from random import randint
+from random import shuffle, randint
 
-shallow_engine = 'd:/projects/gitproj/shallow/build_x64_vc2013/release/shallow.exe'
 eng_paths = ['d:/projects/gitproj/shallow/build_x64_vc2013/release', 'C:\Program Files (x86)\Arena\Engines\Queen4']
 eng_names = ['shallow.exe', 'Queen402eng.exe']#'stockfish_8_x64_popcnt.exe']
-engines = [os.path.join(eng_paths[0], eng_names[0]), os.path.join(eng_paths[1], eng_names[1])]
+engines = [os.path.join(eng_paths[0], eng_names[0]), os.path.join(eng_paths[0], eng_names[0])]
 
 givenMoves_ = 40
 givenTime_ = 30
 movesLimit_ = 500
+numberOfGames_ = 1
+resultFname_ = 'result.pgn'
+rand_seq = []
 
 if subprocess.mswindows:
   import msvcrt
@@ -43,16 +45,15 @@ else:
     fcntl.fcntl(conn, fcntl.F_SETFL, flags)
     return data
 
-
 moves = []
-
-def initMoves(fname):
-  global moves
+def loadMoves(fname, n):
+  global moves, rand_seq
   with open(fname, 'rt') as f:
     lines = f.readlines()
-  n = randint(0, len(lines)-1)
-  line = lines[n]
-  moves = line.split()[0:12]
+  if len(rand_seq) == 0:
+    rand_seq = range(0, len(lines)-1)
+    shuffle(rand_seq)
+  moves = lines[rand_seq[n % len(lines)]].split()[:12]
 
 class ChessEngine:
   def __init__(self, enum, ename = ''):
@@ -72,6 +73,7 @@ class ChessEngine:
   def quit(self):
     if self.p:
       self.p.stdin.write('quit\n')
+      time.sleep(0.5)
       self.p.stdout.close()
       self.p.stdin.close()
       self.p = None
@@ -110,22 +112,21 @@ class ChessEngine:
       line = self.readln(0.1)
       if line:
         tokens = line.split()
-        print tokens
+#       print tokens
         for i, tok in enumerate(tokens):
-          if i > len(tokens)-1:
+          if i >= len(tokens)-1:
             break
           if tok == 'bestmove':
             bestmove = tokens[i+1]
           if tok == 'score':
-            if tokens[i+1] == 'cp':
-              score = int(tokens[i+2])
+            score = int(tokens[i+2])
+          if tok == 'mate':
+            mate = True
+            score = int(tokens[i+1])
           if tok == 'depth':
             d = int(tokens[i+1])
             if d > depth:
               depth = d
-          if tok == 'mate':
-            mate = True
-            score = int(tokens[i+1])
       t = t + 0.1
       time.sleep(0.1)
     return bestmove, score, depth, mate
@@ -145,11 +146,17 @@ results = [0, 0]
 whiteNo = 1
 engs = [None, None]
 
-def printResult():
-  print 'Results: ', engs[0].engtitle, '=', results[0], ', ', engs[1].engtitle, '=', results[1]
+def resultDraw():
+  global results
+  for i in [0, 1]:
+    results[i] = results[i] + 0.5
 
-for num in xrange(0, 1):
-  initMoves('../tables/Kaissa.bk')
+def printResult():
+  print 'Result: ', engs[0].engtitle, '=', results[0], ', ', engs[1].engtitle, '=', results[1]
+
+for num in xrange(0, numberOfGames_):
+  loadMoves('../tables/Kaissa.bk', num)
+  print 'Game:', num
 
   whiteNo = (whiteNo + 1) % 2
   engs[0] = ChessEngine(0)
@@ -180,9 +187,7 @@ for num in xrange(0, 1):
     if (len(moves) % (2*givenMoves_)) == 0 and (len(moves) > 0):
       timebw = [givenTime_, givenTime_]
     if not best:
-      results[0] = results[0] + 0.5
-      results[1] = results[1] + 0.5
-      printResult()
+      resultDraw()
       break
     moves.append(best)
     scorestr = 'score %4.1f' % (score/100.0)
@@ -190,36 +195,20 @@ for num in xrange(0, 1):
     if mate:
       mate_in = abs(score)
       scorestr = 'mate in %d' % (mate_in)
-    print len(moves), ': bestmove', best, ', ', scorestr, ', depth', depth, ', time left', int(timebw[cur]), ', engine ', engs[cur].engtitle
     if mate_in == 0:
-      if score > 0:
-        results[cur] = results[cur] + 1
-      else:
-        results[(cur + 1) % 2] = results[(cur + 1) % 2] + 1
+      results[cur] = results[cur] + 1
+    print len(moves), ': bestmove', best, ', ', scorestr, ', depth', depth, ', time left', int(timebw[cur]), ', engine ', engs[cur].engtitle
     cur = (cur + 1) % 2
     if len(moves) > movesLimit_ or mate_in == 0:
-      printResult()
       break
 
+  printResult()
+  engs[0].pos()
+  with open(resultFname_, 'at') as f:
+    f.write('\n[White \"%s\"]:\n[Black \"%s\"]\n' % (engs[whiteNo].engtitle, engs[(whiteNo+1)%2].engtitle))
+  engs[0].save(resultFname_)
   engs[0].quit()
   engs[1].quit()
 
-  shallow = ChessEngine(0, shallow_engine)
-  shallow.pos()
-  shallow.save('result.pgn')
-  shallow.quit()
-
-# f = open('result.pgn', 'wt')
-# f.write('[Event ...]:\n[Site ...]:\n[Date ...]:\n[Round ...]:\n[White \"%s\"]:\n[Black \"%s\"]:\n[Result ...]:\n[TimeControl ...]:\n' % (engs[whiteNo].engtitle, engs[(whiteNo+1)%2].engtitle))
-# i = 1
-# for move in moves:
-  # if i % 2 == 1:
-    # f.write( '%d. ' % (int((i+1)/2)) )
-  # f.write(move)
-  # if i % 2 == 1:
-    # f.write(' ')
-  # else:
-    # f.write('\n')
-  # i = i + 1
-# f.close()
-
+with open(resultFname_, 'at') as f:
+  f.write('\n{ Result: ' + engs[0].engtitle + '=' + str(results[0]) + ', ' + engs[1].engtitle + '=' + str(results[1]) + ' }\n')
