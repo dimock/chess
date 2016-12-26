@@ -5,13 +5,13 @@ import subprocess, time, errno, os, os.path
 from random import shuffle, randint
 
 eng_paths = ['d:/projects/gitproj/shallow/build_x64_vc2013/release', 'C:\Program Files (x86)\Arena\Engines\shallow']
-eng_names = ['shallow.exe', 'shallow_no_pw_penl.exe']#'stockfish_8_x64_popcnt.exe']
+eng_names = ['shallow.exe', 'shallow_no_bwp.exe']#'stockfish_8_x64_popcnt.exe']
 engines = [os.path.join(eng_paths[1], eng_names[0]), os.path.join(eng_paths[1], eng_names[1])]
 
 givenMoves_ = 40
-givenTime_ = 240
+givenTime_ = 40
 movesLimit_ = 500
-numberOfGames_ = 40
+numberOfGames_ = 1
 resultFname_ = 'result.pgn'
 rand_seq = []
 
@@ -143,6 +143,7 @@ class ChessEngine:
     self.p.stdin.write(strsave)
     
 results = [0, 0]
+wins_count = [0, 0]
 whiteNo = 1
 engs = [None, None]
 
@@ -153,6 +154,7 @@ def resultDraw():
 
 def printResult():
   print 'Result: ', engs[0].engtitle, '=', results[0], ', ', engs[1].engtitle, '=', results[1]
+  print 'Wins: ', engs[0].engtitle, '=', wins_count[0], ', ', engs[1].engtitle, '=', wins_count[1]
 
 for num in xrange(0, numberOfGames_):
   loadMoves('../tables/Kaissa.bk', num)
@@ -186,7 +188,7 @@ for num in xrange(0, numberOfGames_):
       timebw[cur] = 1
     if (len(moves) % (2*givenMoves_)) == 0 and (len(moves) > 0):
       timebw = [givenTime_, givenTime_]
-    if not best or best == 'draw':
+    if not best or best == 'null':
       resultDraw()
       break
     moves.append(best)
@@ -197,6 +199,7 @@ for num in xrange(0, numberOfGames_):
       scorestr = 'mate in %d' % (mate_in)
     if mate_in == 0:
       results[cur] = results[cur] + 1
+      wins_count[cur] = wins_count[cur] + 1
     print len(moves), ': bestmove', best, ', ', scorestr, ', depth', depth, ', time left', int(timebw[cur]), ', engine ', engs[cur].engtitle
     cur = (cur + 1) % 2
     if len(moves) > movesLimit_ or mate_in == 0:
@@ -212,3 +215,4 @@ for num in xrange(0, numberOfGames_):
 
 with open(resultFname_, 'at') as f:
   f.write('\n{ Result: ' + engs[0].engtitle + '=' + str(results[0]) + ', ' + engs[1].engtitle + '=' + str(results[1]) + ' }\n')
+  f.write('\n{ Wins: ' + engs[0].engtitle + '=' + str(wins_count[0]) + ', ' + engs[1].engtitle + '=' + str(wins_count[1]) + ' }\n')
