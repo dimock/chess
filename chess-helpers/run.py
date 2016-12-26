@@ -4,14 +4,14 @@ from subprocess import Popen, PIPE
 import subprocess, time, errno, os, os.path
 from random import shuffle, randint
 
-eng_paths = ['d:/projects/gitproj/shallow/build_x64_vc2013/release', 'C:\Program Files (x86)\Arena\Engines\Queen4']
-eng_names = ['shallow.exe', 'Queen402eng.exe']#'stockfish_8_x64_popcnt.exe']
-engines = [os.path.join(eng_paths[0], eng_names[0]), os.path.join(eng_paths[0], eng_names[0])]
+eng_paths = ['d:/projects/gitproj/shallow/build_x64_vc2013/release', 'C:\Program Files (x86)\Arena\Engines\shallow']
+eng_names = ['shallow.exe', 'shallow_no_pw_penl.exe']#'stockfish_8_x64_popcnt.exe']
+engines = [os.path.join(eng_paths[1], eng_names[0]), os.path.join(eng_paths[1], eng_names[1])]
 
 givenMoves_ = 40
-givenTime_ = 30
+givenTime_ = 240
 movesLimit_ = 500
-numberOfGames_ = 1
+numberOfGames_ = 40
 resultFname_ = 'result.pgn'
 rand_seq = []
 
@@ -186,7 +186,7 @@ for num in xrange(0, numberOfGames_):
       timebw[cur] = 1
     if (len(moves) % (2*givenMoves_)) == 0 and (len(moves) > 0):
       timebw = [givenTime_, givenTime_]
-    if not best:
+    if not best or best == 'draw':
       resultDraw()
       break
     moves.append(best)
